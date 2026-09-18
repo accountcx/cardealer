@@ -1,0 +1,17 @@
+{
+  "name": "@cardealer/database",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cardealer/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@cardealer/config-typescript": "workspace:*",
+    "typescript": "^5.8.2"
+  }
+}

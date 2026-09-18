@@ -1,0 +1,27 @@
+{
+  "name": "@cardealer/admin",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3001",
+    "build": "next build",
+    "start": "next start --port 3001",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cardealer/core": "workspace:*",
+    "@cardealer/env": "workspace:*",
+    "@cardealer/types": "workspace:*",
+    "@cardealer/ui": "workspace:*",
+    "next": "^15.2.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@cardealer/config-typescript": "workspace:*",
+    "@types/node": "^22.13.9",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "typescript": "^5.8.2"
+  }
+}
