@@ -58,7 +58,25 @@ graph TD
 | **Admin Portal** | Next.js App Router | `v15.2+` | Dashboard quản trị bảng giá, quản lý bài viết và đơn hàng |
 | **Shared Core Engine** | TypeScript Pure Functions | `v5.8+` | Logic tính thuế phí lăn bánh, tính tiền trả góp, format VNĐ |
 | **Testing** | [Vitest](https://vitest.dev/) | `v3.0+` | Unit testing tốc độ cao cho tầng logic nghiệp vụ |
-| **Data Persistence** | PostgreSQL 16 + Docker | `v16-alpine` | Cơ sở dữ liệu quan hệ cho toàn bộ hệ thống |
+| **Data Persistence & ORM** | PostgreSQL 16 + [Drizzle ORM](https://orm.drizzle.team/) | `v0.38+` | Cơ sở dữ liệu quan hệ, type-safe schema, migrations & seeders |
+
+---
+
+## 🗺️ Trạng Thái Tiến Độ Dự Án (Phased Roadmap Status)
+
+Dự án được phân rã và quản lý theo **Universal Agentic Workflow (v2.2)** qua 7 giai đoạn độc lập:
+
+| Giai đoạn | Tên Phân Hệ (Epic) | Phạm Vi | Trạng Thái | Deliverables Đã Chuyển Giao |
+| :---: | :--- | :---: | :---: | :--- |
+| **Phase 1** | **Core Data Layer & Car Catalog** | Backend + Admin | ✅ **100% Hoàn Thành** | • PostgreSQL Schemas & Migrations (`packages/database`)<br/>• REST APIs: Auth, Catalog, Admin CRUD (`apps/api`)<br/>• Admin Portal: Login, Cars, Colors, Settings (`apps/admin`)<br/>• Design System & Skeleton Shimmer UI (`packages/ui`)<br/>• Seed Data 4 dòng xe, 5 màu sơn & tài khoản Admin |
+| **Phase 2** | **Admin User & RBAC Management** | Full-stack | ⏳ **Kế Tiếp (Next)** | Quản lý nhân viên, phân quyền đa cấp, Security Audit Trail |
+| **Phase 3** | **Pricing & Lead Engine** | Full-stack | ⏳ Sắp tới | Thuật toán tính lăn bánh, trả góp ngân hàng, Lead Gate 2 bước |
+| **Phase 4** | **Storefront & Car Experience** | Frontend | ⏳ Sắp tới | Trang chủ 6 phân khu, `/xe/[slug]` đổi màu qua query URL |
+| **Phase 5** | **Content & Lexical Blocks** | Full-stack | ⏳ Sắp tới | 15 Content Blocks, TikTok Embed không cuộn, FAQ Accordion |
+| **Phase 6** | **Technical SEO & Indexing** | Full-stack | ⏳ Sắp tới | 7 Schema JSON-LD, Dynamic Sitemap, Google Indexing API v3 |
+| **Phase 7** | **AI-Powered Automation** | AI + Workers | ⏳ Sắp tới | AI sinh bài giá xe hàng tháng, FAQ Schema, Chatbot Showroom |
+
+> Chi tiết kế hoạch kỹ thuật xem tại: [06-PHASED-IMPLEMENTATION-ROADMAP.md](./docs/06-PHASED-IMPLEMENTATION-ROADMAP.md)
 
 ---
 
@@ -93,6 +111,7 @@ pnpm dev
 Truy cập các cổng dịch vụ cục bộ:
 * 🌐 **Khách hàng (Storefront):** `http://localhost:3000`
 * 🛠️ **Cổng Quản Trị (Admin Portal):** `http://localhost:3001`
+  * *Tài khoản quản trị viên mặc định (Seed Data):* `admin@xehyundaivinh.com` / `admin123`
 * ⚡ **Backend API Server:** `http://localhost:4000` (Healthcheck: `http://localhost:4000/api/health`)
 * 🗄️ **Adminer Database UI (nếu bật docker):** `http://localhost:8080`
 
@@ -113,8 +132,8 @@ Truy cập các cổng dịch vụ cục bộ:
   * `seo/json-ld.ts`: Trình tạo tự động dữ liệu có cấu trúc Google Schema (`Product`, `Car`, `FAQPage`).
 * **`packages/types` (`@cardealer/types`):** Single Source of Truth chứa TypeScript Interfaces và Zod Schemas (`Car`, `CarVersion`, `Lead`, `QuoteRequest`).
 * **`packages/env` (`@cardealer/env`):** Kiểm tra tính hợp lệ của biến môi trường ngay lúc build và runtime bằng Zod, ngăn ngừa lỗi thiếu config khi deploy.
-* **`packages/database` (`@cardealer/database`):** Tầng kết nối cơ sở dữ liệu PostgreSQL.
-* **`packages/ui` (`@cardealer/ui`):** Design System chứa các component tái sử dụng (Button, Modal, Card...).
+* **`packages/database` (`@cardealer/database`):** Tầng kết nối cơ sở dữ liệu PostgreSQL (Drizzle ORM).
+* **`packages/ui` (`@cardealer/ui`):** Design System chứa các component tái sử dụng (Button, Modal, Card, Skeleton Shimmer...).
 * **`packages/config-*`:** Cấu hình chuẩn hóa dùng chung cho TypeScript, ESLint và Prettier.
 
 ---
@@ -157,7 +176,10 @@ Truy cập các cổng dịch vụ cục bộ:
 
 ## 📚 Tài Liệu Kỹ Thuật Chi Tiết (Architecture Docs)
 
-Hệ thống đi kèm bộ tài liệu chuyên sâu 5 phần được lưu trữ tại thư mục [`docs/`](./docs/):
+Hệ thống đi kèm bộ tài liệu chuyên sâu được lưu trữ tại thư mục [`docs/`](./docs/):
+* 🗺️ [06. Lộ Trình Triển Khai Phân Tầng 7 Giai Đoạn (Phased Roadmap v2.2)](./docs/06-PHASED-IMPLEMENTATION-ROADMAP.md)
+* 🧭 [Bản Đồ Kiến Trúc Hệ Thống & Tọa Độ Module (System Map)](./docs/SYSTEM_MAP.md)
+* 📁 [Hồ Sơ Chuyển Giao & Nghiệm Thu Phase 1 (Core Data Layer & Catalog Engine)](./docs/features/PHASE-1-CATALOG-DATA/)
 * 📖 [02. Thiết Kế Cơ Sở Dữ Liệu & Entity Schemas](./docs/02-DATABASE-SCHEMA-PAYLOAD-CMS.md)
 * 🎨 [03. Hệ Thống 15 Content Blocks Biên Tập Nội Dung](./docs/03-HE-THONG-CONTENT-BLOCKS-LEXICAL.md)
 * 📱 [04. Tính Năng Frontend & Trải Nghiệm Khách Hàng (UI/UX)](./docs/04-TINH-NANG-FRONTEND-VA-TRAI-NGHIEM-UI-UX.md)

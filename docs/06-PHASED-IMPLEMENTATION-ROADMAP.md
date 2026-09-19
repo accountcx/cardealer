@@ -1,29 +1,31 @@
-# 🗺️ LỘ TRÌNH TRIỂN KHAI PHÂN TẦNG 6 GIAI ĐOẠN (PHASED ROADMAP)
-## CHIẾN LƯỢC PHÁT TRIỂN & CHUYỂN GIAO NỀN TẢNG CARDEALER THEO CHUẨN UNIVERSAL AGENTIC WORKFLOW (v2.1)
+# 🗺️ LỘ TRÌNH TRIỂN KHAI PHÂN TẦNG 7 GIAI ĐOẠN (PHASED ROADMAP)
+## CHIẾN LƯỢC PHÁT TRIỂN & CHUYỂN GIAO NỀN TẢNG CARDEALER THEO CHUẨN UNIVERSAL AGENTIC WORKFLOW (v2.2)
 
-> **Mục tiêu tài liệu**: Phân rã toàn bộ khối lượng kỹ thuật từ các tài liệu đặc tả ([`02`](./02-DATABASE-SCHEMA-PAYLOAD-CMS.md), [`03`](./03-HE-THONG-CONTENT-BLOCKS-LEXICAL.md), [`04`](./04-TINH-NANG-FRONTEND-VA-TRAI-NGHIEM-UI-UX.md), [`05`](./05-TECHNICAL-SEO-VA-SCHEMA-JSONLD.md)) thành **6 Phases độc lập, có tính kế thừa và chuyển giao nguyên tử**. Mỗi Phase vận hành trọn vẹn chu trình 5 Gates (Phân tích ➡️ Thiết kế ➡️ Audit Rủi ro ➡️ Code & Test ➡️ Review Độc lập) nhằm đảm bảo hệ thống có thể chạy thử và nghiệm thu từng bước.
+> **Mục tiêu tài liệu**: Phân rã toàn bộ khối lượng kỹ thuật từ các tài liệu đặc tả ([`02`](./02-DATABASE-SCHEMA-PAYLOAD-CMS.md), [`03`](./03-HE-THONG-CONTENT-BLOCKS-LEXICAL.md), [`04`](./04-TINH-NANG-FRONTEND-VA-TRAI-NGHIEM-UI-UX.md), [`05`](./05-TECHNICAL-SEO-VA-SCHEMA-JSONLD.md)) thành **7 Phases độc lập, có tính kế thừa và chuyển giao nguyên tử**. Mỗi Phase vận hành trọn vẹn chu trình 5 Gates (Phân tích ➡️ Thiết kế ➡️ Audit Rủi ro ➡️ Code & Test ➡️ Review Độc lập) nhằm đảm bảo hệ thống có thể chạy thử và nghiệm thu từng bước.
 
 ---
 
-## 🧭 Tổng Quan Lộ Trình 6 Giai Đoạn
+## 🧭 Tổng Quan Lộ Trình 7 Giai Đoạn
 
 ```mermaid
 graph LR
-    P1["Phase 1: Core Data Layer & Catalog<br/>(✅ ĐÃ HOÀN THÀNH 100%)"] --> P2["Phase 2: Pricing & Lead Engine<br/>(Tính Lăn Bánh, Trả Góp, Lead Gate)"]
-    P2 --> P3["Phase 3: Storefront & Car Experience<br/>(Trang Chủ, /xe/[slug] Đổi Màu URL)"]
-    P3 --> P4["Phase 4: Content & Lexical Blocks<br/>(15 Blocks, TikTok Embed, TOC)"]
-    P4 --> P5["Phase 5: Technical SEO & Indexing<br/>(7 JSON-LD, Sitemap, Google API)"]
-    P5 --> P6["Phase 6: AI-Powered Automation<br/>(Tự động sinh bài SEO, FAQ, Chatbot)"]
+    P1["Phase 1: Core Data Layer & Catalog<br/>(✅ ĐÃ HOÀN THÀNH 100%)"] --> P2["Phase 2: Admin User & RBAC<br/>(Quản Trị Người Dùng & Phân Quyền)"]
+    P2 --> P3["Phase 3: Pricing & Lead Engine<br/>(Tính Lăn Bánh, Trả Góp, Lead Gate)"]
+    P3 --> P4["Phase 4: Storefront & Car Experience<br/>(Trang Chủ, /xe/[slug] Đổi Màu URL)"]
+    P4 --> P5["Phase 5: Content & Lexical Blocks<br/>(15 Blocks, TikTok Embed, TOC)"]
+    P5 --> P6["Phase 6: Technical SEO & Indexing<br/>(7 JSON-LD, Sitemap, Google API)"]
+    P6 --> P7["Phase 7: AI-Powered Automation<br/>(Tự động sinh bài SEO, FAQ, Chatbot)"]
 ```
 
 | Giai đoạn | Tên Phân Hệ (Epic) | Trọng Tâm Kỹ Thuật | Phạm Vi Nền Tảng | Trạng Thái / Deliverables |
 | :---: | :--- | :--- | :---: | :--- |
 | **Phase 1** | **Core Data Layer & Catalog** | Thiết kế DB PostgreSQL, 10 Core Entities, 7 Globals, Seeders & CRUD API | Backend + Admin | ✅ **ĐÃ HOÀN THÀNH (100% - Ready)**<br/>• `packages/database` (Drizzle Schemas, Migrations, Seed)<br/>• `packages/types` (Car, Auth, Settings contracts)<br/>• `apps/api` (REST APIs Auth, Catalog, Admin CRUD)<br/>• `apps/admin` (Dashboard, Login, Cars, Colors, Settings, Skeleton Zero-CLS) |
-| **Phase 2** | **Pricing & Lead Engine** | Thuật toán tính lăn bánh địa phương, trả góp ngân hàng, Lead Gate 2 bước | Full-stack | `packages/core/src/pricing/`, `apps/api/src/routes/quote`, Web Calculators |
-| **Phase 3** | **Storefront & Car Experience** | Trang chủ 6 phân khu, `/xe/[slug]` đổi màu qua query URL, Sticky CTA Bar | Frontend | `apps/web/app/`, `packages/ui` |
-| **Phase 4** | **Content & Lexical Blocks** | 15 Content Blocks, TikTok Embed không cuộn, FAQ Accordion, Sticky TOC | Full-stack | `packages/ui/blocks`, `apps/web/app/tin-tuc/`, `apps/admin` |
-| **Phase 5** | **Technical SEO & Indexing** | 7 Cấu trúc Schema JSON-LD, Dynamic Sitemap, Google Indexing API v3 | Full-stack | `packages/core/src/seo/`, `apps/web/app/sitemap.ts`, Google Indexing Hook |
-| **Phase 6** | **AI-Powered Automation** | AI sinh bài viết bảng giá xe hàng tháng, AI sinh FAQ Schema, AI Chatbot | AI Engine + Cron | `packages/ai-engine`, Background Workers |
+| **Phase 2** | **Admin User & RBAC Management** | Quản trị tài khoản nhân viên showroom, phân quyền đa tầng (Admin, Manager, Editor, Sales), Audit Logs | Full-stack | ⏳ **TIẾP THEO (Next Epic)**<br/>• `packages/database/src/schema/users.ts`<br/>• `apps/api/src/routes/admin/users.ts`<br/>• `apps/admin/app/users/`, `/admin/profile` |
+| **Phase 3** | **Pricing & Lead Engine** | Thuật toán tính lăn bánh địa phương, trả góp ngân hàng, Lead Gate 2 bước | Full-stack | `packages/core/src/pricing/`, `apps/api/src/routes/quote`, Web Calculators |
+| **Phase 4** | **Storefront & Car Experience** | Trang chủ 6 phân khu, `/xe/[slug]` đổi màu qua query URL, Sticky CTA Bar | Frontend | `apps/web/app/`, `packages/ui` |
+| **Phase 5** | **Content & Lexical Blocks** | 15 Content Blocks, TikTok Embed không cuộn, FAQ Accordion, Sticky TOC | Full-stack | `packages/ui/blocks`, `apps/web/app/tin-tuc/`, `apps/admin` |
+| **Phase 6** | **Technical SEO & Indexing** | 7 Cấu trúc Schema JSON-LD, Dynamic Sitemap, Google Indexing API v3 | Full-stack | `packages/core/src/seo/`, `apps/web/app/sitemap.ts`, Google Indexing Hook |
+| **Phase 7** | **AI-Powered Automation** | AI sinh bài viết bảng giá xe hàng tháng, AI sinh FAQ Schema, AI Chatbot | AI Engine + Cron | `packages/ai-engine`, Background Workers |
 
 ---
 
@@ -71,9 +73,57 @@ graph LR
 
 ---
 
-### 💰 Phase 2: Bộ Công Cụ Tài Chính & Phễu Thu Thập Khách Hàng (Pricing & Lead Engine)
+### 👥 Phase 2: Quản Trị Người Dùng & Phân Quyền Hệ Thống (Admin User & RBAC Management)
+> **Tài liệu đặc tả nguồn:** [`02-DATABASE-SCHEMA-PAYLOAD-CMS.md` (Mục Users & Roles)](./02-DATABASE-SCHEMA-PAYLOAD-CMS.md)  
+> **Mã Epic:** `EPIC-PHASE-2-ADMIN-USER-RBAC`  
+> **Trạng thái:** ⏳ **SẴN SÀNG KHỞI ĐỘNG (Ready to Kickoff)**
+
+#### 1. Mục tiêu & Giá trị chuyển giao
+* Xây dựng phân hệ quản lý người dùng nội bộ hoàn chỉnh cho Showroom và Đại lý ô tô (`Admin Portal User Management`).
+* Cung cấp cơ chế Phân quyền dựa trên vai trò (RBAC - Role-Based Access Control) 4 cấp độ: `admin`, `manager`, `editor`, `sales`.
+* Bảo vệ an toàn tài khoản với các chính sách bảo mật: Khóa/Mở khóa tài khoản, Đổi mật khẩu định kỳ, Thu hồi phiên làm việc (Revoke session / Force logout), và Ghi nhật ký kiểm toán hành động (Security Audit Trail).
+* Trang cá nhân (`/admin/profile`) cho phép từng nhân viên cập nhật thông tin cá nhân, avatar, số điện thoại hotline tư vấn và đổi mật khẩu an toàn.
+
+#### 2. Nghiệp vụ chi tiết cần hoàn thành
+* **Mở rộng Schema & Database (`packages/database`):**
+  * Nâng cấp bảng `users`: Thêm `fullName`, `phone`, `avatarUrl`, `role` (`'admin' | 'manager' | 'editor' | 'sales'`), `status` (`'active' | 'suspended' | 'pending'`), `lastLoginAt`, `lastLoginIp`.
+  * Tạo bảng `audit_logs`: Ghi nhận `userId`, `action` (`CREATE_CAR`, `DELETE_CAR`, `CHANGE_STATUS`, `UPDATE_PRICE`, `LOGIN_FAILED`), `targetResource`, `ipAddress`, `userAgent`, `createdAt`.
+* **RBAC Middleware & Route Guards (`apps/api` & `apps/admin`):**
+  * Định nghĩa ma trận quyền hạn chi tiết (Permission Matrix):
+    * `admin`: Toàn quyền hệ thống, quản lý tài khoản, cấu hình showroom, xóa vĩnh viễn dữ liệu.
+    * `manager`: Quản lý xe, duyệt giá niêm yết, phân công Lead khách hàng, xem báo cáo KPI.
+    * `editor`: Quản lý bài viết tin tức, nội dung xe, tải lên media hình ảnh.
+    * `sales`: Tiếp nhận và xử lý danh sách Lead khách hàng được phân công, không được sửa cấu hình hệ thống hay bảng giá.
+  * Phân quyền tại tầng API qua middleware `requireRole(['admin'])` và `requirePermission(...)`.
+  * Phân quyền tại giao diện Admin: Ẩn/hiện menu điều hướng và các nút thao tác xóa/sửa dựa theo vai trò của người dùng hiện tại.
+* **REST APIs Quản Lý User (`apps/api/src/routes/admin/users.ts`):**
+  * `GET /api/admin/users`: Danh sách nhân viên với phân trang, lọc theo vai trò và tìm kiếm theo họ tên/email.
+  * `POST /api/admin/users`: Thêm mới nhân viên, tự động sinh mật khẩu tạm thời hoặc mã kích hoạt.
+  * `GET /api/admin/users/:id`: Xem chi tiết thông tin và lịch sử thao tác của nhân viên.
+  * `PUT /api/admin/users/:id`: Cập nhật thông tin, thay đổi vai trò hoặc chuyển trạng thái (Khóa / Kích hoạt).
+  * `POST /api/admin/users/:id/reset-password`: Đặt lại mật khẩu tài khoản cấp quản trị.
+  * `DELETE /api/admin/users/:id`: Xóa mềm hoặc vô hiệu hóa tài khoản (chặn tự xóa chính mình).
+  * `GET /api/admin/profile` & `PUT /api/admin/profile`: Quản lý trang hồ sơ cá nhân của người dùng đang đăng nhập.
+  * `PUT /api/admin/profile/change-password`: Đổi mật khẩu cá nhân (yêu cầu xác thực mật khẩu cũ).
+* **Giao diện Quản trị Người dùng (`apps/admin`):**
+  * Màn hình Danh sách nhân viên (`/admin/users`): Data table, filter theo vai trò (`Admin`, `Manager`, `Editor`, `Sales`), trạng thái hoạt động (`Đang hoạt động`, `Đã khóa`), nút khóa nhanh và đặt lại mật khẩu.
+  * Modal Thêm / Chỉnh sửa nhân viên: Form chuẩn `react-hook-form` + `zod` với các trường họ tên, email, chức vụ, vai trò, số điện thoại và phân công phụ trách.
+  * Màn hình Hồ sơ cá nhân (`/admin/profile`): Xem thông tin cá nhân, cập nhật thông tin liên hệ và form đổi mật khẩu an toàn.
+  * Trang Nhật ký hoạt động (`/admin/audit-logs`): Xem lịch sử thao tác của nhân viên để truy vết trách nhiệm.
+
+#### 3. Tiêu chí nghiệm thu (DoD - Definition of Done)
+- [ ] Mở rộng bảng `users`, tạo bảng `audit_logs` và chạy migration PostgreSQL thành công.
+- [ ] Tài khoản vai trò `sales` hoặc `editor` khi đăng nhập không thể truy cập vào `/admin/users` hay `/admin/settings` (bị từ chối quyền 403 Forbidden).
+- [ ] Admin có thể tạo tài khoản mới, phân vai trò, khóa hoặc mở khóa nhân viên tức thì.
+- [ ] Chặn triệt để lỗi tự xóa chính mình hoặc tự hạ quyền Admin cuối cùng trong hệ thống (Self-locking prevention).
+- [ ] Trang cá nhân cho phép nhân viên đổi mật khẩu thành công và bắt buộc đăng xuất nếu đổi mật khẩu.
+- [ ] Toàn bộ API và màn hình tuân thủ Clean Architecture, Zod validation, và Skeleton Shimmer Loading (Zero-CLS).
+
+---
+
+### 💰 Phase 3: Bộ Công Cụ Tài Chính & Phễu Thu Thập Khách Hàng (Pricing & Lead Engine)
 > **Tài liệu đặc tả nguồn:** [`04-TINH-NANG-FRONTEND-VA-TRAI-NGHIEM-UI-UX.md` (Mục 5 & 6)](./04-TINH-NANG-FRONTEND-VA-TRAI-NGHIEM-UI-UX.md)  
-> **Mã Epic:** `EPIC-PHASE-2-PRICING-LEAD`
+> **Mã Epic:** `EPIC-PHASE-3-PRICING-LEAD`
 
 #### 1. Mục tiêu & Giá trị chuyển giao
 * Tự động hóa 100% các công thức tài chính phức tạp (lăn bánh, lãi suất vay) với tốc độ phản hồi tức thì.
@@ -99,9 +149,9 @@ graph LR
 
 ---
 
-### 🚗 Phase 3: Giao Diện Khách Hàng & Trải Nghiệm Xem Xe (Storefront & Dynamic Car Experience)
+### 🚗 Phase 4: Giao Diện Khách Hàng & Trải Nghiệm Xem Xe (Storefront & Dynamic Car Experience)
 > **Tài liệu đặc tả nguồn:** [`04-TINH-NANG-FRONTEND-VA-TRAI-NGHIEM-UI-UX.md`](./04-TINH-NANG-FRONTEND-VA-TRAI-NGHIEM-UI-UX.md)  
-> **Mã Epic:** `EPIC-PHASE-3-STOREFRONT-EXPERIENCE`
+> **Mã Epic:** `EPIC-PHASE-4-STOREFRONT-EXPERIENCE`
 
 #### 1. Mục tiêu & Giá trị chuyển giao
 * Mang lại trải nghiệm người dùng hiện đại, thẩm mỹ cao, chuẩn nhận diện showroom ủy quyền.
@@ -128,9 +178,9 @@ graph LR
 
 ---
 
-### 📝 Phase 4: Hệ Thống 15 Content Blocks & Soạn Thảo Độc Quyền (Rich Content & Lexical)
+### 📝 Phase 5: Hệ Thống 15 Content Blocks & Soạn Thảo Độc Quyền (Rich Content & Lexical)
 > **Tài liệu đặc tả nguồn:** [`03-HE-THONG-CONTENT-BLOCKS-LEXICAL.md`](./03-HE-THONG-CONTENT-BLOCKS-LEXICAL.md)  
-> **Mã Epic:** `EPIC-PHASE-4-CONTENT-BLOCKS`
+> **Mã Epic:** `EPIC-PHASE-5-CONTENT-BLOCKS`
 
 #### 1. Mục tiêu & Giá trị chuyển giao
 * Trao quyền tối đa cho ban biên tập nội dung tạo ra các bài đánh giá xe chuyên sâu, cẩm nang lăn bánh và landing page chiến dịch sinh động.
@@ -153,9 +203,9 @@ graph LR
 
 ---
 
-### 🔍 Phase 5: Tự Động Hóa Technical SEO & Google Indexing API (SEO & Discovery)
+### 🔍 Phase 6: Tự Động Hóa Technical SEO & Google Indexing API (SEO & Discovery)
 > **Tài liệu đặc tả nguồn:** [`05-TECHNICAL-SEO-VA-SCHEMA-JSONLD.md`](./05-TECHNICAL-SEO-VA-SCHEMA-JSONLD.md)  
-> **Mã Epic:** `EPIC-PHASE-5-TECHNICAL-SEO`
+> **Mã Epic:** `EPIC-PHASE-6-TECHNICAL-SEO`
 
 #### 1. Mục tiêu & Giá trị chuyển giao
 * Đưa website lên top tìm kiếm Google tự nhiên với thứ hạng cao nhất trong khu vực (Local SEO Nghệ An, Hà Tĩnh).
@@ -182,8 +232,9 @@ graph LR
 
 ---
 
-### 🤖 Phase 6: Trí Tuệ Nhân Tạo Tự Động Hóa (AI-Powered Content & Lead Gen)
-> **Mã Epic:** `EPIC-PHASE-6-AI-AUTOMATION`
+### 🤖 Phase 7: Trí Tuệ Nhân Tạo Tự Động Hóa (AI-Powered Content & Lead Gen)
+> **Tài liệu đặc tả nguồn:** Đặc tả nghiệp vụ AI tự động hóa  
+> **Mã Epic:** `EPIC-PHASE-7-AI-AUTOMATION`
 
 #### 1. Mục tiêu & Giá trị chuyển giao
 * Tự động hóa sản xuất nội dung quy mô lớn và tư vấn khách hàng tự động 24/7.

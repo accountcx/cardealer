@@ -41,10 +41,10 @@ Hệ thống tài liệu bao gồm 4 chuyên đề chuyên sâu:
   * `AutoDealer`: Khai báo doanh nghiệp ô tô địa phương kèm tọa độ Google Maps.
   * `NewsArticle`, `FAQPage`, `VideoObject`, `SoftwareApplication`, `BreadcrumbList`.
 * **Dynamic Sitemap**: Phân cấp ưu tiên cao (`priority: 0.9`, `daily`) cho các bài viết chứa từ khóa bán hàng (`gia-lan-banh`, `khuyen-mai`).
-### 5. [06. Lộ Trình Triển Khai Phân Tầng 6 Giai Đoạn (Phased Implementation Roadmap)](./06-PHASED-IMPLEMENTATION-ROADMAP.md)
-* **Chiến lược chia nhỏ theo từng Phase**: Phân rã toàn bộ hệ thống thành 6 giai đoạn nguyên tử, độc lập và có thể nghiệm thu chạy thử ngay.
-* **Quy chuẩn Universal Agentic Workflow (v2.1)**: Mỗi Phase vận hành qua 5 Gates nghiêm ngặt từ thiết kế, kiểm thử rủi ro, lập trình đến review độc lập.
-* **Lộ trình 6 phân hệ**: (1) Nền tảng Dữ liệu & Catalog, (2) Bộ công cụ Tài chính & Lead Funnel, (3) Giao diện Khách hàng & Trải nghiệm xem xe, (4) Hệ thống 15 Content Blocks, (5) Technical SEO & Indexing API, (6) Trí tuệ nhân tạo tự động hóa.
+### 5. [06. Lộ Trình Triển Khai Phân Tầng 7 Giai Đoạn (Phased Implementation Roadmap)](./06-PHASED-IMPLEMENTATION-ROADMAP.md)
+* **Chiến lược chia nhỏ theo từng Phase**: Phân rã toàn bộ hệ thống thành 7 giai đoạn nguyên tử, độc lập và có thể nghiệm thu chạy thử ngay.
+* **Quy chuẩn Universal Agentic Workflow (v2.2)**: Mỗi Phase vận hành qua 5 Gates nghiêm ngặt từ thiết kế, kiểm thử rủi ro, lập trình đến review độc lập.
+* **Lộ trình 7 phân hệ**: (1) Nền tảng Dữ liệu & Catalog, (2) Quản trị Người dùng & Phân quyền RBAC, (3) Bộ công cụ Tài chính & Lead Funnel, (4) Giao diện Khách hàng & Trải nghiệm xem xe, (5) Hệ thống 15 Content Blocks, (6) Technical SEO & Indexing API, (7) Trí tuệ nhân tạo tự động hóa.
 
 ---
 
