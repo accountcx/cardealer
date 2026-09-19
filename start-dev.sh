@@ -41,6 +41,18 @@ PNPM_VER=$(pnpm -v 2>/dev/null || echo "Unknown")
 echo -e "  📍 Node.js Version : ${C_GREEN}${NODE_VER}${C_RESET}"
 echo -e "  📦 pnpm Version    : ${C_GREEN}${PNPM_VER}${C_RESET}"
 echo -e "  📂 Workspace Root  : ${C_BLUE}${ROOT_DIR}${C_RESET}"
+
+# Nạp biến môi trường từ file .env gốc
+if [ -f "$ROOT_DIR/.env" ]; then
+  set -a
+  source "$ROOT_DIR/.env"
+  set +a
+  if [ -n "$DATABASE_URL" ]; then
+    DB_HOST=$(echo "$DATABASE_URL" | sed -E 's|.*@([^:/]+).*|\1|')
+    DB_NAME=$(echo "$DATABASE_URL" | sed -E 's|.*/([^?]+).*|\1|')
+    echo -e "  🗄️  Database Target   : ${C_GREEN}${DB_HOST}${C_RESET} (${C_CYAN}${DB_NAME}${C_RESET})"
+  fi
+fi
 echo ""
 
 # 2. Hàm kiểm tra và giải phóng port nếu đang bị chiếm dụng

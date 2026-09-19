@@ -4,8 +4,8 @@
   "private": true,
   "packageManager": "pnpm@10.5.2",
   "engines": {
-    "node": ">=24.0.0",
-    "pnpm": ">=10.0.0"
+    "node": ">=24",
+    "pnpm": ">=9.0.0"
   },
   "scripts": {
     "dev": "turbo run dev --parallel",
@@ -15,11 +15,15 @@
     "check-types": "turbo run check-types",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\"",
+    "db:generate": "pnpm --filter @cardealer/database db:generate",
+    "db:migrate": "pnpm --filter @cardealer/database db:migrate",
+    "db:push": "pnpm --filter @cardealer/database db:push",
+    "verify:phase-1": "pnpm --filter @cardealer/database exec tsx src/scripts/verify-phase-1.ts",
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {
-    "prettier": "^3.5.3",
-    "turbo": "^2.4.4",
-    "typescript": "^5.8.2"
+    "prettier": "^3.9.8",
+    "turbo": "^2.11.0",
+    "typescript": "^7.0.2"
   }
 }

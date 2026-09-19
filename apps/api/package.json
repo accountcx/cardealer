@@ -12,12 +12,16 @@
     "@cardealer/core": "workspace:*",
     "@cardealer/database": "workspace:*",
     "@cardealer/env": "workspace:*",
-    "@cardealer/types": "workspace:*"
+    "@cardealer/types": "workspace:*",
+    "bcryptjs": "^3.0.3",
+    "drizzle-orm": "^0.45.2",
+    "jsonwebtoken": "^9.0.3"
   },
   "devDependencies": {
     "@cardealer/config-typescript": "workspace:*",
-    "@types/node": "^22.13.9",
-    "tsx": "^4.19.3",
-    "typescript": "^5.8.2"
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^26.6.1",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2"
   }
 }

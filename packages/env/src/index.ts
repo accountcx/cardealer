@@ -9,12 +9,13 @@ const serverEnvSchema = z.object({
 
 const clientEnvSchema = z.object({
   NEXT_PUBLIC_SITE_URL: z.string().url().default('http://localhost:3000'),
-  NEXT_PUBLIC_API_URL: z.string().url().default('http://localhost:4000/api'),
+  NEXT_PUBLIC_API_URL: z.string().url().default('http://localhost:4000'),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
 export type ClientEnv = z.infer<typeof clientEnvSchema>;
 
+// 🧠 Mental Model: Hàm xác thực biến môi trường Server với cơ chế Fail-Fast lúc khởi động
 export function validateServerEnv(env: Record<string, unknown> = process.env): ServerEnv {
   const parsed = serverEnvSchema.safeParse(env);
   if (!parsed.success) {
@@ -24,6 +25,7 @@ export function validateServerEnv(env: Record<string, unknown> = process.env): S
   return parsed.data;
 }
 
+// 🧠 Mental Model: Hàm xác thực biến môi trường Client (Next.js inlines NEXT_PUBLIC_* at build-time)
 export function validateClientEnv(env: Record<string, unknown> = process.env): ClientEnv {
   const parsed = clientEnvSchema.safeParse(env);
   if (!parsed.success) {
@@ -32,3 +34,9 @@ export function validateClientEnv(env: Record<string, unknown> = process.env): C
   }
   return parsed.data;
 }
+
+// 🧠 Mental Model: Singleton Client Env dùng chung cho toàn bộ Frontend / Admin UI
+export const clientEnv: ClientEnv = validateClientEnv({
+  NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+  NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+});

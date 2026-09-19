@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+@source "../../../packages/ui/src/**/*.{ts,tsx}";
+@source "../**/*.{ts,tsx}";
+@source "./**/*.{ts,tsx}";
+
+@layer base {
+  :root {
+    --hyundai-primary: #002c6c;
+    --hyundai-accent: #0072ce;
+    --hyundai-dark: #0b0f17;
+    --hyundai-card: #131b2a;
+    --hyundai-border: rgba(255, 255, 255, 0.08);
+  }
+
+  body {
+    background-color: #0b0f17;
+    color: #f8fafc;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    min-height: 100vh;
+    background-image: 
+      radial-gradient(at 100% 0%, rgba(0, 114, 206, 0.08) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, rgba(0, 44, 108, 0.12) 0px, transparent 50%);
+    background-attachment: fixed;
+  }
+}
+
+/* Custom Scrollbar for Luxury Dark Theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0b0f17;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Glassmorphism helpers */
+.glass-panel {
+  background: rgba(19, 27, 42, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hyundai-glow {
+  box-shadow: 0 0 25px -5px rgba(0, 114, 206, 0.4);
+}

@@ -17,9 +17,9 @@ export function generateCarJsonLd(car: Car, siteUrl: string) {
   return {
     '@context': 'https://schema.org',
     '@type': ['Product', 'Car'],
-    name: car.name,
-    image: car.featuredImage,
-    description: car.headline || `Bảng giá xe ${car.name} lăn bánh mới nhất`,
+    name: car.tenXe,
+    image: car.anhDaiDienUrl,
+    description: car.promotionSummary || car.moTaChung || `Bảng giá xe ${car.tenXe} lăn bánh mới nhất`,
     brand: {
       '@type': 'Brand',
       name: 'Hyundai',

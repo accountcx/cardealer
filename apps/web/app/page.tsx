@@ -5,22 +5,35 @@ import type { Car } from '@cardealer/types';
 export default function HomePage() {
   const sampleCar: Car = {
     id: 'tucson-2025',
-    name: 'Hyundai Tucson 2025',
+    tenXe: 'Hyundai Tucson 2025',
     slug: 'tucson',
-    featuredImage: '/images/tucson.webp',
-    segment: 'SUV',
-    headline: 'Khám phá thế hệ SUV hoàn toàn mới',
+    anhDaiDienUrl: '/images/tucson.webp',
+    segment: 'suv',
+    status: 'published',
+    isFeatured: true,
+    sortOrder: 1,
+    taxRate: 10,
+    traTruocTu: 150_000_000,
+    promotionSummary: 'Khám phá thế hệ SUV hoàn toàn mới',
+    moTaChung: 'Thiết kế Parametric Dynamic táo bạo',
     highlightFeatures: [
-      { icon: 'engine', label: 'CÔNG SUẤT', value: '156 Hp' },
-      { icon: 'seat', label: 'SỐ CHỖ', value: '5 Chỗ' },
+      { icon: 'engine', title: 'CÔNG SUẤT', value: '156 Hp' },
+      { icon: 'seat', title: 'SỐ CHỖ', value: '5 Chỗ' },
     ],
     versions: [
       {
         id: 'v1',
-        name: 'Tucson 2.0 Xăng Tiêu Chuẩn',
+        carId: 'tucson-2025',
+        tenPhienBan: 'Tucson 2.0 Xăng Tiêu Chuẩn',
+        slug: 'tucson-20-xang-tieu-chuan',
         giaNiemYet: 769_000_000,
-        soChoNgoi: 5,
-        availableColors: [],
+        giaKhuyenMai: 749_000_000,
+        seatCount: 5,
+        dongCo: 'SmartStream G2.0',
+        sortOrder: 1,
+        boSuuTapAnh: [],
+        specGroups: [],
+        colors: [],
       },
     ],
   };
@@ -46,7 +59,7 @@ export default function HomePage() {
       </header>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-        <Card title={sampleCar.name} subtitle={`Phân khúc: ${sampleCar.segment}`}>
+        <Card title={sampleCar.tenXe} subtitle={`Phân khúc: ${sampleCar.segment}`}>
           <p style={{ fontSize: '15px', color: '#374151', margin: '8px 0' }}>
             <strong>Giá niêm yết:</strong> {formatVND(sampleCar.versions[0].giaNiemYet)} (
             {formatVNDShort(sampleCar.versions[0].giaNiemYet)})
