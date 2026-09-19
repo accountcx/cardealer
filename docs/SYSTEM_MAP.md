@@ -34,16 +34,18 @@ graph TD
     Api --> DB
 ```
 
-## 📍 Tọa Độ Phân Vùng Module
+## 📍 Tọa Độ Phân Vùng Module & Tiến Độ
 
-| Phân Vùng | Đường Dẫn Codebase | Trách Nhiệm & Nghiệp Vụ |
-| :--- | :--- | :--- |
-| **Catalog & Product** | `packages/database`, `packages/types/src/car.ts`, `apps/api` | Quản lý 10 Core Entities (`Cars`, `CarVersions`, `Colors`, `VersionColors`...) |
-| **Financial Engine** | `packages/core/src/pricing/`, `apps/api/src/routes/quote.ts` | Thuật toán tính thuế trước bạ, biển số, bảo hiểm, lãi suất trả góp ngân hàng |
-| **Lead & CRM Funnel** | `packages/types/src/lead.ts`, `apps/api`, `apps/web` | Thu thập form, gắn tag Lead (`Event Lead`, `Báo Giá`), gửi thông báo |
-| **Content & Lexical** | `apps/admin`, `apps/web`, `packages/ui` | Trình soạn thảo 15 Content Blocks, nhúng TikTok không cuộn, FAQ accordion |
-| **SEO & Indexing** | `packages/core/src/seo/`, `apps/web`, `apps/api` | 7 Schema JSON-LD, Dynamic Sitemap, Google Indexing API v3 |
-| **Global Settings** | `packages/database`, `apps/admin`, `apps/api` | 7 Globals (`SiteSettings`, `Navigation`, `ContactSettings`, `EventBanner`...) |
+| Phân Vùng | Đường Dẫn Codebase | Trách Nhiệm & Nghiệp Vụ | Trạng Thái |
+| :--- | :--- | :--- | :---: |
+| **Catalog & Product** | `packages/database`, `packages/types/src/car.ts`, `apps/api`, `apps/admin` | Quản lý Core Entities (`Cars`, `CarVersions`, `Colors`, `VersionColors`...) | ✅ **Phase 1 (100%)** |
+| **Global Settings** | `packages/database`, `apps/admin`, `apps/api` | Cấu hình Showroom (`showroomName`, `diaChi`, `hotline`, `zalo`, `social`...) | ✅ **Phase 1 (100%)** |
+| **Financial Engine** | `packages/core/src/pricing/`, `apps/api/src/routes/quote.ts` | Thuật toán tính thuế trước bạ, biển số, bảo hiểm, lãi suất trả góp ngân hàng | ⏳ **Phase 2 (Next)** |
+| **Lead & CRM Funnel** | `packages/types/src/lead.ts`, `apps/api`, `apps/web` | Thu thập form, gắn tag Lead (`Event Lead`, `Báo Giá`), gửi thông báo | ⏳ **Phase 2 (Next)** |
+| **Storefront Experience** | `apps/web/app/`, `packages/ui` | Trang chủ 6 phân khu, `/xe/[slug]` đổi màu qua query URL, Sticky CTA Bar | ⏳ **Phase 3** |
+| **Content & Lexical** | `apps/admin`, `apps/web`, `packages/ui` | Trình soạn thảo 15 Content Blocks, nhúng TikTok không cuộn, FAQ accordion | ⏳ **Phase 4** |
+| **SEO & Indexing** | `packages/core/src/seo/`, `apps/web`, `apps/api` | 7 Schema JSON-LD, Dynamic Sitemap, Google Indexing API v3 | ⏳ **Phase 5** |
+| **AI Automation** | `packages/ai-engine`, `apps/api` | AI sinh bài SEO hàng tháng, FAQ Schema, Chatbot tư vấn showroom | ⏳ **Phase 6** |
 
 ---
 

@@ -9,16 +9,16 @@
 
 ```mermaid
 graph LR
-    P1["Phase 1: Core Data Layer & Catalog<br/>(Entities, DB Postgres, CRUD Xe & Màu)"] --> P2["Phase 2: Pricing & Lead Engine<br/>(Tính Lăn Bánh, Trả Góp, Lead Gate)"]
+    P1["Phase 1: Core Data Layer & Catalog<br/>(✅ ĐÃ HOÀN THÀNH 100%)"] --> P2["Phase 2: Pricing & Lead Engine<br/>(Tính Lăn Bánh, Trả Góp, Lead Gate)"]
     P2 --> P3["Phase 3: Storefront & Car Experience<br/>(Trang Chủ, /xe/[slug] Đổi Màu URL)"]
     P3 --> P4["Phase 4: Content & Lexical Blocks<br/>(15 Blocks, TikTok Embed, TOC)"]
     P4 --> P5["Phase 5: Technical SEO & Indexing<br/>(7 JSON-LD, Sitemap, Google API)"]
     P5 --> P6["Phase 6: AI-Powered Automation<br/>(Tự động sinh bài SEO, FAQ, Chatbot)"]
 ```
 
-| Giai đoạn | Tên Phân Hệ (Epic) | Trọng Tâm Kỹ Thuật | Phạm Vi Nền Tảng | Deliverables Chính |
+| Giai đoạn | Tên Phân Hệ (Epic) | Trọng Tâm Kỹ Thuật | Phạm Vi Nền Tảng | Trạng Thái / Deliverables |
 | :---: | :--- | :--- | :---: | :--- |
-| **Phase 1** | **Core Data Layer & Catalog** | Thiết kế DB PostgreSQL, 10 Core Entities, 7 Globals, Seeders & CRUD API | Backend + Admin | `packages/database`, `packages/types`, `apps/api`, `apps/admin` |
+| **Phase 1** | **Core Data Layer & Catalog** | Thiết kế DB PostgreSQL, 10 Core Entities, 7 Globals, Seeders & CRUD API | Backend + Admin | ✅ **ĐÃ HOÀN THÀNH (100% - Ready)**<br/>• `packages/database` (Drizzle Schemas, Migrations, Seed)<br/>• `packages/types` (Car, Auth, Settings contracts)<br/>• `apps/api` (REST APIs Auth, Catalog, Admin CRUD)<br/>• `apps/admin` (Dashboard, Login, Cars, Colors, Settings, Skeleton Zero-CLS) |
 | **Phase 2** | **Pricing & Lead Engine** | Thuật toán tính lăn bánh địa phương, trả góp ngân hàng, Lead Gate 2 bước | Full-stack | `packages/core/src/pricing/`, `apps/api/src/routes/quote`, Web Calculators |
 | **Phase 3** | **Storefront & Car Experience** | Trang chủ 6 phân khu, `/xe/[slug]` đổi màu qua query URL, Sticky CTA Bar | Frontend | `apps/web/app/`, `packages/ui` |
 | **Phase 4** | **Content & Lexical Blocks** | 15 Content Blocks, TikTok Embed không cuộn, FAQ Accordion, Sticky TOC | Full-stack | `packages/ui/blocks`, `apps/web/app/tin-tuc/`, `apps/admin` |
@@ -31,7 +31,9 @@ graph LR
 
 ### 📦 Phase 1: Nền Tảng Dữ Liệu & Quản Trị Danh Mục Xe (Core Data Layer & Catalog Engine)
 > **Tài liệu đặc tả nguồn:** [`02-DATABASE-SCHEMA-PAYLOAD-CMS.md`](./02-DATABASE-SCHEMA-PAYLOAD-CMS.md)  
-> **Mã Epic:** `EPIC-PHASE-1-CATALOG-DATA`
+> **Mã Epic:** `EPIC-PHASE-1-CATALOG-DATA`  
+> **Trạng thái thực thi:** ✅ **ĐÃ HOÀN THÀNH & NGHIỆM THU 100% (Delivered to Main)**  
+> **Tài liệu thực thi chi tiết:** [`docs/features/PHASE-1-CATALOG-DATA/`](./features/PHASE-1-CATALOG-DATA/)
 
 #### 1. Mục tiêu & Giá trị chuyển giao
 * Xây dựng "trái tim" dữ liệu vững chắc cho toàn bộ nền tảng CarDealer trên PostgreSQL.
@@ -60,10 +62,12 @@ graph LR
   * Màn hình danh sách xe, form thêm mới xe và gán bảng màu ngoại thất (yêu cầu đăng nhập).
 
 #### 3. Tiêu chí nghiệm thu (DoD - Definition of Done)
-* Chạy migration và seed dữ liệu PostgreSQL (kèm tài khoản Admin mặc định) thành công 100%.
-* Đăng nhập Admin với email/password đúng -> cấp cookie phiên và chuyển hướng vào Dashboard; nhập sai -> báo lỗi thân thiện.
-* Người dùng chưa đăng nhập truy cập `/admin` tự động bị chuyển hướng về `/admin/login`.
-* Gọi API `GET /api/cars` trả về JSON đúng Zod Schema từ `@cardealer/types`.
+- [x] Chạy migration và seed dữ liệu PostgreSQL (kèm tài khoản Admin mặc định) thành công 100%.
+- [x] Đăng nhập Admin với email/password đúng -> cấp cookie phiên và chuyển hướng vào Dashboard; nhập sai -> báo lỗi thân thiện.
+- [x] Người dùng chưa đăng nhập truy cập `/admin` tự động bị chuyển hướng về `/admin/login` qua Middleware.
+- [x] Gọi API `GET /api/cars` và `GET /api/admin/*` trả về JSON đúng Zod Schema từ `@cardealer/types`.
+- [x] Giao diện Admin quản trị Dòng xe (`/cars`), Chi tiết xe (`/cars/[slug]`), Bảng màu (`/colors`), Cấu hình Showroom (`/settings`) hoạt động trơn tru với Optimistic UI, Quick Status Toggle và Skeleton Shimmer Loading (Zero-CLS).
+- [x] Vượt qua kiểm tra Type-Safety monorepo (`pnpm check-types`) với 8/8 packages đạt 0 lỗi TypeScript.
 
 ---
 
