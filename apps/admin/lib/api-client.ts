@@ -92,8 +92,12 @@ class HttpClient {
 
     // Global 401 Interceptor: Hết hạn phiên / chưa đăng nhập
     if (response.status === 401) {
-      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
-        window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+      if (typeof window !== 'undefined') {
+        // 🧠 Xóa cookie token để chống vòng lặp chuyển hướng giữa Client và Next.js Server Middleware
+        document.cookie = 'admin_token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        if (!window.location.pathname.startsWith('/login')) {
+          window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+        }
       }
     }
 

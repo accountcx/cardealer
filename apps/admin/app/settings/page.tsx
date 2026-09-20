@@ -10,6 +10,8 @@ import { BrandSection } from './components/BrandSection';
 import { ContactSection } from './components/ContactSection';
 import { SocialSection } from './components/SocialSection';
 import { settingsService } from '../../services/settings.service';
+import { useAuth } from '../../contexts/AuthContext';
+import { AccessDenied } from '../components/AccessDenied';
 
 const settingsSchema = z.object({
   showroomName: z.string().trim().min(1, 'Vui lòng nhập tên showroom'),
@@ -28,6 +30,7 @@ export type SettingsFormData = z.infer<typeof settingsSchema>;
 // 🧠 Mental Model: Trang cấu hình Showroom phân chia thành 3 sub-sections độc lập (Brand, Contact, Social) tuân thủ SRP.
 // Tích hợp react-hook-form FormProvider để quản trị form state tập trung, Type-Safe qua Zod.
 export default function SettingsPage() {
+  const { loading: authLoading, can } = useAuth();
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +53,12 @@ export default function SettingsPage() {
   });
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!can('system:read')) {
+      setLoading(false);
+      return;
+    }
+
     async function loadSettings() {
       try {
         setLoading(true);
@@ -77,7 +86,7 @@ export default function SettingsPage() {
     }
 
     loadSettings();
-  }, [form]);
+  }, [form, authLoading, can]);
 
   const onSubmit = async (data: SettingsFormData) => {
     setSaveError(null);
@@ -91,6 +100,16 @@ export default function SettingsPage() {
       setSaveError(msg);
     }
   };
+
+  if (!authLoading && !can('system:read')) {
+    return (
+      <AccessDenied
+        title="Cấu Hình Showroom & Hệ Thống"
+        message="Chỉ Quản Trị Viên (Admin) và Quản Lý (Manager) mới có quyền truy cập và chỉnh sửa thông tin đại lý showroom."
+        requiredPermission="system:read"
+      />
+    );
+  }
 
   return (
     <div className="max-w-4xl space-y-6">

@@ -8,6 +8,13 @@
       "when": 1789788100692,
       "tag": "0000_seed_initial_data",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789840262905,
+      "tag": "0001_volatile_mysterio",
+      "breakpoints": true
     }
   ]
 }

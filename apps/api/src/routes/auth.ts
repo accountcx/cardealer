@@ -2,10 +2,13 @@ import { IncomingMessage, ServerResponse } from 'node:http';
 import { db, schema } from '@cardealer/database';
 import { eq } from 'drizzle-orm';
 import { comparePassword, signToken, verifyToken, parseCookies } from '../auth';
+import { getClientIp } from '../middleware/rbac';
+import { recordAuditLog } from '../services/audit.service';
 
 // 🧠 Mental Model: API Xác thực Quản trị viên (Authentication Routes).
-// Tuyệt đối KHÔNG sử dụng fallback ngầm. Mọi thông tin tài khoản phải được xác thực trực tiếp
-// qua bảng `users` trong PostgreSQL với mật khẩu mã hóa Bcrypt.
+// Xác thực trực tiếp qua PostgreSQL với Bcrypt hash.
+// Cập nhật lastLoginAt, lastLoginIp và ghi nhật ký đăng nhập.
+// Vô hiệu hóa phiên lập tức nếu tài khoản bị khóa hoặc tokenVersion bị lệch (R4 Mitigation).
 
 export async function handleAuthRoutes(
   req: IncomingMessage,
@@ -36,6 +39,30 @@ export async function handleAuthRoutes(
         return true;
       }
 
+      // Kiểm tra trạng thái tài khoản
+      if (user.status === 'suspended') {
+        sendJson(403, {
+          success: false,
+          error: {
+            code: 'ACCOUNT_SUSPENDED',
+            message: 'Tài khoản của bạn đã bị tạm khóa. Vui lòng liên hệ quản trị viên.',
+          },
+        });
+        return true;
+      }
+
+      const clientIp = getClientIp(req);
+      const now = new Date();
+
+      // Cập nhật thời điểm đăng nhập cuối và IP
+      await db
+        .update(schema.users)
+        .set({
+          lastLoginAt: now,
+          lastLoginIp: clientIp,
+        })
+        .where(eq(schema.users.id, user.id));
+
       const jwtToken = signToken({
         userId: user.id,
         email: user.email,
@@ -44,12 +71,29 @@ export async function handleAuthRoutes(
         tokenVersion: user.tokenVersion,
       });
 
+      // Ghi nhật ký kiểm toán đăng nhập
+      await recordAuditLog({
+        userId: user.id,
+        action: 'USER_LOGIN',
+        resource: 'auth',
+        resourceId: user.id,
+        ipAddress: clientIp,
+        userAgent: req.headers['user-agent'],
+      });
+
       sendJson(
         200,
         {
           success: true,
           data: {
-            user: { id: user.id, email: user.email, fullName: user.fullName, role: user.role },
+            user: {
+              id: user.id,
+              email: user.email,
+              fullName: user.fullName,
+              role: user.role,
+              status: user.status,
+              avatarUrl: user.avatarUrl,
+            },
             token: jwtToken,
           },
         },
@@ -97,14 +141,36 @@ export async function handleAuthRoutes(
         return true;
       }
 
+      if (user.status === 'suspended') {
+        sendJson(403, {
+          success: false,
+          error: { code: 'ACCOUNT_SUSPENDED', message: 'Tài khoản đã bị tạm khóa' },
+        });
+        return true;
+      }
+
+      // Kiểm tra thu hồi token tức thì (R4)
+      const clientTokenVersion = payload.tokenVersion ?? 1;
+      const dbTokenVersion = user.tokenVersion ?? 1;
+      if (clientTokenVersion !== dbTokenVersion) {
+        sendJson(401, {
+          success: false,
+          error: { code: 'TOKEN_REVOKED', message: 'Phiên đăng nhập đã bị vô hiệu hóa. Vui lòng đăng nhập lại.' },
+        });
+        return true;
+      }
+
       sendJson(200, {
         success: true,
         data: {
           id: user.id,
           email: user.email,
           fullName: user.fullName,
+          phone: user.phone,
           role: user.role,
+          status: user.status,
           avatarUrl: user.avatarUrl,
+          lastLoginAt: user.lastLoginAt,
         },
       });
       return true;

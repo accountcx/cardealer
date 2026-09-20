@@ -7,6 +7,8 @@ import { colorService } from '../../services/color.service';
 import { ColorCard, ColorItem } from './components/ColorCard';
 import { ColorFormModal, ColorFormData } from './components/ColorFormModal';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { useAuth } from '../../contexts/AuthContext';
+import { AccessDenied } from '../components/AccessDenied';
 
 // 🧠 Mental Model: Quản trị Bảng màu Master toàn hệ thống Hyundai (SCHEMA.md).
 // Tuyệt đối KHÔNG giấu lỗi hay nuốt lỗi. Khi lưu, sửa, hoặc xóa màu gặp sự cố,
@@ -19,6 +21,7 @@ interface ActionNotification {
 }
 
 export default function ColorsPage() {
+  const { loading: authLoading, can } = useAuth();
   const [colors, setColors] = useState<ColorItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -39,6 +42,11 @@ export default function ColorsPage() {
   });
 
   const loadColors = useCallback(async () => {
+    if (!authLoading && !can('cars:write')) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -55,11 +63,13 @@ export default function ColorsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [authLoading, can]);
 
   useEffect(() => {
-    loadColors();
-  }, [loadColors]);
+    if (!authLoading) {
+      loadColors();
+    }
+  }, [authLoading, loadColors]);
 
   const resetForm = () => {
     setFormData({
@@ -169,6 +179,16 @@ export default function ColorsPage() {
       c.tenMau.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.hexCode.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (!authLoading && !can('cars:write')) {
+    return (
+      <AccessDenied
+        title="Quản Trị Bảng Màu Ngoại Thất"
+        message="Chỉ Quản Trị Viên (Admin), Quản Lý (Manager) và Biên Tập Viên (Editor) mới có quyền truy cập và chỉnh sửa bảng màu chính hãng."
+        requiredPermission="cars:write"
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -15,9 +15,10 @@ export function middleware(request: NextRequest) {
 
   const token = request.cookies.get('admin_token')?.value;
 
-  // 1. Nếu đang ở trang login: nếu đã có token thì chuyển thẳng vào /cars
+  // 1. Nếu đang ở trang login: nếu đã có token và KHÔNG có redirect param thì chuyển vào /cars
   if (pathname === '/login') {
-    if (token) {
+    const hasRedirectParam = request.nextUrl.searchParams.has('redirect');
+    if (token && !hasRedirectParam) {
       return NextResponse.redirect(new URL('/cars', request.url));
     }
     return NextResponse.next();

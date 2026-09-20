@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import AdminShell from './components/AdminShell';
+import { AuthProvider } from '../contexts/AuthContext';
 
 export const metadata: Metadata = {
   title: 'CarDealer Admin Portal | Quản Trị Showroom Hyundai',
@@ -23,7 +24,9 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-[#0B0F17] text-slate-100 antialiased selection:bg-[#0072CE] selection:text-white">
-        <AdminShell>{children}</AdminShell>
+        <AuthProvider>
+          <AdminShell>{children}</AdminShell>
+        </AuthProvider>
       </body>
     </html>
   );

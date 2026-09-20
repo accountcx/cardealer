@@ -2,6 +2,8 @@ import { relations } from 'drizzle-orm';
 import { cars } from './cars';
 import { carVersions } from './car_versions';
 import { colors, versionColors } from './colors';
+import { users } from './users';
+import { auditLogs } from './audit_logs';
 
 export const carsRelations = relations(cars, ({ many }) => ({
   versions: many(carVersions),
@@ -19,4 +21,12 @@ export const versionColorsRelations = relations(versionColors, ({ one }) => ({
 
 export const colorsRelations = relations(colors, ({ many }) => ({
   versionColors: many(versionColors),
+}));
+
+export const usersRelations = relations(users, ({ many }) => ({
+  auditLogs: many(auditLogs),
+}));
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  user: one(users, { fields: [auditLogs.userId], references: [users.id] }),
 }));

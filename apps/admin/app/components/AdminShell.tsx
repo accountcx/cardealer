@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { 
   Car, 
   Palette, 
@@ -15,51 +15,105 @@ import {
   ChevronRight,
   Sun,
   Moon,
-  Menu
+  Menu,
+  UserCheck,
+  User as UserIcon,
 } from 'lucide-react';
 import { clientEnv } from '@cardealer/env';
-import { Button, Badge } from '@cardealer/ui';
-import { authService } from '../../services/auth.service';
+import { Button } from '@cardealer/ui';
+import { useAuth } from '../../contexts/AuthContext';
+import type { PermissionAction } from '@cardealer/types';
 
 interface AdminShellProps {
   children: React.ReactNode;
+}
+
+interface NavItemConfig {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  permission?: PermissionAction;
+  active?: boolean;
+  badge?: string;
+  disabled?: boolean;
 }
 
 // 🧠 Mental Model: AdminShell cung cấp Fixed Topbar và Fixed Sidebar không bị cuộn theo trang
 // Khóa viewport với `fixed inset-0 overflow-hidden`, chỉ cho phép phần `<main>` cuộn nội dung độc lập
 export default function AdminShell({ children }: AdminShellProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const { user, loading, can, logout } = useAuth();
 
   // Không hiển thị Shell tại trang Login
   if (pathname === '/login') {
     return <>{children}</>;
   }
 
-  const handleLogout = async () => {
-    try {
-      await authService.logout();
-    } catch {
-      // ignore
-    }
-    document.cookie = 'admin_token=; path=/; max-age=0';
-    router.push('/login');
-    router.refresh();
-  };
-
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  const navItems = [
-    { label: 'Dòng Xe Hyundai', href: '/cars', icon: Car, active: pathname.startsWith('/cars') || pathname === '/' },
-    { label: 'Bảng Màu Ngoại Thất', href: '/colors', icon: Palette, active: pathname.startsWith('/colors') },
-    { label: 'Khách Hàng & Báo Giá', href: '#', icon: Users, badge: 'Phase 2', disabled: true },
-    { label: 'Bài Viết & Đánh Giá', href: '#', icon: FileText, badge: 'Phase 4', disabled: true },
-    { label: 'Cài Đặt Showroom', href: '/settings', icon: Settings, active: pathname.startsWith('/settings') },
+  const allNavItems: NavItemConfig[] = [
+    {
+      label: 'Dòng Xe Hyundai',
+      href: '/cars',
+      icon: Car,
+      permission: 'cars:read',
+      active: pathname.startsWith('/cars') || pathname === '/',
+    },
+    {
+      label: 'Bảng Màu Ngoại Thất',
+      href: '/colors',
+      icon: Palette,
+      permission: 'cars:write',
+      active: pathname.startsWith('/colors'),
+    },
+    {
+      label: 'Tài Khoản Nhân Sự',
+      href: '/users',
+      icon: UserCheck,
+      permission: 'users:read',
+      active: pathname.startsWith('/users'),
+    },
+    {
+      label: 'Hồ Sơ & Bảo Mật',
+      href: '/profile',
+      icon: UserIcon,
+      active: pathname.startsWith('/profile'),
+    },
+    {
+      label: 'Khách Hàng & Báo Giá',
+      href: '#',
+      icon: Users,
+      permission: 'leads:read',
+      badge: 'Phase 3',
+      disabled: true,
+    },
+    {
+      label: 'Bài Viết & Đánh Giá',
+      href: '#',
+      icon: FileText,
+      badge: 'Phase 4',
+      disabled: true,
+    },
+    {
+      label: 'Cài Đặt Showroom',
+      href: '/settings',
+      icon: Settings,
+      permission: 'system:read',
+      active: pathname.startsWith('/settings'),
+    },
   ];
+
+  // 🧠 Lọc Navigation theo ma trận quyền RBAC:
+  // Nếu người dùng không có permission tương ứng với Role thì ẨN HOÀN TOÀN nav item
+  const visibleNavItems = allNavItems.filter((item) => {
+    if (!item.permission) return true;
+    if (loading || !user || !user.role) return false;
+    return can(item.permission);
+  });
 
   return (
     <div className="fixed inset-0 flex overflow-hidden bg-[#0B0F17] text-slate-100 font-sans antialiased select-none">
@@ -94,7 +148,17 @@ export default function AdminShell({ children }: AdminShellProps) {
                 Quản Trị Hệ Thống
               </div>
             )}
-            {navItems.map((item) => {
+
+            {/* Skeleton loading khi chưa tải xong User Profile */}
+            {loading && !user && (
+              <div className="space-y-2 px-1">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-10 rounded-xl bg-slate-800/50 animate-pulse" />
+                ))}
+              </div>
+            )}
+
+            {visibleNavItems.map((item) => {
               const Icon = item.icon;
               return (
                 <div key={item.label}>
@@ -146,23 +210,47 @@ export default function AdminShell({ children }: AdminShellProps) {
         {/* User Profile Footer & Logout */}
         <div className="pt-4 border-t border-white/10 space-y-3">
           {isSidebarOpen && (
-            <div className="flex items-center gap-3 px-2 py-1">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-800 to-slate-700 border border-white/10 flex items-center justify-center text-xs font-black text-sky-400 shadow-sm shrink-0">
-                TH
-              </div>
-              <div className="overflow-hidden">
-                <div className="text-xs font-bold text-white truncate">Tuấn Hyundai</div>
-                <div className="text-[11px] text-emerald-400 flex items-center gap-1 font-medium">
-                  <ShieldCheck size={12} /> Quản Trị Viên
+            loading ? (
+              <div className="flex items-center gap-3 px-2 py-1.5 rounded-xl animate-pulse">
+                <div className="w-9 h-9 rounded-xl bg-slate-800 shrink-0" />
+                <div className="space-y-1.5 flex-1 min-w-0">
+                  <div className="h-3.5 w-24 bg-slate-800 rounded" />
+                  <div className="h-2.5 w-16 bg-slate-800 rounded" />
                 </div>
               </div>
-            </div>
+            ) : user ? (
+              <Link
+                href="/profile"
+                className="flex items-center gap-3 px-2 py-1.5 rounded-xl hover:bg-slate-800/60 transition-colors group cursor-pointer"
+              >
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-800 to-slate-700 border border-white/10 flex items-center justify-center text-xs font-black text-sky-400 shadow-sm shrink-0">
+                  {(user.fullName || 'NV').substring(0, 2).toUpperCase()}
+                </div>
+                <div className="overflow-hidden">
+                  <div className="text-xs font-bold text-white truncate group-hover:text-sky-300 transition-colors">
+                    {user.fullName || 'Nhân Viên'}
+                  </div>
+                  <div className={`text-[10px] font-bold inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 rounded-md border ${
+                    user.role === 'admin' 
+                      ? 'text-rose-300 bg-rose-500/10 border-rose-500/20'
+                      : user.role === 'manager'
+                      ? 'text-sky-300 bg-sky-500/10 border-sky-500/20'
+                      : user.role === 'editor'
+                      ? 'text-amber-300 bg-amber-500/10 border-amber-500/20'
+                      : 'text-emerald-300 bg-emerald-500/10 border-emerald-500/20'
+                  }`}>
+                    <ShieldCheck size={11} />
+                    {user.role === 'admin' ? 'ADMIN' : user.role === 'manager' ? 'QUẢN LÝ' : user.role === 'editor' ? 'BIÊN TẬP' : 'SALES'}
+                  </div>
+                </div>
+              </Link>
+            ) : null
           )}
 
           <Button
             variant="danger"
             size="sm"
-            onClick={handleLogout}
+            onClick={logout}
             leftIcon={<LogOut size={15} />}
             className="w-full text-xs font-semibold py-2"
           >

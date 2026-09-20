@@ -18,6 +18,7 @@ import {
   FormMessage,
 } from '@cardealer/ui';
 import { authService } from '../../services/auth.service';
+import { useAuth } from '../../contexts/AuthContext';
 
 const loginSchema = z.object({
   email: z
@@ -36,6 +37,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 // Chuẩn phong cách Luxury Dark Automotive với react-hook-form & Shadcn Form Primitives
 export default function LoginPage() {
   const router = useRouter();
+  const { refreshUser } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
@@ -60,9 +62,13 @@ export default function LoginPage() {
 
       if (result && result.user) {
         setSuccess(true);
+        // Đồng bộ dữ liệu người dùng vào AuthContext ngay lập tức
+        await refreshUser();
+        const searchParams = new URLSearchParams(window.location.search);
+        const redirectUrl = searchParams.get('redirect') || '/cars';
         setTimeout(() => {
-          router.push('/cars');
-        }, 800);
+          router.push(redirectUrl);
+        }, 500);
       }
     } catch (err: unknown) {
       const msg =

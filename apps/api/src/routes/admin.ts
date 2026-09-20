@@ -2,6 +2,9 @@ import { IncomingMessage, ServerResponse } from 'node:http';
 import { db, schema } from '@cardealer/database';
 import { eq, inArray, desc } from 'drizzle-orm';
 import { verifyToken, parseCookies } from '../auth';
+import { handleUserManagementRoutes } from './admin/users';
+import { handleProfileRoutes } from './admin/profile';
+import { authenticateAdmin, checkPermission } from '../middleware/rbac';
 
 // 🧠 Mental Model: Tuyến đường Quản trị CMS được bảo vệ (Protected Admin Routes).
 // Kiểm tra JWT token từ HttpOnly Cookie hoặc Bearer Header trước khi cho phép thao tác ghi dữ liệu.
@@ -14,6 +17,10 @@ export async function handleAdminRoutes(
   readBody: () => Promise<Record<string, unknown>>,
   sendJson: (status: number, data: unknown, headers?: Record<string, string>) => void
 ): Promise<boolean> {
+  // 0. Phân luồng Quản trị Nhân sự (RBAC) & Hồ sơ Cá nhân
+  if (await handleUserManagementRoutes(req, res, url, readBody, sendJson)) return true;
+  if (await handleProfileRoutes(req, res, url, readBody, sendJson)) return true;
+
   const cookies = parseCookies(req.headers.cookie);
   const token = cookies['admin_token'] || req.headers.authorization?.replace('Bearer ', '');
 
@@ -279,8 +286,18 @@ export async function handleAdminRoutes(
     }
   }
 
-  // 6. POST /api/admin/colors (Tạo mã màu Master)
+  // 3. POST /api/admin/colors (Tạo mã màu Master)
   if (url.pathname === '/api/admin/colors' && req.method === 'POST') {
+    const auth = await authenticateAdmin(req);
+    if (auth.error) {
+      sendJson(auth.error.statusCode, { success: false, error: auth.error });
+      return true;
+    }
+    if (!checkPermission(auth.user!.role, 'cars:write')) {
+      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền tạo mã màu' } });
+      return true;
+    }
+
     const body = await readBody();
     try {
       const [inserted] = await db.insert(schema.colors).values({
@@ -302,6 +319,16 @@ export async function handleAdminRoutes(
 
   // 4. PUT /api/admin/colors/:id (Cập nhật mã màu Master)
   if (url.pathname.startsWith('/api/admin/colors/') && req.method === 'PUT') {
+    const auth = await authenticateAdmin(req);
+    if (auth.error) {
+      sendJson(auth.error.statusCode, { success: false, error: auth.error });
+      return true;
+    }
+    if (!checkPermission(auth.user!.role, 'cars:write')) {
+      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền cập nhật mã màu' } });
+      return true;
+    }
+
     const id = url.pathname.replace('/api/admin/colors/', '');
     const body = await readBody();
     try {
@@ -324,6 +351,16 @@ export async function handleAdminRoutes(
 
   // 5. DELETE /api/admin/colors/:id (Xóa mã màu Master)
   if (url.pathname.startsWith('/api/admin/colors/') && req.method === 'DELETE') {
+    const auth = await authenticateAdmin(req);
+    if (auth.error) {
+      sendJson(auth.error.statusCode, { success: false, error: auth.error });
+      return true;
+    }
+    if (!checkPermission(auth.user!.role, 'cars:write')) {
+      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền xóa mã màu' } });
+      return true;
+    }
+
     const id = url.pathname.replace('/api/admin/colors/', '');
     try {
       await db.delete(schema.colors).where(eq(schema.colors.id, id));
@@ -338,6 +375,16 @@ export async function handleAdminRoutes(
 
   // 6. POST /api/admin/cars/:slug/version-colors (Lưu cấu hình màu cho phiên bản xe)
   if (url.pathname.startsWith('/api/admin/cars/') && url.pathname.endsWith('/version-colors') && req.method === 'POST') {
+    const auth = await authenticateAdmin(req);
+    if (auth.error) {
+      sendJson(auth.error.statusCode, { success: false, error: auth.error });
+      return true;
+    }
+    if (!checkPermission(auth.user!.role, 'cars:write')) {
+      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền gán màu phiên bản xe' } });
+      return true;
+    }
+
     const slug = url.pathname.replace('/api/admin/cars/', '').replace('/version-colors', '');
     const body = await readBody();
     const items = (body.items || []) as Array<{
@@ -388,6 +435,16 @@ export async function handleAdminRoutes(
 
   // 7. GET /api/admin/settings
   if (url.pathname === '/api/admin/settings' && req.method === 'GET') {
+    const auth = await authenticateAdmin(req);
+    if (auth.error) {
+      sendJson(auth.error.statusCode, { success: false, error: auth.error });
+      return true;
+    }
+    if (!checkPermission(auth.user!.role, 'system:read')) {
+      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền xem cấu hình hệ thống' } });
+      return true;
+    }
+
     try {
       let row = await db.query.systemSettings.findFirst({
         where: eq(schema.systemSettings.key, 'showroom_settings'),
@@ -432,6 +489,16 @@ export async function handleAdminRoutes(
 
   // 8. PUT /api/admin/settings
   if (url.pathname === '/api/admin/settings' && req.method === 'PUT') {
+    const auth = await authenticateAdmin(req);
+    if (auth.error) {
+      sendJson(auth.error.statusCode, { success: false, error: auth.error });
+      return true;
+    }
+    if (!checkPermission(auth.user!.role, 'system:write')) {
+      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền cập nhật cấu hình hệ thống' } });
+      return true;
+    }
+
     const body = await readBody();
     try {
       await db

@@ -19,6 +19,7 @@
     "db:migrate": "pnpm --filter @cardealer/database db:migrate",
     "db:push": "pnpm --filter @cardealer/database db:push",
     "verify:phase-1": "pnpm --filter @cardealer/database exec tsx src/scripts/verify-phase-1.ts",
+    "verify:phase-2": "pnpm --filter @cardealer/database exec tsx ../../scripts/verify-phase-2-rbac.ts",
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {

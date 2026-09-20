@@ -1,5 +1,5 @@
 import { apiClient } from '../lib/api-client';
-import { User, LoginInput } from '@cardealer/types';
+import type { User, LoginInput, UserResponse } from '@cardealer/types';
 
 export type AuthUser = User;
 
@@ -14,8 +14,8 @@ export const authService = {
     return apiClient.post<LoginResult>('/api/auth/login', credentials);
   },
 
-  getProfile: async (): Promise<{ user: User }> => {
-    return apiClient.get<{ user: User }>('/api/auth/me');
+  getProfile: async (): Promise<UserResponse> => {
+    return apiClient.get<UserResponse>('/api/auth/me');
   },
 
   logout: async (): Promise<{ message: string }> => {

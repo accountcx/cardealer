@@ -1,4 +1,5 @@
 export * from './users';
+export * from './audit_logs';
 export * from './cars';
 export * from './car_versions';
 export * from './colors';
