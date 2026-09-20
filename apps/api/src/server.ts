@@ -2,6 +2,7 @@ import http from 'node:http';
 import { checkDatabaseHealth } from '@cardealer/database';
 import { handleAuthRoutes } from './routes/auth';
 import { handleCatalogRoutes } from './routes/catalog';
+import { handleLeadRoutes } from './routes/leads';
 import { handleAdminRoutes } from './routes/admin';
 
 // 🧠 Mental Model: Micro REST API Server & Central Dispatcher.
@@ -82,6 +83,9 @@ const server = http.createServer(async (req, res) => {
 
   // 3. Catalog Routes
   if (await handleCatalogRoutes(req, res, url, sendJson)) return;
+
+  // 3.5. Public Lead Routes (POST /api/leads)
+  if (await handleLeadRoutes(req, res, url, readBody, sendJson)) return;
 
   // 4. Admin Protected Routes
   if (await handleAdminRoutes(req, res, url, readBody, sendJson)) return;

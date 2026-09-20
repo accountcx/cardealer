@@ -4,6 +4,7 @@ import { eq, inArray, desc } from 'drizzle-orm';
 import { verifyToken, parseCookies } from '../auth';
 import { handleUserManagementRoutes } from './admin/users';
 import { handleProfileRoutes } from './admin/profile';
+import { handleAdminLeadRoutes } from './admin/leads';
 import { authenticateAdmin, checkPermission } from '../middleware/rbac';
 
 // 🧠 Mental Model: Tuyến đường Quản trị CMS được bảo vệ (Protected Admin Routes).
@@ -17,9 +18,10 @@ export async function handleAdminRoutes(
   readBody: () => Promise<Record<string, unknown>>,
   sendJson: (status: number, data: unknown, headers?: Record<string, string>) => void
 ): Promise<boolean> {
-  // 0. Phân luồng Quản trị Nhân sự (RBAC) & Hồ sơ Cá nhân
+  // 0. Phân luồng Quản trị Nhân sự (RBAC), Hồ sơ Cá nhân & Khách hàng CRM
   if (await handleUserManagementRoutes(req, res, url, readBody, sendJson)) return true;
   if (await handleProfileRoutes(req, res, url, readBody, sendJson)) return true;
+  if (await handleAdminLeadRoutes(req, res, url, readBody, sendJson)) return true;
 
   const cookies = parseCookies(req.headers.cookie);
   const token = cookies['admin_token'] || req.headers.authorization?.replace('Bearer ', '');

@@ -5,4 +5,5 @@ export * from './car_versions';
 export * from './colors';
 export * from './media';
 export * from './system_settings';
+export * from './leads';
 export * from './relations';

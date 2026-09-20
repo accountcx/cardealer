@@ -66,7 +66,9 @@ export default function HomePage() {
           </p>
           <div style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
             <Button variant="primary">Đăng Ký Lái Thử</Button>
-            <Button variant="outline">Nhận Báo Giá</Button>
+            <a href="/gia-lan-banh" style={{ textDecoration: 'none' }}>
+              <Button variant="outline">Nhận Báo Giá & Tính Lăn Bánh</Button>
+            </a>
           </div>
         </Card>
 

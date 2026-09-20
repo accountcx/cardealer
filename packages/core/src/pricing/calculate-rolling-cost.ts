@@ -1,78 +1,63 @@
 import type {
   RollingCostCalculationInput,
   RollingCostBreakdown,
-  LocationRate,
 } from '@cardealer/types';
+import {
+  getLocationRate,
+  FIXED_GOVERNMENT_RATES,
+  PROVINCE_FEE_CONFIGS,
+} from './config';
 
-// Bảng biểu mức thuế phí theo vùng tiêu chuẩn
-export const DEFAULT_LOCATIONS: Record<string, LocationRate> = {
-  nghe_an: {
-    code: 'nghe_an',
-    name: 'Nghệ An',
-    thueTruocBaPercent: 10,
-    phiBienSo: 1_000_000,
-  },
-  ha_tinh: {
-    code: 'ha_tinh',
-    name: 'Hà Tĩnh',
-    thueTruocBaPercent: 10,
-    phiBienSo: 1_000_000,
-  },
-  ha_noi: {
-    code: 'ha_noi',
-    name: 'Hà Nội',
-    thueTruocBaPercent: 12,
-    phiBienSo: 20_000_000,
-  },
-  ho_chi_minh: {
-    code: 'ho_chi_minh',
-    name: 'TP. Hồ Chí Minh',
-    thueTruocBaPercent: 10,
-    phiBienSo: 20_000_000,
-  },
-};
+// 🧠 Mental Model: Thuật toán tính toán chi phí lăn bánh chính xác theo quy định nhà nước.
+// 1. Áp dụng Integer Arithmetic (Làm tròn Math.round) trên mọi phép tính tỷ lệ để triệt tiêu hoàn toàn sai số dấu phẩy động (R5).
+// 2. Tra cứu mức thuế và tiền biển số từ Config tập trung (R7).
+// 3. Phòng thủ biên tham số (R6): Chặn giá xe âm hoặc bằng 0.
 
-// Định mức chi phí cố định nhà nước
-export const FIXED_RATES = {
-  phiDangKiem: 140_000,
-  phiBaoTriDuongBo12Thang: 1_560_000,
-  phiTNDS_duoi_6_cho: 480_700,
-  phiTNDS_tren_6_cho: 873_400,
-  tyLeBaoHiemThanVo: 0.013, // 1.3% giá xe
-  phiDichVuMacDinh: 2_000_000,
-};
+export { PROVINCE_FEE_CONFIGS, FIXED_GOVERNMENT_RATES, getLocationRate };
 
 /**
  * Thuật toán tính toán chi phí lăn bánh chính xác theo từng tỉnh thành
+ * @param input Thông tin đầu vào gồm giá xe, địa phương, số chỗ ngồi và các tùy chọn bảo hiểm
+ * @returns Chi tiết bóc tách từng khoản phí và tổng giá lăn bánh cuối cùng
  */
 export function calculateRollingCost(input: RollingCostCalculationInput): RollingCostBreakdown {
-  const location = DEFAULT_LOCATIONS[input.tinhThanhCode] || DEFAULT_LOCATIONS.nghe_an;
+  if (!input || input.giaXe <= 0) {
+    throw new RangeError('Giá xe tính toán lăn bánh phải là số dương lớn hơn 0');
+  }
 
-  // 1. Lệ phí trước bạ
+  // 1. Tra cứu biểu phí địa phương (Mặc định: TP. Vinh)
+  const location = getLocationRate(input.tinhThanhCode);
+
+  // 2. Lệ phí trước bạ (10% tại Nghệ An, Hà Tĩnh; 12% tại Hà Nội)
   const lePhiTruocBa = Math.round(input.giaXe * (location.thueTruocBaPercent / 100));
 
-  // 2. Tiền biển số
+  // 3. Tiền cấp biển số (Vinh: 1.000.000đ, Huyện khác: 200.000đ, Hà Nội/TP.HCM: 20.000.000đ)
   const phiBienSo = location.phiBienSo;
 
-  // 3. Phí đăng kiểm
-  const phiDangKiem = FIXED_RATES.phiDangKiem;
+  // 4. Phí đăng kiểm phương tiện cơ giới đường bộ
+  const phiDangKiem = FIXED_GOVERNMENT_RATES.phiDangKiem;
 
-  // 4. Phí bảo trì đường bộ (12 tháng)
-  const phiBaoTriDuongBo = FIXED_RATES.phiBaoTriDuongBo12Thang;
+  // 5. Phí bảo trì đường bộ 12 tháng
+  const phiBaoTriDuongBo = FIXED_GOVERNMENT_RATES.phiBaoTriDuongBo12Thang;
 
-  // 5. Bảo hiểm trách nhiệm dân sự bắt buộc
+  // 6. Bảo hiểm trách nhiệm dân sự bắt buộc theo số chỗ ngồi
+  const soCho = input.soChoNgoi ?? 5;
   const baoHiemTNDS =
-    input.soChoNgoi > 5 ? FIXED_RATES.phiTNDS_tren_6_cho : FIXED_RATES.phiTNDS_duoi_6_cho;
+    soCho > 5
+      ? FIXED_GOVERNMENT_RATES.phiTNDS_tren_6_cho
+      : FIXED_GOVERNMENT_RATES.phiTNDS_duoi_6_cho;
 
-  // 6. Bảo hiểm thân vỏ 2 chiều (tự nguyện)
+  // 7. Bảo hiểm vật chất thân vỏ 2 chiều tự nguyện (1.3% giá trị xe)
   const baoHiemThanVo = input.hasBaoHiemThanVo
-    ? Math.round(input.giaXe * FIXED_RATES.tyLeBaoHiemThanVo)
+    ? Math.round(input.giaXe * FIXED_GOVERNMENT_RATES.tyLeBaoHiemThanVo)
     : 0;
 
-  // 7. Phí dịch vụ đăng ký đăng kiểm trọn gói
-  const phiDichVuDangKy = input.hasPhiDichVu ? FIXED_RATES.phiDichVuMacDinh : 0;
+  // 8. Phí dịch vụ đăng ký đăng kiểm trọn gói từ đại lý
+  const phiDichVuDangKy = input.hasPhiDichVu
+    ? FIXED_GOVERNMENT_RATES.phiDichVuDangKyMacDinh
+    : 0;
 
-  // Tổng chi phí lăn bánh
+  // 9. Tổng chi phí lăn bánh trọn gói
   const tongGiaLanBanh =
     input.giaXe +
     lePhiTruocBa +

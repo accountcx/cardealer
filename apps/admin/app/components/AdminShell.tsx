@@ -85,11 +85,10 @@ export default function AdminShell({ children }: AdminShellProps) {
     },
     {
       label: 'Khách Hàng & Báo Giá',
-      href: '#',
+      href: '/leads',
       icon: Users,
       permission: 'leads:read',
-      badge: 'Phase 3',
-      disabled: true,
+      active: pathname.startsWith('/leads'),
     },
     {
       label: 'Bài Viết & Đánh Giá',
