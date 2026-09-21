@@ -185,7 +185,7 @@ export const FooterSettingsSchema = z.object({
 export type FooterSettings = z.infer<typeof FooterSettingsSchema>;
 
 // 7. Bulk Settings Schema (Aggregator nạp gộp toàn bộ cấu hình Storefront)
-// 🧠 Mental Model: Cung cấp toàn bộ 6 nhóm cấu hình trong 1 payload duy nhất giúp Storefront RootLayout
+// 🧠 Mental Model: Cung cấp toàn bộ các nhóm cấu hình trong 1 payload duy nhất giúp Storefront RootLayout
 // chỉ cần gọi 1 HTTP request, triệt tiêu độ trễ mạng và loại bỏ hoàn toàn hiện tượng nhảy layout (CLS = 0).
 export const BulkSettingsSchema = z.object({
   site: SiteSettingsSchema.default(() => SiteSettingsSchema.parse({})),
@@ -197,7 +197,196 @@ export const BulkSettingsSchema = z.object({
 });
 export type BulkSettings = z.infer<typeof BulkSettingsSchema>;
 
-// 7. Event Banner & Quote Settings (Duy trì tính tương thích ngược cho Phase 3 & 4.2)
+// 8. Homepage Funnel 6 Zones Schemas (Phase 4.2)
+// 🧠 Mental Model: Mỗi phân khu đều có công tắc enabled độc lập. Khi enabled = false hoặc dữ liệu rỗng,
+// Storefront áp dụng cơ chế Graceful Degradation tự động ẩn phân khu, không gây lỗi runtime hay vỡ layout.
+
+// 8.1. Khu 1: Hero Event Banner
+export const HeroBannerSchema = z.object({
+  enabled: z.boolean().default(true),
+  headline: z.string().default('Đại Tiệc Ưu Đãi Ô Tô Hyundai Vinh'),
+  subheadline: z.string().default('Hỗ trợ 50% - 100% lệ phí trước bạ, tặng gói phụ kiện chính hãng 30 triệu đồng'),
+  mediaType: z.enum(['image', 'video']).default('image'),
+  mediaUrl: z.string().default('/images/hero-banner.webp'),
+  contentPosition: z.enum(['center-left', 'center-center', 'center-right']).default('center-left'),
+  countdown: z.object({
+    enabled: z.boolean().default(true),
+    targetDate: z.string().default('2026-10-31T23:59:59+07:00'),
+    urgencyText: z.string().default('Ưu đãi tháng vàng chỉ còn:'),
+  }).default(() => ({
+    enabled: true,
+    targetDate: '2026-10-31T23:59:59+07:00',
+    urgencyText: 'Ưu đãi tháng vàng chỉ còn:',
+  })),
+  remainingSlots: z.object({
+    enabled: z.boolean().default(true),
+    slotsCount: z.number().int().min(0, 'Số suất không được âm').default(5),
+    badgeText: z.string().default('Chỉ còn 5 suất ưu đãi đặc biệt trong tháng'),
+  }).default(() => ({
+    enabled: true,
+    slotsCount: 5,
+    badgeText: 'Chỉ còn 5 suất ưu đãi đặc biệt trong tháng',
+  })),
+  ctaButton: z.object({
+    text: z.string().default('Nhận Báo Giá Lăn Bánh Ngay'),
+    action: z.enum(['quote_modal', 'tel', 'url']).default('quote_modal'),
+    href: z.string().default(''),
+  }).default(() => ({
+    text: 'Nhận Báo Giá Lăn Bánh Ngay',
+    action: 'quote_modal' as const,
+    href: '',
+  })),
+});
+export type HeroBannerConfig = z.infer<typeof HeroBannerSchema>;
+
+// 8.2. Khu 2: Lead Magnet Hub (Bộ Lọc Nhanh)
+export const PriceRangeItemSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  min: z.number().nullable(),
+  max: z.number().nullable(),
+});
+export type PriceRangeItem = z.infer<typeof PriceRangeItemSchema>;
+
+export const BodyStyleItemSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  segment: z.string(),
+});
+export type BodyStyleItem = z.infer<typeof BodyStyleItemSchema>;
+
+export const LeadFilterSchema = z.object({
+  enabled: z.boolean().default(true),
+  headline: z.string().default('Tìm Kiếm Nhanh Chiếc Xe Ưng Ý Của Bạn'),
+  priceRanges: z.array(PriceRangeItemSchema).default(() => [
+    { id: 'under_500', label: 'Dưới 500 triệu', min: null, max: 500_000_000 },
+    { id: '500_800', label: '500 - 800 triệu', min: 500_000_000, max: 800_000_000 },
+    { id: 'above_800', label: 'Trên 800 triệu', min: 800_000_000, max: null },
+  ]),
+  bodyStyles: z.array(BodyStyleItemSchema).default(() => [
+    { id: 'sedan', label: 'Sedan Đô Thị', segment: 'sedan' },
+    { id: 'suv', label: 'SUV Gầm Cao', segment: 'suv' },
+    { id: 'mpv', label: 'MPV 7 Chỗ', segment: 'mpv' },
+  ]),
+});
+export type LeadFilterConfig = z.infer<typeof LeadFilterSchema>;
+
+// 8.3. Khu 3: VIP Showroom / Hồ Sơ Năng Lực Saler
+export const CommitmentItemSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string(),
+  icon: z.string().default('shield'),
+});
+export type CommitmentItem = z.infer<typeof CommitmentItemSchema>;
+
+export const SalerShowroomSchema = z.object({
+  enabled: z.boolean().default(true),
+  mode: z.enum(['saler', 'showroom']).default('saler'),
+  headline: z.string().default('Cam Kết Vàng Từ Chuyên Viên Tư Vấn'),
+  subheadline: z.string().default('Đồng hành tận tâm cùng quý khách hàng trên mọi cung đường'),
+  salerName: z.string().default('Nguyễn Văn Tuấn'),
+  salerTitle: z.string().default('Tư Vấn Bán Hàng Cấp Cao - Hyundai Vinh'),
+  avatarUrl: z.string().default('/images/saler-avatar.webp'),
+  introStory: z.string().default('Với hơn 6 năm kinh nghiệm tư vấn xe ô tô, tôi cam kết mang đến giải pháp mua xe tối ưu chi phí và minh bạch nhất.'),
+  commitments: z.array(CommitmentItemSchema).default(() => [
+    { id: 'c1', title: 'Hỗ Trợ Trả Góp 85%', description: 'Bao đậu hồ sơ vay khó, duyệt nhanh trong 24h, lãi suất ưu đãi đại lý.', icon: 'bank' },
+    { id: 'c2', title: 'Giao Xe Tận Nhà Toàn Quốc', description: 'Hỗ trợ giao xe tận nơi bằng xe chuyên dụng theo yêu cầu ngày giờ tốt.', icon: 'truck' },
+    { id: 'c3', title: 'Bảo Hành Chính Hãng 5 Năm', description: 'Áp dụng chính sách bảo hành toàn quốc tại tất cả đại lý 3S trên cả nước.', icon: 'shield' },
+    { id: 'c4', title: 'Hỗ Trợ Thủ Tục 24/7', description: 'Đăng ký, đăng kiểm, bấm biển số, làm biển số đẹp và giao xe lăn bánh trọn gói.', icon: 'clock' },
+  ]),
+  showroomName: z.string().default('Hyundai Vinh — Đại Lý Ủy Quyền Chuẩn 3S'),
+  showroomAddress: z.string().default('Km 3+500 Đại Lộ Lê Nin, TP. Vinh, Nghệ An'),
+  showroomBadge: z.string().default('Đại Lý Chuẩn 3S Toàn Cầu GDSI'),
+  showroomExperience: z.string().default('Quy mô 5.000m² — Xưởng dịch vụ tiêu chuẩn 3S toàn cầu'),
+  showroomIntro: z.string().default('Showroom tiêu chuẩn 3S toàn cầu của Hyundai Thành Công Việt Nam. Chúng tôi cam kết mang đến không gian trải nghiệm đẳng cấp, xưởng dịch vụ kỹ thuật cao cùng kho xe đủ màu sẵn sàng giao ngay.'),
+  galleryImages: z.array(z.string()).default(() => ['/images/banners/hero-event.webp']),
+});
+export type SalerShowroomConfig = z.infer<typeof SalerShowroomSchema>;
+
+// 8.4. Khu 4: Featured Cars Showcase
+export const FeaturedCarsZoneSchema = z.object({
+  enabled: z.boolean().default(true),
+  headline: z.string().default('Các Dòng Xe Hyundai Bán Chạy Nhất'),
+  subheadline: z.string().default('Ưu đãi lớn trong tháng, sẵn xe đủ màu giao ngay'),
+  maxDisplay: z.number().int().min(1).max(12).default(6),
+  viewAllText: z.string().default('Xem Toàn Bộ Bảng Giá Xe'),
+  viewAllHref: z.string().default('/xe'),
+});
+export type FeaturedCarsZoneConfig = z.infer<typeof FeaturedCarsZoneSchema>;
+
+// 8.5. Khu 5: Delivery Stories (Khách Hàng Nhận Xe - Social Proof)
+export const DeliveryStoryItemSchema = z.object({
+  id: z.string(),
+  customerName: z.string(),
+  location: z.string().default('TP. Vinh, Nghệ An'),
+  carModel: z.string(),
+  imageUrl: z.string(),
+  quote: z.string().default(''),
+  deliveryDate: z.string().default('Tháng 09/2026'),
+});
+export type DeliveryStoryItem = z.infer<typeof DeliveryStoryItemSchema>;
+
+export const DeliveryStoriesZoneSchema = z.object({
+  enabled: z.boolean().default(true),
+  headline: z.string().default('Khoảnh Khắc Bàn Giao Xe Thực Tế'),
+  subheadline: z.string().default('Hơn 500+ khách hàng đã tin tưởng lựa chọn mua xe cùng chúng tôi'),
+  stories: z.array(DeliveryStoryItemSchema).default(() => [
+    {
+      id: 'story-1',
+      customerName: 'Gia Đình Anh Nam',
+      location: 'TP. Vinh, Nghệ An',
+      carModel: 'Hyundai Tucson 2.0 Xăng Đặc Biệt',
+      imageUrl: '/images/delivery/delivery-1.webp',
+      quote: 'Tuấn tư vấn rất nhiệt tình, thủ tục giao xe trong ngày nhanh chóng, giá tốt nhất khu vực!',
+      deliveryDate: 'Tháng 09/2026',
+    },
+    {
+      id: 'story-2',
+      customerName: 'Chị Thanh Mai',
+      location: 'Hà Tĩnh',
+      carModel: 'Hyundai Creta Cao Cấp (Màu Đỏ)',
+      imageUrl: '/images/delivery/delivery-2.webp',
+      quote: 'Hỗ trợ lái thử tận nhà, bấm được biển số đẹp rất ưng ý. Dịch vụ showroom rất chu đáo!',
+      deliveryDate: 'Tháng 09/2026',
+    },
+    {
+      id: 'story-3',
+      customerName: 'Bác Hoàng Minh',
+      location: 'Diễn Châu, Nghệ An',
+      carModel: 'Hyundai Accent 1.4 AT',
+      imageUrl: '/images/delivery/delivery-3.webp',
+      quote: 'Hồ sơ ngân hàng duyệt trong 1 ngày, giao xe đúng giờ hoàng đạo. Cảm ơn em Tuấn!',
+      deliveryDate: 'Tháng 09/2026',
+    },
+  ]),
+});
+export type DeliveryStoriesZoneConfig = z.infer<typeof DeliveryStoriesZoneSchema>;
+
+// 8.6. Khu 6: Latest News & Special Promotions
+export const LatestPromotionsZoneSchema = z.object({
+  enabled: z.boolean().default(true),
+  headline: z.string().default('Tin Tức Khuyến Mại & Sự Kiện'),
+  subheadline: z.string().default('Cập nhật chính sách giá và chương trình ưu đãi mới nhất từ đại lý'),
+  maxPosts: z.number().int().min(1).max(6).default(3),
+  featuredPostIds: z.array(z.string()).default([]),
+});
+export type LatestPromotionsZoneConfig = z.infer<typeof LatestPromotionsZoneSchema>;
+
+// 8.7. Homepage Settings Tổng Hợp
+export const HomepageSettingsSchema = z.object({
+  heroBanner: HeroBannerSchema.default(() => HeroBannerSchema.parse({})),
+  leadFilter: LeadFilterSchema.default(() => LeadFilterSchema.parse({})),
+  salerShowroom: SalerShowroomSchema.default(() => SalerShowroomSchema.parse({})),
+  featuredCars: FeaturedCarsZoneSchema.default(() => FeaturedCarsZoneSchema.parse({})),
+  deliveryStories: DeliveryStoriesZoneSchema.default(() => DeliveryStoriesZoneSchema.parse({})),
+  latestPromotions: LatestPromotionsZoneSchema.default(() => LatestPromotionsZoneSchema.parse({})),
+});
+export type HomepageSettings = z.infer<typeof HomepageSettingsSchema>;
+
+export const DEFAULT_HOMEPAGE_SETTINGS: HomepageSettings = HomepageSettingsSchema.parse({});
+
+// 9. Event Banner & Quote Settings (Duy trì tính tương thích ngược)
 export const EventBannerSchema = z.object({
   enableBanner: z.boolean().default(true),
   mediaType: z.enum(['image', 'video']).default('image'),

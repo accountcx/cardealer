@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Save, Check, Pin, PhoneCall, Sparkles, Eye } from 'lucide-react';
-import { Button, Card } from '@cardealer/ui';
+import { Button, Card, Input, Switch } from '@cardealer/ui';
 import type { StickyBarSettings } from '@cardealer/types';
 import { settingsService } from '../../../services/settings.service';
 
@@ -31,7 +31,7 @@ export const StickyBarSection = ({ initialData }: StickyBarSectionProps) => {
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Không thể lưu cấu hình thanh chốt đơn');
+      setError(err instanceof Error ? err.message : 'Có lỗi xảy ra khi lưu');
     } finally {
       setSaving(false);
     }
@@ -41,9 +41,12 @@ export const StickyBarSection = ({ initialData }: StickyBarSectionProps) => {
     <form onSubmit={handleSave} className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h3 className="text-lg font-bold text-white">Cấu Hình Thanh Chốt Đơn Đáy Trang (Product Sticky Bar)</h3>
+          <h3 className="text-lg font-bold text-white flex items-center gap-2">
+            <Pin className="w-5 h-5 text-[#0072CE]" />
+            <span>Thanh Chốt Đơn Chân Trang (Sticky Bar)</span>
+          </h3>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Thanh kích cầu cố định ở chân màn hình khi người dùng cuộn xem thông tin xe.
+            Ghim cố định ở đáy màn hình khi cuộn trang, thúc đẩy khách hàng bấm gọi hoặc nhận báo giá ngay lập tức.
           </p>
         </div>
         <Button
@@ -77,94 +80,61 @@ export const StickyBarSection = ({ initialData }: StickyBarSectionProps) => {
             <span className="text-sm font-bold text-white block">Kích Hoạt Thanh Chốt Đơn Toàn Cục</span>
             <span className="text-xs text-slate-400">Bật/tắt hiển thị trên Storefront</span>
           </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.enabled}
-              onChange={(e) => handleChange('enabled', e.target.checked)}
-              className="sr-only peer"
-            />
-            <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0072CE]"></div>
-          </label>
+          <Switch
+            checked={formData.enabled}
+            onCheckedChange={(val) => handleChange('enabled', val)}
+          />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Chữ Trên Nút Nhận Báo Giá (CTA Text) *
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.ctaText}
-              onChange={(e) => handleChange('ctaText', e.target.value)}
-              placeholder="VD: NHẬN BÁO GIÁ"
-              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0072CE] focus:border-transparent transition-colors"
-            />
-          </div>
+          <Input
+            label="Chữ Trên Nút Nhận Báo Giá (CTA Text) *"
+            required
+            value={formData.ctaText}
+            onChange={(e) => handleChange('ctaText', e.target.value)}
+            placeholder="VD: NHẬN BÁO GIÁ"
+          />
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Chữ Trên Nút Gọi Điện (Mobile Label) *
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.callText}
-              onChange={(e) => handleChange('callText', e.target.value)}
-              placeholder="VD: GỌI NGAY"
-              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0072CE] focus:border-transparent transition-colors"
-            />
-          </div>
+          <Input
+            label="Chữ Trên Nút Gọi Điện (Mobile Label) *"
+            required
+            value={formData.callText}
+            onChange={(e) => handleChange('callText', e.target.value)}
+            placeholder="VD: GỌI NGAY"
+          />
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Số Hotline Gọi Nhanh *
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.hotline}
-              onChange={(e) => handleChange('hotline', e.target.value)}
-              placeholder="VD: 0981.234.567"
-              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0072CE] focus:border-transparent transition-colors"
-            />
-          </div>
+          <Input
+            label="Số Hotline Gọi Nhanh *"
+            required
+            value={formData.hotline}
+            onChange={(e) => handleChange('hotline', e.target.value)}
+            placeholder="VD: 0981.234.567"
+          />
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Thông Điệp Phụ Kích Cầu (Subtitle)
-            </label>
-            <input
-              type="text"
-              value={formData.subtitle}
-              onChange={(e) => handleChange('subtitle', e.target.value)}
-              placeholder="VD: Hỗ trợ trả góp 85% • Giao xe tận nhà"
-              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0072CE] focus:border-transparent transition-colors"
-            />
-          </div>
+          <Input
+            label="Thông Điệp Phụ Kích Cầu (Subtitle)"
+            value={formData.subtitle}
+            onChange={(e) => handleChange('subtitle', e.target.value)}
+            placeholder="VD: Hỗ trợ trả góp 85% • Giao xe tận nhà"
+          />
         </div>
 
         <div className="flex items-center gap-6 pt-2">
-          <label className="flex items-center gap-2 text-xs font-medium text-slate-300 cursor-pointer select-none">
-            <input
-              type="checkbox"
+          <div className="flex items-center gap-2">
+            <Switch
               checked={formData.showOnDesktop}
-              onChange={(e) => handleChange('showOnDesktop', e.target.checked)}
-              className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-[#0072CE] focus:ring-[#0072CE]"
+              onCheckedChange={(val) => handleChange('showOnDesktop', val)}
             />
-            <span>Hiển thị trên Máy tính (Desktop)</span>
-          </label>
+            <span className="text-xs font-medium text-slate-300">Hiển thị trên Máy tính (Desktop)</span>
+          </div>
 
-          <label className="flex items-center gap-2 text-xs font-medium text-slate-300 cursor-pointer select-none">
-            <input
-              type="checkbox"
+          <div className="flex items-center gap-2">
+            <Switch
               checked={formData.showOnMobile}
-              onChange={(e) => handleChange('showOnMobile', e.target.checked)}
-              className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-[#0072CE] focus:ring-[#0072CE]"
+              onCheckedChange={(val) => handleChange('showOnMobile', val)}
             />
-            <span>Hiển thị trên Điện thoại (Mobile)</span>
-          </label>
+            <span className="text-xs font-medium text-slate-300">Hiển thị trên Điện thoại (Mobile)</span>
+          </div>
         </div>
       </Card>
 

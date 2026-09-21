@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { cn } from './lib/utils';
 
+import { Label } from './label';
+
 // 🧠 Mental Model: Shadcn UI Input Primitive với compound label/error và icon adornments
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -12,17 +14,32 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, label, error, helperText, leftIcon, rightIcon, id, ...props }, ref) => {
+    // Khi được sử dụng trong Shadcn Form (FormControl / Slot), render trực tiếp <input> để Slot truyền ref/id/aria chính xác
+    if (!label && !error && !helperText && !leftIcon && !rightIcon) {
+      return (
+        <input
+          id={id}
+          type={type}
+          className={cn(
+            'flex h-10 w-full rounded-lg border bg-slate-900/80 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 transition-colors',
+            'border-slate-700/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0072CE] focus-visible:border-transparent',
+            'disabled:cursor-not-allowed disabled:opacity-50',
+            className
+          )}
+          ref={ref}
+          {...props}
+        />
+      );
+    }
+
     const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
 
     return (
       <div className="w-full space-y-1.5">
         {label && (
-          <label
-            htmlFor={inputId}
-            className="block text-xs font-semibold text-slate-300 select-none"
-          >
+          <Label htmlFor={inputId} className="block select-none">
             {label}
-          </label>
+          </Label>
         )}
 
         <div className="relative flex items-center">
@@ -62,3 +79,4 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   }
 );
 Input.displayName = 'Input';
+

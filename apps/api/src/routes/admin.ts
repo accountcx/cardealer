@@ -8,6 +8,7 @@ import {
   FloatingSellerSettingsSchema,
   StickyBarSettingsSchema,
   FooterSettingsSchema,
+  HomepageSettingsSchema,
 } from '@cardealer/types';
 import { verifyToken, parseCookies } from '../auth';
 import { handleUserManagementRoutes } from './admin/users';
@@ -549,6 +550,7 @@ export async function handleAdminRoutes(
       else if (key === 'floating_seller_settings') validatedData = FloatingSellerSettingsSchema.parse(body);
       else if (key === 'sticky_bar_settings') validatedData = StickyBarSettingsSchema.parse(body);
       else if (key === 'footer_settings') validatedData = FooterSettingsSchema.parse(body);
+      else if (key === 'homepage_settings') validatedData = HomepageSettingsSchema.parse(body);
     } catch (validationErr: unknown) {
       const msg = validationErr instanceof Error ? validationErr.message : 'Dữ liệu cấu hình không hợp lệ';
       sendJson(400, { success: false, error: { code: 'INVALID_SETTINGS_PAYLOAD', message: msg } });

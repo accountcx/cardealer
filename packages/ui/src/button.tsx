@@ -27,6 +27,8 @@ export const buttonVariants = cva(
           'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30 active:scale-[0.98]',
         ghost:
           'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100',
+        link:
+          'text-[#0072CE] underline-offset-4 hover:underline p-0 h-auto font-normal',
       },
       size: {
         default: 'h-10 px-4 py-2',

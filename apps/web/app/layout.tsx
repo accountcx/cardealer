@@ -45,9 +45,9 @@ export default async function RootLayout({
   const settings = await getStorefrontSettings();
 
   return (
-    <html lang="vi" className="overflow-x-hidden scroll-smooth">
+    <html lang="vi" className="overflow-x-clip scroll-smooth">
       <body
-        className={`${inter.variable} font-sans antialiased min-h-screen bg-slate-50 text-slate-900 selection:bg-[#0072CE] selection:text-white overflow-x-hidden flex flex-col justify-between`}
+        className={`${inter.variable} font-sans antialiased min-h-screen bg-slate-50 text-slate-900 selection:bg-[#0072CE] selection:text-white overflow-x-clip flex flex-col justify-between`}
       >
         <ViewportCoordinator settings={settings}>
           {children}

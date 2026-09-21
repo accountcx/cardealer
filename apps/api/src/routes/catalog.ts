@@ -9,6 +9,7 @@ import {
   FloatingSellerSettingsSchema,
   StickyBarSettingsSchema,
   FooterSettingsSchema,
+  HomepageSettingsSchema,
 } from '@cardealer/types';
 
 // 🧠 Mental Model: Public Catalog Engine (Tối ưu hóa phản hồi < 10ms).
@@ -25,6 +26,9 @@ export async function handleCatalogRoutes(
   // 1. GET /api/cars (Khách hàng Storefront: Chỉ lấy xe đã xuất bản)
   if (url.pathname === '/api/cars' && req.method === 'GET') {
     const segment = url.searchParams.get('segment');
+    const isFeaturedOnly = url.searchParams.get('isFeatured') === 'true';
+    const limitParam = url.searchParams.get('limit');
+    const limit = limitParam ? parseInt(limitParam, 10) : undefined;
     try {
       const dbCars = await db.query.cars.findMany({
         where: eq(schema.cars.status, 'published'),
@@ -32,7 +36,7 @@ export async function handleCatalogRoutes(
         with: { versions: true },
       });
 
-      const formatted = dbCars.map((c) => ({
+      let formatted = dbCars.map((c) => ({
         id: c.id,
         tenXe: c.tenXe,
         slug: c.slug,
@@ -60,9 +64,19 @@ export async function handleCatalogRoutes(
         })),
       }));
 
+      if (segment) {
+        formatted = formatted.filter((c) => c.segment === segment);
+      }
+      if (isFeaturedOnly) {
+        formatted = formatted.filter((c) => c.isFeatured === true);
+      }
+      if (limit && limit > 0) {
+        formatted = formatted.slice(0, limit);
+      }
+
       sendJson(200, {
         success: true,
-        data: segment ? formatted.filter((c) => c.segment === segment) : formatted,
+        data: formatted,
       });
       return true;
     } catch (err: unknown) {
@@ -162,14 +176,31 @@ export async function handleCatalogRoutes(
       };
 
       const parsed = BulkSettingsSchema.parse(bulkData);
-      sendJson(200, { success: true, data: parsed }, {
+      const homepageRaw = settingsMap.get('homepage_settings');
+      const homepageParsed = HomepageSettingsSchema.parse(homepageRaw || {});
+
+      sendJson(200, {
+        success: true,
+        data: {
+          ...parsed,
+          homepage: homepageParsed,
+        },
+      }, {
         'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
       });
       return true;
     } catch {
       // Fallback an toàn tuyệt đối khi DB gặp sự cố (Zero-Crash Protocol)
       const fallback = BulkSettingsSchema.parse({});
-      sendJson(200, { success: true, data: fallback, warning: 'Using fallback defaults' });
+      const homepageFallback = HomepageSettingsSchema.parse({});
+      sendJson(200, {
+        success: true,
+        data: {
+          ...fallback,
+          homepage: homepageFallback,
+        },
+        warning: 'Using fallback defaults',
+      });
       return true;
     }
   }
@@ -208,11 +239,20 @@ export async function handleCatalogRoutes(
           sendJson(200, { success: true, data: FooterSettingsSchema.parse({}) });
           return true;
         }
+        if (key === 'homepage_settings') {
+          sendJson(200, { success: true, data: HomepageSettingsSchema.parse({}) });
+          return true;
+        }
 
         sendJson(404, {
           success: false,
           error: { code: 'SETTING_NOT_FOUND', message: `Không tìm thấy cấu hình với key "${key}"` },
         });
+        return true;
+      }
+
+      if (key === 'homepage_settings') {
+        sendJson(200, { success: true, data: HomepageSettingsSchema.parse(row.data) });
         return true;
       }
 

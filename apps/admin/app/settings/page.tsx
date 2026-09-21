@@ -12,6 +12,7 @@ import type {
   StickyBarSettings,
   FooterSettings,
   ContactSettings,
+  HomepageSettings,
 } from '@cardealer/types';
 import {
   NavigationSettingsSchema,
@@ -19,6 +20,7 @@ import {
   StickyBarSettingsSchema,
   FooterSettingsSchema,
   ContactSettingsSchema,
+  HomepageSettingsSchema,
 } from '@cardealer/types';
 import { BrandSection } from './components/BrandSection';
 import { ContactSection } from './components/ContactSection';
@@ -29,6 +31,7 @@ import { NavigationSection } from './components/NavigationSection';
 import { FloatingSellerSection } from './components/FloatingSellerSection';
 import { StickyBarSection } from './components/StickyBarSection';
 import { FooterSection } from './components/FooterSection';
+import { HomepageFunnelSection } from './components/HomepageFunnelSection';
 import { settingsService } from '../../services/settings.service';
 import { useAuth } from '../../contexts/AuthContext';
 import { AccessDenied } from '../components/AccessDenied';
@@ -73,6 +76,7 @@ export default function SettingsPage() {
   const [sellerData, setSellerData] = useState<FloatingSellerSettings>(FloatingSellerSettingsSchema.parse({}));
   const [stickyData, setStickyData] = useState<StickyBarSettings>(StickyBarSettingsSchema.parse({}));
   const [footerData, setFooterData] = useState<FooterSettings>(FooterSettingsSchema.parse({}));
+  const [homepageData, setHomepageData] = useState<HomepageSettings>(HomepageSettingsSchema.parse({}));
 
   const form = useForm<SettingsFormData>({
     resolver: zodResolver(settingsSchema),
@@ -108,13 +112,14 @@ export default function SettingsPage() {
         setError(null);
         
         // Tải song song tất cả các domain settings
-        const [showroomRes, contactRes, navRes, sellerRes, stickyRes, footerRes] = await Promise.allSettled([
+        const [showroomRes, contactRes, navRes, sellerRes, stickyRes, footerRes, homepageRes] = await Promise.allSettled([
           settingsService.getSettingByKey<Record<string, unknown>>('showroom_settings'),
           settingsService.getSettingByKey<ContactSettings>('contact_settings'),
           settingsService.getSettingByKey<NavigationSettings>('navigation_settings'),
           settingsService.getSettingByKey<FloatingSellerSettings>('floating_seller_settings'),
           settingsService.getSettingByKey<StickyBarSettings>('sticky_bar_settings'),
           settingsService.getSettingByKey<FooterSettings>('footer_settings'),
+          settingsService.getSettingByKey<HomepageSettings>('homepage_settings'),
         ]);
 
         // Tab 1: Showroom & Legal data
@@ -157,6 +162,11 @@ export default function SettingsPage() {
         // Tab 5: Footer data
         if (footerRes.status === 'fulfilled' && footerRes.value) {
           setFooterData(FooterSettingsSchema.parse(footerRes.value));
+        }
+
+        // Tab Homepage Funnel data
+        if (homepageRes.status === 'fulfilled' && homepageRes.value) {
+          setHomepageData(HomepageSettingsSchema.parse(homepageRes.value));
         }
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Chưa có cấu hình showroom trong cơ sở dữ liệu';
@@ -312,7 +322,12 @@ export default function SettingsPage() {
             </Form>
           )}
 
-          {/* TAB 2: MENU ĐIỀU HƯỚNG */}
+          {/* TAB 2: TRANG CHỦ (PHỄU 6 PHÂN KHU) */}
+          {activeTab === 'homepage' && (
+            <HomepageFunnelSection initialData={homepageData} />
+          )}
+
+          {/* TAB 3: MENU ĐIỀU HƯỚNG */}
           {activeTab === 'navigation' && (
             <NavigationSection initialData={navData} />
           )}

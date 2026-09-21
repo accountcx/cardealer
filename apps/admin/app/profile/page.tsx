@@ -167,9 +167,15 @@ export default function ProfilePage() {
             {notification.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
             <span>{notification.message}</span>
           </div>
-          <button onClick={() => setNotification(null)} className="p-1 hover:text-white" type="button">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setNotification(null)}
+            className="h-6 w-6 p-1 text-inherit hover:text-white hover:bg-white/10"
+            type="button"
+          >
             <X size={14} />
-          </button>
+          </Button>
         </div>
       )}
 
@@ -225,28 +231,30 @@ export default function ProfilePage() {
           <div className="md:col-span-2 space-y-4">
             {/* Tabs Header */}
             <div className="flex items-center gap-2 p-1.5 bg-slate-900/60 rounded-xl border border-white/10 text-xs">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => setActiveTab('info')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold transition-all ${
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 h-auto rounded-lg font-semibold transition-all ${
                   activeTab === 'info'
-                    ? 'bg-sky-500 text-white shadow-sm'
+                    ? 'bg-sky-500 text-white shadow-sm hover:bg-sky-600 hover:text-white'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800'
                 }`}
               >
                 <User size={15} /> Thông Tin Cá Nhân
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => setActiveTab('password')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold transition-all ${
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 h-auto rounded-lg font-semibold transition-all ${
                   activeTab === 'password'
-                    ? 'bg-sky-500 text-white shadow-sm'
+                    ? 'bg-sky-500 text-white shadow-sm hover:bg-sky-600 hover:text-white'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800'
                 }`}
               >
                 <KeyRound size={15} /> Đổi Mật Khẩu
-              </button>
+              </Button>
             </div>
 
             {/* Tab 1: Profile Info Form */}
@@ -377,13 +385,15 @@ export default function ProfilePage() {
                       className="pl-10 pr-10 h-11"
                       required
                     />
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => setShowCurrentPassword((prev) => !prev)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white"
+                      className="absolute inset-y-0 right-0 h-full w-10 p-0 text-slate-400 hover:text-white hover:bg-transparent"
                     >
                       {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
@@ -404,13 +414,15 @@ export default function ProfilePage() {
                       className="pl-10 pr-10 h-11"
                       required
                     />
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => setShowNewPassword((prev) => !prev)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white"
+                      className="absolute inset-y-0 right-0 h-full w-10 p-0 text-slate-400 hover:text-white hover:bg-transparent"
                     >
                       {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
+                    </Button>
                   </div>
                 </div>
 

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Plus, Trash2, Save, Check, MapPin, Eye, ShieldCheck, ExternalLink } from 'lucide-react';
-import { Button, Card } from '@cardealer/ui';
+import { Button, Card, Switch, Input, Textarea, Label } from '@cardealer/ui';
 import type { FooterSettings, FooterLinkItem } from '@cardealer/types';
 import { settingsService } from '../../../services/settings.service';
 
@@ -135,43 +135,38 @@ export const FooterSection = ({ initialData }: FooterSectionProps) => {
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs text-slate-300">Bật huy hiệu chứng nhận:</span>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.showCertifiedBadge}
-                onChange={(e) => handleChange('showCertifiedBadge', e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0072CE]"></div>
-            </label>
+            <Switch
+              checked={formData.showCertifiedBadge}
+              onCheckedChange={(val) => handleChange('showCertifiedBadge', val)}
+            />
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <Label className="block text-xs font-semibold text-slate-300 mb-1">
               Đoạn Giới Thiệu Ngắn (Cột 1) *
-            </label>
-            <textarea
+            </Label>
+            <Textarea
               rows={2}
               required
               value={formData.column1Description}
               onChange={(e) => handleChange('column1Description', e.target.value)}
               placeholder="VD: Chuyên trang phân phối và cập nhật bảng giá xe Hyundai chính hãng..."
-              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0072CE] focus:border-transparent transition-colors"
+              className="w-full border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus-visible:ring-[#0072CE]"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <Label className="block text-xs font-semibold text-slate-300 mb-1">
               Chữ Trên Huy Hiệu Chứng Nhận (Badge Text)
-            </label>
-            <input
+            </Label>
+            <Input
               type="text"
               value={formData.certifiedBadgeText}
               onChange={(e) => handleChange('certifiedBadgeText', e.target.value)}
               placeholder="VD: Chính Hãng TC Motor"
-              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0072CE] focus:border-transparent transition-colors"
+              className="w-full border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus-visible:ring-[#0072CE]"
             />
           </div>
         </div>
@@ -198,43 +193,45 @@ export const FooterSection = ({ initialData }: FooterSectionProps) => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <Label className="block text-xs font-semibold text-slate-300 mb-1">
               Tiêu Đề Cột 2 *
-            </label>
-            <input
+            </Label>
+            <Input
               type="text"
               required
               value={formData.column2Title}
               onChange={(e) => handleChange('column2Title', e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0072CE] focus:border-transparent"
+              className="w-full border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus-visible:ring-[#0072CE]"
             />
           </div>
 
           <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
             {formData.column2Links.map((link, idx) => (
               <div key={link.id || idx} className="flex items-center gap-2 bg-slate-950/70 p-2 rounded-xl border border-slate-800">
-                <input
+                <Input
                   type="text"
                   value={link.label}
                   onChange={(e) => handleUpdateCol2Link(idx, 'label', e.target.value)}
                   placeholder="Tên dòng xe"
-                  className="flex-1 px-2.5 py-1.5 text-xs rounded-lg border border-slate-700/70 bg-slate-900 text-white placeholder:text-slate-500"
+                  className="flex-1 h-8 text-xs border-slate-700/70 bg-slate-900 text-white placeholder:text-slate-500"
                 />
-                <input
+                <Input
                   type="text"
                   value={link.url}
                   onChange={(e) => handleUpdateCol2Link(idx, 'url', e.target.value)}
                   placeholder="/xe?kieuDang=..."
-                  className="flex-1 px-2.5 py-1.5 text-xs rounded-lg border border-slate-700/70 bg-slate-900 text-white placeholder:text-slate-500"
+                  className="flex-1 h-8 text-xs border-slate-700/70 bg-slate-900 text-white placeholder:text-slate-500"
                 />
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={() => handleDeleteCol2Link(idx)}
-                  className="p-1.5 text-slate-400 hover:text-red-400 transition-colors"
+                  className="h-8 w-8 text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                   aria-label="Xóa liên kết"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                </Button>
               </div>
             ))}
           </div>
@@ -259,50 +256,52 @@ export const FooterSection = ({ initialData }: FooterSectionProps) => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <Label className="block text-xs font-semibold text-slate-300 mb-1">
               Tiêu Đề Cột 3 *
-            </label>
-            <input
+            </Label>
+            <Input
               type="text"
               required
               value={formData.column3Title}
               onChange={(e) => handleChange('column3Title', e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0072CE] focus:border-transparent"
+              className="w-full border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus-visible:ring-[#0072CE]"
             />
           </div>
 
           <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
             {formData.column3Links.map((link, idx) => (
               <div key={link.id || idx} className="flex items-center gap-2 bg-slate-950/70 p-2 rounded-xl border border-slate-800">
-                <input
+                <Input
                   type="text"
                   value={link.label}
                   onChange={(e) => handleUpdateCol3Link(idx, 'label', e.target.value)}
                   placeholder="Tên công cụ/dịch vụ"
-                  className="flex-1 px-2.5 py-1.5 text-xs rounded-lg border border-slate-700/70 bg-slate-900 text-white placeholder:text-slate-500"
+                  className="flex-1 h-8 text-xs border-slate-700/70 bg-slate-900 text-white placeholder:text-slate-500"
                 />
-                <input
+                <Input
                   type="text"
                   value={link.url}
                   onChange={(e) => handleUpdateCol3Link(idx, 'url', e.target.value)}
                   placeholder="/gia-lan-banh"
-                  className="flex-1 px-2.5 py-1.5 text-xs rounded-lg border border-slate-700/70 bg-slate-900 text-white placeholder:text-slate-500"
+                  className="flex-1 h-8 text-xs border-slate-700/70 bg-slate-900 text-white placeholder:text-slate-500"
                 />
-                <input
+                <Input
                   type="text"
                   value={link.badge || ''}
                   onChange={(e) => handleUpdateCol3Link(idx, 'badge', e.target.value)}
                   placeholder="Badge (VD: HOT)"
-                  className="w-16 px-2 py-1.5 text-xs rounded-lg border border-slate-700/70 bg-slate-900 text-amber-300 placeholder:text-slate-500"
+                  className="w-20 h-8 text-xs border-slate-700/70 bg-slate-900 text-amber-300 placeholder:text-slate-500"
                 />
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={() => handleDeleteCol3Link(idx)}
-                  className="p-1.5 text-slate-400 hover:text-red-400 transition-colors"
+                  className="h-8 w-8 text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                   aria-label="Xóa liên kết"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                </Button>
               </div>
             ))}
           </div>
@@ -320,26 +319,26 @@ export const FooterSection = ({ initialData }: FooterSectionProps) => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <Label className="block text-xs font-semibold text-slate-300 mb-1">
               Tiêu Đề Cột 4 *
-            </label>
-            <input
+            </Label>
+            <Input
               type="text"
               required
               value={formData.column4Title}
               onChange={(e) => handleChange('column4Title', e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0072CE] focus:border-transparent mb-3"
+              className="w-full border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus-visible:ring-[#0072CE] mb-3"
             />
 
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <Label className="block text-xs font-semibold text-slate-300 mb-1">
               Đường Dẫn Iframe Google Maps Embed (URL trong thuộc tính src=&quot;...&quot;)
-            </label>
-            <textarea
+            </Label>
+            <Textarea
               rows={3}
               value={formData.googleMapEmbed}
               onChange={(e) => handleChange('googleMapEmbed', e.target.value)}
               placeholder="https://www.google.com/maps/embed?pb=..."
-              className="w-full px-3 py-2 text-xs rounded-xl border border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0072CE] focus:border-transparent font-mono"
+              className="w-full border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus-visible:ring-[#0072CE] font-mono text-xs"
             />
           </div>
 

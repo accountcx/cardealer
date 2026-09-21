@@ -29,7 +29,7 @@ import {
   ChevronRight,
   ExternalLink,
 } from 'lucide-react';
-import { Button, Input, Badge } from '@cardealer/ui';
+import { Button, Input, Badge, Select } from '@cardealer/ui';
 import { leadService, type LeadListResponse } from '../../services/lead.service';
 import { LeadStats, type LeadFilterType } from './components/LeadStats';
 import { LeadDetailModal } from './components/LeadDetailModal';
@@ -271,13 +271,15 @@ export default function LeadsManagementPage() {
               <div className="text-xs opacity-90 mt-0.5">{notification.message}</div>
             </div>
           </div>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={() => setNotification(null)}
-            className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
+            className="text-slate-400 hover:text-white h-7 w-7 p-1 rounded-lg transition-colors cursor-pointer"
           >
             <X size={16} />
-          </button>
+          </Button>
         </div>
       )}
 
@@ -331,26 +333,20 @@ export default function LeadsManagementPage() {
 
         {/* Dropdown Bộ lọc Trạng thái */}
         <div className="w-full sm:w-60">
-          <div className="relative">
-            <Filter size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value as LeadFilterType);
-                setPage(1);
-              }}
-              className="w-full bg-slate-900/80 border border-white/10 text-slate-200 rounded-lg pl-9 pr-8 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0072CE] focus:border-transparent cursor-pointer transition appearance-none"
-            >
-              <option value="all">Tất Cả Trạng Thái</option>
-              <option value="new">🔴 Mới Nhận (Cần gọi ngay)</option>
-              <option value="contacted">🔵 Đang Tư Vấn</option>
-              <option value="converted">🟢 Đã Chốt / Thành Công</option>
-              <option value="cancelled">⚪ Đã Hủy / Sai Số</option>
-            </select>
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">
-              ▼
-            </div>
-          </div>
+          <Select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value as LeadFilterType);
+              setPage(1);
+            }}
+            className="w-full bg-slate-900/80 border border-white/10 text-slate-200 text-sm h-10"
+          >
+            <option value="all">Tất Cả Trạng Thái</option>
+            <option value="new">🔴 Mới Nhận (Cần gọi ngay)</option>
+            <option value="contacted">🔵 Đang Tư Vấn</option>
+            <option value="converted">🟢 Đã Chốt / Thành Công</option>
+            <option value="cancelled">⚪ Đã Hủy / Sai Số</option>
+          </Select>
         </div>
 
         {(searchQuery || statusFilter !== 'all') && (
@@ -464,14 +460,16 @@ export default function LeadsManagementPage() {
                         </div>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <span className="text-xs font-mono text-slate-400">{lead.phone}</span>
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="icon"
                             onClick={(e) => handleCopyPhone(lead.id, lead.phone, e)}
                             title="Sao chép số điện thoại"
-                            className="text-slate-500 hover:text-sky-400 p-0.5 rounded transition cursor-pointer"
+                            className="h-5 w-5 p-0 text-slate-500 hover:text-sky-400 hover:bg-slate-800 rounded transition cursor-pointer"
                           >
                             {isCopied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
-                          </button>
+                          </Button>
                         </div>
                       </td>
 
@@ -515,16 +513,16 @@ export default function LeadsManagementPage() {
                       <td className="py-3.5 px-4" onClick={(e) => e.stopPropagation()}>
                         {can('leads:write') ? (
                           <div className="relative inline-block">
-                            <select
+                            <Select
                               value={lead.status}
                               onChange={(e) => handleInlineStatusChange(lead.id, e.target.value as LeadStatus, e)}
-                              className="bg-slate-800/90 border border-white/10 text-xs font-semibold rounded-lg px-2.5 py-1 text-slate-200 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer hover:border-white/20 transition"
+                              className="bg-slate-800/90 border border-white/10 text-xs font-semibold rounded-lg h-7 px-2.5 py-0 text-slate-200 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer hover:border-white/20 transition w-36"
                             >
                               <option value="new">🔴 Mới Nhận</option>
                               <option value="contacted">🔵 Đang Tư Vấn</option>
                               <option value="converted">🟢 Thành Công</option>
                               <option value="cancelled">⚪ Đã Hủy</option>
-                            </select>
+                            </Select>
                           </div>
                         ) : (
                           renderStatusBadge(lead.status)
@@ -584,14 +582,16 @@ export default function LeadsManagementPage() {
                           </a>
 
                           {/* Nút Chi Tiết */}
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="icon"
                             onClick={() => setSelectedLead(lead)}
                             title="Xem chi tiết hồ sơ"
-                            className="p-1.5 rounded-lg bg-slate-800 border border-white/10 text-slate-300 hover:text-white hover:border-white/20 transition cursor-pointer"
+                            className="h-7 w-7 p-1.5 rounded-lg bg-slate-800 border border-white/10 text-slate-300 hover:text-white hover:border-white/20 transition cursor-pointer"
                           >
                             <Eye size={14} />
-                          </button>
+                          </Button>
                         </div>
                       </td>
                     </tr>

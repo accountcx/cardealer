@@ -10,6 +10,9 @@
 import { useState } from 'react';
 import { calculateInstallment } from '@cardealer/core';
 import type { InstallmentCalculationResult } from '@cardealer/types';
+import { LeadQuoteForm, type LeadQuoteFormData, Label, Button } from '@cardealer/ui';
+import { leadsService } from '../../services/leads.service';
+import { AppError } from '../../lib/api-client';
 
 interface InstallmentEstimatorTabProps {
   giaXe: number;
@@ -37,8 +40,7 @@ export default function InstallmentEstimatorTab({
 
   // Gate state
   const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
-  const [fullName, setFullName] = useState<string>(initialFullName);
-  const [phone, setPhone] = useState<string>(initialPhone);
+  const [submittedData, setSubmittedData] = useState<LeadQuoteFormData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -55,56 +57,43 @@ export default function InstallmentEstimatorTab({
     laiSuatNamPercent: annualRate,
   });
 
-  const handleUnlock = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleUnlock = async (data: LeadQuoteFormData) => {
     setErrorMsg(null);
-
-    const phoneRegex = /^(03|05|07|08|09)\d{8}$/;
-    if (!fullName.trim() || fullName.trim().length < 2) {
-      setErrorMsg('Họ và tên phải có ít nhất 2 ký tự');
-      return;
-    }
-
-    if (!phoneRegex.test(phone.trim())) {
-      setErrorMsg('Số điện thoại không hợp lệ! Vui lòng nhập 10 chữ số bắt đầu bằng 03, 05, 07, 08, 09.');
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/leads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullName: fullName.trim(),
-          phone: phone.trim(),
-          carModel: tenXe,
-          carVersion: tenPhienBan,
-          leadType: 'Dự Toán Trả Góp',
-          estimatedTotal: effectivePrice,
-          notes: `Vay ${loanPercent}% (${result.soTienVay.toLocaleString('vi-VN')} ₫) trong ${loanTermYears} năm. Gốc lãi tháng đầu: ${result.tongTienThangDau.toLocaleString('vi-VN')} ₫`,
-          metadata: {
-            downPaymentPercent,
-            loanPercent,
-            loanTermYears,
-            soTienTraTruoc: result.soTienTraTruoc,
-            soTienVay: result.soTienVay,
-            tienGocHangThang: result.tienGocHangThang,
-            tienLaiThangDau: result.tienLaiThangDau,
-            tongTienThangDau: result.tongTienThangDau,
-          },
-        }),
+      const cleanPhone = data.phone.trim().replace(/^\+84/, '0').replace(/\D/g, '');
+
+      await leadsService.createLead({
+        fullName: data.fullName.trim(),
+        phone: cleanPhone,
+        carModel: tenXe,
+        carVersion: tenPhienBan,
+        leadType: 'Dự Toán Trả Góp',
+        estimatedTotal: effectivePrice,
+        notes: `Vay ${loanPercent}% (${result.soTienVay.toLocaleString('vi-VN')} ₫) trong ${loanTermYears} năm. Gốc lãi tháng đầu: ${result.tongTienThangDau.toLocaleString('vi-VN')} ₫`,
+        metadata: {
+          downPaymentPercent,
+          loanPercent,
+          loanTermYears,
+          soTienTraTruoc: result.soTienTraTruoc,
+          soTienVay: result.soTienVay,
+          tienGocHangThang: result.tienGocHangThang,
+          tienLaiThangDau: result.tienLaiThangDau,
+          tongTienThangDau: result.tongTienThangDau,
+        },
       });
 
-      const resData = await response.json();
-      if (response.ok && resData.success) {
-        setIsUnlocked(true);
+      setSubmittedData({ fullName: data.fullName.trim(), phone: cleanPhone });
+      setIsUnlocked(true);
+    } catch (err: unknown) {
+      if (err instanceof AppError && err.statusCode === 429) {
+        setErrorMsg('Quý khách đã gửi yêu cầu gần đây. Vui lòng chờ 10 phút hoặc gọi trực tiếp Hotline!');
       } else {
-        setErrorMsg(resData.error || 'Có lỗi xảy ra khi gửi yêu cầu. Vui lòng thử lại!');
+        setErrorMsg(
+          err instanceof Error ? err.message : 'Có lỗi xảy ra khi gửi yêu cầu. Vui lòng thử lại!'
+        );
       }
-    } catch {
-      setErrorMsg('Lỗi kết nối máy chủ. Vui lòng liên hệ Hotline.');
     } finally {
       setIsSubmitting(false);
     }
@@ -156,9 +145,9 @@ export default function InstallmentEstimatorTab({
           {/* Slider: Tỷ Lệ Trả Trước */}
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              <Label className="text-xs font-bold uppercase tracking-wider text-slate-700">
                 1. Số tiền trả trước:
-              </label>
+              </Label>
               <span className="text-sm font-black text-[#0072CE] bg-sky-50 px-2.5 py-1 rounded-lg border border-sky-200">
                 {downPaymentPercent}% ({new Intl.NumberFormat('vi-VN').format(result.soTienTraTruoc)} ₫)
               </span>
@@ -186,9 +175,9 @@ export default function InstallmentEstimatorTab({
           {/* Selector: Thời Hạn Vay */}
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              <Label className="text-xs font-bold uppercase tracking-wider text-slate-700">
                 2. Thời hạn vay vốn:
-              </label>
+              </Label>
               <span className="text-sm font-black text-[#0072CE] bg-sky-50 px-2.5 py-1 rounded-lg border border-sky-200">
                 {loanTermYears} năm ({loanTermMonths} tháng)
               </span>
@@ -196,18 +185,18 @@ export default function InstallmentEstimatorTab({
 
             <div className="grid grid-cols-6 gap-2">
               {[3, 4, 5, 6, 7, 8].map((year) => (
-                <button
+                <Button
                   key={year}
                   type="button"
                   onClick={() => setLoanTermYears(year)}
-                  className={`py-2.5 text-xs font-extrabold rounded-xl border transition cursor-pointer ${
+                  className={`h-auto py-2.5 text-xs font-extrabold rounded-xl border transition cursor-pointer ${
                     loanTermYears === year
                       ? 'bg-[#002C6C] text-white border-[#002C6C] shadow-md shadow-blue-950/20'
-                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:text-slate-900'
                   }`}
                 >
                   {year}N
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -269,7 +258,7 @@ export default function InstallmentEstimatorTab({
 
         {/* ==================== SOFT-GATE LEAD CAPTURE FORM ==================== */}
         {!isUnlocked ? (
-          <form onSubmit={handleUnlock} className="space-y-5 bg-gradient-to-br from-slate-50 via-sky-50/40 to-indigo-50/40 p-6 sm:p-8 rounded-3xl border-2 border-sky-200/80 shadow-lg">
+          <div className="space-y-5 bg-gradient-to-br from-slate-50 via-sky-50/40 to-indigo-50/40 p-6 sm:p-8 rounded-3xl border-2 border-sky-200/80 shadow-lg">
             <div className="text-center max-w-xl mx-auto">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-900 border border-blue-200 mb-2">
                 ⚡ Hỗ trợ thẩm định hồ sơ duyệt vay trong 24h
@@ -282,59 +271,22 @@ export default function InstallmentEstimatorTab({
               </p>
             </div>
 
-            {errorMsg && (
-              <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs sm:text-sm font-semibold flex items-center gap-2">
-                <span className="text-base">⚠️</span> {errorMsg}
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                  Họ và tên Quý khách <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ví dụ: Nguyễn Văn An"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                  className="w-full p-3.5 bg-white border border-slate-300 focus:border-[#0072CE] focus:ring-2 focus:ring-blue-100 rounded-xl text-sm font-semibold text-slate-900 outline-none transition"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                  Số điện thoại nhận duyệt vay (Zalo/SMS) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  inputMode="numeric"
-                  placeholder="Ví dụ: 0912 345 678 (10 số)"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  required
-                  className="w-full p-3.5 bg-white border border-slate-300 focus:border-[#0072CE] focus:ring-2 focus:ring-blue-100 rounded-xl text-sm font-semibold text-slate-900 outline-none transition"
-                />
-              </div>
-            </div>
-
-            {/* Red CTA Button */}
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full py-4 sm:py-5 px-6 rounded-2xl font-black text-white text-base sm:text-lg tracking-wider transition-all duration-300 shadow-xl shadow-red-600/20 bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:brightness-110 active:scale-[0.99] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-3"
-            >
-              <span>{isSubmitting ? 'ĐANG GỬI HỒ SƠ...' : 'ĐĂNG KÝ HỒ SƠ VAY NHANH — DUYỆT TRONG 24H'}</span>
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </button>
+            <LeadQuoteForm
+              onSubmit={handleUnlock}
+              loading={isSubmitting}
+              error={errorMsg}
+              submitText="ĐĂNG KÝ HỒ SƠ VAY NHANH — DUYỆT TRONG 24H"
+              buttonClassName="h-14 sm:h-16 text-base sm:text-lg font-black tracking-wider shadow-xl shadow-red-600/20 bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:brightness-110"
+              defaultValues={{
+                fullName: initialFullName,
+                phone: initialPhone,
+              }}
+            />
 
             <p className="text-center text-xs text-slate-500 font-medium">
               🔒 Bảo mật tuyệt đối • Hỗ trợ chứng minh thu nhập • Không phát sinh phí hồ sơ
             </p>
-          </form>
+          </div>
         ) : (
           <div className="space-y-4 pt-2">
             <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-400/50 rounded-2xl p-5 text-emerald-900 shadow-lg shadow-emerald-500/10 flex items-center gap-4">
@@ -346,7 +298,7 @@ export default function InstallmentEstimatorTab({
                   ĐÃ TIẾP NHẬN HỒ SƠ TƯ VẤN TRẢ GÓP!
                 </h3>
                 <p className="text-xs sm:text-sm text-emerald-800 mt-0.5 leading-relaxed">
-                  Cảm ơn Quý khách <strong className="font-bold">{fullName}</strong>. Chuyên viên tài chính Showroom Hyundai Vinh sẽ liên hệ trực tiếp qua số điện thoại <strong className="font-bold">{phone}</strong> để hướng dẫn thủ tục vay ngân hàng ưu đãi nhất!
+                  Cảm ơn Quý khách <strong className="font-bold">{submittedData?.fullName || initialFullName}</strong>. Chuyên viên tài chính Showroom Hyundai Vinh sẽ liên hệ trực tiếp qua số điện thoại <strong className="font-bold">{submittedData?.phone || initialPhone}</strong> để hướng dẫn thủ tục vay ngân hàng ưu đãi nhất!
                 </p>
               </div>
             </div>

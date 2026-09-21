@@ -178,17 +178,34 @@ Nhằm đảm bảo tiến độ triển khai nhanh, kiểm thử độc lập v
 #### 🚗 Phase 4.2: Trang Chủ Phễu Chuyển Đổi 6 Phân Khu (Homepage Conversion Funnel - `/`)
 > **Mã Epic:** `EPIC-PHASE-4.2-HOMEPAGE-FUNNEL`
 
-* **1. Mục tiêu & Giá trị:** Tối ưu hóa tỷ lệ chuyển đổi khách hàng vãng lai ngay từ trang chủ bằng phễu 6 phân khu tâm lý mua sắm xe ô tô.
-* **2. Nghiệp vụ chi tiết:**
-  * **Khu 1 - Hero Event Banner:** Trình phát video/banner khuyến mại lớn trong tháng, bộ đếm ngược ưu đãi (Countdown Timer) tạo tính cấp bách, hiển thị số suất ưu đãi còn lại theo thời gian thực.
-  * **Khu 2 - Lead Magnet Hub (Bộ Lọc Nhanh):** Thanh tìm kiếm nhanh dòng xe theo mức ngân sách (Dưới 500tr, 500tr - 800tr, Trên 800tr) và kiểu dáng xe (Sedan, SUV, MPV).
-  * **Khu 3 - VIP Showroom Section:** Giới thiệu cơ sở vật chất xưởng dịch vụ 3S, phòng chờ khách hàng chuẩn châu Âu và quy trình bàn giao xe chuyên nghiệp.
-  * **Khu 4 - Featured Cars Showcase:** Lưới danh mục các dòng xe bán chạy nhất (Accent, Tucson, Santa Fe, Creta) kèm giá niêm yết, mức trả trước chỉ từ X triệu và huy hiệu khuyến mãi.
-  * **Khu 5 - Testimonials & Delivery Stories:** Bằng chứng xã hội (Social Proof) dạng Slider/Gallery hình ảnh khách hàng nhận xe thực tế tại Showroom Hyundai Vinh.
-  * **Khu 6 - Latest News & Special Promotions:** Khối hiển thị 3 - 4 bài viết khuyến mãi và tin tức đại lý mới nhất.
+* **1. Mục tiêu & Giá trị:** Tối ưu hóa tỷ lệ chuyển đổi khách hàng vãng lai ngay từ trang chủ bằng phễu 6 phân khu tâm lý mua sắm xe ô tô. Toàn bộ 6 phân khu đều có khả năng **cấu hình động 100% từ Admin Portal** và sở hữu **công tắc Bật/Tắt độc lập (`enabled: boolean`)** giúp linh hoạt thích ứng theo chiến dịch kinh doanh hoặc tạm ẩn khi chưa chuẩn bị xong nội dung.
+* **2. Nghiệp vụ chi tiết & Cơ chế Cấu hình Admin (Admin Dynamic Controls):**
+  * **Cơ chế Bật/Tắt Phân Khu (Zone Visibility Toggle):** Admin Portal cung cấp 6 công tắc tương ứng cho từng khu. Khi một khu bị Tắt hoặc chưa có dữ liệu (ví dụ: chưa có bài viết tin tức hoặc chưa có ảnh bàn giao), Storefront tự động ẩn khu đó mượt mà (Graceful Degradation), không gây vỡ layout hay lỗi trang.
+  * **Khu 1 - Hero Event Banner:**
+    * *Nghiệp vụ:* Trình phát video/banner khuyến mại lớn trong tháng, bộ đếm ngược ưu đãi (Countdown Timer) tạo tính cấp bách, hiển thị số suất ưu đãi còn lại theo thời gian thực.
+    * *Cấu hình Admin:* Tiêu đề lớn (Headline), Slogan chiến dịch, Media nền (Ảnh banner hoặc Link Video Youtube/MP4), Công tắc Countdown (Bật/Tắt + Datetime kết thúc đếm ngược theo múi giờ VN), Số suất ưu đãi còn lại (ví dụ: "Chỉ còn 5 suất"), Tùy chỉnh nút CTA (Text & hành động mở Modal Báo Giá hoặc gọi Hotline).
+  * **Khu 2 - Lead Magnet Hub (Bộ Lọc Nhanh):**
+    * *Nghiệp vụ:* Thanh tìm kiếm nhanh dòng xe theo mức ngân sách và kiểu dáng xe.
+    * *Cấu hình Admin:* Toggle Bật/Tắt; cấu hình các mốc ngân sách gợi ý (Dưới 500tr, 500tr - 800tr, Trên 800tr); lựa chọn các kiểu dáng xe hiển thị (Sedan, SUV, MPV, Bán tải). Dữ liệu lọc kết nối trực tiếp với Catalog `/api/cars`.
+  * **Khu 3 - VIP Showroom / Hồ sơ Năng Lực Saler:**
+    * *Nghiệp vụ:* Xây dựng niềm tin vững chắc về uy tín phục vụ.
+    * *Cấu hình Admin:* Toggle Bật/Tắt; Chế độ chuyển đổi linh hoạt:
+      * *Chế độ Showroom 3S:* Giới thiệu quy mô đại lý, xưởng dịch vụ kỹ thuật cao, phòng chờ VIP.
+      * *Chế độ Cá nhân Saler:* Hồ sơ năng lực tư vấn bán hàng + 4 Cam kết vàng (Hỗ trợ hồ sơ trả góp duyệt nhanh, Giao xe tận nhà, Bảo hành chính hãng, Thủ tục đăng ký lăn bánh 24/7) kèm thư viện 3 - 4 hình ảnh thực tế.
+  * **Khu 4 - Featured Cars Showcase (Dòng Xe Nổi Bật):**
+    * *Nghiệp vụ:* Lưới danh mục các dòng xe bán chạy nhất (Accent, Tucson, Santa Fe, Creta) kèm giá niêm yết, mức trả trước chỉ từ X triệu và huy hiệu khuyến mãi.
+    * *Cấu hình Admin:* Toggle Bật/Tắt; Trong trang Quản lý Xe (`/admin/cars`), saler/admin chỉ cần gạt cờ **`isFeatured` (Ghim xe nổi bật)** và thứ tự ưu tiên `sortOrder`. Giá niêm yết và mức trả trước tối thiểu được đồng bộ tự động từ database.
+  * **Khu 5 - Testimonials & Delivery Stories (Bàn Giao Xe Thực Tế):**
+    * *Nghiệp vụ:* Bằng chứng xã hội (Social Proof) dạng Slider/Gallery hình ảnh khách hàng nhận xe thực tế, gia tăng tỷ lệ chốt cọc.
+    * *Cấu hình Admin:* Toggle Bật/Tắt; Tab/Module quản lý album bàn giao xe: Upload ảnh trao xe thực tế, Tên khách hàng (ví dụ: "Anh Nam - TP. Vinh"), Dòng xe bàn giao ("Hyundai Tucson 2.0 ĐB"), Lời chia sẻ/cảm nhận của khách.
+  * **Khu 6 - Latest News & Special Promotions (Tin Tức & Khuyến Mãi):**
+    * *Nghiệp vụ:* Khối hiển thị 3 - 4 bài viết khuyến mãi và tin tức đại lý mới nhất.
+    * *Cấu hình Admin:* Toggle Bật/Tắt; Tự động lấy 3 - 4 bài viết mới nhất từ module Bài viết/Tin tức (hoặc cho phép ghim thủ công bài viết quan trọng). Nếu chưa có bài viết hoặc tắt khu, phân khu tự động ẩn đi.
 * **3. Tiêu chí nghiệm thu (DoD):**
-  * Tốc độ tải trang trang chủ đạt chuẩn Core Web Vitals (FCP < 1.0s, LCP < 2.0s).
-  * Bộ đếm ngược Countdown hoạt động mượt mà, tự động cập nhật không bị lỗi lệch múi giờ.
+  * Tốc độ tải trang trang chủ đạt chuẩn Core Web Vitals (FCP < 1.0s, LCP < 2.0s, CLS = 0).
+  * Bộ đếm ngược Countdown hoạt động mượt mà, chuẩn múi giờ `Asia/Ho_Chi_Minh`, tự động ẩn hoặc đổi trạng thái khi hết hạn.
+  * 100% 6 phân khu phản hồi tức thì với thao tác Bật/Tắt và chỉnh sửa nội dung từ Admin Portal mà không cần deploy lại.
+  * Cơ chế Graceful Degradation: Trang chủ tự động ẩn phân khu chưa có dữ liệu hoặc bị tắt, giữ vững giao diện thẩm mỹ không bị lỗi trắng trang hay vỡ layout.
 
 ---
 

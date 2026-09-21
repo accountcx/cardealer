@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Save, Check, UserCheck, ShieldCheck, PhoneCall, MessageCircle, Eye } from 'lucide-react';
-import { Button, Card } from '@cardealer/ui';
+import { Button, Card, Input, Switch, Textarea } from '@cardealer/ui';
 import type { FloatingSellerSettings } from '@cardealer/types';
 import { settingsService } from '../../../services/settings.service';
 
@@ -32,7 +32,7 @@ export const FloatingSellerSection = ({ initialData }: FloatingSellerSectionProp
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Không thể lưu cấu hình chuyên viên');
+      setError(err instanceof Error ? err.message : 'Có lỗi xảy ra khi lưu');
     } finally {
       setSaving(false);
     }
@@ -42,9 +42,12 @@ export const FloatingSellerSection = ({ initialData }: FloatingSellerSectionProp
     <form onSubmit={handleSave} className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h3 className="text-lg font-bold text-white">Cấu Hình Widget Chuyên Viên Tư Vấn Nổi</h3>
+          <h3 className="text-lg font-bold text-white flex items-center gap-2">
+            <UserCheck className="w-5 h-5 text-[#0072CE]" />
+            <span>Widget Chuyên Viên Tư Vấn Nổi (Floating Seller)</span>
+          </h3>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Tùy biến avatar, thông tin liên hệ và lời chào hiển thị góc màn hình Storefront.
+            Nút tròn nổi ở góc dưới màn hình, hiển thị ảnh đại diện và thông tin liên hệ nhanh cho khách hàng.
           </p>
         </div>
         <Button
@@ -78,99 +81,59 @@ export const FloatingSellerSection = ({ initialData }: FloatingSellerSectionProp
           <Card className="p-5 border-slate-800 bg-slate-900/90 rounded-2xl space-y-4 shadow-xl">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <span className="text-sm font-bold text-white">Trạng Thái Kích Hoạt Widget</span>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.enabled}
-                  onChange={(e) => handleChange('enabled', e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0072CE]"></div>
-              </label>
+              <Switch
+                checked={formData.enabled}
+                onCheckedChange={(val) => handleChange('enabled', val)}
+              />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Họ Tên Chuyên Viên *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.sellerName}
-                  onChange={(e) => handleChange('sellerName', e.target.value)}
-                  placeholder="VD: Tuấn Hyundai"
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0072CE] focus:border-transparent transition-colors"
-                />
-              </div>
+              <Input
+                label="Họ Tên Chuyên Viên *"
+                required
+                value={formData.sellerName}
+                onChange={(e) => handleChange('sellerName', e.target.value)}
+                placeholder="VD: Tuấn Hyundai"
+              />
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Số Hotline Kích Hoạt Cuộc Gọi *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.sellerPhone}
-                  onChange={(e) => handleChange('sellerPhone', e.target.value)}
-                  placeholder="VD: 0981.234.567"
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0072CE] focus:border-transparent transition-colors"
-                />
-              </div>
+              <Input
+                label="Số Hotline Kích Hoạt Cuộc Gọi *"
+                required
+                value={formData.sellerPhone}
+                onChange={(e) => handleChange('sellerPhone', e.target.value)}
+                placeholder="VD: 0981.234.567"
+              />
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Liên Kết Zalo (OA hoặc cá nhân) *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.sellerZalo}
-                  onChange={(e) => handleChange('sellerZalo', e.target.value)}
-                  placeholder="https://zalo.me/0981234567"
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0072CE] focus:border-transparent transition-colors"
-                />
-              </div>
+              <Input
+                label="Liên Kết Zalo (OA hoặc cá nhân) *"
+                required
+                value={formData.sellerZalo}
+                onChange={(e) => handleChange('sellerZalo', e.target.value)}
+                placeholder="https://zalo.me/0981234567"
+              />
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Đường Dẫn Ảnh Avatar (WebP/JPG)
-                </label>
-                <input
-                  type="text"
-                  value={formData.sellerAvatar}
-                  onChange={(e) => handleChange('sellerAvatar', e.target.value)}
-                  placeholder="/images/avatars/sale-tuan.webp"
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0072CE] focus:border-transparent transition-colors"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Dòng Trạng Thái (Status Text)
-              </label>
-              <input
-                type="text"
-                value={formData.statusText}
-                onChange={(e) => handleChange('statusText', e.target.value)}
-                placeholder="VD: Đang trực tuyến - Hỗ trợ 24/7"
-                className="w-full px-3 py-2 text-sm rounded-xl border border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0072CE] focus:border-transparent transition-colors"
+              <Input
+                label="Đường Dẫn Ảnh Avatar (WebP/JPG)"
+                value={formData.sellerAvatar}
+                onChange={(e) => handleChange('sellerAvatar', e.target.value)}
+                placeholder="/images/avatars/sale-tuan.webp"
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Lời Chào Tư Vấn (Greeting Message)
-              </label>
-              <textarea
-                rows={2}
-                value={formData.greetingMessage}
-                onChange={(e) => handleChange('greetingMessage', e.target.value)}
-                placeholder="Nhập lời chào thân thiện đến khách hàng..."
-                className="w-full px-3 py-2 text-sm rounded-xl border border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0072CE] focus:border-transparent transition-colors"
-              />
-            </div>
+            <Input
+              label="Dòng Trạng Thái (Status Text)"
+              value={formData.statusText}
+              onChange={(e) => handleChange('statusText', e.target.value)}
+              placeholder="VD: Đang trực tuyến - Hỗ trợ 24/7"
+            />
+
+            <Textarea
+              label="Lời Chào Tư Vấn (Greeting Message)"
+              rows={2}
+              value={formData.greetingMessage}
+              onChange={(e) => handleChange('greetingMessage', e.target.value)}
+              placeholder="Nhập lời chào thân thiện đến khách hàng..."
+            />
           </Card>
         </div>
 

@@ -11,6 +11,7 @@ import {
 } from 'react-hook-form';
 import { Slot } from '@radix-ui/react-slot';
 import { cn } from './lib/utils';
+import { Label } from './label';
 
 // 🧠 Mental Model: Shadcn UI Form Context Layer (Compound Component Pattern)
 // Đồng bộ hóa Controller của react-hook-form với accessibility (aria-describedby, aria-invalid)
@@ -88,19 +89,15 @@ const FormItem = React.forwardRef<
 FormItem.displayName = 'FormItem';
 
 const FormLabel = React.forwardRef<
-  HTMLLabelElement,
-  React.LabelHTMLAttributes<HTMLLabelElement>
+  React.ElementRef<typeof Label>,
+  React.ComponentPropsWithoutRef<typeof Label>
 >(({ className, ...props }, ref) => {
   const { error, formItemId } = useFormField();
 
   return (
-    <label
+    <Label
       ref={ref}
-      className={cn(
-        'block text-xs font-semibold text-slate-300 select-none',
-        error && 'text-red-400',
-        className
-      )}
+      className={cn('block', error && 'text-red-400', className)}
       htmlFor={formItemId}
       {...props}
     />
@@ -180,4 +177,5 @@ export {
   FormDescription,
   FormMessage,
   FormField,
+  Label,
 };

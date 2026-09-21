@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { Users, AlertCircle, PhoneCall, CheckCircle2, XCircle } from 'lucide-react';
+import { Button } from '@cardealer/ui';
 import type { LeadStatus } from '@cardealer/types';
 
 export type LeadFilterType = 'all' | LeadStatus;
@@ -106,14 +107,15 @@ export function LeadStats({
         const isActive = activeFilter === card.id;
 
         return (
-          <button
+          <Button
             key={card.id}
             type="button"
+            variant="ghost"
             onClick={() => onFilterChange?.(card.id)}
-            className={`text-left relative p-3.5 sm:p-4 rounded-xl border transition-all duration-200 cursor-pointer ${
+            className={`text-left relative p-3.5 sm:p-4 rounded-xl border transition-all duration-200 cursor-pointer h-auto w-full block justify-start ${
               isActive
-                ? `${card.activeBorder} ${card.activeGlow} bg-slate-900/90`
-                : 'border-white/10 bg-slate-900/60 hover:bg-slate-900/80 hover:border-white/20'
+                ? `${card.activeBorder} ${card.activeGlow} bg-slate-900/90 text-white`
+                : 'border-white/10 bg-slate-900/60 hover:bg-slate-900/80 hover:border-white/20 text-slate-300'
             } backdrop-blur-xl`}
           >
             <div className="flex items-center justify-between gap-2 mb-2">
@@ -130,7 +132,7 @@ export function LeadStats({
             <div className="text-[11px] text-slate-400 border-t border-white/5 pt-2 mt-2 truncate">
               {card.description}
             </div>
-          </button>
+          </Button>
         );
       })}
     </div>

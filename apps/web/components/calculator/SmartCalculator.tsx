@@ -10,6 +10,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { calculateRollingCost } from '@cardealer/core';
 import type { RollingCostBreakdown } from '@cardealer/types';
+import { Input, Label, Select, Button } from '@cardealer/ui';
+import { leadsService } from '../../services/leads.service';
+import { AppError } from '../../lib/api-client';
 
 export type CalculatorState = 'input' | 'gate' | 'success';
 
@@ -164,7 +167,7 @@ export default function SmartCalculator({
 
   // 4. Client Phone Validation (R2)
   const validateVietnamPhone = (rawPhone: string): boolean => {
-    const cleaned = rawPhone.replace(/\D/g, '');
+    const cleaned = rawPhone.replace(/^\+84/, '0').replace(/\D/g, '');
     const vnPhoneRegex = /^(03|05|07|08|09)\d{8}$/;
     return vnPhoneRegex.test(cleaned);
   };
@@ -190,15 +193,16 @@ export default function SmartCalculator({
     }
 
     setIsSubmitting(true);
-    const cleanPhone = phone.replace(/\D/g, '');
+    const cleanPhone = phone.replace(/^\+84/, '0').replace(/\D/g, '');
 
     try {
       const payload = {
         fullName: fullName.trim(),
         phone: cleanPhone,
         province: selectedProvince,
+        preferredTime: preferredTime,
         preferredContactTime: preferredTime,
-        leadType: 'Báo Giá Lăn Bánh',
+        leadType: 'Giá Lăn Bánh' as const,
         carModel: selectedCarName,
         carVersion: selectedVersionName,
         estimatedTotal: calculatedResult?.tongGiaLanBanh || 0,
@@ -207,26 +211,11 @@ export default function SmartCalculator({
           ...calculatedResult,
           selectedProvince,
         },
+        websiteUrl: honeypot,
         website_url: honeypot,
       };
 
-      const res = await fetch('/api/leads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const json = await res.json();
-
-      if (!res.ok) {
-        if (res.status === 429) {
-          setLeadError('Quý khách đã gửi yêu cầu gần đây. Vui lòng chờ 10 phút hoặc gọi trực tiếp Hotline!');
-        } else {
-          setLeadError(json.error || 'Có lỗi khi gửi thông tin. Vui lòng thử lại!');
-        }
-        setIsSubmitting(false);
-        return;
-      }
+      await leadsService.createLead(payload);
 
       setState('success');
       try {
@@ -242,11 +231,16 @@ export default function SmartCalculator({
             phone: cleanPhone,
           })
         );
-      } catch {
-        // Ignored
+      } catch (e) {
+        console.warn('Cannot save state to sessionStorage', e);
       }
-    } catch {
-      setLeadError('Lỗi kết nối máy chủ. Vui lòng kiểm tra lại mạng hoặc liên hệ Hotline.');
+    } catch (err: unknown) {
+      if (err instanceof AppError && err.statusCode === 429) {
+        setLeadError('Quý khách đã gửi yêu cầu gần đây. Vui lòng chờ 10 phút hoặc gọi trực tiếp Hotline!');
+      } else {
+        const errMsg = err instanceof Error ? err.message : 'Có lỗi khi gửi thông tin. Vui lòng thử lại!';
+        setLeadError(errMsg);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -320,84 +314,72 @@ export default function SmartCalculator({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {/* 1. Chọn Dòng Xe */}
               <div className="space-y-2">
-                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
+                <Label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
                   <svg className="w-4 h-4 text-[#0072CE]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 16v-2a4 4 0 00-4-4H9a4 4 0 00-4 4v2m14 0H5m14 0a2 2 0 012 2v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1a2 2 0 012-2" />
                   </svg>
                   1. Chọn Dòng Xe <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    value={selectedCarName}
-                    onChange={(e) => setSelectedCarName(e.target.value)}
-                    className="w-full p-4 pr-10 bg-slate-50 hover:bg-slate-100/80 border-2 border-slate-200 focus:border-[#0072CE] focus:bg-white rounded-2xl text-slate-900 font-bold text-sm transition outline-none cursor-pointer appearance-none shadow-sm truncate"
-                  >
-                    {cars.map((c) => (
-                      <option key={c.id} value={c.tenXe}>
-                        {c.tenXe}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                    ▼
-                  </div>
-                </div>
+                </Label>
+                <Select
+                  variant="light"
+                  value={selectedCarName}
+                  onChange={(e) => setSelectedCarName(e.target.value)}
+                  className="p-4 pr-10 bg-slate-50 hover:bg-slate-100/80 border-2 border-slate-200 focus:border-[#0072CE] focus:bg-white rounded-2xl text-slate-900 font-bold text-sm h-14"
+                >
+                  {cars.map((c) => (
+                    <option key={c.id} value={c.tenXe}>
+                      {c.tenXe}
+                    </option>
+                  ))}
+                </Select>
               </div>
 
               {/* 2. Chọn Phiên Bản */}
               <div className="space-y-2">
-                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
+                <Label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
                   <svg className="w-4 h-4 text-[#0072CE]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                   </svg>
                   2. Chọn Phiên Bản <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    value={selectedVersionName}
-                    onChange={(e) => handleVersionSelect(e.target.value)}
-                    disabled={availableVersions.length === 0}
-                    className="w-full p-4 pr-10 bg-slate-50 hover:bg-slate-100/80 border-2 border-slate-200 focus:border-[#0072CE] focus:bg-white rounded-2xl text-slate-900 font-bold text-sm transition outline-none cursor-pointer appearance-none shadow-sm disabled:opacity-50 truncate"
-                  >
-                    {availableVersions.length === 0 ? (
-                      <option value="">-- Vui lòng chọn xe --</option>
-                    ) : (
-                      availableVersions.map((v) => (
-                        <option key={v.id} value={v.tenPhienBan}>
-                          {v.tenPhienBan} ({new Intl.NumberFormat('vi-VN').format(v.giaNiemYet)} ₫)
-                        </option>
-                      ))
-                    )}
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                    ▼
-                  </div>
-                </div>
+                </Label>
+                <Select
+                  variant="light"
+                  value={selectedVersionName}
+                  onChange={(e) => handleVersionSelect(e.target.value)}
+                  disabled={availableVersions.length === 0}
+                  className="p-4 pr-10 bg-slate-50 hover:bg-slate-100/80 border-2 border-slate-200 focus:border-[#0072CE] focus:bg-white rounded-2xl text-slate-900 font-bold text-sm h-14 disabled:opacity-50"
+                >
+                  {availableVersions.length === 0 ? (
+                    <option value="">-- Vui lòng chọn xe --</option>
+                  ) : (
+                    availableVersions.map((v) => (
+                      <option key={v.id} value={v.tenPhienBan}>
+                        {v.tenPhienBan} ({new Intl.NumberFormat('vi-VN').format(v.giaNiemYet)} ₫)
+                      </option>
+                    ))
+                  )}
+                </Select>
               </div>
 
               {/* 3. Nơi Đăng Ký Biển Số */}
               <div className="space-y-2">
-                <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
+                <Label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
                   <svg className="w-4 h-4 text-[#0072CE]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                   3. Nơi Đăng Ký Biển Số <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    value={selectedProvince}
-                    onChange={(e) => setSelectedProvince(e.target.value)}
-                    className="w-full p-4 pr-10 bg-slate-50 hover:bg-slate-100/80 border-2 border-slate-200 focus:border-[#0072CE] focus:bg-white rounded-2xl text-slate-900 font-bold text-sm transition outline-none cursor-pointer appearance-none shadow-sm truncate"
-                  >
-                    <option value="Vinh">TP. Vinh</option>
-                    <option value="Huyện Khác (Nghệ An)">Các Huyện Nghệ An</option>
-                    <option value="Hà Tĩnh">Hà Tĩnh</option>
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                    ▼
-                  </div>
-                </div>
+                </Label>
+                <Select
+                  variant="light"
+                  value={selectedProvince}
+                  onChange={(e) => setSelectedProvince(e.target.value)}
+                  className="p-4 pr-10 bg-slate-50 hover:bg-slate-100/80 border-2 border-slate-200 focus:border-[#0072CE] focus:bg-white rounded-2xl text-slate-900 font-bold text-sm h-14"
+                >
+                  <option value="Vinh">TP. Vinh</option>
+                  <option value="Huyện Khác (Nghệ An)">Các Huyện Nghệ An</option>
+                  <option value="Hà Tĩnh">Hà Tĩnh</option>
+                </Select>
               </div>
             </div>
 
@@ -426,16 +408,16 @@ export default function SmartCalculator({
             )}
 
             {/* Submit Button */}
-            <button
+            <Button
               type="submit"
               disabled={!selectedVersionName}
-              className="w-full py-4 sm:py-5 px-8 rounded-2xl font-black text-white text-base sm:text-lg tracking-wider transition-all duration-300 shadow-xl shadow-blue-900/20 bg-gradient-to-r from-[#002C6C] via-[#0072CE] to-[#002C6C] hover:brightness-110 active:scale-[0.99] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-3 group"
+              className="w-full h-auto py-4 sm:py-5 px-8 rounded-2xl font-black text-white text-base sm:text-lg tracking-wider transition-all duration-300 shadow-xl shadow-blue-900/20 bg-gradient-to-r from-[#002C6C] via-[#0072CE] to-[#002C6C] hover:brightness-110 active:scale-[0.99] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-3 group border-0"
             >
               <span>XEM DỰ TOÁN GIÁ LĂN BÁNH CHI TIẾT</span>
               <svg className="w-5 h-5 group-hover:translate-x-1.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
-            </button>
+            </Button>
           </form>
         )}
 
@@ -580,68 +562,69 @@ export default function SmartCalculator({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                    <Label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
                       Họ và tên Quý khách <span className="text-red-500">*</span>
-                    </label>
-                    <input
+                    </Label>
+                    <Input
                       type="text"
                       placeholder="Ví dụ: Nguyễn Văn An"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       required
-                      className="w-full p-3.5 bg-white border border-slate-300 focus:border-[#0072CE] focus:ring-2 focus:ring-blue-100 rounded-xl text-sm font-semibold text-slate-900 outline-none transition"
+                      className="w-full h-11 bg-white border border-slate-300 focus-visible:ring-[#0072CE] focus-visible:ring-2 rounded-xl text-sm font-semibold text-slate-900 transition"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                    <Label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
                       Số điện thoại nhận báo giá (Zalo/SMS) <span className="text-red-500">*</span>
-                    </label>
-                    <input
+                    </Label>
+                    <Input
                       type="tel"
                       inputMode="numeric"
                       placeholder="Ví dụ: 0912 345 678 (10 số)"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       required
-                      className="w-full p-3.5 bg-white border border-slate-300 focus:border-[#0072CE] focus:ring-2 focus:ring-blue-100 rounded-xl text-sm font-semibold text-slate-900 outline-none transition"
+                      className="w-full h-11 bg-white border border-slate-300 focus-visible:ring-[#0072CE] focus-visible:ring-2 rounded-xl text-sm font-semibold text-slate-900 transition"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  <Label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
                     Khung giờ Quý khách tiện nghe máy:
-                  </label>
+                  </Label>
                   <div className="grid grid-cols-3 gap-2 sm:gap-3">
                     {(['Sáng (8h - 12h)', 'Chiều (13h - 18h)', 'Bất kỳ'] as const).map((t) => (
-                      <button
+                      <Button
                         key={t}
                         type="button"
+                        variant={preferredTime === t ? 'primary' : 'outline'}
                         onClick={() => setPreferredTime(t)}
-                        className={`py-2.5 px-3 text-xs font-bold rounded-xl border transition cursor-pointer ${
+                        className={`h-10 text-xs font-bold rounded-xl transition cursor-pointer ${
                           preferredTime === t
                             ? 'bg-[#002C6C] text-white border-[#002C6C] shadow-sm'
                             : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
                         }`}
                       >
                         {t}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
 
                 {/* High Converting Red CTA Button */}
-                <button
+                <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-4 sm:py-5 px-6 rounded-2xl font-black text-white text-base sm:text-lg tracking-wider transition-all duration-300 shadow-xl shadow-red-600/20 bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:brightness-110 active:scale-[0.99] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-3"
+                  className="w-full h-14 sm:h-16 rounded-2xl font-black text-white text-base sm:text-lg tracking-wider transition-all duration-300 shadow-xl shadow-red-600/20 bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:brightness-110 active:scale-[0.99] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-3 border-none"
                 >
                   <span>{isSubmitting ? 'ĐANG GỬI YÊU CẦU...' : 'XEM GIÁ LĂN BÁNH THỰC TẾ & NHẬN ƯU ĐÃI'}</span>
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                   </svg>
-                </button>
+                </Button>
 
                 <p className="text-center text-xs text-slate-500 font-medium flex items-center justify-center gap-1.5">
                   <span>🔒</span> Cam kết bảo mật thông tin 100% — Không làm phiền ngoài nhu cầu tư vấn xe.
@@ -673,13 +656,14 @@ export default function SmartCalculator({
 
             {/* Nút quay lại chọn xe khác */}
             <div className="text-center pt-2">
-              <button
+              <Button
                 type="button"
+                variant="link"
                 onClick={handleReset}
-                className="text-xs sm:text-sm font-bold text-slate-500 hover:text-[#0072CE] underline cursor-pointer transition"
+                className="text-xs sm:text-sm font-bold text-slate-500 hover:text-[#0072CE] underline cursor-pointer transition h-auto p-0"
               >
                 ← Tính toán dòng xe hoặc phiên bản khác
-              </button>
+              </Button>
             </div>
           </div>
         )}

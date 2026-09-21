@@ -20,7 +20,7 @@ import {
   DollarSign,
   Save,
 } from 'lucide-react';
-import { Button, Badge } from '@cardealer/ui';
+import { Button, Badge, Select, Textarea, Label } from '@cardealer/ui';
 import type { LeadStatus } from '@cardealer/types';
 import { LEAD_STATUS_LABELS } from '@cardealer/types';
 
@@ -100,13 +100,15 @@ export function LeadDetailModal({
             </span>
             <h2 className="text-xl font-extrabold text-white mt-0.5">{lead.fullName}</h2>
           </div>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={onClose}
             className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition cursor-pointer"
           >
             <X size={16} />
-          </button>
+          </Button>
         </div>
 
         {/* Body Content */}
@@ -216,33 +218,31 @@ export function LeadDetailModal({
           {/* Edit Form (Only for Users with leads:write) */}
           {canEdit && (
             <form onSubmit={handleSave} className="space-y-3.5 pt-2 border-t border-white/10">
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">
+              <div className="space-y-1.5">
+                <Label className="block text-xs font-bold text-slate-300">
                   Cập nhật trạng thái khách hàng:
-                </label>
-                <select
+                </Label>
+                <Select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value as LeadStatus)}
-                  className="w-full p-2.5 bg-slate-800 border border-white/10 rounded-xl text-xs font-bold text-white focus:ring-2 focus:ring-sky-500 outline-none"
-                >
-                  {(['new', 'contacted', 'converted', 'cancelled'] as const).map((s) => (
-                    <option key={s} value={s}>
-                      {LEAD_STATUS_LABELS[s]}
-                    </option>
-                  ))}
-                </select>
+                  className="bg-slate-800 border-white/10 text-xs font-bold h-10"
+                  options={(['new', 'contacted', 'converted', 'cancelled'] as const).map((s) => ({
+                    value: s,
+                    label: LEAD_STATUS_LABELS[s],
+                  }))}
+                />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">
+              <div className="space-y-1.5">
+                <Label className="block text-xs font-bold text-slate-300">
                   Thêm ghi chú cuộc gọi mới:
-                </label>
-                <textarea
+                </Label>
+                <Textarea
                   rows={3}
                   placeholder="Ghi lại nhu cầu của khách (gói vay, màu xe mong muốn, thời gian hẹn lái thử)..."
                   value={newNote}
                   onChange={(e) => setNewNote(e.target.value)}
-                  className="w-full p-3 bg-slate-800 border border-white/10 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:ring-2 focus:ring-sky-500 outline-none"
+                  className="bg-slate-800 border-white/10 text-xs text-slate-200 placeholder-slate-500"
                 />
               </div>
 

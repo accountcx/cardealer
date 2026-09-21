@@ -66,7 +66,7 @@ export async function handleLeadRoutes(
       const rawBody = await readBody();
 
       // 2. Bẫy Honeypot Bot (R1)
-      if (rawBody.websiteUrl) {
+      if (rawBody.websiteUrl || rawBody.website_url) {
         console.warn(`[Lead Honeypot] Phát hiện bot spam từ IP: ${clientIp.replace(/[\r\n]/g, '')}`);
         // Giả lập thành công để đánh lừa bot
         sendJson(200, {
@@ -121,10 +121,10 @@ export async function handleLeadRoutes(
       // 5. Lưu bản ghi Lead vào PostgreSQL (Drizzle ORM)
       const metadataToSave: Record<string, unknown> = {
         ...(validated.metadata || {}),
-        carModel: validated.carModel,
+        carModel: validated.carModel || validated.carInterest,
         carVersion: validated.carVersion,
         leadType: validated.leadType,
-        preferredTime: validated.preferredTime,
+        preferredTime: validated.preferredTime || validated.preferredContactTime,
         ipAddress: clientIp,
       };
 

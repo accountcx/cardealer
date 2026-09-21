@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Plus, Trash2, Save, Check, ExternalLink, ChevronDown, MoveDown, MoveUp } from 'lucide-react';
-import { Button, Card } from '@cardealer/ui';
+import { Button, Card, Input, Switch } from '@cardealer/ui';
 import type { NavigationSettings, NavLink, NavSubLink } from '@cardealer/types';
 import { settingsService } from '../../../services/settings.service';
 
@@ -145,42 +145,42 @@ export const NavigationSection = ({ initialData }: NavigationSectionProps) => {
                 <span className="w-7 h-7 rounded-full bg-slate-800 text-sky-400 border border-slate-700 font-bold text-xs flex items-center justify-center flex-shrink-0">
                   {parentIdx + 1}
                 </span>
-                <input
+                <Input
                   type="text"
                   value={link.label}
                   onChange={(e) => handleUpdateLink(parentIdx, 'label', e.target.value)}
                   placeholder="Nhãn menu (VD: Dòng Xe)"
-                  className="flex-1 px-3 py-2 text-sm font-semibold rounded-xl border border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0072CE] focus:border-transparent transition-colors"
+                  className="flex-1 text-sm font-semibold border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus-visible:ring-[#0072CE]"
                 />
               </div>
 
               <div className="flex items-center gap-2 flex-1">
-                <input
+                <Input
                   type="text"
                   value={link.url}
                   onChange={(e) => handleUpdateLink(parentIdx, 'url', e.target.value)}
                   placeholder="Đường dẫn (VD: /xe)"
-                  className="flex-1 px-3 py-2 text-sm rounded-xl border border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0072CE] focus:border-transparent transition-colors"
+                  className="flex-1 text-sm border-slate-700/80 bg-slate-950/90 text-white placeholder:text-slate-500 focus-visible:ring-[#0072CE]"
                 />
 
-                <label className="flex items-center gap-1.5 text-xs text-slate-300 whitespace-nowrap cursor-pointer select-none">
-                  <input
-                    type="checkbox"
+                <div className="flex items-center gap-1.5 text-xs text-slate-300 whitespace-nowrap select-none px-2">
+                  <Switch
                     checked={link.newTab}
-                    onChange={(e) => handleUpdateLink(parentIdx, 'newTab', e.target.checked)}
-                    className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-[#0072CE] focus:ring-[#0072CE]"
+                    onCheckedChange={(checked) => handleUpdateLink(parentIdx, 'newTab', checked)}
                   />
                   <span>Tab mới</span>
-                </label>
+                </div>
 
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={() => handleDeleteLink(parentIdx)}
-                  className="p-2 text-slate-400 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition-colors"
+                  className="h-8 w-8 text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                   aria-label="Xóa menu"
                 >
                   <Trash2 className="w-4 h-4" />
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -190,42 +190,46 @@ export const NavigationSection = ({ initialData }: NavigationSectionProps) => {
                 <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
                   Menu Con Cấp 2 ({link.subLinks?.length || 0})
                 </span>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => handleAddSubLink(parentIdx)}
-                  className="text-xs font-semibold text-sky-400 hover:text-sky-300 flex items-center gap-1 transition-colors"
+                  className="text-xs font-semibold text-sky-400 hover:text-sky-300 hover:bg-sky-500/10 flex items-center gap-1 transition-colors h-7 px-2"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Thêm mục con</span>
-                </button>
+                </Button>
               </div>
 
               {link.subLinks && link.subLinks.length > 0 && (
                 <div className="space-y-2">
                   {link.subLinks.map((sub, subIdx) => (
                     <div key={sub.id || subIdx} className="flex items-center gap-2 bg-slate-950/70 p-2 rounded-xl border border-slate-800/80">
-                      <input
+                      <Input
                         type="text"
                         value={sub.label}
                         onChange={(e) => handleUpdateSubLink(parentIdx, subIdx, 'label', e.target.value)}
                         placeholder="Tên menu con"
-                        className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-slate-700/70 bg-slate-900 text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-[#0072CE]"
+                        className="flex-1 h-8 text-xs border-slate-700/70 bg-slate-900 text-white placeholder:text-slate-500 focus-visible:ring-[#0072CE]"
                       />
-                      <input
+                      <Input
                         type="text"
                         value={sub.url}
                         onChange={(e) => handleUpdateSubLink(parentIdx, subIdx, 'url', e.target.value)}
                         placeholder="Đường dẫn"
-                        className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-slate-700/70 bg-slate-900 text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-[#0072CE]"
+                        className="flex-1 h-8 text-xs border-slate-700/70 bg-slate-900 text-white placeholder:text-slate-500 focus-visible:ring-[#0072CE]"
                       />
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon"
                         onClick={() => handleDeleteSubLink(parentIdx, subIdx)}
-                        className="p-1.5 text-slate-400 hover:text-red-400 transition-colors"
+                        className="h-7 w-7 text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                         aria-label="Xóa menu con"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      </Button>
                     </div>
                   ))}
                 </div>

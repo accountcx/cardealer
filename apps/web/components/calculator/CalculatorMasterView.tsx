@@ -6,6 +6,7 @@
 // Đồng bộ xe & phiên bản đang chọn qua lại giữa 2 Tab để khách hàng không phải chọn lại.
 
 import { useState, useEffect } from 'react';
+import { Button } from '@cardealer/ui';
 import SmartCalculator, { type CarItem, type CarVersionItem } from './SmartCalculator';
 import InstallmentEstimatorTab from './InstallmentEstimatorTab';
 
@@ -46,31 +47,31 @@ export default function CalculatorMasterView({
       {/* Tab Switcher với tương phản cao chuẩn UX */}
       <div className="flex justify-center">
         <div className="inline-flex p-1.5 rounded-2xl bg-slate-200/90 border border-slate-300/90 shadow-inner">
-          <button
+          <Button
             type="button"
             onClick={() => setActiveTab('rolling')}
-            className={`flex items-center gap-2 sm:gap-2.5 px-4 sm:px-8 py-3 rounded-xl font-black text-xs sm:text-sm tracking-wide transition-all cursor-pointer ${
+            className={`h-auto flex items-center gap-2 sm:gap-2.5 px-4 sm:px-8 py-3 rounded-xl font-black text-xs sm:text-sm tracking-wide transition-all cursor-pointer border-0 ${
               activeTab === 'rolling'
                 ? 'bg-[#002C6C] text-white shadow-lg shadow-blue-950/20'
-                : 'text-slate-700 hover:text-slate-950 hover:bg-white/60'
+                : 'bg-transparent text-slate-700 hover:text-slate-950 hover:bg-white/60 shadow-none'
             }`}
           >
             <span>🚗</span>
             <span>1. DỰ TOÁN GIÁ LĂN BÁNH</span>
-          </button>
+          </Button>
 
-          <button
+          <Button
             type="button"
             onClick={() => setActiveTab('installment')}
-            className={`flex items-center gap-2 sm:gap-2.5 px-4 sm:px-8 py-3 rounded-xl font-black text-xs sm:text-sm tracking-wide transition-all cursor-pointer ${
+            className={`h-auto flex items-center gap-2 sm:gap-2.5 px-4 sm:px-8 py-3 rounded-xl font-black text-xs sm:text-sm tracking-wide transition-all cursor-pointer border-0 ${
               activeTab === 'installment'
                 ? 'bg-[#002C6C] text-white shadow-lg shadow-blue-950/20'
-                : 'text-slate-700 hover:text-slate-950 hover:bg-white/60'
+                : 'bg-transparent text-slate-700 hover:text-slate-950 hover:bg-white/60 shadow-none'
             }`}
           >
             <span>💳</span>
             <span>2. DỰ TOÁN VAY TRẢ GÓP</span>
-          </button>
+          </Button>
         </div>
       </div>
 

@@ -1,4 +1,9 @@
-import { BulkSettingsSchema, type BulkSettings } from '@cardealer/types';
+import {
+  BulkSettingsSchema,
+  HomepageSettingsSchema,
+  type BulkSettings,
+  type HomepageSettings,
+} from '@cardealer/types';
 
 const API_BASE_URL =
   process.env.INTERNAL_API_URL ||
@@ -42,5 +47,39 @@ export async function getStorefrontSettings(): Promise<BulkSettings> {
       err instanceof Error ? err.message : String(err)
     );
     return BulkSettingsSchema.parse({});
+  }
+}
+
+// 🧠 Mental Model: Nạp cấu hình riêng cho Phễu Chuyển Đổi Trang Chủ (6 Phân Khu).
+// Fallback an toàn về HomepageSettingsSchema.parse({}) nếu Backend chưa khởi động xong.
+export async function getHomepageSettings(): Promise<HomepageSettings> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/settings/homepage_settings`, {
+      cache: isDev ? 'no-store' : undefined,
+      next: isDev ? undefined : {
+        tags: ['homepage-settings'],
+        revalidate: 30,
+      },
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+
+    if (!res.ok) {
+      return HomepageSettingsSchema.parse({});
+    }
+
+    const json = (await res.json()) as { success?: boolean; data?: unknown };
+    if (json.success && json.data) {
+      return HomepageSettingsSchema.parse(json.data);
+    }
+
+    return HomepageSettingsSchema.parse({});
+  } catch (err: unknown) {
+    console.warn(
+      `[Homepage Settings] Không thể kết nối Backend (${API_BASE_URL}), kích hoạt Default Fallback:`,
+      err instanceof Error ? err.message : String(err)
+    );
+    return HomepageSettingsSchema.parse({});
   }
 }

@@ -22,9 +22,15 @@ export const ViewportCoordinator = ({ settings, children }: ViewportCoordinatorP
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const [isStickyBarVisible, setIsStickyBarVisible] = useState(false);
 
+  React.useEffect(() => {
+    const handleOpenLeadModal = () => setIsLeadModalOpen(true);
+    window.addEventListener('open-lead-modal', handleOpenLeadModal);
+    return () => window.removeEventListener('open-lead-modal', handleOpenLeadModal);
+  }, []);
+
   return (
     <NavigationContext.Provider value={settings.navigation.headerLinks}>
-      <div className="min-h-screen flex flex-col justify-between relative overflow-x-hidden">
+      <div className="min-h-screen flex flex-col justify-between relative overflow-x-clip">
         {/* 1. Showroom Navbar & TopBar */}
         <Navbar
           headerLinks={settings.navigation.headerLinks}
@@ -43,7 +49,7 @@ export const ViewportCoordinator = ({ settings, children }: ViewportCoordinatorP
         />
 
         {/* 3. Thân Trang (Page Content) */}
-        <main className="flex-1 w-full overflow-x-hidden">{children}</main>
+        <main className="flex-1 w-full overflow-x-clip">{children}</main>
 
         {/* 4. Widget Chuyên Viên Nổi (Tự động nâng cao khi StickyBar xuất hiện) */}
         <FloatingSeller

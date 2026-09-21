@@ -7,9 +7,10 @@ import {
   FloatingSellerSettingsSchema,
   StickyBarSettingsSchema,
   FooterSettingsSchema,
+  HomepageSettingsSchema,
 } from '@cardealer/types';
 
-// 🧠 Mental Model: Hàm nạp dữ liệu hạt giống (Seed Data) cho 6 Domain Keys trong bảng system_settings.
+// 🧠 Mental Model: Hàm nạp dữ liệu hạt giống (Seed Data) cho 7 Domain Keys trong bảng system_settings.
 // Sử dụng phương thức ON CONFLICT DO UPDATE / DO NOTHING để đảm bảo không ghi đè dữ liệu đã được người dùng tùy chỉnh.
 export async function seedSystemSettings(dbInstance = db) {
   const defaultKeys = [
@@ -36,6 +37,10 @@ export async function seedSystemSettings(dbInstance = db) {
     {
       key: 'footer_settings',
       data: FooterSettingsSchema.parse({}),
+    },
+    {
+      key: 'homepage_settings',
+      data: HomepageSettingsSchema.parse({}),
     },
     {
       // Duy trì tương thích ngược với Phase 1 Admin Settings

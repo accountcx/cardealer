@@ -38,7 +38,7 @@ export const MobileDrawer = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 lg:hidden flex">
+    <div className="fixed inset-0 z-[60] lg:hidden flex">
       {/* Backdrop nền mờ */}
       <div
         className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300 motion-reduce:transition-none"

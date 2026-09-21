@@ -1,8 +1,9 @@
 'use client';
 
-import { Building2, Compass, UserCheck, Pin, LayoutTemplate } from 'lucide-react';
+import { Building2, Compass, UserCheck, Pin, LayoutTemplate, Sparkles } from 'lucide-react';
+import { Button } from '@cardealer/ui';
 
-export type SettingsTabId = 'showroom' | 'navigation' | 'floatingSeller' | 'stickyBar' | 'footer';
+export type SettingsTabId = 'showroom' | 'homepage' | 'navigation' | 'floatingSeller' | 'stickyBar' | 'footer';
 
 export interface TabItem {
   id: SettingsTabId;
@@ -17,6 +18,12 @@ export const SETTINGS_TABS: TabItem[] = [
     label: 'Showroom & Liên Hệ',
     description: 'Tên đại lý, hotline 24/7, địa chỉ, bản đồ và pháp lý',
     icon: Building2,
+  },
+  {
+    id: 'homepage',
+    label: 'Trang Chủ (Phễu 6 Khu)',
+    description: 'Bật/tắt 6 phân khu, banner sự kiện, đếm ngược, cam kết saler, album giao xe',
+    icon: Sparkles,
   },
   {
     id: 'navigation',
@@ -58,19 +65,20 @@ export const SettingsTabNav = ({ activeTab, onTabChange }: SettingsTabNavProps) 
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
         return (
-          <button
+          <Button
             key={tab.id}
             type="button"
+            variant="ghost"
             onClick={() => onTabChange(tab.id)}
-            className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ease-in-out motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-[#0072CE] focus-visible:outline-none ${
+            className={`h-auto flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ease-in-out motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-[#0072CE] focus-visible:outline-none ${
               isActive
-                ? 'bg-[#0072CE] text-white shadow-md shadow-[#0072CE]/30 border border-[#0072CE]/50'
+                ? 'bg-[#0072CE] text-white shadow-md shadow-[#0072CE]/30 border border-[#0072CE]/50 hover:bg-[#005BA4] hover:text-white'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
             }`}
           >
             <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
             <span>{tab.label}</span>
-          </button>
+          </Button>
         );
       })}
     </nav>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PhoneCall, Menu, ChevronDown, ChevronRight, FileText, MapPin, Clock, Sparkles } from 'lucide-react';
 import type { NavLink, ContactSettings } from '@cardealer/types';
@@ -14,11 +14,9 @@ export interface NavbarProps {
 }
 
 // 🧠 Mental Model: Thanh điều hướng thương hiệu Hyundai Showroom toàn trang.
-// 1. Smart Header: Tự động ẩn khi cuộn xuống và hiện lại thanh Navbar trắng khi cuộn lên.
-// 2. Không rớt dòng: Class whitespace-nowrap và tỷ lệ khoảng cách linh hoạt trên mọi kích thước màn hình.
-// 3. Hiệu ứng Hover sống động (Interactive Hover State): 
-//    - Đổi màu chữ sang Electric Blue (#0072CE), nền soft pill, thanh gạch chân trượt mở (scale-x animation).
-//    - Dropdown items dịch chuyển nhẹ (translate-x-1) kèm icon lấp lánh phản hồi trực quan.
+// 1. Ghim cố định vị trí trên cùng (Sticky Header): Luôn neo chặt vào mép trên trình duyệt.
+// 2. Độ ưu tiên hiển thị lớp cao nhất (z-50): Luôn nằm đè lên trên banner và nội dung phía dưới.
+// 3. Hiệu ứng cuộn thông minh (Smart Scroll): Tự động thu gọn & ẩn khi cuộn xuống sâu, xuất hiện ngay khi cuộn lên.
 export const Navbar = ({
   headerLinks,
   contact,
@@ -26,40 +24,23 @@ export const Navbar = ({
   onOpenMobileMenu,
 }: NavbarProps) => {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
-  const lastScrollY = useRef(0);
 
   const cleanServiceHotline = sanitizePhoneNumber(contact.hotlineDichVu);
 
   useEffect(() => {
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-
-      // Xác định trạng thái nền kính mờ khi cuộn qua đỉnh
-      setIsScrolled(currentScrollY > 20);
-
-      // Cơ chế Smart Header:
-      // - Ở đầu trang (< 60px): Luôn hiển thị đầy đủ
-      // - Cuộn xuống: Ẩn thanh header để giải phóng không gian đọc
-      // - Cuộn lên: Hiện lại thanh Navbar trắng để người dùng dễ thao tác
-      if (currentScrollY <= 60) {
-        setIsVisible(true);
-      } else if (currentScrollY > lastScrollY.current + 8) {
-        setIsVisible(false); // Cuộn xuống
-      } else if (currentScrollY < lastScrollY.current - 8) {
-        setIsVisible(true); // Cuộn lên
-      }
-
-      lastScrollY.current = currentScrollY;
+      // Kích hoạt trạng thái thu gọn kính mờ & đổ bóng khi cuộn qua đỉnh 20px
+      setIsScrolled(window.scrollY > 20);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
     <>
-      {/* 1. TOPBAR TIỆN ÍCH (Không fixed/sticky/z-50, chỉ hiện trên Desktop lg:block, tự trôi mất khi cuộn) */}
+      {/* 1. TOPBAR TIỆN ÍCH (Chỉ hiện trên Desktop lg:block khi ở đầu trang, tự trôi mất khi cuộn) */}
       {(contact.diaChi || contact.workingHours || contact.hotlineDichVu) && (
         <div className="hidden lg:block w-full bg-slate-900 text-slate-300 text-xs py-2 px-4 border-b border-slate-800">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -94,13 +75,13 @@ export const Navbar = ({
         </div>
       )}
 
-      {/* 2. MAIN HEADER & NAVBAR (Smart Sticky: Ẩn khi cuộn xuống, hiện khi cuộn lên) */}
+      {/* 2. MAIN HEADER & NAVBAR (Luôn ghim cố định trên cùng khi cuộn trang - z-50) */}
       <header
-        className={`sticky top-0 z-40 w-full transition-all duration-300 ease-in-out motion-reduce:transition-none ${isVisible ? 'translate-y-0' : '-translate-y-full'
-          } ${isScrolled
-            ? 'bg-white/95 backdrop-blur-md shadow-md border-b border-slate-200/80 py-2.5'
-            : 'bg-white border-b border-slate-100 py-3'
-          }`}
+        className={`sticky top-0 z-50 w-full transition-all duration-300 ease-in-out motion-reduce:transition-none ${
+          isScrolled
+            ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-slate-200/80 py-2 sm:py-2.5'
+            : 'bg-white border-b border-slate-100 py-3 sm:py-3.5'
+        }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-2 xl:gap-4">
           {/* Showroom Brand Logo */}

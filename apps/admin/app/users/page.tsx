@@ -17,7 +17,7 @@ import {
   X,
   RefreshCw,
 } from 'lucide-react';
-import { Button, Input, Badge } from '@cardealer/ui';
+import { Button, Input, Badge, Select } from '@cardealer/ui';
 import { userService } from '../../services/user.service';
 import { UserTableSkeleton } from './components/UserTableSkeleton';
 import { UserFormModal, type UserFormData } from './components/UserFormModal';
@@ -278,9 +278,15 @@ export default function UsersPage() {
             {notification.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
             <span>{notification.message}</span>
           </div>
-          <button onClick={() => setNotification(null)} className="p-1 hover:text-white" type="button">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setNotification(null)}
+            className="h-6 w-6 p-1 text-inherit hover:text-white hover:bg-white/10"
+            type="button"
+          >
             <X size={14} />
-          </button>
+          </Button>
         </div>
       )}
 
@@ -305,13 +311,14 @@ export default function UsersPage() {
           {/* Role Filter */}
           <div className="flex items-center gap-1 p-1 bg-slate-800/80 rounded-xl border border-white/5 text-xs">
             {['all', 'admin', 'manager', 'editor', 'sales'].map((role) => (
-              <button
+              <Button
                 key={role}
                 onClick={() => setSelectedRole(role)}
                 type="button"
-                className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
+                variant="ghost"
+                className={`h-auto px-3 py-1.5 rounded-lg font-medium transition-all text-xs ${
                   selectedRole === role
-                    ? 'bg-sky-500 text-white shadow-sm'
+                    ? 'bg-sky-500 text-white shadow-sm hover:bg-sky-600 hover:text-white'
                     : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
                 }`}
               >
@@ -324,21 +331,22 @@ export default function UsersPage() {
                   : role === 'editor'
                   ? 'Biên Tập'
                   : 'Sales'}
-              </button>
+              </Button>
             ))}
           </div>
 
           {/* Status Dropdown */}
-          <select
+          <Select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
+            containerClassName="w-44 shrink-0"
             className="h-10 px-3 rounded-xl bg-slate-800/80 border border-white/10 text-xs text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-sky-500/50"
           >
             <option value="all">Trạng Thái: Tất Cả</option>
             <option value="active">Đang Hoạt Động</option>
             <option value="suspended">Tạm Khóa</option>
             <option value="pending">Chờ Duyệt</option>
-          </select>
+          </Select>
 
           <Button variant="ghost" size="sm" onClick={loadData} title="Làm mới dữ liệu">
             <RefreshCw size={15} />
@@ -456,10 +464,12 @@ export default function UsersPage() {
                         <div className="inline-flex items-center gap-1">
                           {/* Quick Lock / Unlock */}
                           {canUser(currentUser, 'users:update') && !isSelf && (
-                            <button
+                            <Button
                               type="button"
+                              variant="ghost"
+                              size="icon"
                               onClick={() => handleToggleStatus(user)}
-                              className={`p-2 rounded-lg transition-colors ${
+                              className={`h-8 w-8 p-2 rounded-lg transition-colors ${
                                 user.status === 'active'
                                   ? 'text-slate-400 hover:text-amber-400 hover:bg-amber-400/10'
                                   : 'text-emerald-400 hover:bg-emerald-400/10'
@@ -467,46 +477,52 @@ export default function UsersPage() {
                               title={user.status === 'active' ? 'Tạm khóa tài khoản' : 'Mở khóa tài khoản'}
                             >
                               {user.status === 'active' ? <Lock size={15} /> : <Unlock size={15} />}
-                            </button>
+                            </Button>
                           )}
 
                           {/* Force Logout */}
                           {canUser(currentUser, 'users:force_logout') && !isSelf && (
-                            <button
+                            <Button
                               type="button"
+                              variant="ghost"
+                              size="icon"
                               onClick={() => setForceLogoutTarget(user)}
-                              className="p-2 rounded-lg text-slate-400 hover:text-sky-400 hover:bg-sky-400/10 transition-colors"
+                              className="h-8 w-8 p-2 rounded-lg text-slate-400 hover:text-sky-400 hover:bg-sky-400/10 transition-colors"
                               title="Buộc đăng xuất / Thu hồi phiên làm việc tức thì"
                             >
                               <LogOut size={15} />
-                            </button>
+                            </Button>
                           )}
 
                           {/* Edit */}
                           {canUser(currentUser, 'users:update') && (
-                            <button
+                            <Button
                               type="button"
+                              variant="ghost"
+                              size="icon"
                               onClick={() => {
                                 setEditingUser(user);
                                 setIsFormModalOpen(true);
                               }}
-                              className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                              className="h-8 w-8 p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
                               title="Chỉnh sửa thông tin"
                             >
                               <Edit2 size={15} />
-                            </button>
+                            </Button>
                           )}
 
                           {/* Delete */}
                           {canUser(currentUser, 'users:delete') && !isSelf && (
-                            <button
+                            <Button
                               type="button"
+                              variant="ghost"
+                              size="icon"
                               onClick={() => setDeleteTarget(user)}
-                              className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-400/10 transition-colors"
+                              className="h-8 w-8 p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-400/10 transition-colors"
                               title="Xóa tài khoản nhân viên"
                             >
                               <Trash2 size={15} />
-                            </button>
+                            </Button>
                           )}
                         </div>
                       </td>

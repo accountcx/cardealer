@@ -48,8 +48,10 @@ export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
  */
 export const LeadTypeEnum = z.enum([
   'Giá Lăn Bánh',
+  'Báo Giá Lăn Bánh',
   'Dự Toán Trả Góp',
   'Báo Giá',
+  'Báo Giá Nhanh',
   'Lái Thử',
   'Liên Hệ',
 ]);
@@ -67,26 +69,32 @@ export const CreateLeadSchema = z.object({
   phone: z
     .string()
     .trim()
-    .regex(/^(03|05|07|08|09)\d{8}$/, 'Số điện thoại không hợp lệ (Phải là 10 chữ số đầu 03, 05, 07, 08, 09)')
-    .refine((val) => !DUMMY_PHONE_BLACKLIST.includes(val), {
-      message: 'Vui lòng nhập số điện thoại đang hoạt động thực tế',
-    }),
+    .transform((val) => val.replace(/^\+84/, '0').replace(/\D/g, ''))
+    .pipe(
+      z
+        .string()
+        .regex(/^(03|05|07|08|09)\d{8}$/, 'Số điện thoại không hợp lệ (Phải là 10 chữ số đầu 03, 05, 07, 08, 09)')
+        .refine((val) => !DUMMY_PHONE_BLACKLIST.includes(val), {
+          message: 'Vui lòng nhập số điện thoại đang hoạt động thực tế',
+        })
+    ),
   carVersionId: z.string().uuid().optional().nullable(),
   carModel: z.string().optional(),
+  carInterest: z.string().optional(),
   carVersion: z.string().optional(),
   province: z.string().default('Vinh'),
   estimatedTotal: z.number().nonnegative().optional().nullable(),
   leadType: LeadTypeEnum.default('Giá Lăn Bánh'),
-  preferredTime: z
-    .enum(['Sáng (8h - 12h)', 'Chiều (13h - 18h)', 'Bất kỳ'])
-    .optional()
-    .default('Bất kỳ'),
+  preferredTime: z.string().optional().default('Bất kỳ'),
+  preferredContactTime: z.string().optional(),
   notes: z.string().max(500, 'Ghi chú tối đa 500 ký tự').optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
   // 🧠 Mental Model: Bẫy bot (Honeypot field). Trường này ẩn trên giao diện; nếu bot tự điền sẽ bị âm thầm loại bỏ.
   websiteUrl: z.string().optional(),
+  website_url: z.string().optional(),
 });
 export type CreateLeadInput = z.infer<typeof CreateLeadSchema>;
+export type CreateLeadPayload = z.input<typeof CreateLeadSchema>;
 
 /**
  * Schema cập nhật trạng thái Lead dành cho Admin CRM

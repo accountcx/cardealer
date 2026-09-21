@@ -1,8 +1,20 @@
 // 🧠 Mental Model: Modal Form Thêm Mới & Chỉnh Sửa Nhân Sự (SOP UI v2.2.4)
-// Tuân thủ 100% Named Export, tái sử dụng Modal từ @cardealer/ui (Shared Primitives First)
-// Chỉ sử dụng icon từ lucide-react, zero arbitrary values, WCAG AAA Reduced Motion.
-import React, { useState, useEffect } from 'react';
-import { Modal, Input, Button } from '@cardealer/ui';
+// Tuân thủ 100% Named Export, tái sử dụng Modal, Form, Input, Select, Button từ @cardealer/ui
+// Sử dụng react-hook-form, WCAG AAA Reduced Motion, zero arbitrary CSS.
+import React, { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import {
+  Modal,
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+  Input,
+  Select,
+  Button,
+} from '@cardealer/ui';
 import { User, Mail, Phone, Shield, Lock, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import type { UserResponse, Role, UserStatus } from '@cardealer/types';
 
@@ -24,6 +36,16 @@ export interface UserFormModalProps {
   loading?: boolean;
 }
 
+const DEFAULT_VALUES: UserFormData = {
+  email: '',
+  fullName: '',
+  phone: '',
+  avatarUrl: '',
+  role: 'sales',
+  status: 'active',
+  password: '',
+};
+
 export const UserFormModal: React.FC<UserFormModalProps> = ({
   isOpen,
   onClose,
@@ -32,22 +54,16 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
   loading = false,
 }) => {
   const isEdit = Boolean(initialData);
-
-  const [formData, setFormData] = useState<UserFormData>({
-    email: '',
-    fullName: '',
-    phone: '',
-    avatarUrl: '',
-    role: 'sales',
-    status: 'active',
-    password: '',
-  });
-
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const form = useForm<UserFormData>({
+    defaultValues: DEFAULT_VALUES,
+    mode: 'onTouched',
+  });
 
   useEffect(() => {
     if (initialData) {
-      setFormData({
+      form.reset({
         email: initialData.email || '',
         fullName: initialData.fullName || '',
         phone: initialData.phone || '',
@@ -57,45 +73,25 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
         password: '',
       });
     } else {
-      setFormData({
-        email: '',
-        fullName: '',
-        phone: '',
-        avatarUrl: '',
-        role: 'sales',
-        status: 'active',
-        password: '',
-      });
+      form.reset(DEFAULT_VALUES);
     }
     setErrorMessage(null);
-  }, [initialData, isOpen]);
+  }, [initialData, isOpen, form]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleFormSubmit = async (data: UserFormData) => {
     setErrorMessage(null);
 
-    // Frontend validation
-    if (!formData.fullName.trim() || formData.fullName.trim().length < 2) {
-      setErrorMessage('Họ tên phải có ít nhất 2 ký tự');
+    // Validation bổ sung cho mật khẩu mới
+    if (!isEdit && (!data.password || data.password.length < 8)) {
+      setErrorMessage('Mật khẩu bắt buộc có ít nhất 8 ký tự (chữ hoa, chữ thường, số và ký tự đặc biệt)');
       return;
     }
 
-    if (!isEdit) {
-      if (!formData.email.trim() || !formData.email.includes('@')) {
-        setErrorMessage('Email không đúng định dạng');
-        return;
-      }
-      if (!formData.password || formData.password.length < 8) {
-        setErrorMessage('Mật khẩu bắt buộc có ít nhất 8 ký tự (chữ hoa, chữ thường, số và ký tự đặc biệt)');
-        return;
-      }
-    }
-
     try {
-      await onSubmit(formData);
+      await onSubmit(data);
       onClose();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Đã có lỗi xảy ra khi lưu';
+      const msg = err instanceof Error ? err.message : 'Đã có lỗi xảy ra khi lưu thông tin';
       setErrorMessage(msg);
     }
   };
@@ -107,166 +103,213 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       title={isEdit ? 'Chỉnh Sửa Thông Tin Nhân Viên' : 'Thêm Mới Nhân Viên Showroom'}
       className="max-w-xl"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {errorMessage && (
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium">
-            <AlertCircle size={16} className="shrink-0" />
-            <span>{errorMessage}</span>
-          </div>
-        )}
-
-        {/* Email */}
-        <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-            Địa Chỉ Email {isEdit ? '(Cố định)' : <span className="text-rose-400">*</span>}
-          </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-              <Mail size={16} />
-            </div>
-            <Input
-              type="email"
-              disabled={isEdit}
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              placeholder="nhanvien@hyundaivinh.com"
-              className={`pl-10 h-11 ${isEdit ? 'opacity-60 cursor-not-allowed bg-slate-800/50' : ''}`}
-              required={!isEdit}
-            />
-          </div>
-        </div>
-
-        {/* Full Name */}
-        <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-            Họ Và Tên <span className="text-rose-400">*</span>
-          </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-              <User size={16} />
-            </div>
-            <Input
-              type="text"
-              value={formData.fullName}
-              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-              placeholder="Nguyễn Văn A"
-              className="pl-10 h-11"
-              required
-            />
-          </div>
-        </div>
-
-        {/* Password (Only in create mode) */}
-        {!isEdit && (
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Mật Khẩu Khởi Tạo <span className="text-rose-400">*</span>
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                <Lock size={16} />
-              </div>
-              <Input
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                placeholder="Tối thiểu 8 ký tự (Hoa, thường, số, ký tự đặc biệt)"
-                className="pl-10 h-11"
-                required
-              />
-            </div>
-            <p className="mt-1 text-[11px] text-slate-500">
-              Ví dụ: Hyundai@2026. Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt.
-            </p>
-          </div>
-        )}
-
-        {/* Phone & Avatar */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Số Điện Thoại</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                <Phone size={16} />
-              </div>
-              <Input
-                type="text"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="0987.654.321"
-                className="pl-10 h-11"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Ảnh Đại Diện (URL)</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                <ImageIcon size={16} />
-              </div>
-              <Input
-                type="url"
-                value={formData.avatarUrl}
-                onChange={(e) => setFormData({ ...formData, avatarUrl: e.target.value })}
-                placeholder="https://images.unsplash.com/..."
-                className="pl-10 h-11"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Role & Status Selection */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Vai Trò Quản Trị <span className="text-rose-400">*</span>
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                <Shield size={16} />
-              </div>
-              <select
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value as Role })}
-                className="w-full pl-10 pr-4 h-11 rounded-xl bg-slate-900/90 border border-white/10 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-sky-500/50"
-              >
-                <option value="admin">Quản Trị Viên Tối Cao (Admin)</option>
-                <option value="manager">Quản Lý Showroom (Manager)</option>
-                <option value="editor">Biên Tập Viên Catalog (Editor)</option>
-                <option value="sales">Nhân Viên Bán Hàng (Sales)</option>
-              </select>
-            </div>
-          </div>
-
-          {isEdit && (
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Trạng Thái Tài Khoản <span className="text-rose-400">*</span>
-              </label>
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as UserStatus })}
-                className="w-full px-4 h-11 rounded-xl bg-slate-900/90 border border-white/10 text-white text-xs font-medium focus:outline-none focus:ring-2 focus:ring-sky-500/50"
-              >
-                <option value="active">Đang Hoạt Động (Active)</option>
-                <option value="suspended">Tạm Khóa (Suspended)</option>
-                <option value="pending">Chờ Kích Hoạt (Pending)</option>
-              </select>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
+          {errorMessage && (
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium animate-in fade-in">
+              <AlertCircle size={16} className="shrink-0" />
+              <span>{errorMessage}</span>
             </div>
           )}
-        </div>
 
-        {/* Footer Actions */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
-          <Button variant="ghost" type="button" onClick={onClose} disabled={loading}>
-            Hủy Bỏ
-          </Button>
-          <Button variant="primary" type="submit" isLoading={loading} className="px-5">
-            {isEdit ? 'Lưu Thay Đổi' : 'Tạo Tài Khoản'}
-          </Button>
-        </div>
-      </form>
+          {/* Email */}
+          <FormField
+            control={form.control}
+            name="email"
+            rules={{
+              required: !isEdit ? 'Vui lòng nhập địa chỉ email' : false,
+              pattern: {
+                value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                message: 'Email không đúng định dạng',
+              },
+            }}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  Địa Chỉ Email {isEdit ? '(Cố định)' : <span className="text-rose-400">*</span>}
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    type="email"
+                    disabled={isEdit}
+                    leftIcon={<Mail size={16} />}
+                    placeholder="nhanvien@hyundaivinh.com"
+                    className={`h-11 ${isEdit ? 'opacity-60 cursor-not-allowed bg-slate-800/50' : ''}`}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Full Name */}
+          <FormField
+            control={form.control}
+            name="fullName"
+            rules={{
+              required: 'Vui lòng nhập họ và tên',
+              minLength: { value: 2, message: 'Họ tên phải có ít nhất 2 ký tự' },
+            }}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  Họ Và Tên <span className="text-rose-400">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    type="text"
+                    leftIcon={<User size={16} />}
+                    placeholder="Nguyễn Văn A"
+                    className="h-11"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Password (Only in create mode) */}
+          {!isEdit && (
+            <FormField
+              control={form.control}
+              name="password"
+              rules={{
+                required: 'Vui lòng nhập mật khẩu khởi tạo',
+                minLength: { value: 8, message: 'Mật khẩu tối thiểu 8 ký tự' },
+              }}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Mật Khẩu Khởi Tạo <span className="text-rose-400">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="password"
+                      leftIcon={<Lock size={16} />}
+                      placeholder="Tối thiểu 8 ký tự (Hoa, thường, số, ký tự đặc biệt)"
+                      className="h-11"
+                    />
+                  </FormControl>
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    Ví dụ: Hyundai@2026. Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt.
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {/* Phone & Avatar */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Số Điện Thoại</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="text"
+                      leftIcon={<Phone size={16} />}
+                      placeholder="0987.654.321"
+                      className="h-11"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="avatarUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Ảnh Đại Diện (URL)</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="url"
+                      leftIcon={<ImageIcon size={16} />}
+                      placeholder="https://images.unsplash.com/..."
+                      className="h-11"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Role & Status Selection */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Vai Trò Quản Trị <span className="text-rose-400">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Select
+                      {...field}
+                      className="h-11 bg-slate-900/90 border-white/10"
+                      options={[
+                        { value: 'admin', label: 'Quản Trị Viên Tối Cao (Admin)' },
+                        { value: 'manager', label: 'Quản Lý Showroom (Manager)' },
+                        { value: 'editor', label: 'Biên Tập Viên Catalog (Editor)' },
+                        { value: 'sales', label: 'Nhân Viên Bán Hàng (Sales)' },
+                      ]}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {isEdit && (
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Trạng Thái Tài Khoản <span className="text-rose-400">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Select
+                        {...field}
+                        className="h-11 bg-slate-900/90 border-white/10"
+                        options={[
+                          { value: 'active', label: 'Đang Hoạt Động (Active)' },
+                          { value: 'suspended', label: 'Tạm Khóa (Suspended)' },
+                          { value: 'pending', label: 'Chờ Kích Hoạt (Pending)' },
+                        ]}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </div>
+
+          {/* Footer Actions */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+            <Button variant="ghost" type="button" onClick={onClose} disabled={loading}>
+              Hủy Bỏ
+            </Button>
+            <Button variant="primary" type="submit" isLoading={loading} className="px-5">
+              {isEdit ? 'Lưu Thay Đổi' : 'Tạo Tài Khoản'}
+            </Button>
+          </div>
+        </form>
+      </Form>
     </Modal>
   );
 };

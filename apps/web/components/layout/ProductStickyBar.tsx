@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { PhoneCall, Sparkles, FileText } from 'lucide-react';
+import { Button } from '@cardealer/ui';
 import type { StickyBarSettings } from '@cardealer/types';
 import { sanitizePhoneNumber } from '@cardealer/types';
 
@@ -73,14 +74,14 @@ export const ProductStickyBar = ({
           </a>
 
           {/* Nút Nhận Báo Giá: Mục tiêu chuyển đổi tối thượng (Đỏ/Hồng + Pulse) */}
-          <button
+          <Button
             type="button"
             onClick={onOpenLeadModal}
-            className="h-10 sm:h-11 px-4 sm:px-6 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:brightness-110 text-white font-black text-xs sm:text-sm shadow-lg shadow-red-600/30 transition-all active:scale-[0.98] motion-reduce:transition-none motion-reduce:transform-none flex items-center gap-1.5 whitespace-nowrap animate-pulse hover:animate-none focus-visible:ring-2 focus-visible:ring-red-500 cursor-pointer"
+            className="h-10 sm:h-11 px-4 sm:px-6 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:brightness-110 text-white font-black text-xs sm:text-sm shadow-lg shadow-red-600/30 transition-all active:scale-[0.98] motion-reduce:transition-none motion-reduce:transform-none flex items-center gap-1.5 whitespace-nowrap animate-pulse hover:animate-none focus-visible:ring-2 focus-visible:ring-red-500 cursor-pointer border-0"
           >
             <FileText className="w-4 h-4 text-white flex-shrink-0" />
             <span className="whitespace-nowrap">{settings.ctaText}</span>
-          </button>
+          </Button>
         </div>
       </div>
     </div>
