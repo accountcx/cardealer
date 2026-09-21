@@ -36,7 +36,7 @@ export const BrandSection: React.FC = () => {
               <FormControl>
                 <Input
                   {...field}
-                  placeholder="Ví dụ: Hyundai Vinh - Đại lý ủy quyền Hyundai Thành Công"
+                  placeholder="Ví dụ: Xe Hyundai Vinh"
                 />
               </FormControl>
               <FormMessage />

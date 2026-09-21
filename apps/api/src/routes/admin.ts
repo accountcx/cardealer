@@ -1,6 +1,14 @@
 import { IncomingMessage, ServerResponse } from 'node:http';
 import { db, schema } from '@cardealer/database';
 import { eq, inArray, desc } from 'drizzle-orm';
+import {
+  SiteSettingsSchema,
+  NavigationSettingsSchema,
+  ContactSettingsSchema,
+  FloatingSellerSettingsSchema,
+  StickyBarSettingsSchema,
+  FooterSettingsSchema,
+} from '@cardealer/types';
 import { verifyToken, parseCookies } from '../auth';
 import { handleUserManagementRoutes } from './admin/users';
 import { handleProfileRoutes } from './admin/profile';
@@ -448,8 +456,8 @@ export async function handleAdminRoutes(
     }
   }
 
-  // 7. GET /api/admin/settings
-  if (url.pathname === '/api/admin/settings' && req.method === 'GET') {
+  // 7. GET /api/admin/settings hoặc GET /api/admin/settings/:key
+  if (url.pathname.startsWith('/api/admin/settings') && req.method === 'GET') {
     const auth = await authenticateAdmin(req);
     if (auth.error) {
       sendJson(auth.error.statusCode, { success: false, error: auth.error });
@@ -460,14 +468,42 @@ export async function handleAdminRoutes(
       return true;
     }
 
-    try {
-      let row = await db.query.systemSettings.findFirst({
-        where: eq(schema.systemSettings.key, 'showroom_settings'),
-      });
+    const key = url.pathname.replace('/api/admin/settings', '').replace(/^\//, '');
 
-      if (!row) {
-        const defaultShowroomSettings = {
-          showroomName: 'Hyundai Vinh - Đại Lý Ô Tô Ủy Quyền Chính Hãng',
+    try {
+      if (key) {
+        // Lấy riêng 1 key cấu hình
+        const row = await db.query.systemSettings.findFirst({
+          where: eq(schema.systemSettings.key, key),
+        });
+
+        if (!row) {
+          // Fallback schema defaults nếu chưa tồn tại
+          if (key === 'site_settings') return sendJson(200, { success: true, data: SiteSettingsSchema.parse({}) }), true;
+          if (key === 'navigation_settings') return sendJson(200, { success: true, data: NavigationSettingsSchema.parse({}) }), true;
+          if (key === 'contact_settings') return sendJson(200, { success: true, data: ContactSettingsSchema.parse({}) }), true;
+          if (key === 'floating_seller_settings') return sendJson(200, { success: true, data: FloatingSellerSettingsSchema.parse({}) }), true;
+          if (key === 'sticky_bar_settings') return sendJson(200, { success: true, data: StickyBarSettingsSchema.parse({}) }), true;
+          
+          sendJson(404, { success: false, error: { code: 'SETTING_NOT_FOUND', message: `Không tìm thấy key "${key}"` } });
+          return true;
+        }
+
+        sendJson(200, { success: true, data: row.data });
+        return true;
+      }
+
+      // Không truyền key: trả về toàn bộ map settings cho Admin Dashboard
+      const allRows = await db.query.systemSettings.findMany();
+      const settingsMap: Record<string, unknown> = {};
+      for (const r of allRows) {
+        settingsMap[r.key] = r.data;
+      }
+
+      // Đảm bảo có sẵn showroom_settings cho Phase 1 admin
+      if (!settingsMap.showroom_settings) {
+        settingsMap.showroom_settings = {
+          showroomName: 'Xe Hyundai Vinh',
           hotlineKinhDoanh: '0981.234.567',
           hotlineDichVu: '0987.654.321',
           zaloNumber: '0981234567',
@@ -477,33 +513,19 @@ export async function handleAdminRoutes(
           facebookUrl: 'https://facebook.com/hyundaivinh',
           youtubeUrl: 'https://youtube.com/@hyundaivinh',
         };
-
-        const [inserted] = await db
-          .insert(schema.systemSettings)
-          .values({
-            key: 'showroom_settings',
-            data: defaultShowroomSettings,
-          })
-          .onConflictDoUpdate({
-            target: schema.systemSettings.key,
-            set: { data: defaultShowroomSettings, updatedAt: new Date() },
-          })
-          .returning();
-
-        row = inserted;
       }
 
-      sendJson(200, { success: true, data: row.data });
+      sendJson(200, { success: true, data: settingsMap });
       return true;
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi truy vấn cấu hình showroom';
+      const msg = err instanceof Error ? err.message : 'Lỗi truy vấn cấu hình hệ thống';
       sendJson(500, { success: false, error: { code: 'DATABASE_ERROR', message: msg } });
       return true;
     }
   }
 
-  // 8. PUT /api/admin/settings
-  if (url.pathname === '/api/admin/settings' && req.method === 'PUT') {
+  // 8. PUT /api/admin/settings hoặc PUT /api/admin/settings/:key
+  if (url.pathname.startsWith('/api/admin/settings') && req.method === 'PUT') {
     const auth = await authenticateAdmin(req);
     if (auth.error) {
       sendJson(auth.error.statusCode, { success: false, error: auth.error });
@@ -514,26 +536,45 @@ export async function handleAdminRoutes(
       return true;
     }
 
+    const rawKey = url.pathname.replace('/api/admin/settings', '').replace(/^\//, '');
+    const key = rawKey || 'showroom_settings';
     const body = await readBody();
+
+    // Validate payload qua Zod Schema tương ứng (R1 & Type-Safety Defense)
+    let validatedData = body;
+    try {
+      if (key === 'site_settings') validatedData = SiteSettingsSchema.parse(body);
+      else if (key === 'navigation_settings') validatedData = NavigationSettingsSchema.parse(body);
+      else if (key === 'contact_settings') validatedData = ContactSettingsSchema.parse(body);
+      else if (key === 'floating_seller_settings') validatedData = FloatingSellerSettingsSchema.parse(body);
+      else if (key === 'sticky_bar_settings') validatedData = StickyBarSettingsSchema.parse(body);
+      else if (key === 'footer_settings') validatedData = FooterSettingsSchema.parse(body);
+    } catch (validationErr: unknown) {
+      const msg = validationErr instanceof Error ? validationErr.message : 'Dữ liệu cấu hình không hợp lệ';
+      sendJson(400, { success: false, error: { code: 'INVALID_SETTINGS_PAYLOAD', message: msg } });
+      return true;
+    }
+
     try {
       await db
         .insert(schema.systemSettings)
         .values({
-          key: 'showroom_settings',
-          data: body,
+          key,
+          data: validatedData,
+          updatedAt: new Date(),
         })
         .onConflictDoUpdate({
           target: schema.systemSettings.key,
           set: {
-            data: body,
+            data: validatedData,
             updatedAt: new Date(),
           },
         });
 
-      sendJson(200, { success: true, data: body });
+      sendJson(200, { success: true, message: `Cập nhật cấu hình "${key}" thành công`, data: validatedData });
       return true;
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi cập nhật cấu hình showroom';
+      const msg = err instanceof Error ? err.message : 'Lỗi cập nhật cấu hình hệ thống';
       sendJson(500, { success: false, error: { code: 'UPDATE_SETTINGS_ERROR', message: msg } });
       return true;
     }

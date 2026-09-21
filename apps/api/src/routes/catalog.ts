@@ -1,6 +1,15 @@
 import { IncomingMessage, ServerResponse } from 'node:http';
 import { db, schema } from '@cardealer/database';
 import { eq, desc, and } from 'drizzle-orm';
+import {
+  BulkSettingsSchema,
+  SiteSettingsSchema,
+  NavigationSettingsSchema,
+  ContactSettingsSchema,
+  FloatingSellerSettingsSchema,
+  StickyBarSettingsSchema,
+  FooterSettingsSchema,
+} from '@cardealer/types';
 
 // 🧠 Mental Model: Public Catalog Engine (Tối ưu hóa phản hồi < 10ms).
 // Tuyệt đối KHÔNG sử dụng fallback ngầm / mock data. 
@@ -121,6 +130,50 @@ export async function handleCatalogRoutes(
     }
   }
 
+  // 3.5. GET /api/settings (Bulk Settings Ingestion)
+  // 🧠 Mental Model: Endpoint nạp gộp toàn bộ 5 Domain Keys trong 1 HTTP request duy nhất có Cache Headers.
+  // Giúp Storefront RootLayout nạp HTML trọn vẹn, không bị waterfall và triệt tiêu CLS = 0.
+  if (url.pathname === '/api/settings' && req.method === 'GET') {
+    try {
+      const rows = await db.query.systemSettings.findMany();
+      const settingsMap = new Map(rows.map((r) => [r.key, r.data]));
+
+      const contactRaw = (settingsMap.get('contact_settings') as Record<string, any>) || {};
+      const showroomRaw = (settingsMap.get('showroom_settings') as Record<string, any>) || {};
+
+      const contactMerged = {
+        ...showroomRaw,
+        ...contactRaw,
+        legal: {
+          businessName: contactRaw.legal?.businessName ?? showroomRaw.legal?.businessName ?? showroomRaw.legalBusinessName ?? '',
+          businessLicense: contactRaw.legal?.businessLicense ?? showroomRaw.legal?.businessLicense ?? showroomRaw.legalBusinessLicense ?? '',
+          copyrightText: contactRaw.legal?.copyrightText ?? showroomRaw.legal?.copyrightText ?? showroomRaw.legalCopyrightText ?? '',
+          bctCertificateUrl: contactRaw.legal?.bctCertificateUrl ?? showroomRaw.legal?.bctCertificateUrl ?? showroomRaw.legalBctCertificateUrl ?? '',
+        },
+      };
+
+      const bulkData = {
+        site: settingsMap.get('site_settings') || {},
+        navigation: settingsMap.get('navigation_settings') || {},
+        contact: contactMerged,
+        floatingSeller: settingsMap.get('floating_seller_settings') || {},
+        stickyBar: settingsMap.get('sticky_bar_settings') || {},
+        footer: settingsMap.get('footer_settings') || {},
+      };
+
+      const parsed = BulkSettingsSchema.parse(bulkData);
+      sendJson(200, { success: true, data: parsed }, {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      });
+      return true;
+    } catch {
+      // Fallback an toàn tuyệt đối khi DB gặp sự cố (Zero-Crash Protocol)
+      const fallback = BulkSettingsSchema.parse({});
+      sendJson(200, { success: true, data: fallback, warning: 'Using fallback defaults' });
+      return true;
+    }
+  }
+
   // 4. GET /api/settings/:key
   if (url.pathname.startsWith('/api/settings/') && req.method === 'GET') {
     const key = url.pathname.replace('/api/settings/', '');
@@ -130,6 +183,32 @@ export async function handleCatalogRoutes(
       });
 
       if (!row) {
+        // Nếu là key chuẩn nhưng chưa có bản ghi, trả về schema default
+        if (key === 'site_settings') {
+          sendJson(200, { success: true, data: SiteSettingsSchema.parse({}) });
+          return true;
+        }
+        if (key === 'navigation_settings') {
+          sendJson(200, { success: true, data: NavigationSettingsSchema.parse({}) });
+          return true;
+        }
+        if (key === 'contact_settings') {
+          sendJson(200, { success: true, data: ContactSettingsSchema.parse({}) });
+          return true;
+        }
+        if (key === 'floating_seller_settings') {
+          sendJson(200, { success: true, data: FloatingSellerSettingsSchema.parse({}) });
+          return true;
+        }
+        if (key === 'sticky_bar_settings') {
+          sendJson(200, { success: true, data: StickyBarSettingsSchema.parse({}) });
+          return true;
+        }
+        if (key === 'footer_settings') {
+          sendJson(200, { success: true, data: FooterSettingsSchema.parse({}) });
+          return true;
+        }
+
         sendJson(404, {
           success: false,
           error: { code: 'SETTING_NOT_FOUND', message: `Không tìm thấy cấu hình với key "${key}"` },

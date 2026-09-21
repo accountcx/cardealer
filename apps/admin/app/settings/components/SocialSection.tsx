@@ -26,7 +26,7 @@ export const SocialSection: React.FC = () => {
         </h2>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <FormField
           control={control}
           name="facebookUrl"
@@ -35,6 +35,20 @@ export const SocialSection: React.FC = () => {
               <FormLabel>Fanpage Facebook</FormLabel>
               <FormControl>
                 <Input {...field} type="url" placeholder="https://facebook.com/..." />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={control}
+          name="tiktokUrl"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Kênh TikTok</FormLabel>
+              <FormControl>
+                <Input {...field} type="url" placeholder="https://tiktok.com/@..." />
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -21,6 +21,7 @@
     "verify:phase-1": "pnpm --filter @cardealer/database exec tsx src/scripts/verify-phase-1.ts",
     "verify:phase-2": "pnpm --filter @cardealer/database exec tsx ../../scripts/verify-phase-2-rbac.ts",
     "verify:phase-3": "pnpm --filter @cardealer/database exec tsx ../../scripts/verify-phase-3-pricing-lead.ts",
+    "verify:phase-4-1": "pnpm --filter @cardealer/core test",
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {

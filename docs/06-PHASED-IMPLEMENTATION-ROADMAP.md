@@ -160,16 +160,18 @@ Nhằm đảm bảo tiến độ triển khai nhanh, kiểm thử độc lập v
 #### 🚗 Phase 4.1: Khung Nền Tảng Storefront & Tiện Ích Chuyển Đổi Toàn Cục (Global Shell & Conversion Widgets)
 > **Mã Epic:** `EPIC-PHASE-4.1-STOREFRONT-SHELL-WIDGETS`
 
-* **1. Mục tiêu & Giá trị:** Thiết lập khung sườn Layout chuẩn thương hiệu Hyundai toàn trang (Desktop/Mobile), đảm bảo mọi điểm chạm đều sẵn sàng kích hoạt hành vi liên hệ tư vấn.
-* **2. Nghiệp vụ chi tiết:**
-  * **Header/Navbar Showroom:** Logo Hyundai Vinh chính hãng, Menu điều hướng (Dòng xe, Bảng giá, Trả góp, Tin tức, Liên hệ), Hotline bán hàng 24/7 nổi bật và nút CTA "Nhận Báo Giá".
-  * **Mobile Navigation Drawer:** Menu trượt mượt mà trên Mobile với các nút liên hệ nhanh một chạm.
-  * **Thanh chốt đơn cố định đáy màn hình (`ProductStickyBar`):** Ghim cố định ở chân màn hình trên cả Mobile & Desktop, hiển thị tên xe, giá khởi điểm, nút "GỌI NGAY" (`tel:`) và nút "NHẬN BÁO GIÁ" mở Modal Lead.
-  * **Widget Chuyên Viên Nổi (`FloatingSeller`):** Avatar nhân viên tư vấn, trạng thái "Đang trực tuyến", nút gọi Hotline và mở nhanh cửa sổ Zalo Chat tức thì.
-  * **Footer Đại Lý 3S:** Giới thiệu showroom, địa chỉ Google Maps, giờ mở cửa, chính sách bảo hành/bảo mật, biểu tượng Bộ Công Thương và liên kết mạng xã hội.
+* **1. Mục tiêu & Giá trị:** Thiết lập khung sườn Layout chuẩn thương hiệu Hyundai toàn trang (Desktop/Mobile), đảm bảo mọi điểm chạm đều sẵn sàng kích hoạt hành vi liên hệ tư vấn. Toàn bộ thông tin cấu hình, nội dung liên hệ và tiện ích chuyển đổi đều có thể **quản trị và chỉnh sửa 100% linh hoạt từ Admin CMS**.
+* **2. Nghiệp vụ chi tiết (Toàn bộ hỗ trợ Dynamic Editing từ Admin):**
+  * **Header/Navbar Showroom:** Logo thương hiệu, Menu điều hướng đa cấp (`Navigation`), Hotline bán hàng 24/7 và nút CTA "Nhận Báo Giá" — tất cả đều cấu hình và cập nhật trực tiếp từ Admin (`Navigation`, `ContactSettings`, `SiteSettings`).
+  * **Mobile Navigation Drawer:** Menu trượt mượt mà trên Mobile với các nút liên hệ nhanh một chạm (Gọi điện, Chat Zalo), đồng bộ tự động từ cài đặt menu và hotline trong Admin.
+  * **Thanh chốt đơn cố định đáy màn hình (`ProductStickyBar`):** Ghim cố định ở chân màn hình trên cả Mobile & Desktop, hiển thị tên xe, giá khởi điểm; các nút "GỌI NGAY" (`tel:`), "NHẬN BÁO GIÁ", hotline liên kết và trạng thái bật/tắt đều có thể tùy chỉnh từ Admin.
+  * **Widget Chuyên Viên Nổi (`FloatingSeller`):** Quản trị viên tùy biến hoàn toàn từ Admin (`ContactSettings`): Avatar nhân viên tư vấn, tên hiển thị, trạng thái "Đang trực tuyến", số Hotline kích hoạt cuộc gọi, link chat Zalo OA/cá nhân và link Messenger Facebook.
+  * **Footer Đại Lý 3S:** Toàn bộ nội dung quản lý qua Admin: Giới thiệu showroom, địa chỉ, mã nhúng bản đồ Google Maps iframe, giờ mở cửa làm việc, hotline, email, hệ thống liên kết mạng xã hội (Facebook, YouTube, TikTok, Zalo), chính sách bảo hành/bảo mật, thông tin pháp lý/GPKD, copyright và biểu tượng Bộ Công Thương.
+  * **Đồng bộ Cấu hình Toàn cục (Global Settings Sync):** Kết nối trực tiếp với các API Globals (`SiteSettings`, `Navigation`, `ContactSettings`) từ Admin Portal, cho phép thay đổi tức thì trên Storefront mà không cần can thiệp code hay deploy lại.
 * **3. Tiêu chí nghiệm thu (DoD):**
   * Layout không bị nhảy CLS (Cumulative Layout Shift = 0) khi cuộn trang.
   * Widget gọi điện và chat Zalo hoạt động chính xác 100% trên cả Android và iOS.
+  * 100% nội dung và cấu hình của Header, Menu, Footer, Floating Seller, Sticky Bar cập nhật thành công và phản hồi ngay lập tức trên Storefront khi chỉnh sửa từ Admin Portal.
 
 ---
 

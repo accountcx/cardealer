@@ -1,124 +1,42 @@
 import type { Metadata } from 'next';
 import CalculatorMasterView from '../../components/calculator/CalculatorMasterView';
-import type { CarItem } from '../../components/calculator/SmartCalculator';
+import { Breadcrumbs } from '../../components/layout/Breadcrumbs';
+import { getCarsList } from '../../services/cars.service';
+import { getStorefrontSettings } from '../../services/settings.service';
 
-// 🧠 Mental Model: Server Component cho Trang Tính Giá Lăn Bánh & Trả Góp Ô Tô.
-// Chuẩn thiết kế Storefront Hyundai Showroom Flagship (Hyundai Deep Navy & Electric Blue).
-// 1. SEO Rich Results (R14): Nhúng JSON-LD Schema 'SoftwareApplication' & 'FinanceApplication'.
-// 2. Tải danh sách xe đang bán từ Backend API nội bộ (http://localhost:4000/api/cars).
-// 3. Tích hợp trọn bộ 2 công cụ tài chính: Giá lăn bánh & Dự toán trả góp đồng bộ trạng thái.
+// 🧠 Mental Model: Server Component cho Trang Tính Giá Lăn Bánh & Trả Góp Ô Tô Xe Hyundai Vinh.
+// Chuẩn thiết kế Storefront Hyundai (Hyundai Deep Navy & Electric Blue).
+// 1. Tận dụng Navbar & Footer & Widgets toàn cục từ RootLayout.
+// 2. SEO Rich Results (R14): Nhúng JSON-LD Schema 'SoftwareApplication' & 'FinanceApplication'.
+// 3. Tải danh sách xe từ cars.service với ISR caching và fallback Zero-Crash.
+// 4. Đồng bộ Hotline và Link Zalo từ hệ thống quản trị Settings CMS.
 
 export const metadata: Metadata = {
-  title: 'Bảng Tính Giá Lăn Bánh & Trả Góp Xe Hyundai 2026 | Hyundai Vinh Chính Hãng',
+  title: 'Bảng Tính Giá Lăn Bánh & Trả Góp Xe Hyundai 2026 | Xe Hyundai Vinh',
   description:
     'Công cụ tính toán chính xác giá lăn bánh xe ô tô Hyundai tại Nghệ An & Hà Tĩnh: Grand i10, Accent, Creta, Tucson, Santa Fe, Custin, Palisade. Dự toán lãi suất trả góp chỉ 7.9%/năm.',
   openGraph: {
     title: 'Tính Giá Lăn Bánh Xe Hyundai Nhanh Chóng & Nhận Ưu Đãi Độc Quyền',
-    description: 'Dự toán trọn gói các khoản thuế trước bạ 10%, biển số, đăng kiểm. Nhận ưu đãi tiền mặt độc quyền!',
+    description:
+      'Dự toán trọn gói các khoản thuế trước bạ 10%, biển số, đăng kiểm. Nhận ưu đãi tiền mặt độc quyền tại Xe Hyundai Vinh!',
     type: 'website',
   },
 };
 
-// Dữ liệu xe mẫu dự phòng nếu API máy chủ đang khởi động
-const FALLBACK_CARS: CarItem[] = [
-  {
-    id: 'tucson-default',
-    tenXe: 'Hyundai Tucson 2025',
-    slug: 'hyundai-tucson',
-    versions: [
-      { id: 'v-tucson-1', tenPhienBan: '2.0 Xăng Tiêu Chuẩn', giaNiemYet: 769_000_000 },
-      { id: 'v-tucson-2', tenPhienBan: '2.0 Xăng Đặc Biệt', giaNiemYet: 859_000_000 },
-      { id: 'v-tucson-3', tenPhienBan: '1.6 Turbo HTRAC', giaNiemYet: 979_000_000 },
-      { id: 'v-tucson-4', tenPhienBan: '2.0 Dầu Đặc Biệt', giaNiemYet: 989_000_000 },
-    ],
-  },
-  {
-    id: 'accent-default',
-    tenXe: 'Hyundai Accent Thế Hệ Mới',
-    slug: 'hyundai-accent',
-    versions: [
-      { id: 'v-accent-1', tenPhienBan: '1.5 MT Tiêu Chuẩn', giaNiemYet: 439_000_000 },
-      { id: 'v-accent-2', tenPhienBan: '1.5 AT Tiêu Chuẩn', giaNiemYet: 489_000_000 },
-      { id: 'v-accent-3', tenPhienBan: '1.5 AT Đặc Biệt', giaNiemYet: 529_000_000 },
-      { id: 'v-accent-4', tenPhienBan: '1.5 AT Cao Cấp', giaNiemYet: 569_000_000 },
-    ],
-  },
-  {
-    id: 'creta-default',
-    tenXe: 'Hyundai Creta',
-    slug: 'hyundai-creta',
-    versions: [
-      { id: 'v-creta-1', tenPhienBan: '1.5 Tiêu Chuẩn', giaNiemYet: 599_000_000 },
-      { id: 'v-creta-2', tenPhienBan: '1.5 Đặc Biệt', giaNiemYet: 650_000_000 },
-      { id: 'v-creta-3', tenPhienBan: '1.5 Cao Cấp', giaNiemYet: 699_000_000 },
-    ],
-  },
-  {
-    id: 'santafe-default',
-    tenXe: 'Hyundai Santa Fe Hoàn Toàn Mới',
-    slug: 'hyundai-santafe',
-    versions: [
-      { id: 'v-santafe-1', tenPhienBan: 'Exclusive 2.5 Xăng', giaNiemYet: 1_069_000_000 },
-      { id: 'v-santafe-2', tenPhienBan: 'Prestige 2.5 Xăng', giaNiemYet: 1_265_000_000 },
-      { id: 'v-santafe-3', tenPhienBan: 'Calligraphy 2.5 Xăng', giaNiemYet: 1_365_000_000 },
-      { id: 'v-santafe-4', tenPhienBan: 'Calligraphy 2.5 Turbo', giaNiemYet: 1_465_000_000 },
-    ],
-  },
-  {
-    id: 'custin-default',
-    tenXe: 'Hyundai Custin',
-    slug: 'hyundai-custin',
-    versions: [
-      { id: 'v-custin-1', tenPhienBan: '1.5T Tiêu Chuẩn', giaNiemYet: 820_000_000 },
-      { id: 'v-custin-2', tenPhienBan: '1.5T Đặc Biệt', giaNiemYet: 915_000_000 },
-      { id: 'v-custin-3', tenPhienBan: '2.0T Cao Cấp', giaNiemYet: 974_000_000 },
-    ],
-  },
-];
-
-async function getCarsList(): Promise<CarItem[]> {
-  const apiPort = process.env.API_PORT || 4000;
-  const targetUrls = [
-    `http://127.0.0.1:${apiPort}/api/cars`,
-    `http://localhost:${apiPort}/api/cars`,
-  ];
-
-  for (const url of targetUrls) {
-    try {
-      const res = await fetch(url, {
-        cache: 'no-store',
-      });
-      if (!res.ok) continue;
-      const json = await res.json();
-      if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-        return json.data.map((c: any) => ({
-          id: c.id,
-          tenXe: c.tenXe,
-          slug: c.slug,
-          versions: (c.versions || []).map((v: any) => ({
-            id: v.id,
-            tenPhienBan: v.tenPhienBan,
-            giaNiemYet: Number(v.giaNiemYet || 0),
-          })),
-        }));
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.warn(`[Storefront SSR] Không thể lấy xe từ ${url}: ${msg}`);
-    }
-  }
-
-  return FALLBACK_CARS;
-}
-
 export default async function GiaLanBanhPage() {
-  const cars = await getCarsList();
+  const [cars, settings] = await Promise.all([
+    getCarsList(),
+    getStorefrontSettings(),
+  ]);
+
+  const hotline = settings.contact.hotlineKinhDoanh || '0981.234.567';
+  const zaloUrl = settings.contact.sellerZalo || 'https://zalo.me/0981234567';
 
   // JSON-LD Schema chuẩn Schema.org cho ứng dụng tài chính (R14)
   const jsonLdSchema = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
-    name: 'Công cụ tính Giá Lăn Bánh Xe Hyundai',
+    name: 'Công cụ tính Giá Lăn Bánh Xe Hyundai - Xe Hyundai Vinh',
     applicationCategory: 'FinanceApplication',
     operatingSystem: 'Web Browser',
     price: '0',
@@ -128,117 +46,57 @@ export default async function GiaLanBanhPage() {
       price: '0',
       priceCurrency: 'VND',
     },
-    description: 'Công cụ dự toán chi phí lăn bánh ô tô và ước tính trả góp ngân hàng chính xác tại Nghệ An',
+    description:
+      'Công cụ dự toán chi phí lăn bánh ô tô và ước tính trả góp ngân hàng chính xác tại Nghệ An & Hà Tĩnh',
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-20">
+    <div className="w-full pb-20">
       {/* Script SEO JSON-LD */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSchema) }}
       />
 
-      {/* 1. Showroom Top Navbar Header */}
-      <header className="bg-[#002C6C] text-white border-b border-blue-900/40 sticky top-0 z-50 shadow-md">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-3 text-white no-underline">
-            <div className="w-9 h-9 rounded-xl bg-white text-[#002C6C] flex items-center justify-center font-black text-xl shadow">
-              H
-            </div>
-            <div>
-              <div className="text-sm font-black tracking-wider uppercase">HYUNDAI VINH</div>
-              <div className="text-[10px] text-sky-200 tracking-tight font-medium">Đại Lý Ủy Quyền Chính Hãng TC Motor</div>
-            </div>
-          </a>
-
-          <div className="flex items-center gap-3 sm:gap-4">
-            <div className="hidden md:flex flex-col text-right">
-              <span className="text-[10px] uppercase text-sky-200 font-bold">Hotline Bán Hàng 24/7</span>
-              <a href="tel:0941153666" className="text-sm font-black text-white hover:text-sky-200 transition">
-                0941.153.666
-              </a>
-            </div>
-
-            <a
-              href="tel:0941153666"
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:brightness-110 text-white text-xs font-black tracking-wider uppercase transition shadow-md shadow-red-900/30 flex items-center gap-2"
-            >
-              <span>📞</span>
-              <span>GỌI TƯ VẤN</span>
-            </a>
-          </div>
-        </div>
-      </header>
-
-      {/* 2. Hero Section Banner */}
-      <section className="bg-gradient-to-b from-[#002C6C] via-[#051c42] to-slate-50 text-white pt-12 pb-24 px-4 sm:px-6 relative overflow-hidden">
+      {/* Hero Section Banner */}
+      <section className="bg-gradient-to-b from-[#002C6C] via-[#051c42] to-slate-50 text-white pt-8 pb-20 px-4 sm:px-6 relative overflow-hidden">
         {/* Glow effects */}
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-sky-400/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-10 left-10 w-72 h-72 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          {/* Breadcrumbs */}
-          <nav className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-white/10 text-sky-200 border border-white/15 backdrop-blur-md mb-6">
-            <a href="/" className="hover:text-white transition">Trang chủ</a>
-            <span>&gt;</span>
-            <span className="text-white font-bold">Dự toán giá lăn bánh</span>
-          </nav>
+        {/* Hero Content Container: Căn lề trái thẳng hàng với khung tính toán bên dưới */}
+        <div className="max-w-4xl mx-auto relative z-10 text-left">
+          {/* Breadcrumbs tự động sinh theo URL: Căn trái, thuần túy không viền/nền, phân cấp thị giác */}
+          <Breadcrumbs />
 
+          {/* Tiêu đề trang đại diện thay cho lặp lại logo */}
           <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-white leading-tight">
-            Công Cụ Tính Giá Lăn Bánh & Trả Góp Ô Tô
+            Công Cụ Tính Giá Lăn Bánh &amp; Trả Góp Ô Tô
           </h1>
 
-          <p className="text-sm sm:text-base md:text-lg text-slate-300 mt-4 max-w-2xl mx-auto leading-relaxed">
-            Dự toán chính xác 100% biểu phí trước bạ, biển số, bảo trì đường bộ theo quy định tại Nghệ An & Hà Tĩnh cùng bảng tính gốc lãi trả góp ngân hàng ưu đãi.
+          <p className="text-sm sm:text-base md:text-lg text-slate-200 mt-3 max-w-2xl leading-relaxed font-normal">
+            Dự toán chính xác 100% biểu phí trước bạ, biển số, bảo trì đường bộ theo quy định tại Nghệ An &amp; Hà Tĩnh cùng bảng tính gốc lãi trả góp ngân hàng ưu đãi.
           </p>
-
-          {/* Trust Highlights */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-8 max-w-3xl mx-auto text-left">
-            <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-3">
-              <div className="text-base">🛡️</div>
-              <div className="text-xs font-bold text-white mt-1">Biểu Phí Chuẩn 2026</div>
-              <div className="text-[10px] text-slate-300">Áp dụng đúng quy định</div>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-3">
-              <div className="text-base">💰</div>
-              <div className="text-xs font-bold text-white mt-1">Ưu Đãi Tiền Mặt</div>
-              <div className="text-[10px] text-slate-300">Tặng kèm gói phụ kiện</div>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-3">
-              <div className="text-base">⚡</div>
-              <div className="text-xs font-bold text-white mt-1">Duyệt Vay 24H</div>
-              <div className="text-[10px] text-slate-300">Lãi suất chỉ từ 7.9%</div>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-3">
-              <div className="text-base">🚗</div>
-              <div className="text-xs font-bold text-white mt-1">Lái Thử Tận Nhà</div>
-              <div className="text-[10px] text-slate-300">Phục vụ toàn khu vực</div>
-            </div>
-          </div>
         </div>
       </section>
 
-      {/* 3. Main Master Calculator Container */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 -mt-16 relative z-20">
+      {/* Main Master Calculator Container */}
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 -mt-10 relative z-20">
         <CalculatorMasterView
           cars={cars}
-          defaultHotline="0941.153.666"
-          defaultZaloUrl="https://zalo.me/0941153666"
+          defaultHotline={hotline}
+          defaultZaloUrl={zaloUrl}
         />
 
-        {/* 4. Showroom 4-Pillar Commitment Grid */}
+        {/* Showroom 4-Pillar Commitment Grid */}
         <div className="mt-16 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xl">
           <div className="text-center mb-8">
             <span className="text-xs font-bold uppercase tracking-wider text-[#0072CE]">Cam Kết Vàng</span>
             <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
-              Tại Sao Khách Hàng Chọn Mua Xe Tại Hyundai Vinh?
+              Tại Sao Khách Hàng Chọn Mua Xe Tại Xe Hyundai Vinh?
             </h2>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Đại lý ủy quyền phân phối xe ô tô Hyundai chính hãng lớn nhất tại khu vực Bắc Miền Trung.
+            <p className="text-xs sm:text-sm text-slate-700 font-medium mt-1">
+              Hệ thống phân phối xe ô tô Hyundai chính hãng uy tín tại khu vực Bắc Miền Trung.
             </p>
           </div>
 
@@ -248,7 +106,7 @@ export default async function GiaLanBanhPage() {
                 🏆
               </div>
               <h3 className="text-sm font-extrabold text-slate-900">Cam Kết Giá Tốt Nhất</h3>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-700 font-medium mt-1.5 leading-relaxed">
                 Chính sách giá minh bạch, luôn có chương trình giảm tiền mặt và quà tặng giá trị cao nhất tháng.
               </p>
             </div>
@@ -258,7 +116,7 @@ export default async function GiaLanBanhPage() {
                 ⚡
               </div>
               <h3 className="text-sm font-extrabold text-slate-900">Hỗ Trợ Vay Đến 85%</h3>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-700 font-medium mt-1.5 leading-relaxed">
                 Liên kết các ngân hàng lớn (Vietcombank, BIDV, Techcombank), giải ngân nhanh chóng trong 24 giờ.
               </p>
             </div>
@@ -268,7 +126,7 @@ export default async function GiaLanBanhPage() {
                 🚗
               </div>
               <h3 className="text-sm font-extrabold text-slate-900">Sẵn Xe Đủ Màu Giao Ngay</h3>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-700 font-medium mt-1.5 leading-relaxed">
                 Kho xe lớn nhất khu vực, hỗ trợ xem xe thực tế và giao xe tận nhà theo phong thủy của khách.
               </p>
             </div>
@@ -278,14 +136,14 @@ export default async function GiaLanBanhPage() {
                 🔧
               </div>
               <h3 className="text-sm font-extrabold text-slate-900">Bảo Hành 5 Năm / 100.000 KM</h3>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-700 font-medium mt-1.5 leading-relaxed">
                 Xưởng dịch vụ 3S tiêu chuẩn quốc tế, phụ tùng chính hãng, cứu hộ giao thông 24/7 an tâm tuyệt đối.
               </p>
             </div>
           </div>
         </div>
 
-        {/* 5. Section FAQ: Hỏi đáp phổ biến về giá lăn bánh */}
+        {/* Section FAQ: Hỏi đáp phổ biến về giá lăn bánh */}
         <div className="mt-12 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xl">
           <div className="text-center mb-8">
             <span className="text-xs font-bold uppercase tracking-wider text-[#0072CE]">Giải Đáp Thắc Mắc</span>
@@ -337,26 +195,6 @@ export default async function GiaLanBanhPage() {
           </div>
         </div>
       </main>
-
-      {/* 6. Sticky Floating Bottom Quick Contact Bar (Mobile & Desktop) */}
-      <aside aria-label="Hỗ trợ trực tuyến" className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-slate-200 p-3 sm:hidden shadow-2xl">
-        <div className="flex items-center gap-2">
-          <a
-            href="tel:0941153666"
-            className="flex-1 py-3 px-4 rounded-xl font-black text-white text-xs text-center bg-[#002C6C] shadow-md flex items-center justify-center gap-2"
-          >
-            <span>📞</span> GỌI HOTLINE
-          </a>
-          <a
-            href="https://zalo.me/0941153666"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 py-3 px-4 rounded-xl font-black text-white text-xs text-center bg-[#0072CE] shadow-md flex items-center justify-center gap-2"
-          >
-            <span>💬</span> CHAT ZALO
-          </a>
-        </div>
-      </aside>
     </div>
   );
 }
