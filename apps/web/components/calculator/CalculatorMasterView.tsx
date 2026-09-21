@@ -6,36 +6,66 @@
 // Đồng bộ xe & phiên bản đang chọn qua lại giữa 2 Tab để khách hàng không phải chọn lại.
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@cardealer/ui';
 import SmartCalculator, { type CarItem, type CarVersionItem } from './SmartCalculator';
 import InstallmentEstimatorTab from './InstallmentEstimatorTab';
 
 interface CalculatorMasterViewProps {
   cars: CarItem[];
+  initialCarSlug?: string;
   defaultHotline?: string;
   defaultZaloUrl?: string;
 }
 
 export default function CalculatorMasterView({
   cars,
+  initialCarSlug,
   defaultHotline = '0981.234.567',
   defaultZaloUrl = 'https://zalo.me/0981234567',
 }: CalculatorMasterViewProps) {
+  const searchParams = useSearchParams();
+  const targetSlug = searchParams.get('xe') || searchParams.get('car') || initialCarSlug;
+
   const [activeTab, setActiveTab] = useState<'rolling' | 'installment'>('rolling');
   const [carList, setCarList] = useState<CarItem[]>(cars);
 
-  // Cập nhật khi props cars thay đổi
+  // 🧠 Mental Model: Hàm tìm kiếm xe ban đầu phù hợp với Query Param URL (?xe=...)
+  const findMatchingCar = (carListToSearch: CarItem[], slugOrName?: string) => {
+    if (!slugOrName || !carListToSearch || carListToSearch.length === 0) return carListToSearch?.[0];
+    const clean = slugOrName.toLowerCase().trim();
+    return (
+      carListToSearch.find((c) => c.slug?.toLowerCase() === clean) ||
+      carListToSearch.find((c) => c.slug?.toLowerCase().includes(clean)) ||
+      carListToSearch.find((c) => c.tenXe?.toLowerCase().includes(clean)) ||
+      carListToSearch.find((c) => clean.includes(c.slug?.toLowerCase())) ||
+      carListToSearch[0]
+    );
+  };
+
+  const initialMatchedCar = findMatchingCar(cars, targetSlug);
+
+  // Trạng thái xe đang chọn đồng bộ giữa 2 tab
+  const [syncedCarName, setSyncedCarName] = useState<string>(
+    initialMatchedCar?.tenXe || cars[0]?.tenXe || 'Hyundai Tucson 2025'
+  );
+  const [syncedVersion, setSyncedVersion] = useState<CarVersionItem | null>(
+    initialMatchedCar?.versions?.[0] || cars[0]?.versions?.[0] || null
+  );
+
+  // Cập nhật khi props cars hoặc targetSlug thay đổi
   useEffect(() => {
     if (cars && cars.length > 0) {
       setCarList(cars);
+      if (targetSlug) {
+        const matched = findMatchingCar(cars, targetSlug);
+        if (matched) {
+          setSyncedCarName(matched.tenXe);
+          setSyncedVersion(matched.versions?.[0] || null);
+        }
+      }
     }
-  }, [cars]);
-
-  // Trạng thái xe đang chọn đồng bộ giữa 2 tab
-  const [syncedCarName, setSyncedCarName] = useState<string>(cars[0]?.tenXe || 'Hyundai Tucson 2025');
-  const [syncedVersion, setSyncedVersion] = useState<CarVersionItem | null>(
-    cars[0]?.versions?.[0] || null
-  );
+  }, [cars, targetSlug]);
 
   const handleVersionChange = (version: CarVersionItem | null, carName: string) => {
     setSyncedCarName(carName);
@@ -80,6 +110,7 @@ export default function CalculatorMasterView({
         {activeTab === 'rolling' ? (
           <SmartCalculator
             cars={carList}
+            initialCarSlug={targetSlug}
             defaultHotline={defaultHotline}
             defaultZaloUrl={defaultZaloUrl}
             onVersionChange={handleVersionChange}

@@ -1,4 +1,4 @@
-import { clientEnv } from '@cardealer/env';
+import { clientEnv, getServerApiUrl } from '@cardealer/env';
 
 export interface ApiErrorResponse {
   success: false;
@@ -36,7 +36,7 @@ export interface RequestOptions extends Omit<RequestInit, 'body'> {
 
 // 🧠 Mental Model: Centralized HTTP Client cho Storefront (apps/web).
 // 1. Client-side (trình duyệt): Gọi qua relative URL để tận dụng Next.js Rewrites, tự động loại bỏ lỗi CORS.
-// 2. Server-side (SSR / ISR): Kết hợp process.env.INTERNAL_API_URL hoặc NEXT_PUBLIC_API_URL để fetch an toàn.
+// 2. Server-side (SSR / ISR): Kết hợp getServerApiUrl() từ @cardealer/env để fetch an toàn (hỗ trợ cả internal Docker network).
 // 3. Chuẩn hóa trích xuất lỗi thành AppError và bóc tách dữ liệu payload tự động.
 export class HttpClient {
   private readonly baseUrl: string;
@@ -50,11 +50,7 @@ export class HttpClient {
       return '';
     }
     if (this.baseUrl) return this.baseUrl;
-    return (
-      process.env.INTERNAL_API_URL ||
-      clientEnv.NEXT_PUBLIC_API_URL ||
-      'http://localhost:4000'
-    ).replace(/\/+$/, '');
+    return getServerApiUrl();
   }
 
   private buildUrl(endpoint: string, params?: Record<string, string | number | boolean | undefined>): string {

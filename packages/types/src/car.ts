@@ -96,3 +96,69 @@ export type CreateVersionInput = z.infer<typeof CreateVersionInputSchema>;
 
 export const CreateColorInputSchema = ColorSchema.omit({ id: true });
 export type CreateColorInput = z.infer<typeof CreateColorInputSchema>;
+
+// 🧠 Mental Model: Kiểu dữ liệu và hằng số cho Bộ Lọc Danh Mục Dòng Xe (Phase 4.3 Catalog & Filter Grid)
+export type CatalogSegment = 'all' | 'sedan' | 'suv' | 'mpv' | 'hatchback' | 'ev';
+
+export interface SegmentTabOption {
+  id: CatalogSegment;
+  label: string;
+}
+
+export type PriceRangeId = 'all' | 'under-500' | '500-700' | '700-1000' | 'over-1000';
+
+export interface PriceRangeOption {
+  id: PriceRangeId;
+  label: string;
+  minPrice: number;
+  maxPrice: number;
+}
+
+export const CATALOG_PRICE_RANGES: PriceRangeOption[] = [
+  { id: 'all', label: 'Tất Cả Mức Giá', minPrice: 0, maxPrice: Infinity },
+  { id: 'under-500', label: 'Dưới 500 triệu', minPrice: 0, maxPrice: 500_000_000 },
+  { id: '500-700', label: '500 - 700 triệu', minPrice: 500_000_000, maxPrice: 700_000_000 },
+  { id: '700-1000', label: '700 triệu - 1 tỷ', minPrice: 700_000_000, maxPrice: 1_000_000_000 },
+  { id: 'over-1000', label: 'Trên 1 tỷ', minPrice: 1_000_000_000, maxPrice: Infinity },
+];
+
+export const CATALOG_SEGMENTS: SegmentTabOption[] = [
+  { id: 'all', label: 'Tất Cả' },
+  { id: 'sedan', label: 'Sedan' },
+  { id: 'suv', label: 'SUV' },
+  { id: 'mpv', label: 'MPV' },
+  { id: 'hatchback', label: 'Hatchback' },
+  { id: 'ev', label: 'Xe Điện (EV)' },
+];
+
+export interface CarCatalogItem {
+  id: string;
+  tenXe: string;
+  slug: string;
+  anhDaiDienUrl: string;
+  segment: CarSegment;
+  traTruocTu: number | null;
+  promotionSummary: string | null;
+  fuelType?: string | null;
+  seatRange: string;
+  minPrice: number;
+  maxPrice: number;
+  versionCount: number;
+  isFeatured: boolean;
+  status: CarStatus;
+  versions?: {
+    id: string;
+    tenPhienBan: string;
+    giaNiemYet: number;
+    giaKhuyenMai?: number | null;
+    seatCount?: number;
+    dongCo?: string | null;
+    hopSo?: string | null;
+    danDong?: string | null;
+  }[];
+}
+
+export interface CatalogFilterState {
+  segment: CatalogSegment;
+  price: PriceRangeId;
+}

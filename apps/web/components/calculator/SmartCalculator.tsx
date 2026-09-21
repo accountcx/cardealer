@@ -8,6 +8,7 @@
 // 4. Bẫy Honeypot ẩn (R1) chống bot spam.
 
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { calculateRollingCost } from '@cardealer/core';
 import type { RollingCostBreakdown } from '@cardealer/types';
 import { Input, Label, Select, Button } from '@cardealer/ui';
@@ -31,6 +32,7 @@ export interface CarItem {
 
 interface SmartCalculatorProps {
   cars: CarItem[];
+  initialCarSlug?: string;
   defaultHotline?: string;
   defaultZaloUrl?: string;
   onVersionChange?: (version: CarVersionItem | null, carName: string) => void;
@@ -40,14 +42,32 @@ const STORAGE_KEY = 'cardealer_rolling_calculator_session';
 
 export default function SmartCalculator({
   cars,
+  initialCarSlug,
   defaultHotline = '0941.153.666',
   defaultZaloUrl = 'https://zalo.me/0941153666',
   onVersionChange,
 }: SmartCalculatorProps) {
+  const searchParams = useSearchParams();
+  const targetSlug = searchParams.get('xe') || searchParams.get('car') || initialCarSlug;
+
+  // 🧠 Mental Model: Hàm tìm kiếm dòng xe tương ứng dựa theo Slug hoặc Tên xe từ URL query params
+  const findCarBySlugOrName = (slugOrName?: string) => {
+    if (!slugOrName || !cars || cars.length === 0) return cars?.[0];
+    const clean = slugOrName.toLowerCase().trim();
+    return (
+      cars.find((c) => c.slug?.toLowerCase() === clean) ||
+      cars.find((c) => c.slug?.toLowerCase().includes(clean)) ||
+      cars.find((c) => c.tenXe?.toLowerCase().includes(clean)) ||
+      cars.find((c) => clean.includes(c.slug?.toLowerCase())) ||
+      cars[0]
+    );
+  };
+
   const [state, setState] = useState<CalculatorState>('input');
 
-  // Input Form States
-  const [selectedCarName, setSelectedCarName] = useState<string>(cars[0]?.tenXe || '');
+  // Input Form States: Ưu tiên khởi tạo đúng dòng xe từ URL Query Params (?xe=...)
+  const initialMatchedCar = findCarBySlugOrName(targetSlug);
+  const [selectedCarName, setSelectedCarName] = useState<string>(initialMatchedCar?.tenXe || cars[0]?.tenXe || '');
   const [selectedVersionName, setSelectedVersionName] = useState<string>('');
   const [selectedProvince, setSelectedProvince] = useState<string>('Vinh');
   const [availableVersions, setAvailableVersions] = useState<CarVersionItem[]>([]);
@@ -68,6 +88,16 @@ export default function SmartCalculator({
   useEffect(() => {
     onVersionChangeRef.current = onVersionChange;
   }, [onVersionChange]);
+
+  // 0. Tự động đồng bộ dòng xe khi URL query parameter (?xe=...) hoặc danh sách cars thay đổi
+  useEffect(() => {
+    if (targetSlug && cars && cars.length > 0) {
+      const matched = findCarBySlugOrName(targetSlug);
+      if (matched && matched.tenXe !== selectedCarName) {
+        setSelectedCarName(matched.tenXe);
+      }
+    }
+  }, [targetSlug, cars]);
 
   // 1. Cập nhật danh sách phiên bản khi chọn dòng xe
   useEffect(() => {
@@ -104,26 +134,28 @@ export default function SmartCalculator({
     if (onVersionChange) onVersionChange(ver, selectedCarName);
   };
 
-  // 2. Phục hồi trạng thái khi F5 tải lại trang (R11)
+  // 2. Phục hồi trạng thái khi F5 tải lại trang (R11) - Chỉ áp dụng khi URL không có query param chỉ định xe
   useEffect(() => {
     try {
-      const saved = sessionStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.state === 'gate' || parsed.state === 'success') {
-          setState(parsed.state);
-          setSelectedCarName(parsed.carName || '');
-          setSelectedVersionName(parsed.versionName || '');
-          setSelectedProvince(parsed.province || 'Vinh');
-          setCalculatedResult(parsed.calculatedResult || null);
-          if (parsed.fullName) setFullName(parsed.fullName);
-          if (parsed.phone) setPhone(parsed.phone);
+      if (!targetSlug) {
+        const saved = sessionStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.state === 'gate' || parsed.state === 'success') {
+            setState(parsed.state);
+            setSelectedCarName(parsed.carName || '');
+            setSelectedVersionName(parsed.versionName || '');
+            setSelectedProvince(parsed.province || 'Vinh');
+            setCalculatedResult(parsed.calculatedResult || null);
+            if (parsed.fullName) setFullName(parsed.fullName);
+            if (parsed.phone) setPhone(parsed.phone);
+          }
         }
       }
     } catch {
       sessionStorage.removeItem(STORAGE_KEY);
     }
-  }, []);
+  }, [targetSlug]);
 
   // 3. Xử lý Chuyển từ Step 1 (Input) sang Step 2 (Gate)
   const handleCalculateRolling = (e: React.FormEvent) => {

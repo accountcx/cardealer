@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import CalculatorMasterView from '../../components/calculator/CalculatorMasterView';
 import { Breadcrumbs } from '../../components/layout/Breadcrumbs';
@@ -10,6 +11,7 @@ import { getStorefrontSettings } from '../../services/settings.service';
 // 2. SEO Rich Results (R14): Nhúng JSON-LD Schema 'SoftwareApplication' & 'FinanceApplication'.
 // 3. Tải danh sách xe từ cars.service với ISR caching và fallback Zero-Crash.
 // 4. Đồng bộ Hotline và Link Zalo từ hệ thống quản trị Settings CMS.
+// 5. Tự động nhận diện query parameter (?xe=tucson) để tự động chọn dòng xe và phiên bản tương ứng.
 
 export const metadata: Metadata = {
   title: 'Bảng Tính Giá Lăn Bánh & Trả Góp Xe Hyundai 2026 | Xe Hyundai Vinh',
@@ -23,7 +25,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function GiaLanBanhPage() {
+interface GiaLanBanhPageProps {
+  searchParams?: Promise<{ xe?: string; car?: string }>;
+}
+
+export default async function GiaLanBanhPage(props: GiaLanBanhPageProps) {
+  const resolvedParams = props.searchParams ? await props.searchParams : {};
+  const initialCarSlug = resolvedParams?.xe || resolvedParams?.car;
+
   const [cars, settings] = await Promise.all([
     getCarsList(),
     getStorefrontSettings(),
@@ -82,11 +91,14 @@ export default async function GiaLanBanhPage() {
 
       {/* Main Master Calculator Container */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 -mt-10 relative z-20">
-        <CalculatorMasterView
-          cars={cars}
-          defaultHotline={hotline}
-          defaultZaloUrl={zaloUrl}
-        />
+        <Suspense fallback={<div className="h-96 w-full rounded-3xl bg-white/50 animate-pulse" />}>
+          <CalculatorMasterView
+            cars={cars}
+            initialCarSlug={initialCarSlug}
+            defaultHotline={hotline}
+            defaultZaloUrl={zaloUrl}
+          />
+        </Suspense>
 
         {/* Showroom 4-Pillar Commitment Grid */}
         <div className="mt-16 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xl">

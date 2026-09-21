@@ -36,33 +36,42 @@ export async function handleCatalogRoutes(
         with: { versions: true },
       });
 
-      let formatted = dbCars.map((c) => ({
-        id: c.id,
-        tenXe: c.tenXe,
-        slug: c.slug,
-        anhDaiDienUrl: c.anhDaiDienUrl,
-        segment: c.segment,
-        traTruocTu: c.traTruocTu,
-        promotionSummary: c.promotionSummary,
-        minPrice: c.versions.length > 0 ? Math.min(...c.versions.map((v) => Number(v.giaKhuyenMai || v.giaNiemYet))) : 0,
-        maxPrice: c.versions.length > 0 ? Math.max(...c.versions.map((v) => Number(v.giaNiemYet))) : 0,
-        versionCount: c.versions.length,
-        status: c.status,
-        isFeatured: c.isFeatured,
-        versions: (c.versions || []).map((v) => ({
-          id: v.id,
-          tenPhienBan: v.tenPhienBan,
-          slug: v.slug,
-          giaNiemYet: Number(v.giaNiemYet),
-          giaKhuyenMai: v.giaKhuyenMai ? Number(v.giaKhuyenMai) : null,
-          seatCount: v.seatCount,
-          dongCo: v.dongCo,
-          hopSo: v.hopSo,
-          danDong: v.danDong,
-          anhDaiDienUrl: v.anhDaiDienUrl,
-          sortOrder: v.sortOrder,
-        })),
-      }));
+      let formatted = dbCars.map((c) => {
+        const seats = c.versions.map((v) => v.seatCount).filter((s) => typeof s === 'number' && s > 0);
+        const minSeat = seats.length > 0 ? Math.min(...seats) : 5;
+        const maxSeat = seats.length > 0 ? Math.max(...seats) : 5;
+        const seatRange = minSeat === maxSeat ? `${minSeat} chỗ` : `${minSeat} - ${maxSeat} chỗ`;
+
+        return {
+          id: c.id,
+          tenXe: c.tenXe,
+          slug: c.slug,
+          anhDaiDienUrl: c.anhDaiDienUrl,
+          segment: c.segment,
+          fuelType: c.fuelType || null,
+          seatRange,
+          traTruocTu: c.traTruocTu,
+          promotionSummary: c.promotionSummary,
+          minPrice: c.versions.length > 0 ? Math.min(...c.versions.map((v) => Number(v.giaKhuyenMai || v.giaNiemYet))) : 0,
+          maxPrice: c.versions.length > 0 ? Math.max(...c.versions.map((v) => Number(v.giaNiemYet))) : 0,
+          versionCount: c.versions.length,
+          status: c.status,
+          isFeatured: c.isFeatured,
+          versions: (c.versions || []).map((v) => ({
+            id: v.id,
+            tenPhienBan: v.tenPhienBan,
+            slug: v.slug,
+            giaNiemYet: Number(v.giaNiemYet),
+            giaKhuyenMai: v.giaKhuyenMai ? Number(v.giaKhuyenMai) : null,
+            seatCount: v.seatCount,
+            dongCo: v.dongCo,
+            hopSo: v.hopSo,
+            danDong: v.danDong,
+            anhDaiDienUrl: v.anhDaiDienUrl,
+            sortOrder: v.sortOrder,
+          })),
+        };
+      });
 
       if (segment) {
         formatted = formatted.filter((c) => c.segment === segment);
