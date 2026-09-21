@@ -22,7 +22,7 @@ graph LR
 | **Phase 1** | **Core Data Layer & Catalog** | Thiết kế DB PostgreSQL, 10 Core Entities, 7 Globals, Seeders & CRUD API | Backend + Admin | ✅ **ĐÃ HOÀN THÀNH (100% - Ready)**<br/>• `packages/database` (Drizzle Schemas, Migrations, Seed)<br/>• `packages/types` (Car, Auth, Settings contracts)<br/>• `apps/api` (REST APIs Auth, Catalog, Admin CRUD)<br/>• `apps/admin` (Dashboard, Login, Cars, Colors, Settings, Skeleton Zero-CLS) |
 | **Phase 2** | **Admin User & RBAC Management** | Quản trị tài khoản nhân viên showroom, phân quyền đa tầng (Admin, Manager, Editor, Sales), Audit Logs | Full-stack | ⏳ **TIẾP THEO (Next Epic)**<br/>• `packages/database/src/schema/users.ts`<br/>• `apps/api/src/routes/admin/users.ts`<br/>• `apps/admin/app/users/`, `/admin/profile` |
 | **Phase 3** | **Pricing & Lead Engine** | Thuật toán tính lăn bánh địa phương, trả góp ngân hàng, Lead Gate 2 bước | Full-stack | `packages/core/src/pricing/`, `apps/api/src/routes/quote`, Web Calculators |
-| **Phase 4** | **Storefront & Car Experience** | Trang chủ 6 phân khu, `/xe/[slug]` đổi màu qua query URL, Sticky CTA Bar | Frontend | `apps/web/app/`, `packages/ui` |
+| **Phase 4** | **Storefront & Car Experience** | Phân rã 4 sub-phases: 4.1 Shell & Widgets, 4.2 Trang chủ 6 phân khu, 4.3 Catalog /xe, 4.4 Chi tiết xe /xe/[slug] đổi màu động | Frontend | `apps/web/app/`, `packages/ui` |
 | **Phase 5** | **Content & Lexical Blocks** | 15 Content Blocks, TikTok Embed không cuộn, FAQ Accordion, Sticky TOC | Full-stack | `packages/ui/blocks`, `apps/web/app/tin-tuc/`, `apps/admin` |
 | **Phase 6** | **Technical SEO & Indexing** | 7 Cấu trúc Schema JSON-LD, Dynamic Sitemap, Google Indexing API v3 | Full-stack | `packages/core/src/seo/`, `apps/web/app/sitemap.ts`, Google Indexing Hook |
 | **Phase 7** | **AI-Powered Automation** | AI sinh bài viết bảng giá xe hàng tháng, AI sinh FAQ Schema, AI Chatbot | AI Engine + Cron | `packages/ai-engine`, Background Workers |
@@ -151,30 +151,84 @@ graph LR
 
 ### 🚗 Phase 4: Giao Diện Khách Hàng & Trải Nghiệm Xem Xe (Storefront & Dynamic Car Experience)
 > **Tài liệu đặc tả nguồn:** [`04-TINH-NANG-FRONTEND-VA-TRAI-NGHIEM-UI-UX.md`](./04-TINH-NANG-FRONTEND-VA-TRAI-NGHIEM-UI-UX.md)  
-> **Mã Epic:** `EPIC-PHASE-4-STOREFRONT-EXPERIENCE`
+> **Mã Epic Tổng:** `EPIC-PHASE-4-STOREFRONT-EXPERIENCE`
 
-#### 1. Mục tiêu & Giá trị chuyển giao
-* Mang lại trải nghiệm người dùng hiện đại, thẩm mỹ cao, chuẩn nhận diện showroom ủy quyền.
-* Tối ưu hóa chuyển đổi mua hàng thông qua điều hướng mượt mà và các điểm chạm tương tác liên tục.
+Nhằm đảm bảo tiến độ triển khai nhanh, kiểm thử độc lập và bàn giao liên tục (CI/CD), Phase 4 được chia thành 4 Phase nhỏ chuyên biệt:
 
-#### 2. Nghiệp vụ chi tiết cần hoàn thành
-* **Trang chủ Phễu Chuyển Đổi 6 Phân Khu (`/`):**
-  1. *Hero Event Banner:* Trình phát video nền, bộ đếm ngược ưu đãi (Countdown Timer), hiển thị số suất còn lại.
-  2. *Lead Magnet Hub:* Thanh tìm kiếm & chọn dòng xe nhanh theo tầm giá.
-  3. *VIP Showroom Section:* Giới thiệu không gian trải nghiệm và tiêu chuẩn bàn giao xe.
-  4. *Featured Cars Showcase:* Lưới danh mục xe nổi bật kèm giá niêm yết và nhãn ưu đãi.
-  5. *Testimonials & Delivery:* Bằng chứng xã hội hình ảnh khách hàng nhận xe tại showroom.
-  6. *Latest News & Promotions:* Khối tin tức khuyến mãi mới nhất.
-* **Trang Chi Tiết Dòng Xe Chuẩn Hóa (`/xe/[carSlug]`):**
-  * Hợp nhất toàn bộ phiên bản và màu sắc trên một URL duy nhất.
-  * Cơ chế đồng bộ URL query params: `?phien-ban=tucson-xang-tieu-chuan&mau=trang-ngoc-trai` giúp khách hàng chia sẻ link chuẩn xác mà không cần reload trang.
-  * Bảng màu ngoại thất tương tác (Interactive Color Swatches): Bấm đổi màu đổi ngay góc ảnh xe thực tế.
-  * Thanh chốt đơn cố định đáy màn hình (`ProductStickyBar`): Luôn hiển thị giá, tên xe và 2 nút "Nhận Báo Giá" + "Gọi Hotline".
-  * Widget chuyên viên tư vấn nổi (`FloatingSeller`): Avatar chuyên viên, số Hotline, nút chat Zalo mở tức thì.
+---
 
-#### 3. Tiêu chí nghiệm thu (DoD)
-* Giao diện responsive 100% trên Mobile (375px), Tablet (768px) và Desktop (1440px).
-* Tốc độ tải trang First Contentful Paint (FCP) dưới 1 giây.
+#### 🚗 Phase 4.1: Khung Nền Tảng Storefront & Tiện Ích Chuyển Đổi Toàn Cục (Global Shell & Conversion Widgets)
+> **Mã Epic:** `EPIC-PHASE-4.1-STOREFRONT-SHELL-WIDGETS`
+
+* **1. Mục tiêu & Giá trị:** Thiết lập khung sườn Layout chuẩn thương hiệu Hyundai toàn trang (Desktop/Mobile), đảm bảo mọi điểm chạm đều sẵn sàng kích hoạt hành vi liên hệ tư vấn.
+* **2. Nghiệp vụ chi tiết:**
+  * **Header/Navbar Showroom:** Logo Hyundai Vinh chính hãng, Menu điều hướng (Dòng xe, Bảng giá, Trả góp, Tin tức, Liên hệ), Hotline bán hàng 24/7 nổi bật và nút CTA "Nhận Báo Giá".
+  * **Mobile Navigation Drawer:** Menu trượt mượt mà trên Mobile với các nút liên hệ nhanh một chạm.
+  * **Thanh chốt đơn cố định đáy màn hình (`ProductStickyBar`):** Ghim cố định ở chân màn hình trên cả Mobile & Desktop, hiển thị tên xe, giá khởi điểm, nút "GỌI NGAY" (`tel:`) và nút "NHẬN BÁO GIÁ" mở Modal Lead.
+  * **Widget Chuyên Viên Nổi (`FloatingSeller`):** Avatar nhân viên tư vấn, trạng thái "Đang trực tuyến", nút gọi Hotline và mở nhanh cửa sổ Zalo Chat tức thì.
+  * **Footer Đại Lý 3S:** Giới thiệu showroom, địa chỉ Google Maps, giờ mở cửa, chính sách bảo hành/bảo mật, biểu tượng Bộ Công Thương và liên kết mạng xã hội.
+* **3. Tiêu chí nghiệm thu (DoD):**
+  * Layout không bị nhảy CLS (Cumulative Layout Shift = 0) khi cuộn trang.
+  * Widget gọi điện và chat Zalo hoạt động chính xác 100% trên cả Android và iOS.
+
+---
+
+#### 🚗 Phase 4.2: Trang Chủ Phễu Chuyển Đổi 6 Phân Khu (Homepage Conversion Funnel - `/`)
+> **Mã Epic:** `EPIC-PHASE-4.2-HOMEPAGE-FUNNEL`
+
+* **1. Mục tiêu & Giá trị:** Tối ưu hóa tỷ lệ chuyển đổi khách hàng vãng lai ngay từ trang chủ bằng phễu 6 phân khu tâm lý mua sắm xe ô tô.
+* **2. Nghiệp vụ chi tiết:**
+  * **Khu 1 - Hero Event Banner:** Trình phát video/banner khuyến mại lớn trong tháng, bộ đếm ngược ưu đãi (Countdown Timer) tạo tính cấp bách, hiển thị số suất ưu đãi còn lại theo thời gian thực.
+  * **Khu 2 - Lead Magnet Hub (Bộ Lọc Nhanh):** Thanh tìm kiếm nhanh dòng xe theo mức ngân sách (Dưới 500tr, 500tr - 800tr, Trên 800tr) và kiểu dáng xe (Sedan, SUV, MPV).
+  * **Khu 3 - VIP Showroom Section:** Giới thiệu cơ sở vật chất xưởng dịch vụ 3S, phòng chờ khách hàng chuẩn châu Âu và quy trình bàn giao xe chuyên nghiệp.
+  * **Khu 4 - Featured Cars Showcase:** Lưới danh mục các dòng xe bán chạy nhất (Accent, Tucson, Santa Fe, Creta) kèm giá niêm yết, mức trả trước chỉ từ X triệu và huy hiệu khuyến mãi.
+  * **Khu 5 - Testimonials & Delivery Stories:** Bằng chứng xã hội (Social Proof) dạng Slider/Gallery hình ảnh khách hàng nhận xe thực tế tại Showroom Hyundai Vinh.
+  * **Khu 6 - Latest News & Special Promotions:** Khối hiển thị 3 - 4 bài viết khuyến mãi và tin tức đại lý mới nhất.
+* **3. Tiêu chí nghiệm thu (DoD):**
+  * Tốc độ tải trang trang chủ đạt chuẩn Core Web Vitals (FCP < 1.0s, LCP < 2.0s).
+  * Bộ đếm ngược Countdown hoạt động mượt mà, tự động cập nhật không bị lỗi lệch múi giờ.
+
+---
+
+#### 🚗 Phase 4.3: Trang Danh Mục Dòng Xe & Bộ Lọc Đa Chiều (Catalog & Filter Grid - `/xe`)
+> **Mã Epic:** `EPIC-PHASE-4.3-CATALOG-FILTER`
+
+* **1. Mục tiêu & Giá trị:** Giúp khách hàng dễ dàng so sánh, tìm kiếm dòng xe phù hợp với nhu cầu và khả năng tài chính.
+* **2. Nghiệp vụ chi tiết:**
+  * **Tabs Lọc Phân Khúc Xe:** Phân loại mượt mà theo `Tất cả`, `Sedan`, `SUV`, `MPV`, `Hatchback`, `Xe Điện (EV)`.
+  * **Bộ Lọc Theo Mức Giá:** Slider hoặc các mốc bấm nhanh (Dưới 500tr, 500 - 700tr, 700 - 1 tỷ, Trên 1 tỷ).
+  * **Car Card Component Thông Minh:**
+    * Ảnh đại diện xe chụp góc chuẩn showroom.
+    * Tên xe, phân khúc, số chỗ ngồi và loại nhiên liệu.
+    * Khoảng giá (`minPrice` - `maxPrice`) tính từ các phiên bản đang bán.
+    * Mức trả trước tối thiểu ("Trả trước từ X triệu").
+    * 2 nút hành động: "Xem Chi Tiết" (trỏ tới `/xe/[slug]`) và "Dự Toán Lăn Bánh" (trỏ tới `/gia-lan-banh?xe=[slug]`).
+  * **SEO Schema:** Nhúng JSON-LD Schema `ItemList` và `AggregateOffer` cho toàn bộ danh mục xe.
+* **3. Tiêu chí nghiệm thu (DoD):**
+  * Bộ lọc lọc tức thì (< 50ms) không cần tải lại trang.
+  * Khi thay đổi bộ lọc, trạng thái được lưu vào URL query params để tiện chia sẻ.
+
+---
+
+#### 🚗 Phase 4.4: Trang Chi Tiết Dòng Xe Chuẩn Hóa & Đổi Màu Động (Dynamic Car Experience & Deep Linking - `/xe/[carSlug]`)
+> **Mã Epic:** `EPIC-PHASE-4.4-CAR-DETAIL-EXPERIENCE`
+
+* **1. Mục tiêu & Giá trị:** Trải nghiệm xem xe tương tác cao cấp nhất, hợp nhất tất cả phiên bản và màu sắc trên 1 URL duy nhất, tăng tối đa thời gian trên trang và chuyển đổi đơn hàng.
+* **2. Nghiệp vụ chi tiết:**
+  * **Hợp Nhất URL & Deep Linking 2 Chiều:**
+    * Định dạng URL chuẩn: `/xe/[carSlug]?phien-ban=[versionSlug]&mau=[colorSlug]`.
+    * Chia sẻ link mở đúng chính xác phiên bản và màu sơn ngoại thất đã chọn.
+    * Cập nhật URL tức thì qua `window.history.replaceState` không reload trang.
+  * **Bảng Chọn Màu Tương Tác (Interactive Color Swatches):**
+    * Hiển thị các chấm tròn màu ngoại thất thực tế (Trắng, Đỏ, Đen, Xanh Rêu, Bạc...).
+    * Click đổi màu xe: Ảnh xe góc lớn lập tức chuyển sang ảnh thực tế của màu đó với hiệu ứng fade nhẹ mượt mà.
+  * **Selector Chọn Phiên Bản:** Bấm chọn giữa các phiên bản (Tiêu chuẩn, Đặc biệt, Cao cấp) tự động cập nhật lại bảng thông số kỹ thuật, giá niêm yết và danh sách màu tương ứng của phiên bản đó.
+  * **Bảng So Sánh & Thông Số Kỹ Thuật Động:** Động cơ, công suất, hộp số, số chỗ ngồi, gói trang bị an toàn Hyundai SmartSense.
+  * **Thư Viện Ảnh (Photo Gallery & Lightbox):** Xem ảnh chi tiết ngoại thất/nội thất dạng grid kèm chế độ zoom toàn màn hình.
+  * **Tích hợp liền mạch Form Dự toán & Trả góp:** Nút "Tính Giá Lăn Bánh Xe Này" dẫn trực tiếp đến `/gia-lan-banh` với tham số xe được chọn sẵn.
+* **3. Tiêu chí nghiệm thu (DoD):**
+  * Chuyển đổi màu xe và phiên bản mượt mà, phản hồi tức thì dưới 100ms.
+  * Thẻ `canonical` luôn trỏ về URL gốc `/xe/[carSlug]` tránh lỗi trùng lặp nội dung SEO (Duplicate Content).
 
 ---
 
