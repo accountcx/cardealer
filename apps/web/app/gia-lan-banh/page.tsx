@@ -77,29 +77,38 @@ const FALLBACK_CARS: CarItem[] = [
 ];
 
 async function getCarsList(): Promise<CarItem[]> {
-  try {
-    const apiPort = process.env.API_PORT || 4000;
-    const res = await fetch(`http://localhost:${apiPort}/api/cars`, {
-      next: { revalidate: 60 },
-    });
-    if (!res.ok) return FALLBACK_CARS;
-    const json = await res.json();
-    if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-      return json.data.map((c: any) => ({
-        id: c.id,
-        tenXe: c.tenXe,
-        slug: c.slug,
-        versions: (c.versions || []).map((v: any) => ({
-          id: v.id,
-          tenPhienBan: v.tenPhienBan,
-          giaNiemYet: Number(v.giaNiemYet || 0),
-        })),
-      }));
+  const apiPort = process.env.API_PORT || 4000;
+  const targetUrls = [
+    `http://127.0.0.1:${apiPort}/api/cars`,
+    `http://localhost:${apiPort}/api/cars`,
+  ];
+
+  for (const url of targetUrls) {
+    try {
+      const res = await fetch(url, {
+        cache: 'no-store',
+      });
+      if (!res.ok) continue;
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+        return json.data.map((c: any) => ({
+          id: c.id,
+          tenXe: c.tenXe,
+          slug: c.slug,
+          versions: (c.versions || []).map((v: any) => ({
+            id: v.id,
+            tenPhienBan: v.tenPhienBan,
+            giaNiemYet: Number(v.giaNiemYet || 0),
+          })),
+        }));
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[Storefront SSR] Không thể lấy xe từ ${url}: ${msg}`);
     }
-    return FALLBACK_CARS;
-  } catch {
-    return FALLBACK_CARS;
   }
+
+  return FALLBACK_CARS;
 }
 
 export default async function GiaLanBanhPage() {

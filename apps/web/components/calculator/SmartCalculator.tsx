@@ -7,7 +7,7 @@
 // 3. Zero-Cost Client Phone Validation (R2) kiểm tra 10 số di động VN.
 // 4. Bẫy Honeypot ẩn (R1) chống bot spam.
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { calculateRollingCost } from '@cardealer/core';
 import type { RollingCostBreakdown } from '@cardealer/types';
 
@@ -60,26 +60,39 @@ export default function SmartCalculator({
   const [leadError, setLeadError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Ref giữ callback onVersionChange ổn định giữa các lần render
+  const onVersionChangeRef = useRef(onVersionChange);
+  useEffect(() => {
+    onVersionChangeRef.current = onVersionChange;
+  }, [onVersionChange]);
+
   // 1. Cập nhật danh sách phiên bản khi chọn dòng xe
   useEffect(() => {
-    const foundCar = cars.find((c) => c.tenXe === selectedCarName);
-    if (foundCar && foundCar.versions) {
-      setAvailableVersions(foundCar.versions);
-      if (foundCar.versions.length > 0) {
-        setSelectedVersionName(foundCar.versions[0].tenPhienBan);
-        if (onVersionChange) {
-          onVersionChange(foundCar.versions[0], foundCar.tenXe);
+    const foundCar = cars.find((c) => c.tenXe === selectedCarName) || cars[0];
+    if (foundCar) {
+      if (selectedCarName !== foundCar.tenXe) {
+        setSelectedCarName(foundCar.tenXe);
+      }
+      const vers = foundCar.versions || [];
+      setAvailableVersions(vers);
+      if (vers.length > 0) {
+        const isExistingVersion = vers.some((v) => v.tenPhienBan === selectedVersionName);
+        const versionToSet = isExistingVersion ? selectedVersionName : vers[0].tenPhienBan;
+        setSelectedVersionName(versionToSet);
+        if (onVersionChangeRef.current) {
+          const verObj = vers.find((v) => v.tenPhienBan === versionToSet) || vers[0];
+          onVersionChangeRef.current(verObj, foundCar.tenXe);
         }
       } else {
         setSelectedVersionName('');
-        if (onVersionChange) onVersionChange(null, foundCar.tenXe);
+        if (onVersionChangeRef.current) onVersionChangeRef.current(null, foundCar.tenXe);
       }
     } else {
       setAvailableVersions([]);
       setSelectedVersionName('');
-      if (onVersionChange) onVersionChange(null, '');
+      if (onVersionChangeRef.current) onVersionChangeRef.current(null, '');
     }
-  }, [selectedCarName, cars, onVersionChange]);
+  }, [selectedCarName, cars]);
 
   // Khi người dùng đổi phiên bản xe
   const handleVersionSelect = (versionName: string) => {
@@ -317,7 +330,7 @@ export default function SmartCalculator({
                   <select
                     value={selectedCarName}
                     onChange={(e) => setSelectedCarName(e.target.value)}
-                    className="w-full p-4 bg-slate-50 hover:bg-slate-100/80 border-2 border-slate-200 focus:border-[#0072CE] focus:bg-white rounded-2xl text-slate-900 font-bold text-sm transition outline-none cursor-pointer appearance-none shadow-sm"
+                    className="w-full p-4 pr-10 bg-slate-50 hover:bg-slate-100/80 border-2 border-slate-200 focus:border-[#0072CE] focus:bg-white rounded-2xl text-slate-900 font-bold text-sm transition outline-none cursor-pointer appearance-none shadow-sm truncate"
                   >
                     {cars.map((c) => (
                       <option key={c.id} value={c.tenXe}>
@@ -344,7 +357,7 @@ export default function SmartCalculator({
                     value={selectedVersionName}
                     onChange={(e) => handleVersionSelect(e.target.value)}
                     disabled={availableVersions.length === 0}
-                    className="w-full p-4 bg-slate-50 hover:bg-slate-100/80 border-2 border-slate-200 focus:border-[#0072CE] focus:bg-white rounded-2xl text-slate-900 font-bold text-sm transition outline-none cursor-pointer appearance-none shadow-sm disabled:opacity-50"
+                    className="w-full p-4 pr-10 bg-slate-50 hover:bg-slate-100/80 border-2 border-slate-200 focus:border-[#0072CE] focus:bg-white rounded-2xl text-slate-900 font-bold text-sm transition outline-none cursor-pointer appearance-none shadow-sm disabled:opacity-50 truncate"
                   >
                     {availableVersions.length === 0 ? (
                       <option value="">-- Vui lòng chọn xe --</option>
@@ -375,11 +388,11 @@ export default function SmartCalculator({
                   <select
                     value={selectedProvince}
                     onChange={(e) => setSelectedProvince(e.target.value)}
-                    className="w-full p-4 bg-slate-50 hover:bg-slate-100/80 border-2 border-slate-200 focus:border-[#0072CE] focus:bg-white rounded-2xl text-slate-900 font-bold text-sm transition outline-none cursor-pointer appearance-none shadow-sm"
+                    className="w-full p-4 pr-10 bg-slate-50 hover:bg-slate-100/80 border-2 border-slate-200 focus:border-[#0072CE] focus:bg-white rounded-2xl text-slate-900 font-bold text-sm transition outline-none cursor-pointer appearance-none shadow-sm truncate"
                   >
-                    <option value="Vinh">TP. Vinh (Biển số 1.000.000 ₫)</option>
-                    <option value="Huyện Khác (Nghệ An)">Các Huyện Nghệ An (Biển số 200.000 ₫)</option>
-                    <option value="Hà Tĩnh">Tỉnh Hà Tĩnh (Biển số 1.000.000 ₫)</option>
+                    <option value="Vinh">TP. Vinh</option>
+                    <option value="Huyện Khác (Nghệ An)">Các Huyện Nghệ An</option>
+                    <option value="Hà Tĩnh">Hà Tĩnh</option>
                   </select>
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                     ▼

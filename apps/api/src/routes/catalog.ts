@@ -36,6 +36,19 @@ export async function handleCatalogRoutes(
         versionCount: c.versions.length,
         status: c.status,
         isFeatured: c.isFeatured,
+        versions: (c.versions || []).map((v) => ({
+          id: v.id,
+          tenPhienBan: v.tenPhienBan,
+          slug: v.slug,
+          giaNiemYet: Number(v.giaNiemYet),
+          giaKhuyenMai: v.giaKhuyenMai ? Number(v.giaKhuyenMai) : null,
+          seatCount: v.seatCount,
+          dongCo: v.dongCo,
+          hopSo: v.hopSo,
+          danDong: v.danDong,
+          anhDaiDienUrl: v.anhDaiDienUrl,
+          sortOrder: v.sortOrder,
+        })),
       }));
 
       sendJson(200, {

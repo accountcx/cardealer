@@ -5,7 +5,7 @@
 // 2. Dự Toán Trả Góp Ngân Hàng (InstallmentEstimatorTab)
 // Đồng bộ xe & phiên bản đang chọn qua lại giữa 2 Tab để khách hàng không phải chọn lại.
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import SmartCalculator, { type CarItem, type CarVersionItem } from './SmartCalculator';
 import InstallmentEstimatorTab from './InstallmentEstimatorTab';
 
@@ -21,6 +21,41 @@ export default function CalculatorMasterView({
   defaultZaloUrl = 'https://zalo.me/0941153666',
 }: CalculatorMasterViewProps) {
   const [activeTab, setActiveTab] = useState<'rolling' | 'installment'>('rolling');
+  const [carList, setCarList] = useState<CarItem[]>(cars);
+
+  // Cập nhật khi props cars thay đổi
+  useEffect(() => {
+    if (cars && cars.length > 0) {
+      setCarList(cars);
+    }
+  }, [cars]);
+
+  // Luôn chủ động fetch dữ liệu mới nhất trực tiếp từ Backend API
+  useEffect(() => {
+    async function fetchCarsFromBE() {
+      try {
+        const res = await fetch('/api/cars', { cache: 'no-store' });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          const beCars: CarItem[] = json.data.map((c: any) => ({
+            id: c.id,
+            tenXe: c.tenXe,
+            slug: c.slug,
+            versions: (c.versions || []).map((v: any) => ({
+              id: v.id,
+              tenPhienBan: v.tenPhienBan,
+              giaNiemYet: Number(v.giaNiemYet || 0),
+            })),
+          }));
+          setCarList(beCars);
+        }
+      } catch (err) {
+        console.warn('Lỗi khi tải danh sách xe từ BE:', err);
+      }
+    }
+    fetchCarsFromBE();
+  }, []);
 
   // Trạng thái xe đang chọn đồng bộ giữa 2 tab
   const [syncedCarName, setSyncedCarName] = useState<string>(cars[0]?.tenXe || 'Hyundai Tucson 2025');
@@ -70,16 +105,16 @@ export default function CalculatorMasterView({
       <div className="transition-all duration-300">
         {activeTab === 'rolling' ? (
           <SmartCalculator
-            cars={cars}
+            cars={carList}
             defaultHotline={defaultHotline}
             defaultZaloUrl={defaultZaloUrl}
             onVersionChange={handleVersionChange}
           />
         ) : (
           <InstallmentEstimatorTab
-            giaXe={syncedVersion?.giaNiemYet || cars[0]?.versions?.[0]?.giaNiemYet || 769_000_000}
+            giaXe={syncedVersion?.giaNiemYet || carList[0]?.versions?.[0]?.giaNiemYet || 769_000_000}
             tenXe={syncedCarName}
-            tenPhienBan={syncedVersion?.tenPhienBan || cars[0]?.versions?.[0]?.tenPhienBan || ''}
+            tenPhienBan={syncedVersion?.tenPhienBan || carList[0]?.versions?.[0]?.tenPhienBan || ''}
             defaultHotline={defaultHotline}
             defaultZaloUrl={defaultZaloUrl}
           />

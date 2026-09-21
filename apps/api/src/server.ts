@@ -98,7 +98,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 if (process.env.NODE_ENV !== 'test') {
-  server.listen(PORT, async () => {
+  server.listen(PORT, '0.0.0.0', async () => {
     console.log(`🚀 [CarDealer API] Server đang chạy tại http://localhost:${PORT}`);
     try {
       const health = await checkDatabaseHealth();
