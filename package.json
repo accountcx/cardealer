@@ -18,6 +18,7 @@
     "db:generate": "pnpm --filter @cardealer/database db:generate",
     "db:migrate": "pnpm --filter @cardealer/database db:migrate",
     "db:push": "pnpm --filter @cardealer/database db:push",
+    "db:update-avatars": "pnpm --filter @cardealer/database exec tsx src/scripts/update-car-avatars.ts",
     "verify:phase-1": "pnpm --filter @cardealer/database exec tsx src/scripts/verify-phase-1.ts",
     "verify:phase-2": "pnpm --filter @cardealer/database exec tsx ../../scripts/verify-phase-2-rbac.ts",
     "verify:phase-3": "pnpm --filter @cardealer/database exec tsx ../../scripts/verify-phase-3-pricing-lead.ts",
