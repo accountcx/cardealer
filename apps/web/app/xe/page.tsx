@@ -100,11 +100,13 @@ export default async function CatalogPage() {
         </div>
 
         {/* 3. Client Island: Bộ Lọc & Lưới Xe Thông Minh */}
-        <CatalogView
-          initialCars={cars}
-          contactHotline={contactHotline}
-          errorMessage={errorMessage}
-        />
+        <React.Suspense fallback={null}>
+          <CatalogView
+            initialCars={cars}
+            contactHotline={contactHotline}
+            errorMessage={errorMessage}
+          />
+        </React.Suspense>
       </div>
     </main>
   );

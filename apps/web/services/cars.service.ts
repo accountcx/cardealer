@@ -1,6 +1,6 @@
 import { apiClient } from '../lib/api-client';
 import type { CarItem } from '../components/calculator/SmartCalculator';
-import type { CarCatalogItem } from '@cardealer/types';
+import type { CarCatalogItem, CarDetail } from '@cardealer/types';
 
 // 🧠 Mental Model: Typed Service Layer quản lý danh sách xe cho Storefront (Web).
 // Thay thế toàn bộ lời gọi fetch() trực tiếp bằng apiClient trung tâm.
@@ -84,9 +84,35 @@ export const carsService = {
 
     return [];
   },
+
+  /**
+   * 🧠 Mental Model: Nạp thông tin chi tiết đầy đủ của dòng xe (/xe/[carSlug])
+   * Bao gồm danh sách phiên bản, thông số kỹ thuật (specGroups), màu sắc swatch phẳng và thư viện ảnh.
+   * Sử dụng ISR Next.js với revalidate 60s và On-demand Cache Tag 'car-detail'.
+   */
+  getCarBySlug: async (slug: string): Promise<CarDetail | null> => {
+    try {
+      const data = await apiClient.get<CarDetail>(`/api/cars/${slug}`, undefined, {
+        next: {
+          tags: ['car-detail', `car-${slug}`],
+          revalidate: 60,
+        },
+      });
+
+      if (data && data.slug) {
+        return data;
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[Cars Service] Không thể nạp chi tiết xe '${slug}' từ API: ${msg}`);
+    }
+
+    return null;
+  },
 };
 
 // Aliases duy trì tương thích ngược cho các import hiện hữu
 export const getCarsList = carsService.getCarsList;
 export const getFeaturedCars = carsService.getFeaturedCars;
 export const getCatalogCars = carsService.getCatalogCars;
+export const getCarBySlug = carsService.getCarBySlug;

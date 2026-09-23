@@ -98,7 +98,10 @@ export async function handleCatalogRoutes(
     }
   }
 
-  // 2. GET /api/cars/:slug (Khách hàng Storefront: Chỉ lấy xe đã xuất bản)
+  // 2. GET /api/cars/:slug (Khách hàng Storefront & Saler: Lấy chi tiết dòng xe và các biến thể màu)
+  // 🧠 Mental Model: Chuẩn hóa response theo CarDetailSchema của Phase 4.4.
+  // Làm phẳng mảng versionColors thành colors[] có slug tiếng Việt không dấu.
+  // Tự động tính toán minPrice, maxPrice và sắp xếp versions theo sortOrder.
   if (url.pathname.startsWith('/api/cars/') && req.method === 'GET') {
     const slug = url.pathname.replace('/api/cars/', '');
     try {
@@ -106,6 +109,7 @@ export async function handleCatalogRoutes(
         where: and(eq(schema.cars.slug, slug), eq(schema.cars.status, 'published')),
         with: {
           versions: {
+            orderBy: [schema.carVersions.sortOrder],
             with: {
               versionColors: {
                 with: { color: true },
@@ -123,7 +127,83 @@ export async function handleCatalogRoutes(
         return true;
       }
 
-      sendJson(200, { success: true, data: car });
+      const formattedVersions = (car.versions || []).map((v) => {
+        const colors = (v.versionColors || [])
+          .map((vc) => {
+            const colorName = vc.color?.tenMau || '';
+            const colorSlug = colorName
+              .toLowerCase()
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .replace(/đ/g, 'd')
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/^-+|-+$/g, '');
+
+            return {
+              colorId: vc.colorId,
+              tenMau: colorName,
+              slug: colorSlug,
+              hexCode: vc.color?.hexCode || '#000000',
+              isTwoTone: vc.color?.isTwoTone || false,
+              secondaryHexCode: vc.color?.secondaryHexCode || null,
+              anhXeTheoMauUrl: vc.anhXeTheoMauUrl || null,
+              isDefault: vc.isDefault || false,
+            };
+          })
+          .sort((a, b) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0));
+
+        return {
+          id: v.id,
+          carId: v.carId,
+          tenPhienBan: v.tenPhienBan,
+          slug: v.slug,
+          giaNiemYet: Number(v.giaNiemYet),
+          giaKhuyenMai: v.giaKhuyenMai ? Number(v.giaKhuyenMai) : null,
+          seatCount: v.seatCount,
+          dongCo: v.dongCo,
+          hopSo: v.hopSo,
+          danDong: v.danDong,
+          anhDaiDienUrl: v.anhDaiDienUrl,
+          boSuuTapAnh: Array.isArray(v.boSuuTapAnh) ? v.boSuuTapAnh : [],
+          specGroups: Array.isArray(v.specGroups) ? v.specGroups : [],
+          reviewContent: v.reviewContent || null,
+          contentBlocks: v.contentBlocks || null,
+          sortOrder: v.sortOrder,
+          colors,
+          versionColors: v.versionColors, // duy trì tương thích ngược
+        };
+      });
+
+      const prices = (car.versions || []).map((v) => Number(v.giaKhuyenMai || v.giaNiemYet)).filter((p) => p > 0);
+      const listPrices = (car.versions || []).map((v) => Number(v.giaNiemYet)).filter((p) => p > 0);
+      const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+      const maxPrice = listPrices.length > 0 ? Math.max(...listPrices) : minPrice;
+
+      const formattedCar = {
+        id: car.id,
+        tenXe: car.tenXe,
+        slug: car.slug,
+        anhDaiDienUrl: car.anhDaiDienUrl,
+        catalogFileUrl: car.catalogFileUrl,
+        segment: car.segment,
+        taxRate: Number(car.taxRate),
+        traTruocTu: car.traTruocTu ? Number(car.traTruocTu) : null,
+        promotionSummary: car.promotionSummary,
+        fuelType: car.fuelType || null,
+        highlightFeatures: Array.isArray(car.highlightFeatures) ? car.highlightFeatures : [],
+        moTaChung: car.moTaChung,
+        isFeatured: car.isFeatured,
+        status: car.status,
+        sortOrder: car.sortOrder,
+        minPrice,
+        maxPrice,
+        versionCount: formattedVersions.length,
+        versions: formattedVersions,
+      };
+
+      sendJson(200, { success: true, data: formattedCar }, {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      });
       return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Lỗi truy vấn thông tin chi tiết xe';

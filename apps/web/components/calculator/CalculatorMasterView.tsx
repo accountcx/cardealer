@@ -29,8 +29,12 @@ export default function CalculatorMasterView({
   const searchParams = useSearchParams();
   const targetSlug = searchParams.get('model') || searchParams.get('xe') || searchParams.get('car') || initialCarSlug;
   const targetSegment = searchParams.get('segment') || initialSegment;
+  const targetVersionSlug = searchParams.get('phien-ban') || searchParams.get('version');
+  const tabParam = searchParams.get('tab');
 
-  const [activeTab, setActiveTab] = useState<'rolling' | 'installment'>('rolling');
+  const [activeTab, setActiveTab] = useState<'rolling' | 'installment'>(
+    tabParam === 'tra-gop' || tabParam === 'installment' ? 'installment' : 'rolling'
+  );
   const [rollingState, setRollingState] = useState<'input' | 'gate' | 'success'>('input');
   const [resetSignal, setResetSignal] = useState<number>(0);
   const [carList, setCarList] = useState<CarItem[]>(cars);
@@ -86,6 +90,21 @@ export default function CalculatorMasterView({
     return carListToSearch[0];
   };
 
+  const findMatchingVersion = (matchedCar?: CarItem, verSlug?: string | null) => {
+    if (!matchedCar || !matchedCar.versions || matchedCar.versions.length === 0) return null;
+    if (verSlug) {
+      const cleanVer = verSlug.toLowerCase().trim();
+      const found = matchedCar.versions.find(
+        (v) =>
+          v.slug?.toLowerCase() === cleanVer ||
+          v.tenPhienBan?.toLowerCase().includes(cleanVer) ||
+          cleanVer.includes(v.slug?.toLowerCase() || '')
+      );
+      if (found) return found;
+    }
+    return matchedCar.versions[0] || null;
+  };
+
   const initialMatchedCar = findMatchingCar(cars, targetSlug, targetSegment);
 
   // Trạng thái xe đang chọn đồng bộ giữa 2 tab
@@ -93,8 +112,21 @@ export default function CalculatorMasterView({
     initialMatchedCar?.tenXe || cars[0]?.tenXe || 'Hyundai Tucson 2025'
   );
   const [syncedVersion, setSyncedVersion] = useState<CarVersionItem | null>(
-    initialMatchedCar?.versions?.[0] || cars[0]?.versions?.[0] || null
+    findMatchingVersion(initialMatchedCar, targetVersionSlug) ||
+      initialMatchedCar?.versions?.[0] ||
+      cars[0]?.versions?.[0] ||
+      null
   );
+
+  // Đồng bộ tab từ URL searchParams
+  useEffect(() => {
+    const currentTab = searchParams.get('tab');
+    if (currentTab === 'tra-gop' || currentTab === 'installment') {
+      setActiveTab('installment');
+    } else if (currentTab === 'lan-banh' || currentTab === 'rolling') {
+      setActiveTab('rolling');
+    }
+  }, [searchParams]);
 
   // Cập nhật khi props cars hoặc targetSlug/targetSegment thay đổi
   useEffect(() => {
@@ -104,11 +136,11 @@ export default function CalculatorMasterView({
         const matched = findMatchingCar(cars, targetSlug, targetSegment);
         if (matched) {
           setSyncedCarName(matched.tenXe);
-          setSyncedVersion(matched.versions?.[0] || null);
+          setSyncedVersion(findMatchingVersion(matched, targetVersionSlug));
         }
       }
     }
-  }, [cars, targetSlug, targetSegment]);
+  }, [cars, targetSlug, targetSegment, targetVersionSlug]);
 
   const handleVersionChange = (version: CarVersionItem | null, carName: string) => {
     setSyncedCarName(carName);

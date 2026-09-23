@@ -20,10 +20,15 @@ export interface ViewportCoordinatorProps {
 export const ViewportCoordinator = ({ settings, children }: ViewportCoordinatorProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
+  const [leadModalCarTitle, setLeadModalCarTitle] = useState<string | undefined>(undefined);
   const [isStickyBarVisible, setIsStickyBarVisible] = useState(false);
 
   React.useEffect(() => {
-    const handleOpenLeadModal = () => setIsLeadModalOpen(true);
+    const handleOpenLeadModal = (e: Event) => {
+      const detail = (e as CustomEvent)?.detail;
+      setLeadModalCarTitle(detail?.carTitle);
+      setIsLeadModalOpen(true);
+    };
     window.addEventListener('open-lead-modal', handleOpenLeadModal);
     return () => window.removeEventListener('open-lead-modal', handleOpenLeadModal);
   }, []);
@@ -67,7 +72,11 @@ export const ViewportCoordinator = ({ settings, children }: ViewportCoordinatorP
         {/* 6. Modal Thu Thập Báo Giá Nhanh */}
         <LeadQuoteModal
           isOpen={isLeadModalOpen}
-          onClose={() => setIsLeadModalOpen(false)}
+          onClose={() => {
+            setIsLeadModalOpen(false);
+            setLeadModalCarTitle(undefined);
+          }}
+          carTitle={leadModalCarTitle}
         />
       </div>
     </NavigationContext.Provider>

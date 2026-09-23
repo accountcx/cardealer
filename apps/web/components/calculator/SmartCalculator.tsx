@@ -21,6 +21,7 @@ export interface CarVersionItem {
   id: string;
   tenPhienBan: string;
   giaNiemYet: number;
+  slug?: string;
 }
 
 export interface CarItem {

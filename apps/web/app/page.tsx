@@ -79,30 +79,32 @@ export default async function HomePage() {
         hotline={hotline}
       />
 
-      <HomeFilterProvider
-        allCars={allCars}
-        defaultFeaturedCars={featuredCars}
-        priceRanges={homepage.leadFilter.priceRanges}
-        bodyStyles={homepage.leadFilter.bodyStyles}
-      >
-        {/* Vị trí 2: Khối Bộ Lọc Xe (Filter) */}
-        <LeadMagnetFilter
-          config={homepage.leadFilter}
-          totalCars={allCars.length || featuredCars.length || 8}
-        />
+      <React.Suspense fallback={null}>
+        <HomeFilterProvider
+          allCars={allCars}
+          defaultFeaturedCars={featuredCars}
+          priceRanges={homepage.leadFilter.priceRanges}
+          bodyStyles={homepage.leadFilter.bodyStyles}
+        >
+          {/* Vị trí 2: Khối Bộ Lọc Xe (Filter) */}
+          <LeadMagnetFilter
+            config={homepage.leadFilter}
+            totalCars={allCars.length || featuredCars.length || 8}
+          />
 
-        {/* Vị trí 3: Danh Sách Xe Bán Chạy (Hiển thị ngay dưới Filter để khách lọc xong thấy xe ngay) */}
-        <FeaturedCarsSection
-          config={homepage.featuredCars}
-          cars={featuredCars}
-        />
+          {/* Vị trí 3: Danh Sách Xe Bán Chạy (Hiển thị ngay dưới Filter để khách lọc xong thấy xe ngay) */}
+          <FeaturedCarsSection
+            config={homepage.featuredCars}
+            cars={featuredCars}
+          />
 
-        {/* Vị trí 4: BANNER MỒI CÂU DẪN VỀ TRANG TÍNH GIÁ (Lead Magnet Banner) */}
-        <RollingEstimateCalloutBanner
-          config={homepage.rollingEstimateCallout}
-          hotline={hotline}
-        />
-      </HomeFilterProvider>
+          {/* Vị trí 4: BANNER MỒI CÂU DẪN VỀ TRANG TÍNH GIÁ (Lead Magnet Banner) */}
+          <RollingEstimateCalloutBanner
+            config={homepage.rollingEstimateCallout}
+            hotline={hotline}
+          />
+        </HomeFilterProvider>
+      </React.Suspense>
 
       {/* Vị trí 5: Khối Cam kết đại lý 3S & Uy tín chuyên viên */}
       <SalerProfileSection

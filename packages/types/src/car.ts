@@ -38,6 +38,7 @@ export type Color = z.infer<typeof ColorSchema>;
 export const VersionColorSchema = z.object({
   colorId: z.string(),
   tenMau: z.string(),
+  slug: z.string().optional().default(''),
   hexCode: z.string(),
   isTwoTone: z.boolean().default(false),
   secondaryHexCode: z.string().optional().nullable(),
@@ -162,3 +163,17 @@ export interface CatalogFilterState {
   segment: CatalogSegment;
   price: PriceRangeId;
 }
+
+// 🧠 Mental Model: Data Contracts cho Trang Chi Tiết Dòng Xe (Phase 4.4 Car Detail Experience)
+export const CarDetailVersionSchema = CarVersionSchema.extend({
+  colors: z.array(VersionColorSchema).default([]),
+});
+export type CarDetailVersion = z.infer<typeof CarDetailVersionSchema>;
+
+export const CarDetailSchema = CarSchema.extend({
+  minPrice: z.number(),
+  maxPrice: z.number(),
+  versionCount: z.number().default(0),
+  versions: z.array(CarDetailVersionSchema).default([]),
+});
+export type CarDetail = z.infer<typeof CarDetailSchema>;
