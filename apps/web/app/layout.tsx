@@ -4,7 +4,7 @@ import './globals.css';
 import { getStorefrontSettings } from '../services/settings.service';
 import { ViewportCoordinator } from '../components/layout/ViewportCoordinator';
 import { Footer } from '../components/layout/Footer';
-import { AutoDealerJsonLd } from '../components/seo/AutoDealerJsonLd';
+import { AutoDealerJsonLd, SalerJsonLd } from '../components/seo/AutoDealerJsonLd';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -57,6 +57,9 @@ export default async function RootLayout({
 
         {/* Local Business JSON-LD Schema */}
         <AutoDealerJsonLd contact={settings.contact} site={settings.site} />
+
+        {/* Sales Consultant Person JSON-LD Schema */}
+        <SalerJsonLd contact={settings.contact} site={settings.site} />
       </body>
     </html>
   );

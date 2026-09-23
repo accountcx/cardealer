@@ -1,25 +1,35 @@
 import type { ContactSettings, SiteSettings } from '@cardealer/types';
+import { getSiteUrl } from '@cardealer/env';
 
 export interface AutoDealerJsonLdProps {
   contact: ContactSettings;
   site: SiteSettings;
 }
 
-// 🧠 Mental Model: Script Schema.org 'AutoDealer' tối ưu Google Local Business SEO cho Showroom.
-// Tự động chèn metadata địa chỉ, hotline, giờ mở cửa và tọa độ GPS lấy trực tiếp từ cấu hình đại lý.
 export const AutoDealerJsonLd = ({ contact, site }: AutoDealerJsonLdProps) => {
+  const siteUrl = site.siteUrl || getSiteUrl();
+  const fullImageUrl = (site.defaultImage || '/images/og-image.jpg').startsWith('http')
+    ? site.defaultImage
+    : `${siteUrl}${site.defaultImage || '/images/og-image.jpg'}`;
+
   const schemaData = {
     '@context': 'https://schema.org',
     '@type': 'AutoDealer',
+    '@id': `${siteUrl}/#dealer`,
     name: contact.showroomName,
-    image: site.defaultImage || '/images/og-image.jpg',
+    url: siteUrl,
+    image: fullImageUrl,
     telephone: contact.hotlineKinhDoanh,
     email: contact.email,
+    priceRange: '$$$$',
+    currenciesAccepted: 'VND',
+    paymentAccepted: 'Tiền mặt, Chuyển khoản ngân hàng, Trả góp qua ngân hàng',
+    hasMap: site.googleMapEmbedUrl || undefined,
     address: {
       '@type': 'PostalAddress',
       streetAddress: contact.diaChi,
-      addressLocality: 'TP. Vinh',
-      addressRegion: 'Nghệ An',
+      addressLocality: contact.tinhThanh || 'TP. Vinh',
+      addressRegion: contact.tinhThanh || 'Nghệ An',
       addressCountry: 'VN',
     },
     geo: {
@@ -43,6 +53,11 @@ export const AutoDealerJsonLd = ({ contact, site }: AutoDealerJsonLdProps) => {
         closes: '18:00',
       },
     ],
+    sameAs: [
+      site.facebookUrl,
+      site.youtubeUrl,
+      site.zaloUrl,
+    ].filter(Boolean),
   };
 
   return (
@@ -52,3 +67,7 @@ export const AutoDealerJsonLd = ({ contact, site }: AutoDealerJsonLdProps) => {
     />
   );
 };
+
+export { SalerJsonLd } from './SalerJsonLd';
+export type { SalerJsonLdProps } from './SalerJsonLd';
+

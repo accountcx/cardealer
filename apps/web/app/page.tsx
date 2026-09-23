@@ -1,13 +1,15 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import { getHomepageSettings, getStorefrontSettings } from '../services/settings.service';
-import { getFeaturedCars } from '../services/cars.service';
+import { getFeaturedCars, getCatalogCars } from '../services/cars.service';
 import { HeroEventBanner } from '../components/home/HeroEventBanner';
 import { LeadMagnetFilter } from '../components/home/LeadMagnetFilter';
-import { SalerProfileSection } from '../components/home/SalerProfileSection';
 import { FeaturedCarsSection } from '../components/home/FeaturedCarsSection';
+import { RollingEstimateCalloutBanner } from '../components/home/RollingEstimateCalloutBanner';
+import { SalerProfileSection } from '../components/home/SalerProfileSection';
 import { DeliveryStoriesSection } from '../components/home/DeliveryStoriesSection';
 import { LatestNewsSection, type ArticlePreview } from '../components/home/LatestNewsSection';
+import { HomeFilterProvider } from '../components/home/HomeFilterContext';
 
 export const revalidate = 60;
 
@@ -57,11 +59,13 @@ const SAMPLE_PROMOTIONS: ArticlePreview[] = [
 // 🧠 Mental Model: Trang Chủ Phễu Chuyển Đổi 6 Phân Khu (Homepage Conversion Funnel - `/`).
 // 1. Server-Side Rendering (RSC) nạp song song Promise.all dữ liệu settings và catalog xe, triệt tiêu CLS = 0.
 // 2. Mọi phân khu đều tuân thủ cơ chế Graceful Degradation: Tự động ẩn nếu bị tắt hoặc rỗng dữ liệu.
+// 3. Phân Khu 2 (LeadMagnetFilter) và Phân Khu 4 (FeaturedCarsSection) liên kết qua HomeFilterProvider để lọc xe tức thì.
 export default async function HomePage() {
-  const [homepage, settings, featuredCars] = await Promise.all([
+  const [homepage, settings, featuredCars, allCars] = await Promise.all([
     getHomepageSettings(),
     getStorefrontSettings(),
     getFeaturedCars(),
+    getCatalogCars(),
   ]);
 
   const hotline = settings.contact.hotlineKinhDoanh || settings.site.phone || '0981.234.567';
@@ -75,31 +79,44 @@ export default async function HomePage() {
         hotline={hotline}
       />
 
-      {/* Phân Khu 2: Lead Magnet Hub (Bộ Lọc Nhanh) */}
-      <LeadMagnetFilter
-        config={homepage.leadFilter}
-        totalCars={featuredCars.length || 8}
-      />
+      <HomeFilterProvider
+        allCars={allCars}
+        defaultFeaturedCars={featuredCars}
+        priceRanges={homepage.leadFilter.priceRanges}
+        bodyStyles={homepage.leadFilter.bodyStyles}
+      >
+        {/* Vị trí 2: Khối Bộ Lọc Xe (Filter) */}
+        <LeadMagnetFilter
+          config={homepage.leadFilter}
+          totalCars={allCars.length || featuredCars.length || 8}
+        />
 
-      {/* Phân Khu 3: VIP Showroom / Hồ Sơ Saler & 4 Cam Kết Vàng */}
+        {/* Vị trí 3: Danh Sách Xe Bán Chạy (Hiển thị ngay dưới Filter để khách lọc xong thấy xe ngay) */}
+        <FeaturedCarsSection
+          config={homepage.featuredCars}
+          cars={featuredCars}
+        />
+
+        {/* Vị trí 4: BANNER MỒI CÂU DẪN VỀ TRANG TÍNH GIÁ (Lead Magnet Banner) */}
+        <RollingEstimateCalloutBanner
+          config={homepage.rollingEstimateCallout}
+          hotline={hotline}
+        />
+      </HomeFilterProvider>
+
+      {/* Vị trí 5: Khối Cam kết đại lý 3S & Uy tín chuyên viên */}
       <SalerProfileSection
         config={homepage.salerShowroom}
         hotline={hotline}
         zalo={zalo}
       />
 
-      {/* Phân Khu 4: Featured Cars Showcase (Dòng Xe Bán Chạy) */}
-      <FeaturedCarsSection
-        config={homepage.featuredCars}
-        cars={featuredCars}
-      />
-
-      {/* Phân Khu 5: Testimonials & Delivery Stories (Bàn Giao Xe Thực Tế) */}
+      {/* Vị trí 6: Khoảnh khắc bàn giao xe thực tế (Social Proof tạo lòng tin) */}
       <DeliveryStoriesSection
         config={homepage.deliveryStories}
       />
 
-      {/* Phân Khu 6: Latest News & Special Promotions (Tin Tức Khuyến Mãi) */}
+      {/* Vị trí 7: Tin tức SEO & Footer */}
       <LatestNewsSection
         config={homepage.latestPromotions}
         posts={SAMPLE_PROMOTIONS}

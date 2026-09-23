@@ -31,6 +31,18 @@ describe('CreateLeadSchema validation', () => {
     expect(res2.success).toBe(true);
   });
 
+  it('should accept frictionless single-field lead without fullName', () => {
+    const res = CreateLeadSchema.safeParse({
+      phone: '0981234567',
+      leadType: 'Giá Lăn Bánh',
+    });
+    expect(res.success).toBe(true);
+    if (res.success) {
+      expect(res.data.fullName).toBe('Khách hàng');
+      expect(res.data.phone).toBe('0981234567');
+    }
+  });
+
   it('should normalize +84 phone numbers into 10-digit format', () => {
     const res = CreateLeadSchema.safeParse({
       fullName: 'Tran Thi D',

@@ -105,16 +105,16 @@ export const LeadQuoteForm: React.FC<LeadQuoteFormProps> = ({
           type="submit"
           disabled={loading}
           className={cn(
-            'w-full h-12 bg-[#002C6C] hover:bg-[#001D48] text-white rounded-xl font-bold text-sm shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2',
+            'w-full h-auto min-h-[48px] py-3 px-4 bg-[#002C6C] hover:bg-[#001D48] text-white rounded-xl font-bold text-sm shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2 whitespace-normal break-words overflow-hidden',
             buttonClassName
           )}
         >
           {loading ? (
-            <span>Đang gửi thông tin...</span>
+            <span className="whitespace-normal leading-snug">Đang gửi thông tin...</span>
           ) : (
             <>
               <svg
-                className="w-4 h-4 text-sky-400"
+                className="w-4 h-4 text-sky-400 shrink-0"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -126,7 +126,9 @@ export const LeadQuoteForm: React.FC<LeadQuoteFormProps> = ({
                   d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
                 />
               </svg>
-              <span>{submitText}</span>
+              <span className="whitespace-normal break-words leading-snug text-center max-w-full">
+                {submitText}
+              </span>
             </>
           )}
         </Button>

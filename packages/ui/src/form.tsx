@@ -8,6 +8,8 @@ import {
   type FieldValues,
   FormProvider,
   useFormContext,
+  useForm,
+  useWatch,
 } from 'react-hook-form';
 import { Slot } from '@radix-ui/react-slot';
 import { cn } from './lib/utils';
@@ -178,4 +180,9 @@ export {
   FormMessage,
   FormField,
   Label,
+  useForm,
+  useWatch,
+  useFormContext,
+  Controller,
 };
+export type { ControllerProps, FieldPath, FieldValues };

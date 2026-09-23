@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Sparkles, ArrowRight, Tag, ShieldCheck } from 'lucide-react';
+import { Sparkles, ArrowRight, Tag, ShieldCheck, Calculator } from 'lucide-react';
 import { Button } from '@cardealer/ui';
 import { formatVNDShort } from '@cardealer/core';
 import type { Car } from '@cardealer/types';
@@ -12,16 +12,10 @@ export interface CarShowcaseCardProps {
 }
 
 // 🧠 Mental Model: Client Component hiển thị thẻ xe trong Featured Showcase.
-// Tích hợp 2 nút hành động: Xem chi tiết (chuyển /xe/[slug]) và Nhận báo giá (mở LeadQuoteModal với context dòng xe).
+// Tích hợp 2 nút hành động chuyển đổi cao:
+// 1. Nút phụ: "Chi Tiết" (chuyển /xe/[slug] xem thông số kỹ thuật).
+// 2. Nút chính: "Tính Giá Lăn Bánh" (dẫn thẳng sang /gia-lan-banh?model=[slug] tự động chọn xe).
 export const CarShowcaseCard: React.FC<CarShowcaseCardProps> = ({ car }) => {
-  const handleOpenModal = () => {
-    window.dispatchEvent(
-      new CustomEvent('open-lead-modal', {
-        detail: { source: 'homepage_featured', carSlug: car.slug },
-      })
-    );
-  };
-
   // Tính toán khoảng giá từ các phiên bản
   const minPrice =
     car.versions && car.versions.length > 0
@@ -87,8 +81,8 @@ export const CarShowcaseCard: React.FC<CarShowcaseCardProps> = ({ car }) => {
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="p-6 pt-0 grid grid-cols-2 gap-2.5">
+      {/* Action Buttons: Chi Tiết & Tính Giá Lăn Bánh */}
+      <div className="p-5 sm:p-6 pt-0 grid grid-cols-2 gap-2.5">
         <Link
           href={`/xe/${car.slug}`}
           className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 text-xs font-bold transition-all border border-slate-200/60"
@@ -97,12 +91,13 @@ export const CarShowcaseCard: React.FC<CarShowcaseCardProps> = ({ car }) => {
           <ArrowRight className="w-3.5 h-3.5" />
         </Link>
         <Button
-          type="button"
-          onClick={handleOpenModal}
-          className="h-auto flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-[#002C6C] hover:bg-[#001D48] text-white text-xs font-bold shadow-md shadow-[#002C6C]/20 transition-all active:scale-[0.98] border-0"
+          asChild
+          className="h-auto flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#002C6C] to-[#0072CE] hover:brightness-110 text-white text-xs font-bold shadow-md shadow-[#002C6C]/25 transition-all active:scale-[0.98] border-0"
         >
-          <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-          <span>Báo Giá</span>
+          <Link href={`/gia-lan-banh?model=${car.slug}`}>
+            <Calculator className="w-3.5 h-3.5 text-amber-300" />
+            <span>Tính Giá Lăn Bánh</span>
+          </Link>
         </Button>
       </div>
     </div>

@@ -34,7 +34,7 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=installer /app .
 
 USER nextjs
-EXPOSE 3000
-ENV PORT=3000
+EXPOSE 3002
+ENV PORT=3002
 
 CMD ["node", "apps/web/server.js"]

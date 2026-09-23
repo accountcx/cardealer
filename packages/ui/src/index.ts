@@ -16,5 +16,6 @@ export * from './switch';
 export * from './skeleton';
 export * from './lead-quote-form';
 export * from './admin-shell';
+export * from './chip-group';
 
 

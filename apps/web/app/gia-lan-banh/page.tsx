@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
+import { getSiteUrl } from '@cardealer/env';
 import CalculatorMasterView from '../../components/calculator/CalculatorMasterView';
 import { Breadcrumbs } from '../../components/layout/Breadcrumbs';
 import { getCarsList } from '../../services/cars.service';
@@ -26,12 +27,19 @@ export const metadata: Metadata = {
 };
 
 interface GiaLanBanhPageProps {
-  searchParams?: Promise<{ xe?: string; car?: string }>;
+  searchParams?: Promise<{
+    xe?: string;
+    car?: string;
+    model?: string;
+    segment?: string;
+    budget?: string;
+  }>;
 }
 
 export default async function GiaLanBanhPage(props: GiaLanBanhPageProps) {
   const resolvedParams = props.searchParams ? await props.searchParams : {};
-  const initialCarSlug = resolvedParams?.xe || resolvedParams?.car;
+  const initialCarSlug = resolvedParams?.model || resolvedParams?.xe || resolvedParams?.car;
+  const initialSegment = resolvedParams?.segment;
 
   const [cars, settings] = await Promise.all([
     getCarsList(),
@@ -41,22 +49,30 @@ export default async function GiaLanBanhPage(props: GiaLanBanhPageProps) {
   const hotline = settings.contact.hotlineKinhDoanh || '0981.234.567';
   const zaloUrl = settings.contact.sellerZalo || 'https://zalo.me/0981234567';
 
+  const siteUrl = getSiteUrl();
+
   // JSON-LD Schema chuẩn Schema.org cho ứng dụng tài chính (R14)
   const jsonLdSchema = {
     '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    name: 'Công cụ tính Giá Lăn Bánh Xe Hyundai - Xe Hyundai Vinh',
+    '@type': 'WebApplication',
+    '@id': `${siteUrl}/gia-lan-banh`,
+    url: `${siteUrl}/gia-lan-banh`,
+    name: 'Công cụ tính Giá Lăn Bánh Xe Hyundai - Hyundai Vinh',
+    description: 'Công cụ dự toán chi phí lăn bánh ô tô và ước tính trả góp ngân hàng chính xác tại Nghệ An & Hà Tĩnh.',
     applicationCategory: 'FinanceApplication',
-    operatingSystem: 'Web Browser',
-    price: '0',
-    priceCurrency: 'VND',
+    operatingSystem: 'All',
+    browserRequirements: 'Requires JavaScript. Requires HTML5.',
     offers: {
       '@type': 'Offer',
       price: '0',
       priceCurrency: 'VND',
+      availability: 'https://schema.org/InStock',
     },
-    description:
-      'Công cụ dự toán chi phí lăn bánh ô tô và ước tính trả góp ngân hàng chính xác tại Nghệ An & Hà Tĩnh',
+    author: {
+      '@type': 'AutoDealer',
+      name: 'Xe Hyundai Vinh',
+      url: siteUrl,
+    },
   };
 
   return (
@@ -67,44 +83,48 @@ export default async function GiaLanBanhPage(props: GiaLanBanhPageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSchema) }}
       />
 
-      {/* Hero Section Banner */}
-      <section className="bg-gradient-to-b from-[#002C6C] via-[#051c42] to-slate-50 text-white pt-8 pb-20 px-4 sm:px-6 relative overflow-hidden">
+      {/* Hero Section Banner - Siêu tinh gọn trên mobile (<45px) */}
+      <section className="bg-gradient-to-b from-[#002C6C] to-[#041a3d] text-white py-2.5 sm:pt-8 sm:pb-10 px-3.5 sm:px-6 relative overflow-hidden">
         {/* Glow effects */}
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-sky-400/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-10 left-10 w-72 h-72 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
 
-        {/* Hero Content Container: Căn lề trái thẳng hàng với khung tính toán bên dưới */}
+        {/* Hero Content Container */}
         <div className="max-w-4xl mx-auto relative z-10 text-left">
-          {/* Breadcrumbs tự động sinh theo URL: Căn trái, thuần túy không viền/nền, phân cấp thị giác */}
-          <Breadcrumbs />
+          {/* Breadcrumbs - Ẩn trên mobile để tiết kiệm diện tích */}
+          <div className="hidden sm:block">
+            <Breadcrumbs />
+          </div>
 
-          {/* Tiêu đề trang đại diện thay cho lặp lại logo */}
-          <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-white leading-tight">
+          {/* Tiêu đề trang đại diện - Siêu gọn trên mobile */}
+          <h1 className="text-base sm:text-3xl md:text-5xl font-black tracking-tight text-white leading-tight">
             Công Cụ Tính Giá Lăn Bánh &amp; Trả Góp Ô Tô
           </h1>
 
-          <p className="text-sm sm:text-base md:text-lg text-slate-200 mt-3 max-w-2xl leading-relaxed font-normal">
+          {/* Mô tả dài - Ẩn trên mobile để đưa bảng tính ngay vào tầm mắt */}
+          <p className="hidden sm:block text-xs sm:text-base md:text-lg text-slate-200 mt-1.5 sm:mt-3 max-w-2xl leading-relaxed font-normal">
             Dự toán chính xác 100% biểu phí trước bạ, biển số, bảo trì đường bộ theo quy định tại Nghệ An &amp; Hà Tĩnh cùng bảng tính gốc lãi trả góp ngân hàng ưu đãi.
           </p>
         </div>
       </section>
 
       {/* Main Master Calculator Container */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 -mt-10 relative z-20">
+      <main className="max-w-4xl mx-auto px-3 sm:px-6 pt-3 sm:pt-6 relative z-20">
         <Suspense fallback={<div className="h-96 w-full rounded-3xl bg-white/50 animate-pulse" />}>
           <CalculatorMasterView
             cars={cars}
             initialCarSlug={initialCarSlug}
+            initialSegment={initialSegment}
             defaultHotline={hotline}
             defaultZaloUrl={zaloUrl}
           />
         </Suspense>
 
         {/* Showroom 4-Pillar Commitment Grid */}
-        <div className="mt-16 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xl">
-          <div className="text-center mb-8">
+        <div className="mt-8 sm:mt-16 bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 border border-slate-200 shadow-xl">
+          <div className="text-center mb-5 sm:mb-8">
             <span className="text-xs font-bold uppercase tracking-wider text-[#0072CE]">Cam Kết Vàng</span>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
+            <h2 className="text-lg sm:text-2xl font-black text-slate-900 mt-1">
               Tại Sao Khách Hàng Chọn Mua Xe Tại Xe Hyundai Vinh?
             </h2>
             <p className="text-xs sm:text-sm text-slate-700 font-medium mt-1">
@@ -112,8 +132,8 @@ export default async function GiaLanBanhPage(props: GiaLanBanhPageProps) {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-blue-200 transition">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+            <div className="p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-slate-50 border border-slate-100 hover:border-blue-200 transition">
               <div className="w-10 h-10 rounded-xl bg-blue-100 text-[#002C6C] flex items-center justify-center font-bold text-lg mb-3">
                 🏆
               </div>

@@ -21,8 +21,8 @@ export const SETTINGS_TABS: TabItem[] = [
   },
   {
     id: 'homepage',
-    label: 'Trang Chủ (Phễu 6 Khu)',
-    description: 'Bật/tắt 6 phân khu, banner sự kiện, đếm ngược, cam kết saler, album giao xe',
+    label: 'Trang Chủ (Phễu 7 Khu)',
+    description: 'Bật/tắt 7 phân khu, banner sự kiện, đếm ngược, cam kết saler, album giao xe',
     icon: Sparkles,
   },
   {
@@ -70,11 +70,10 @@ export const SettingsTabNav = ({ activeTab, onTabChange }: SettingsTabNavProps) 
             type="button"
             variant="ghost"
             onClick={() => onTabChange(tab.id)}
-            className={`h-auto flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ease-in-out motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-[#0072CE] focus-visible:outline-none ${
-              isActive
+            className={`h-auto flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ease-in-out motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-[#0072CE] focus-visible:outline-none ${isActive
                 ? 'bg-[#0072CE] text-white shadow-md shadow-[#0072CE]/30 border border-[#0072CE]/50 hover:bg-[#005BA4] hover:text-white'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
-            }`}
+              }`}
           >
             <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
             <span>{tab.label}</span>

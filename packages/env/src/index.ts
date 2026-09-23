@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 // 🧠 Mental Model: Centralized Constants cho URLs mặc định của Showroom
 export const DEFAULT_SITE_URL = 'https://xehyundaivinh.com';
-export const DEFAULT_DEV_SITE_URL = 'http://localhost:3000';
+export const DEFAULT_DEV_SITE_URL = 'http://localhost:3002';
 export const DEFAULT_API_URL = 'http://localhost:4000';
 
 const serverEnvSchema = z.object({
@@ -14,7 +14,7 @@ const serverEnvSchema = z.object({
 });
 
 const clientEnvSchema = z.object({
-  NEXT_PUBLIC_SITE_URL: z.string().url().default('http://localhost:3000'),
+  NEXT_PUBLIC_SITE_URL: z.string().url().default(DEFAULT_SITE_URL),
   NEXT_PUBLIC_API_URL: z.string().url().default('http://localhost:4000'),
 });
 

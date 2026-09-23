@@ -23,6 +23,7 @@ export const carsService = {
           id: c.id,
           tenXe: c.tenXe,
           slug: c.slug,
+          segment: c.segment || c.kieuDang,
           versions: (c.versions || []).map((v: any) => ({
             id: v.id,
             tenPhienBan: v.tenPhienBan,

@@ -33,6 +33,13 @@ export const SiteSettingsSchema = z.object({
   phone: z.string().default('0981.234.567'),
   mapLatitude: z.number().default(18.6796),
   mapLongitude: z.number().default(105.6813),
+  siteUrl: z.string().optional(),
+  googleMapEmbedUrl: z.string().optional(),
+  facebookUrl: z.string().optional(),
+  facebookPersonalUrl: z.string().optional(),
+  youtubeUrl: z.string().optional(),
+  zaloUrl: z.string().optional(),
+  tiktokUrl: z.string().optional(),
 });
 export type SiteSettings = z.infer<typeof SiteSettingsSchema>;
 
@@ -84,6 +91,7 @@ export type NavigationSettings = z.infer<typeof NavigationSettingsSchema>;
 export const ContactSettingsSchema = z.object({
   showroomName: z.string().default(''),
   sellerName: z.string().default(''),
+  salerName: z.string().optional(),
   sellerPhone: z.string().default(''),
   sellerZalo: z.string().default(''),
   sellerEmail: z.string().default(''),
@@ -94,6 +102,7 @@ export const ContactSettingsSchema = z.object({
   zaloNumber: z.string().default(''),
   email: z.string().default(''),
   diaChi: z.string().default(''),
+  tinhThanh: z.string().optional(),
   workingHours: z.string().default(''),
   googleMapsUrl: z.string().default(''),
   googleMapEmbed: z.string().optional().default(''),
@@ -373,12 +382,32 @@ export const LatestPromotionsZoneSchema = z.object({
 });
 export type LatestPromotionsZoneConfig = z.infer<typeof LatestPromotionsZoneSchema>;
 
-// 8.7. Homepage Settings Tổng Hợp
+// 8.7. Phân Khu Lead Magnet Banner (Dự Toán Lăn Bánh Tức Thì)
+export const RollingEstimateCalloutSchema = z.object({
+  enabled: z.boolean().default(true),
+  badgeText: z.string().default('Minh Bạch Giá — Không Chi Phí Ẩn'),
+  headline: z.string().default(
+    'Bạn muốn biết giá lăn bánh chính xác tại TP. Vinh hoặc các huyện Nghệ An sau khi trừ hết khuyến mại tiền mặt?'
+  ),
+  description: z.string().default(
+    'Dự toán trọn gói biểu phí nhà nước (thuế trước bạ 10%, biển số, đăng kiểm, đường bộ) kèm gói quà tặng phụ kiện chính hãng & ưu đãi tiền mặt độc quyền tại Showroom trong tháng 09/2026.'
+  ),
+  buttonText: z.string().default('Dự Toán Lăn Bánh Tức Thì (Bước 1/2)'),
+  commitments: z.array(z.string()).default([
+    'Biểu phí chuẩn 100%',
+    'Trừ khuyến mại đại lý',
+    'Dự toán vay góp 24h',
+  ]),
+});
+export type RollingEstimateCalloutConfig = z.infer<typeof RollingEstimateCalloutSchema>;
+
+// 8.8. Homepage Settings Tổng Hợp
 export const HomepageSettingsSchema = z.object({
   heroBanner: HeroBannerSchema.default(() => HeroBannerSchema.parse({})),
   leadFilter: LeadFilterSchema.default(() => LeadFilterSchema.parse({})),
   salerShowroom: SalerShowroomSchema.default(() => SalerShowroomSchema.parse({})),
   featuredCars: FeaturedCarsZoneSchema.default(() => FeaturedCarsZoneSchema.parse({})),
+  rollingEstimateCallout: RollingEstimateCalloutSchema.default(() => RollingEstimateCalloutSchema.parse({})),
   deliveryStories: DeliveryStoriesZoneSchema.default(() => DeliveryStoriesZoneSchema.parse({})),
   latestPromotions: LatestPromotionsZoneSchema.default(() => LatestPromotionsZoneSchema.parse({})),
 });

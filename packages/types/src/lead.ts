@@ -63,9 +63,14 @@ export type LeadType = z.infer<typeof LeadTypeEnum>;
 export const CreateLeadSchema = z.object({
   fullName: z
     .string()
-    .trim()
-    .min(2, 'Họ và tên phải có ít nhất 2 ký tự')
-    .max(100, 'Họ tên không được vượt quá 100 ký tự'),
+    .optional()
+    .transform((val) => (!val || val.trim().length === 0 ? 'Khách hàng' : val.trim()))
+    .pipe(
+      z
+        .string()
+        .min(2, 'Họ và tên phải có ít nhất 2 ký tự')
+        .max(100, 'Họ tên không được vượt quá 100 ký tự')
+    ),
   phone: z
     .string()
     .trim()

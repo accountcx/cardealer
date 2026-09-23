@@ -109,7 +109,7 @@ pnpm dev
 ```
 
 Truy cập các cổng dịch vụ cục bộ:
-* 🌐 **Khách hàng (Storefront):** `http://localhost:3000`
+* 🌐 **Khách hàng (Storefront):** `http://localhost:3002`
 * 🛠️ **Cổng Quản Trị (Admin Portal):** `http://localhost:3001`
   * *Tài khoản quản trị viên mặc định (Seed Data):* `admin@xehyundaivinh.com` / `admin123`
 * ⚡ **Backend API Server:** `http://localhost:4000` (Healthcheck: `http://localhost:4000/api/health`)

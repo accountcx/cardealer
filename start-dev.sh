@@ -3,7 +3,7 @@
 # ==============================================================================
 # 🚗 CARDEALER MONOREPO - ALL-IN-ONE LOCAL DEV RUNNER 🚗
 # Tự động dọn dẹp port, kích hoạt Node v24 và khởi chạy cả 3 Projects:
-#   1. Storefront Web (Next.js 15)  -> Port 3000
+#   1. Storefront Web (Next.js 15)  -> Port 3002
 #   2. Admin Portal   (Next.js 15)  -> Port 3001
 #   3. Backend API    (Node REST)   -> Port 4000
 # ==============================================================================
@@ -68,8 +68,8 @@ cleanup_port() {
   fi
 }
 
-echo -e "${C_BLUE}🔍 Bước 1: Kiểm tra và dọn dẹp các cổng mạng 3000, 3001, 4000...${C_RESET}"
-cleanup_port 3000
+echo -e "${C_BLUE}🔍 Bước 1: Kiểm tra và dọn dẹp các cổng mạng 3002, 3001, 4000...${C_RESET}"
+cleanup_port 3002
 cleanup_port 3001
 cleanup_port 4000
 echo -e "${C_GREEN}✅ Các cổng mạng đã sẵn sàng!${C_RESET}"
@@ -92,7 +92,7 @@ cleanup_all() {
     kill -TERM "$RUNNER_PID" 2>/dev/null || true
   fi
   sleep 1
-  cleanup_port 3000
+  cleanup_port 3002
   cleanup_port 3001
   cleanup_port 4000
   echo -e "${C_GREEN}✅ Đã dừng an toàn tất cả các tiến trình. Hẹn gặp lại!${C_RESET}"
@@ -106,7 +106,7 @@ echo ""
 echo -e "${C_GREEN}${C_BOLD}======================================================================${C_RESET}"
 echo -e "${C_GREEN}${C_BOLD}  🎉 TẤT CẢ CÁC DỊCH VỤ ĐANG SẴN SÀNG TRUY CẬP: 🎉${C_RESET}"
 echo -e "${C_GREEN}${C_BOLD}======================================================================${C_RESET}"
-echo -e "  🌐 ${C_BOLD}Storefront (Khách hàng):${C_RESET} ${C_CYAN}http://localhost:3000${C_RESET}"
+echo -e "  🌐 ${C_BOLD}Storefront (Khách hàng):${C_RESET} ${C_CYAN}http://localhost:3002${C_RESET}"
 echo -e "  🛠️  ${C_BOLD}Admin Portal (Quản trị):${C_RESET}  ${C_CYAN}http://localhost:3001${C_RESET}"
 echo -e "  ⚡ ${C_BOLD}Backend API Service:${C_RESET}     ${C_CYAN}http://localhost:4000${C_RESET}"
 echo -e "  📡 ${C_BOLD}API Healthcheck:${C_RESET}         ${C_CYAN}http://localhost:4000/api/health${C_RESET}"
