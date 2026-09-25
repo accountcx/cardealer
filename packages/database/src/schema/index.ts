@@ -6,4 +6,5 @@ export * from './colors';
 export * from './media';
 export * from './system_settings';
 export * from './leads';
+export * from './posts';
 export * from './relations';

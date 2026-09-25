@@ -91,7 +91,13 @@ describe('Phase 4.4: Car Detail Schema & Multi-Tier JSON-LD', () => {
       showroomAddress: '138 Phạm Văn Đồng, Hà Nội',
     };
 
-    const jsonLd = generateCarJsonLd(mockCarDetail, siteUrl, consultant) as any;
+    const jsonLd = generateCarJsonLd(mockCarDetail, siteUrl, {
+      consultant,
+      aggregateRating: {
+        ratingValue: '4.9',
+        reviewCount: 38,
+      },
+    }) as any;
 
     expect(jsonLd['@context']).toBe('https://schema.org');
     expect(Array.isArray(jsonLd['@graph'])).toBe(true);
@@ -112,6 +118,13 @@ describe('Phase 4.4: Car Detail Schema & Multi-Tier JSON-LD', () => {
     expect(product.warranty['@type']).toBe('WarrantyPromise');
     expect(product.aggregateRating['@type']).toBe('AggregateRating');
     expect(product.aggregateRating.ratingValue).toBe('4.9');
+
+    // Kiểm tra cơ chế chống phạt Google Manual Action: Không truyền review thực tế -> Không sinh aggregateRating ảo
+    const cleanJsonLd = generateCarJsonLd(mockCarDetail, siteUrl, { consultant }) as any;
+    const cleanProduct = cleanJsonLd['@graph'].find((item: any) =>
+      Array.isArray(item['@type']) && item['@type'].includes('Product')
+    );
+    expect(cleanProduct.aggregateRating).toBeUndefined();
 
     // 2. Kiểm tra Person (Saler Consultant)
     const person = graph.find((item: any) => item['@type'] === 'Person');

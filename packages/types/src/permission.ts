@@ -12,6 +12,8 @@ export type PermissionAction =
   | 'users:force_logout'
   | 'cars:read'
   | 'cars:write'
+  | 'posts:read'
+  | 'posts:write'
   | 'leads:read'
   | 'leads:write'
   | 'system:read'
@@ -27,6 +29,8 @@ export const ROLE_PERMISSIONS: Record<Role, readonly PermissionAction[]> = {
     'users:force_logout',
     'cars:read',
     'cars:write',
+    'posts:read',
+    'posts:write',
     'leads:read',
     'leads:write',
     'system:read',
@@ -37,6 +41,8 @@ export const ROLE_PERMISSIONS: Record<Role, readonly PermissionAction[]> = {
     'users:update',
     'cars:read',
     'cars:write',
+    'posts:read',
+    'posts:write',
     'leads:read',
     'leads:write',
     'system:read',
@@ -44,10 +50,13 @@ export const ROLE_PERMISSIONS: Record<Role, readonly PermissionAction[]> = {
   editor: [
     'cars:read',
     'cars:write',
+    'posts:read',
+    'posts:write',
     'leads:read',
   ],
   sales: [
     'cars:read',
+    'posts:read',
     'leads:read',
     'leads:write',
   ],

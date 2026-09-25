@@ -5,6 +5,7 @@ import { colors, versionColors } from './colors';
 import { users } from './users';
 import { auditLogs } from './audit_logs';
 import { leads } from './leads';
+import { posts, categories, postTags } from './posts';
 
 export const carsRelations = relations(cars, ({ many }) => ({
   versions: many(carVersions),
@@ -27,6 +28,8 @@ export const colorsRelations = relations(colors, ({ many }) => ({
 
 export const usersRelations = relations(users, ({ many }) => ({
   auditLogs: many(auditLogs),
+  posts: many(posts),
+  leads: many(leads),
 }));
 
 export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
@@ -35,4 +38,21 @@ export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
 
 export const leadsRelations = relations(leads, ({ one }) => ({
   carVersion: one(carVersions, { fields: [leads.carVersionId], references: [carVersions.id] }),
+  post: one(posts, { fields: [leads.postId], references: [posts.id] }),
+  author: one(users, { fields: [leads.authorId], references: [users.id] }),
+}));
+
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  posts: many(posts),
+}));
+
+export const postsRelations = relations(posts, ({ one, many }) => ({
+  category: one(categories, { fields: [posts.categoryId], references: [categories.id] }),
+  author: one(users, { fields: [posts.authorId], references: [users.id] }),
+  tags: many(postTags),
+  leads: many(leads),
+}));
+
+export const postTagsRelations = relations(postTags, ({ one }) => ({
+  post: one(posts, { fields: [postTags.postId], references: [posts.id] }),
 }));

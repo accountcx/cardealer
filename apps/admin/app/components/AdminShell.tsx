@@ -74,10 +74,10 @@ export default function AdminShell({ children }: AdminShellProps) {
     },
     {
       label: 'Bài Viết & Đánh Giá',
-      href: '#',
+      href: '/posts',
       icon: <FileText size={18} />,
-      badge: 'Phase 4',
-      disabled: true,
+      permission: 'posts:read',
+      active: pathname.startsWith('/posts'),
     },
     {
       label: 'Cài Đặt Showroom',

@@ -4,10 +4,13 @@ import { handleAuthRoutes } from './routes/auth';
 import { handleCatalogRoutes } from './routes/catalog';
 import { handleLeadRoutes } from './routes/leads';
 import { handleAdminRoutes } from './routes/admin';
+import { handleRedirectRoutes } from './routes/redirects';
+import { handlePostRoutes } from './routes/posts';
 
 // 🧠 Mental Model: Micro REST API Server & Central Dispatcher.
 // Thiết kế theo chuẩn Router Delegation Pattern, phân tách routes thành các module con (< 100 dòng mỗi file).
 // Áp dụng bảo vệ Logging Sanitization (CWE-117) và Zero Hardcode thông qua biến môi trường API_PORT.
+// Updated relations for posts and categories.
 
 const PORT = Number(process.env.API_PORT) || 4000;
 
@@ -86,6 +89,12 @@ const server = http.createServer(async (req, res) => {
 
   // 3.5. Public Lead Routes (POST /api/leads)
   if (await handleLeadRoutes(req, res, url, readBody, sendJson)) return;
+
+  // 3.6. 301 Redirects Lookup Route (GET /api/redirects)
+  if (await handleRedirectRoutes(req, res, url, sendJson)) return;
+
+  // 3.7. Posts Management & Inbound Leads (REST CRUD, Preview, Honeypot)
+  if (await handlePostRoutes(req, res, url, readBody, sendJson)) return;
 
   // 4. Admin Protected Routes
   if (await handleAdminRoutes(req, res, url, readBody, sendJson)) return;

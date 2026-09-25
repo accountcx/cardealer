@@ -44,7 +44,7 @@ graph TD
 | **Financial Engine** | `packages/core/src/pricing/`, `apps/api/src/routes/quote.ts` | Thuật toán tính thuế trước bạ, biển số, bảo hiểm, lãi suất trả góp ngân hàng | ⏳ **Phase 3** |
 | **Lead & CRM Funnel** | `packages/types/src/lead.ts`, `apps/api`, `apps/web` | Thu thập form, gắn tag Lead (`Event Lead`, `Báo Giá`), gửi thông báo | ⏳ **Phase 3** |
 | **Storefront Experience** | `apps/web/app/`, `packages/ui` | 4.1 Shell & Widgets (✅ 100%), 4.2 Trang chủ 6 phân khu (✅ 100%), 4.3 Catalog /xe (✅ 100%), 4.4 /xe/[slug] (✅ 100% Hoàn Thành) | ✅ **Phase 4.4 (100%)** |
-| **Content & Lexical** | `apps/admin`, `apps/web`, `packages/ui` | Trình soạn thảo 15 Content Blocks, nhúng TikTok không cuộn, FAQ accordion | ⏳ **Phase 5** |
+| **Content & Inbound Marketing** | `packages/database`, `packages/types`, `packages/core`, `apps/admin`, `apps/web`, `packages/ui` | Hệ thống Tin tức, Tiptap Editor 8 Lean Blocks, TikTok 9:16 khử scrollbar, 3 Điểm chạm Inbound Lead | 🔄 **Phase 5 (Gate 2 Design Ready)** |
 | **SEO & Indexing** | `packages/core/src/seo/`, `apps/web`, `apps/api` | 7 Schema JSON-LD, Dynamic Sitemap, Google Indexing API v3 | ⏳ **Phase 6** |
 | **AI Automation** | `packages/ai-engine`, `apps/api` | AI sinh bài SEO hàng tháng, FAQ Schema, Chatbot tư vấn showroom | ⏳ **Phase 7** |
 
