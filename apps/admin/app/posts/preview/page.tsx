@@ -108,20 +108,16 @@ function PreviewContent() {
 
       if (token) {
         // Tải qua Secret Preview Token
-        const res = await apiClient.get<{ success: boolean; data: PostDetailData }>(
+        const res = await apiClient.get<any>(
           `/api/posts/preview?token=${encodeURIComponent(token)}`
         );
-        if (res.data) {
-          fetchedPost = res.data;
-        }
+        fetchedPost = res?.data || res;
       } else if (postId) {
         // Tải qua Admin Post ID (yêu cầu quyền admin)
-        const res = await apiClient.get<{ success: boolean; data: PostDetailData }>(
+        const res = await apiClient.get<any>(
           `/api/admin/posts/${postId}`
         );
-        if (res.data) {
-          fetchedPost = res.data;
-        }
+        fetchedPost = res?.data || res;
       }
 
       if (!fetchedPost) {

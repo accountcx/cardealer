@@ -106,9 +106,14 @@ export default function PostsManagementPage() {
     let isMounted = true;
     postService
       .getCategories()
-      .then((res) => {
-        if (isMounted && res.success && Array.isArray(res.data)) {
-          setCategories(res.data);
+      .then((res: any) => {
+        if (isMounted) {
+          const list = Array.isArray(res?.data)
+            ? res.data
+            : Array.isArray(res)
+            ? res
+            : [];
+          setCategories(list);
         }
       })
       .catch((err) => console.error('[Posts Page] Lỗi tải chuyên mục:', err));
@@ -139,13 +144,19 @@ export default function PostsManagementPage() {
         params.search = debouncedSearch.trim();
       }
 
-      const res = await postService.getPosts(params);
-      if (res && Array.isArray(res.data)) {
-        setPosts(res.data);
-        if (res.pagination) {
-          setTotalItems(res.pagination.totalItems);
-          setTotalPages(res.pagination.totalPages || 1);
-        }
+      const res: any = await postService.getPosts(params);
+      const postList = Array.isArray(res?.data)
+        ? res.data
+        : Array.isArray(res)
+        ? res
+        : [];
+      setPosts(postList);
+      if (res?.pagination) {
+        setTotalItems(res.pagination.totalItems);
+        setTotalPages(res.pagination.totalPages || 1);
+      } else {
+        setTotalItems(postList.length);
+        setTotalPages(1);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Không thể tải danh sách bài viết';
@@ -311,7 +322,7 @@ export default function PostsManagementPage() {
       )}
 
       {/* 2. Interactive Filter Bar */}
-      <Card className="p-4 md:p-6 bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl space-y-4">
+      <Card className="relative z-20 p-4 md:p-6 bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl space-y-4">
         {/* Status Tabs */}
         <div className="flex flex-wrap items-center gap-2 border-b border-white/10 pb-4">
           {[
@@ -356,7 +367,7 @@ export default function PostsManagementPage() {
           </div>
 
           {/* Category Dropdown */}
-          <div className="md:col-span-4">
+          <div className="md:col-span-4 relative z-30">
             <Select
               value={selectedCategory}
               onChange={(e) => {
@@ -375,7 +386,7 @@ export default function PostsManagementPage() {
       </Card>
 
       {/* 3. 4-State UI Data Presentation */}
-      <Card className="bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+      <Card className="relative z-10 bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
         {/* Loading State */}
         {loading && (
           <div className="p-6 space-y-4">

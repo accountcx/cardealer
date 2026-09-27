@@ -1,14 +1,16 @@
 import { IncomingMessage, ServerResponse } from 'node:http';
 import crypto from 'node:crypto';
 import { db, schema } from '@cardealer/database';
-import { eq, desc, and, or, ilike, count, sql } from 'drizzle-orm';
+import { eq, desc, asc, and, or, ilike, count, sql, ne } from 'drizzle-orm';
 import {
   CreatePostInputSchema,
   UpdatePostInputSchema,
+  createCategorySchema,
+  updateCategorySchema,
   hasPermission,
   type Role,
 } from '@cardealer/types';
-import { calculateReadingTimeAndWordCount, extractTextFromTiptap } from '@cardealer/core';
+import { calculateReadingTimeAndWordCount, extractTextFromTiptap, slugifyVietnamese } from '@cardealer/core';
 import { authenticateAdmin } from '../middleware/rbac';
 
 // 🧠 Mental Model: Router Quản Trị Biên Tập Bài Viết & Inbound Lead Receiver (CMS Posts Engine).
@@ -154,6 +156,186 @@ export async function handlePostRoutes(
     }
   }
 
+  // 1.3. GET /api/posts/categories (Danh mục công khai cho Storefront)
+  if (pathname === '/api/posts/categories' && method === 'GET') {
+    try {
+      const publicCategories = await db
+        .select({
+          id: schema.categories.id,
+          tenChuyenMuc: schema.categories.tenChuyenMuc,
+          slug: schema.categories.slug,
+          moTa: schema.categories.moTa,
+          sortOrder: schema.categories.sortOrder,
+        })
+        .from(schema.categories)
+        .orderBy(asc(schema.categories.sortOrder), desc(schema.categories.createdAt));
+
+      sendJson(200, { success: true, data: publicCategories });
+      return true;
+    } catch (err: unknown) {
+      console.error('[Public Categories] Lỗi tải chuyên mục:', err);
+      sendJson(500, { success: false, error: { code: 'DB_ERROR', message: 'Lỗi tải chuyên mục bài viết' } });
+      return true;
+    }
+  }
+
+  // 1.4. GET /api/posts (Danh sách bài viết đã xuất bản cho Storefront kèm lọc category & search)
+  if (pathname === '/api/posts' && method === 'GET') {
+    try {
+      const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+      const limit = Math.min(50, Math.max(1, Number(url.searchParams.get('limit')) || 12));
+      const offset = (page - 1) * limit;
+
+      const categoryFilter = url.searchParams.get('category')?.trim() || url.searchParams.get('chuyenMuc')?.trim();
+      const searchQuery = url.searchParams.get('search')?.trim() || url.searchParams.get('q')?.trim();
+
+      const conditions = [eq(schema.posts.status, 'published')];
+
+      if (categoryFilter) {
+        // Tìm category theo slug hoặc UUID (chỉ đối chiếu UUID khi định dạng hợp lệ để tránh lỗi Postgres 22P02)
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(categoryFilter);
+        const foundCategory = await db.query.categories.findFirst({
+          where: isUuid
+            ? or(
+                eq(schema.categories.slug, categoryFilter),
+                eq(schema.categories.id, categoryFilter)
+              )
+            : eq(schema.categories.slug, categoryFilter),
+        });
+
+        if (foundCategory) {
+          conditions.push(eq(schema.posts.categoryId, foundCategory.id));
+        } else {
+          // Không tìm thấy chuyên mục tương ứng -> Trả về rỗng
+          sendJson(200, {
+            success: true,
+            data: [],
+            pagination: { page, limit, totalItems: 0, totalPages: 0 },
+          });
+          return true;
+        }
+      }
+
+      if (searchQuery) {
+        conditions.push(ilike(schema.posts.tieuDe, `%${searchQuery}%`));
+      }
+
+      const whereClause = and(...conditions);
+
+      const [totalCountResult] = await db
+        .select({ total: count() })
+        .from(schema.posts)
+        .where(whereClause);
+
+      const totalItems = Number(totalCountResult?.total || 0);
+
+      const postsList = await db.query.posts.findMany({
+        where: whereClause,
+        orderBy: [
+          desc(schema.posts.isFeatured),
+          asc(schema.posts.featuredOrder),
+          desc(schema.posts.createdAt),
+        ],
+        limit,
+        offset,
+        with: {
+          category: {
+            columns: {
+              id: true,
+              tenChuyenMuc: true,
+              slug: true,
+            },
+          },
+          author: {
+            columns: {
+              id: true,
+              fullName: true,
+              role: true,
+              avatarUrl: true,
+              phone: true,
+            },
+          },
+        },
+      });
+
+      sendJson(200, {
+        success: true,
+        data: postsList,
+        pagination: {
+          page,
+          limit,
+          totalItems,
+          totalPages: Math.ceil(totalItems / limit) || 1,
+        },
+      });
+      return true;
+    } catch (err: unknown) {
+      console.error('[Public Posts] Lỗi tải danh sách bài viết:', err);
+      sendJson(500, { success: false, error: { code: 'DB_ERROR', message: 'Lỗi tải danh sách bài viết' } });
+      return true;
+    }
+  }
+
+  // 1.5. GET /api/posts/:slug (Chi tiết bài viết chuẩn SEO cho Storefront)
+  const publicSinglePostMatch = pathname.match(/^\/api\/posts\/([a-zA-Z0-9_-]+)$/);
+  if (publicSinglePostMatch && method === 'GET') {
+    const postSlug = publicSinglePostMatch[1];
+    if (postSlug !== 'preview' && postSlug !== 'categories') {
+      try {
+        const post = await db.query.posts.findFirst({
+          where: and(
+            eq(schema.posts.slug, postSlug),
+            eq(schema.posts.status, 'published')
+          ),
+          with: {
+            category: {
+              columns: {
+                id: true,
+                tenChuyenMuc: true,
+                slug: true,
+                moTa: true,
+              },
+            },
+            author: {
+              columns: {
+                id: true,
+                fullName: true,
+                role: true,
+                avatarUrl: true,
+                phone: true,
+              },
+            },
+            tags: true,
+          },
+        });
+
+        if (!post) {
+          sendJson(404, {
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'Không tìm thấy bài viết' },
+          });
+          return true;
+        }
+
+        // Tăng viewCount trong nền
+        db.update(schema.posts)
+          .set({ viewCount: sql`${schema.posts.viewCount} + 1` })
+          .where(eq(schema.posts.id, post.id))
+          .catch((viewErr) => console.error('[Public Post Detail] Lỗi tăng lượt xem:', viewErr));
+
+        sendJson(200, {
+          success: true,
+          data: post,
+        });
+        return true;
+      } catch (err: unknown) {
+        console.error('[Public Post Detail] Lỗi truy vấn bài viết:', err);
+        sendJson(500, { success: false, error: { code: 'DB_ERROR', message: 'Lỗi tải chi tiết bài viết' } });
+        return true;
+      }
+    }
+  }
+
   // ==========================================================================
   // 2. ADMIN PROTECTED ROUTES (Yêu cầu JWT Token & RBAC)
   // ==========================================================================
@@ -171,25 +353,47 @@ export async function handlePostRoutes(
   const userRole = currentUser.role as Role;
 
   // --------------------------------------------------------------------------
-  // 2.1. CHUYÊN MỤC BÀI VIẾT (CATEGORIES)
+  // 2.1. CHUYÊN MỤC BÀI VIẾT (CATEGORIES) — CRUD, AGGREGATE COUNT & DELETE GUARD
   // --------------------------------------------------------------------------
 
-  // GET /api/admin/categories
+  const categoryIdMatch = pathname.match(/^\/api\/admin\/categories\/([0-9a-fA-F-]{36})$/);
+  const categoryIdParam = categoryIdMatch ? categoryIdMatch[1] : null;
+
+  // 2.1.1. GET /api/admin/categories (Danh sách chuyên mục kèm số bài viết postCount)
   if (pathname === '/api/admin/categories' && method === 'GET') {
+    if (!hasPermission(userRole, 'posts:read')) {
+      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền xem danh mục bài viết' } });
+      return true;
+    }
+
     try {
-      const categoriesList = await db.query.categories.findMany({
-        orderBy: [schema.categories.sortOrder, desc(schema.categories.createdAt)],
-      });
+      // 🧠 Option A Architecture: Single Drizzle SQL Query kết hợp LEFT JOIN và GROUP BY
+      const categoriesList = await db
+        .select({
+          id: schema.categories.id,
+          tenChuyenMuc: schema.categories.tenChuyenMuc,
+          slug: schema.categories.slug,
+          moTa: schema.categories.moTa,
+          sortOrder: schema.categories.sortOrder,
+          createdAt: schema.categories.createdAt,
+          updatedAt: schema.categories.updatedAt,
+          postCount: sql<number>`cast(count(${schema.posts.id}) as integer)`,
+        })
+        .from(schema.categories)
+        .leftJoin(schema.posts, eq(schema.posts.categoryId, schema.categories.id))
+        .groupBy(schema.categories.id)
+        .orderBy(asc(schema.categories.sortOrder), desc(schema.categories.createdAt));
+
       sendJson(200, { success: true, data: categoriesList });
       return true;
     } catch (err: unknown) {
-      console.error('[Admin Categories] Lỗi truy vấn:', err);
+      console.error('[Admin Categories] Lỗi truy vấn danh mục kèm count:', err);
       sendJson(500, { success: false, error: { code: 'DB_ERROR', message: 'Lỗi tải danh mục bài viết' } });
       return true;
     }
   }
 
-  // POST /api/admin/categories
+  // 2.1.2. POST /api/admin/categories (Tạo mới chuyên mục + Unique Slug Validation)
   if (pathname === '/api/admin/categories' && method === 'POST') {
     if (!hasPermission(userRole, 'posts:write')) {
       sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền tạo chuyên mục' } });
@@ -198,29 +402,180 @@ export async function handlePostRoutes(
 
     try {
       const body = await readBody();
-      const tenChuyenMuc = String(body.tenChuyenMuc || '').trim();
-      const slug = String(body.slug || '').trim();
-      const moTa = body.moTa ? String(body.moTa).trim() : null;
-      const sortOrder = Number(body.sortOrder) || 0;
-
-      if (!tenChuyenMuc || !slug) {
+      const parseResult = createCategorySchema.safeParse(body);
+      if (!parseResult.success) {
         sendJson(400, {
           success: false,
-          error: { code: 'INVALID_INPUT', message: 'Tên chuyên mục và slug là bắt buộc' },
+          error: {
+            code: 'INVALID_INPUT',
+            message: parseResult.error.issues[0]?.message || 'Dữ liệu chuyên mục không hợp lệ',
+            details: parseResult.error.flatten(),
+          },
+        });
+        return true;
+      }
+
+      const { tenChuyenMuc, slug: inputSlug, moTa, sortOrder } = parseResult.data;
+      const slug = inputSlug || slugifyVietnamese(tenChuyenMuc);
+
+      // Kiểm tra Unique Slug
+      const existingSlug = await db.query.categories.findFirst({
+        where: eq(schema.categories.slug, slug),
+      });
+
+      if (existingSlug) {
+        sendJson(409, {
+          success: false,
+          error: {
+            code: 'SLUG_CONFLICT',
+            message: 'Slug này đã tồn tại trên hệ thống, vui lòng chọn một slug khác.',
+          },
         });
         return true;
       }
 
       const [newCategory] = await db
         .insert(schema.categories)
-        .values({ tenChuyenMuc, slug, moTa, sortOrder })
+        .values({
+          tenChuyenMuc,
+          slug,
+          moTa: moTa || null,
+          sortOrder: sortOrder ?? 0,
+        })
         .returning();
 
-      sendJson(201, { success: true, data: newCategory });
+      sendJson(201, {
+        success: true,
+        data: { ...newCategory, postCount: 0 },
+        message: 'Tạo chuyên mục thành công',
+      });
       return true;
     } catch (err: unknown) {
       console.error('[Admin Categories] Lỗi tạo chuyên mục:', err);
-      sendJson(500, { success: false, error: { code: 'DB_ERROR', message: 'Lỗi tạo mới chuyên mục (trùng slug?)' } });
+      sendJson(500, { success: false, error: { code: 'DB_ERROR', message: 'Lỗi tạo mới chuyên mục' } });
+      return true;
+    }
+  }
+
+  // 2.1.3. PUT /api/admin/categories/:id (Cập nhật chuyên mục)
+  if (categoryIdParam && method === 'PUT') {
+    if (!hasPermission(userRole, 'posts:write')) {
+      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền chỉnh sửa chuyên mục' } });
+      return true;
+    }
+
+    try {
+      const body = await readBody();
+      const parseResult = updateCategorySchema.safeParse(body);
+      if (!parseResult.success) {
+        sendJson(400, {
+          success: false,
+          error: {
+            code: 'INVALID_INPUT',
+            message: parseResult.error.issues[0]?.message || 'Dữ liệu cập nhật không hợp lệ',
+            details: parseResult.error.flatten(),
+          },
+        });
+        return true;
+      }
+
+      const existingCategory = await db.query.categories.findFirst({
+        where: eq(schema.categories.id, categoryIdParam),
+      });
+
+      if (!existingCategory) {
+        sendJson(404, { success: false, error: { code: 'NOT_FOUND', message: 'Không tìm thấy chuyên mục' } });
+        return true;
+      }
+
+      // Kiểm tra Unique Slug nếu slug được thay đổi
+      if (parseResult.data.slug && parseResult.data.slug !== existingCategory.slug) {
+        const conflict = await db.query.categories.findFirst({
+          where: and(eq(schema.categories.slug, parseResult.data.slug), ne(schema.categories.id, categoryIdParam)),
+        });
+        if (conflict) {
+          sendJson(409, {
+            success: false,
+            error: {
+              code: 'SLUG_CONFLICT',
+              message: 'Slug này đã tồn tại trên hệ thống, vui lòng chọn một slug khác.',
+            },
+          });
+          return true;
+        }
+      }
+
+      const updateData: Record<string, unknown> = {
+        updatedAt: new Date(),
+      };
+      if (parseResult.data.tenChuyenMuc !== undefined) updateData.tenChuyenMuc = parseResult.data.tenChuyenMuc;
+      if (parseResult.data.slug !== undefined) updateData.slug = parseResult.data.slug;
+      if (parseResult.data.moTa !== undefined) updateData.moTa = parseResult.data.moTa;
+      if (parseResult.data.sortOrder !== undefined) updateData.sortOrder = parseResult.data.sortOrder;
+
+      const [updatedCategory] = await db
+        .update(schema.categories)
+        .set(updateData)
+        .where(eq(schema.categories.id, categoryIdParam))
+        .returning();
+
+      sendJson(200, {
+        success: true,
+        data: updatedCategory,
+        message: 'Cập nhật chuyên mục thành công',
+      });
+      return true;
+    } catch (err: unknown) {
+      console.error('[Admin Categories] Lỗi cập nhật chuyên mục:', err);
+      sendJson(500, { success: false, error: { code: 'DB_ERROR', message: 'Lỗi cập nhật chuyên mục' } });
+      return true;
+    }
+  }
+
+  // 2.1.4. DELETE /api/admin/categories/:id (Chặn xóa an toàn khi còn bài viết liên kết)
+  if (categoryIdParam && method === 'DELETE') {
+    if (!hasPermission(userRole, 'posts:write')) {
+      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền xóa chuyên mục' } });
+      return true;
+    }
+
+    try {
+      const existingCategory = await db.query.categories.findFirst({
+        where: eq(schema.categories.id, categoryIdParam),
+      });
+
+      if (!existingCategory) {
+        sendJson(404, { success: false, error: { code: 'NOT_FOUND', message: 'Không tìm thấy chuyên mục' } });
+        return true;
+      }
+
+      // 🧠 Dual-Layer Restrict Guard: Kiểm tra số bài viết đang gán vào chuyên mục
+      const [postCountResult] = await db
+        .select({ count: sql<number>`cast(count(*) as integer)` })
+        .from(schema.posts)
+        .where(eq(schema.posts.categoryId, categoryIdParam));
+
+      if (postCountResult && postCountResult.count > 0) {
+        sendJson(400, {
+          success: false,
+          error: {
+            code: 'CATEGORY_IN_USE',
+            message: `Không thể xóa chuyên mục "${existingCategory.tenChuyenMuc}" vì đang có ${postCountResult.count} bài viết liên kết. Vui lòng chuyển các bài viết sang chuyên mục khác trước khi xóa.`,
+          },
+        });
+        return true;
+      }
+
+      await db.delete(schema.categories).where(eq(schema.categories.id, categoryIdParam));
+
+      sendJson(200, {
+        success: true,
+        message: `Đã xóa chuyên mục "${existingCategory.tenChuyenMuc}" thành công`,
+      });
+      return true;
+    } catch (err: unknown) {
+      console.error('[Admin Categories] Lỗi xóa chuyên mục:', err);
+      sendJson(500, { success: false, error: { code: 'DB_ERROR', message: 'Lỗi máy chủ khi xóa chuyên mục' } });
       return true;
     }
   }
@@ -438,6 +793,12 @@ export async function handlePostRoutes(
         return true;
       }
 
+      if (!post.previewToken) {
+        const generatedToken = crypto.randomBytes(32).toString('hex');
+        await db.update(schema.posts).set({ previewToken: generatedToken }).where(eq(schema.posts.id, postId));
+        post.previewToken = generatedToken;
+      }
+
       sendJson(200, { success: true, data: post });
       return true;
     } catch (err: unknown) {
@@ -539,6 +900,9 @@ export async function handlePostRoutes(
         stats = { readingTime, wordCount };
       }
 
+      // Sinh token bảo mật 64 ký tự cho preview nháp nếu chưa có
+      const previewToken = existingPost.previewToken || crypto.randomBytes(32).toString('hex');
+
       const [updatedPost] = await db
         .update(schema.posts)
         .set({
@@ -563,6 +927,7 @@ export async function handlePostRoutes(
           ...(updateData.metaDescription !== undefined ? { metaDescription: updateData.metaDescription } : {}),
           ...(updateData.canonicalUrl !== undefined ? { canonicalUrl: updateData.canonicalUrl } : {}),
           ...(updateData.noIndex !== undefined ? { noIndex: updateData.noIndex } : {}),
+          previewToken,
           ...stats,
           updatedAt: new Date(),
         })

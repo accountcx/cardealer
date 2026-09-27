@@ -66,8 +66,11 @@ export interface PostArticle {
 interface NewsPageProps {
   searchParams: Promise<{
     trang?: string;
+    page?: string;
     chuyenMuc?: string;
+    category?: string;
     q?: string;
+    search?: string;
   }>;
 }
 
@@ -216,9 +219,28 @@ const CATEGORIES_LIST = [
 
 export default async function NewsListingPage({ searchParams }: NewsPageProps) {
   const resolvedParams = await searchParams;
-  const currentPage = Math.max(1, Number(resolvedParams.trang || 1));
-  const selectedCategorySlug = resolvedParams.chuyenMuc || '';
-  const searchQuery = resolvedParams.q?.trim() || '';
+  const currentPage = Math.max(1, Number(resolvedParams.trang || resolvedParams.page || 1));
+  const selectedCategorySlug = resolvedParams.category || resolvedParams.chuyenMuc || '';
+  const searchQuery = resolvedParams.search?.trim() || resolvedParams.q?.trim() || '';
+
+  // Nạp danh mục động từ Backend API (Fallback về CATEGORIES_LIST)
+  let categoriesNav = CATEGORIES_LIST;
+  try {
+    const catRes = await apiClient.get<any>('/api/posts/categories');
+    const categoriesArray = Array.isArray(catRes) ? catRes : catRes?.data;
+    if (Array.isArray(categoriesArray) && categoriesArray.length > 0) {
+      categoriesNav = [
+        { id: 'all', label: 'Tất cả tin tức', slug: '' },
+        ...categoriesArray.map((c: any) => ({
+          id: c.id,
+          label: c.tenChuyenMuc,
+          slug: c.slug,
+        })),
+      ];
+    }
+  } catch {
+    // Sử dụng CATEGORIES_LIST nếu chưa kết nối được
+  }
 
   // Nạp dữ liệu từ Backend API với Fallback an toàn
   let allArticles: PostArticle[] = FALLBACK_ARTICLES;
@@ -231,8 +253,9 @@ export default async function NewsListingPage({ searchParams }: NewsPageProps) {
       search: searchQuery || undefined,
     });
 
-    if (apiData && Array.isArray(apiData.data) && apiData.data.length > 0) {
-      allArticles = apiData.data;
+    const articlesArray = Array.isArray(apiData) ? apiData : apiData?.data;
+    if (Array.isArray(articlesArray) && articlesArray.length > 0) {
+      allArticles = articlesArray;
     }
   } catch {
     // Sử dụng FALLBACK_ARTICLES nếu API chưa khởi động hoặc trả về rỗng
@@ -296,12 +319,12 @@ export default async function NewsListingPage({ searchParams }: NewsPageProps) {
 
           {/* Interactive Category Filter Bar */}
           <div className="pt-6 flex flex-wrap items-center gap-2">
-            {CATEGORIES_LIST.map((cat) => {
+            {categoriesNav.map((cat) => {
               const isActive = (!selectedCategorySlug && !cat.slug) || selectedCategorySlug === cat.slug;
               return (
                 <Link
                   key={cat.id}
-                  href={cat.slug ? `/tin-tuc?chuyenMuc=${cat.slug}` : '/tin-tuc'}
+                  href={cat.slug ? `/tin-tuc?category=${encodeURIComponent(cat.slug)}` : '/tin-tuc'}
                 >
                   <Button
                     type="button"

@@ -11,7 +11,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, usePathname } from 'next/navigation';
 import {
   ChevronLeft,
   Save,
@@ -51,11 +51,12 @@ import {
   Switch,
 } from '@cardealer/ui';
 import { postService, type PostItem, type CategoryItem } from '../../../services/post.service';
+import { catalogService, type CarSummary } from '../../../services/catalog.service';
 import { calculateSeoScore, type SeoAnalysisResult, type TiptapDoc } from '@cardealer/core';
 import { useAuth } from '../../../contexts/AuthContext';
 import { AccessDenied } from '../../components/AccessDenied';
 
-// Các loại Block trực quan
+// Các loại Block trực quan chuẩn E-E-A-T & High Conversion
 type BlockType =
   | 'paragraph'
   | 'heading'
@@ -65,7 +66,15 @@ type BlockType =
   | 'faq'
   | 'gated'
   | 'relatedCar'
-  | 'priceTable';
+  | 'priceTable'
+  | 'leadForm';
+
+export interface PriceVersionItem {
+  version: string;
+  listedPrice: number;
+  discount: number;
+  rollingPrice: number;
+}
 
 interface EditorBlock {
   id: string;
@@ -85,18 +94,27 @@ interface EditorBlock {
   carSlug?: string;
   carPrice?: number;
   carImage?: string;
+  seatCount?: number;
+  fuelType?: string;
+  prices?: PriceVersionItem[];
+  formHeadline?: string;
+  formSubheadline?: string;
+  formButtonText?: string;
 }
 
 export default function PostEditorPage() {
   const router = useRouter();
   const params = useParams();
-  const postId = params?.id as string;
-  const isNew = postId === 'new';
+  const pathname = usePathname();
+  const rawId = params?.id as string | undefined;
+  const isNew = rawId === 'new' || pathname.endsWith('/new') || !rawId;
+  const postId = isNew ? 'new' : (rawId || '');
 
   const { user, loading: authLoading, can } = useAuth();
 
   // State dữ liệu bài viết
   const [categories, setCategories] = useState<CategoryItem[]>([]);
+  const [availableCars, setAvailableCars] = useState<CarSummary[]>([]);
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [pageError, setPageError] = useState<string | null>(null);
@@ -149,19 +167,43 @@ export default function PostEditorPage() {
 
   // Tải danh mục
   useEffect(() => {
-    postService.getCategories().then((res) => {
-      if (res.success && Array.isArray(res.data)) {
-        setCategories(res.data);
-        if (isNew && res.data.length > 0) {
-          setCategoryId(res.data[0].id);
+    postService
+      .getCategories()
+      .then((res: any) => {
+        const list = Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res)
+            ? res
+            : [];
+        setCategories(list);
+        if (isNew && list.length > 0) {
+          setCategoryId((prev) => prev || list[0].id);
         }
-      }
-    });
+      })
+      .catch((err) => console.error('[Post Editor] Lỗi tải chuyên mục:', err));
+
+    // 🧠 Tải danh sách xe từ Database để hỗ trợ nạp dữ liệu cho RelatedCar & PriceTable Block
+    catalogService
+      .getCars()
+      .then((res: any) => {
+        const list = Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res)
+            ? res
+            : [];
+        setAvailableCars(list);
+      })
+      .catch((err) => console.error('[Post Editor] Lỗi tải danh mục xe:', err));
   }, [isNew]);
 
   // Tải dữ liệu bài viết nếu chế độ Edit
   useEffect(() => {
-    if (!isNew && postId) {
+    if (isNew) {
+      setLoading(false);
+      return;
+    }
+
+    if (postId && postId !== 'new') {
       setLoading(true);
       postService
         .getPostById(postId)
@@ -193,6 +235,8 @@ export default function PostEditorPage() {
           setPageError(err instanceof Error ? err.message : 'Lỗi tải bài viết');
         })
         .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
     }
   }, [isNew, postId]);
 
@@ -256,10 +300,12 @@ export default function PostEditorPage() {
           return {
             type: 'relatedCarBlock',
             attrs: {
-              carName: b.carName || 'Hyundai Tucson 2026',
-              slug: b.carSlug || 'tucson-2026',
-              minPrice: b.carPrice || 769000000,
-              imageUrl: b.carImage || '/images/cars/tucson.webp',
+              carName: b.carName || 'Hyundai Accent 2026',
+              slug: b.carSlug || 'hyundai-accent',
+              minPrice: b.carPrice || 439000000,
+              imageUrl: b.carImage || '/images/cars/accent.webp',
+              seatCount: b.seatCount || 5,
+              fuelType: b.fuelType || 'Xăng 1.5L',
             },
           };
         case 'priceTable':
@@ -267,6 +313,20 @@ export default function PostEditorPage() {
             type: 'priceTableBlock',
             attrs: {
               title: b.title || 'Bảng Giá Xe Hyundai Mới Nhất',
+              prices: b.prices || [
+                { version: 'Hyundai Accent 1.5 AT', listedPrice: 489000000, discount: 30000000, rollingPrice: 512000000 },
+                { version: 'Hyundai Creta 1.5 Cao Cấp', listedPrice: 699000000, discount: 45000000, rollingPrice: 735000000 },
+              ],
+            },
+          };
+        case 'leadForm':
+          return {
+            type: 'leadFormBlock',
+            attrs: {
+              headline: b.formHeadline || 'Nhận Báo Giá Lăn Bánh Chi Tiết Tận Tay',
+              subheadline: b.formSubheadline || 'Để lại thông tin, chuyên viên tư vấn sẽ gửi bảng tính chi phí lăn bánh chính xác và số tiền trả góp hàng tháng qua Zalo trong 5 phút.',
+              buttonText: b.formButtonText || 'Gửi Báo Giá Ngay',
+              carName: b.carName || 'Hyundai Accent / Creta',
             },
           };
         case 'paragraph':
@@ -340,6 +400,36 @@ export default function PostEditorPage() {
           gatedDesc: (node.attrs?.description as string) || '',
         };
       }
+      if (node.type === 'priceTableBlock') {
+        return {
+          id,
+          type: 'priceTable',
+          title: (node.attrs?.title as string) || 'Bảng Giá Xe Hyundai Mới Nhất',
+          prices: (node.attrs?.prices as PriceVersionItem[]) || [],
+        };
+      }
+      if (node.type === 'relatedCarBlock') {
+        return {
+          id,
+          type: 'relatedCar',
+          carName: (node.attrs?.carName as string) || 'Hyundai Accent 2026',
+          carSlug: (node.attrs?.slug as string) || 'hyundai-accent',
+          carPrice: Number(node.attrs?.minPrice) || 439000000,
+          carImage: (node.attrs?.imageUrl as string) || '/images/cars/accent.webp',
+          seatCount: Number(node.attrs?.seatCount) || 5,
+          fuelType: (node.attrs?.fuelType as string) || 'Xăng 1.5L',
+        };
+      }
+      if (node.type === 'leadFormBlock' || node.type === 'inlineQuickForm') {
+        return {
+          id,
+          type: 'leadForm',
+          formHeadline: (node.attrs?.headline as string) || 'Nhận Báo Giá Lăn Bánh Chi Tiết Tận Tay',
+          formSubheadline: (node.attrs?.subheadline as string) || 'Để lại thông tin, chuyên viên tư vấn sẽ gửi bảng tính chi phí lăn bánh chính xác qua Zalo trong 5 phút.',
+          formButtonText: (node.attrs?.buttonText as string) || 'Gửi Báo Giá Ngay',
+          carName: (node.attrs?.carName as string) || 'Hyundai Accent / Creta',
+        };
+      }
       return {
         id,
         type: 'paragraph',
@@ -359,6 +449,42 @@ export default function PostEditorPage() {
     });
   }, [tieuDe, slug, tiptapDoc, focusKeyword, metaDescription, tomTat]);
 
+  // 🧠 Danh sách toàn bộ phiên bản xe từ kho hệ thống phục vụ chọn trực tiếp ở từng dòng bảng giá
+  const allVersionOptions = useMemo(() => {
+    const result: Array<{
+      value: string;
+      label: string;
+      fullLabel: string;
+      listedPrice: number;
+      discount: number;
+      rollingPrice: number;
+    }> = [];
+
+    availableCars.forEach((c) => {
+      (c.versions || []).forEach((v) => {
+        const cleanVerName = v.tenPhienBan.toLowerCase().startsWith(c.tenXe.toLowerCase())
+          ? v.tenPhienBan
+          : `${c.tenXe} ${v.tenPhienBan}`;
+        const listed = v.giaNiemYet || 0;
+        const promo = v.giaKhuyenMai || listed;
+        const discount = Math.max(0, listed - promo);
+        // Thuế trước bạ 10% tại Nghệ An + 3.500.000đ biển số, đăng kiểm, bảo trì & TNDS
+        const rolling = Math.round(promo * 1.10 + 3500000);
+
+        result.push({
+          value: `${c.id}::${v.id}`,
+          label: cleanVerName,
+          fullLabel: cleanVerName,
+          listedPrice: listed,
+          discount,
+          rollingPrice: rolling,
+        });
+      });
+    });
+
+    return result;
+  }, [availableCars]);
+
   // Thao tác với Block
   const addBlock = (type: BlockType) => {
     const newId = String(Date.now());
@@ -368,7 +494,60 @@ export default function PostEditorPage() {
       content: type === 'heading' ? 'Tiêu đề đoạn mới' : type === 'paragraph' ? 'Nhập nội dung đoạn văn...' : '',
       level: 2,
       calloutType: 'info',
-      title: type === 'callout' ? 'Lưu ý quan trọng' : type === 'gated' ? 'Nhận Báo Giá Lăn Bánh Ưu Đãi' : '',
+      title:
+        type === 'callout'
+          ? 'Lưu ý quan trọng'
+          : type === 'gated'
+            ? 'Nhận Báo Giá Lăn Bánh Ưu Đãi'
+            : type === 'priceTable'
+              ? 'Bảng Giá & Chi Phí Lăn Bánh Tham Khảo (Tháng 09/2026)'
+              : '',
+      faqs:
+        type === 'faq'
+          ? [
+            {
+              question: 'Giá xe đã bao gồm các loại thuế phí lăn bánh chưa?',
+              answer: 'Giá niêm yết đã bao gồm 10% VAT nhưng chưa bao gồm lệ phí trước bạ và phí đăng ký biển số.',
+            },
+          ]
+          : undefined,
+      prices:
+        type === 'priceTable'
+          ? (availableCars.length > 0 && availableCars[0].versions && availableCars[0].versions.length > 0
+            ? availableCars[0].versions.map((v) => {
+              const listed = v.giaNiemYet || 0;
+              const promo = v.giaKhuyenMai || listed;
+              const discount = Math.max(0, listed - promo);
+              const cleanVer = v.tenPhienBan.toLowerCase().startsWith(availableCars[0].tenXe.toLowerCase())
+                ? v.tenPhienBan
+                : `${availableCars[0].tenXe} ${v.tenPhienBan}`;
+              return {
+                version: cleanVer,
+                listedPrice: listed,
+                discount,
+                rollingPrice: Math.round(promo * 1.10 + 3500000),
+              };
+            })
+            : [
+              { version: 'Hyundai Accent 1.5 AT Tiêu Chuẩn', listedPrice: 489000000, discount: 30000000, rollingPrice: 512000000 },
+              { version: 'Hyundai Accent 1.5 AT Đặc Biệt', listedPrice: 569000000, discount: 35000000, rollingPrice: 595000000 },
+              { version: 'Hyundai Creta 1.5 Cao Cấp', listedPrice: 699000000, discount: 45000000, rollingPrice: 735000000 },
+            ])
+          : undefined,
+      carName:
+        type === 'relatedCar'
+          ? (availableCars[0]?.tenXe || 'Hyundai Accent 2026')
+          : type === 'leadForm'
+            ? (availableCars[0]?.tenXe || 'Hyundai Accent / Creta')
+            : undefined,
+      carSlug: type === 'relatedCar' ? (availableCars[0]?.slug || 'hyundai-accent') : undefined,
+      carPrice: type === 'relatedCar' ? (availableCars[0]?.minPrice || 439000000) : undefined,
+      carImage: type === 'relatedCar' ? (availableCars[0]?.anhDaiDienUrl || '/images/cars/accent.webp') : undefined,
+      seatCount: type === 'relatedCar' ? (availableCars[0]?.versions?.[0]?.seatCount || 5) : undefined,
+      fuelType: type === 'relatedCar' ? (availableCars[0]?.fuelType || 'Xăng 1.5L Smartstream') : undefined,
+      formHeadline: type === 'leadForm' ? 'Nhận Báo Giá Lăn Bánh Chi Tiết Tận Tay' : undefined,
+      formSubheadline: type === 'leadForm' ? 'Để lại thông tin, chuyên viên tư vấn sẽ gửi bảng tính chi phí lăn bánh chính xác và số tiền trả góp hàng tháng qua Zalo trong 5 phút.' : undefined,
+      formButtonText: type === 'leadForm' ? 'Gửi Báo Giá Ngay' : undefined,
     };
     setBlocks((prev) => [...prev, newBlock]);
   };
@@ -464,6 +643,67 @@ export default function PostEditorPage() {
     }
   };
 
+  // 🧠 Live Preview Handler: Tự động lưu những gì đang có trên form vào DB nháp rồi mở xem trước
+  const handlePreview = async () => {
+    if (!tieuDe.trim()) {
+      setToast({ type: 'error', message: 'Vui lòng nhập tiêu đề bài viết trước khi xem trước!' });
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const targetStatus = status || 'draft';
+      const effectiveSlug = slug.trim() || toSlug(tieuDe);
+      if (!slug.trim()) setSlug(effectiveSlug);
+
+      const payload = {
+        tieuDe,
+        slug: effectiveSlug,
+        categoryId: categoryId || undefined,
+        anhDaiDienUrl,
+        anhDaiDienAlt: anhDaiDienAlt || tieuDe,
+        tomTat: tomTat || null,
+        noiDung: tiptapDoc,
+        status: targetStatus,
+        isFeatured,
+        featuredOrder,
+        metaTitle: metaTitle || null,
+        metaDescription: metaDescription || null,
+        canonicalUrl: canonicalUrl || null,
+        noIndex,
+      };
+
+      let activeToken = previewToken;
+
+      if (isNew) {
+        const res = await postService.createPost(payload);
+        if (res.success && res.data) {
+          activeToken = res.data.previewToken || null;
+          setPreviewToken(activeToken);
+          setToast({ type: 'success', message: 'Đã lưu bản nháp và mở tab xem trước!' });
+          window.history.replaceState(null, '', `/posts/${res.data.id}`);
+        }
+      } else {
+        const res = await postService.updatePost(postId, payload);
+        if (res.success && res.data) {
+          activeToken = res.data.previewToken || previewToken;
+          setPreviewToken(activeToken);
+          setToast({ type: 'success', message: 'Đã đồng bộ nội dung đang sửa vào xem trước!' });
+        }
+      }
+
+      if (activeToken) {
+        const url = `${window.location.origin.replace(':3001', ':3002')}/tin-tuc/preview?token=${activeToken}`;
+        window.open(url, '_blank');
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi khi chuẩn bị xem trước bài viết';
+      setToast({ type: 'error', message: msg });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // RBAC Guard
   if (authLoading || loading) {
     return (
@@ -501,10 +741,10 @@ export default function PostEditorPage() {
               status === 'published'
                 ? 'published'
                 : status === 'draft'
-                ? 'draft'
-                : status === 'scheduled'
-                ? 'outline'
-                : 'danger'
+                  ? 'draft'
+                  : status === 'scheduled'
+                    ? 'outline'
+                    : 'danger'
             }
           >
             {status === 'published' ? 'Đã xuất bản' : status === 'draft' ? 'Bản nháp' : status}
@@ -513,20 +753,17 @@ export default function PostEditorPage() {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2.5">
-          {previewToken && (
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => {
-                const url = `${window.location.origin.replace(':3001', ':3002')}/tin-tuc/preview?token=${previewToken}`;
-                window.open(url, '_blank');
-              }}
-              className="flex items-center gap-2 h-11 px-4 font-semibold text-xs"
-            >
-              <Eye size={16} />
-              Xem trước
-            </Button>
-          )}
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handlePreview}
+            disabled={saving}
+            className="flex items-center gap-2 h-11 px-4 font-semibold text-xs"
+            title="Xem trước nội dung thực tế (Tự động đồng bộ những gì đang có)"
+          >
+            <Eye size={16} />
+            {saving ? 'Đang chuẩn bị...' : 'Xem trước'}
+          </Button>
 
           <Button
             variant="secondary"
@@ -553,11 +790,10 @@ export default function PostEditorPage() {
       {/* Toast Alert */}
       {toast && (
         <div
-          className={`flex items-center justify-between p-4 rounded-xl border backdrop-blur-md transition-all ${
-            toast.type === 'success'
+          className={`flex items-center justify-between p-4 rounded-xl border backdrop-blur-md transition-all ${toast.type === 'success'
               ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
               : 'bg-red-500/10 border-red-500/20 text-red-300'
-          }`}
+            }`}
         >
           <div className="flex items-center gap-3">
             {toast.type === 'success' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
@@ -580,7 +816,7 @@ export default function PostEditorPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* CỘT TRÁI: Soạn Thảo & Khối Nội Dung (8 Cột) */}
         <div className="lg:col-span-8 space-y-6">
-          <Card className="p-6 bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl space-y-5">
+          <Card className="relative z-20 p-6 bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl space-y-5">
             {/* Title Input */}
             <div className="space-y-1.5">
               <Input
@@ -620,7 +856,7 @@ export default function PostEditorPage() {
             </div>
 
             {/* Category & Thumbnail */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-30">
               <Select
                 label="Chuyên mục *"
                 value={categoryId}
@@ -660,7 +896,7 @@ export default function PostEditorPage() {
           </Card>
 
           {/* 3. Visual Content Block Editor */}
-          <Card className="p-6 bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl space-y-6">
+          <Card className="relative z-10 p-6 bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl space-y-6">
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div>
                 <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
@@ -747,7 +983,7 @@ export default function PostEditorPage() {
 
                   {block.type === 'heading' && (
                     <div className="flex items-center gap-3">
-                      <div className="w-32 shrink-0">
+                      <div className="w-32 shrink-0 relative z-20">
                         <Select
                           variant="dark"
                           options={[
@@ -773,7 +1009,7 @@ export default function PostEditorPage() {
                   {block.type === 'callout' && (
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-44 shrink-0">
+                        <div className="w-44 shrink-0 relative z-20">
                           <Select
                             variant="dark"
                             options={[
@@ -844,6 +1080,466 @@ export default function PostEditorPage() {
                       />
                     </div>
                   )}
+
+                  {block.type === 'faq' && (
+                    <div className="space-y-3 p-3.5 bg-emerald-500/5 rounded-xl border border-emerald-500/20">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <FileQuestion size={14} /> Danh sách câu hỏi & giải đáp (Schema FAQPage)
+                        </label>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const currentFaqs = block.faqs || [];
+                            updateBlock(block.id, {
+                              faqs: [...currentFaqs, { question: '', answer: '' }],
+                            });
+                          }}
+                          className="h-7 text-xs text-emerald-300 hover:text-emerald-200 hover:bg-emerald-500/10 px-2.5 flex items-center gap-1 rounded-lg border border-emerald-500/30"
+                        >
+                          <Plus size={13} /> Thêm câu hỏi
+                        </Button>
+                      </div>
+
+                      <div className="space-y-3">
+                        {(block.faqs && block.faqs.length > 0 ? block.faqs : [{ question: '', answer: '' }]).map(
+                          (faqItem, faqIdx) => (
+                            <div
+                              key={faqIdx}
+                              className="p-3 rounded-xl bg-slate-900/90 border border-white/10 space-y-2 relative group/faq"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-[11px] font-mono text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded">
+                                  FAQ #{faqIdx + 1}
+                                </span>
+                                {(block.faqs?.length || 0) > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const nextFaqs = [...(block.faqs || [])];
+                                      nextFaqs.splice(faqIdx, 1);
+                                      updateBlock(block.id, { faqs: nextFaqs });
+                                    }}
+                                    className="text-slate-500 hover:text-red-400 p-1 rounded transition-colors"
+                                    title="Xóa câu hỏi này"
+                                  >
+                                    <Trash2 size={13} />
+                                  </button>
+                                )}
+                              </div>
+                              <Input
+                                value={faqItem.question}
+                                onChange={(e) => {
+                                  const nextFaqs = [...(block.faqs || [{ question: '', answer: '' }])];
+                                  nextFaqs[faqIdx] = { ...nextFaqs[faqIdx], question: e.target.value };
+                                  updateBlock(block.id, { faqs: nextFaqs });
+                                }}
+                                placeholder="Nhập câu hỏi (e.g. Mua xe Hyundai có được giao tận nhà không?)..."
+                                className="h-9 bg-slate-950/80 border-white/10 text-slate-100 text-xs font-semibold placeholder:text-slate-600 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/60"
+                              />
+                              <Textarea
+                                rows={2}
+                                value={faqItem.answer}
+                                onChange={(e) => {
+                                  const nextFaqs = [...(block.faqs || [{ question: '', answer: '' }])];
+                                  nextFaqs[faqIdx] = { ...nextFaqs[faqIdx], answer: e.target.value };
+                                  updateBlock(block.id, { faqs: nextFaqs });
+                                }}
+                                placeholder="Nhập câu trả lời giải đáp chi tiết..."
+                                className="bg-slate-950/80 border-white/10 text-slate-200 text-xs min-h-[56px] placeholder:text-slate-600 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/60"
+                              />
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {block.type === 'priceTable' && (
+                    <div className="space-y-4 p-4 bg-blue-500/5 rounded-xl border border-blue-500/20">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <TableIcon size={14} /> Bảng Giá & Chi Phí Lăn Bánh Tham Khảo
+                        </label>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const currentPrices = block.prices || [];
+                            updateBlock(block.id, {
+                              prices: [
+                                ...currentPrices,
+                                {
+                                  version: '',
+                                  listedPrice: 0,
+                                  discount: 0,
+                                  rollingPrice: 0,
+                                },
+                              ],
+                            });
+                          }}
+                          className="h-7 text-xs text-blue-300 hover:text-blue-200 hover:bg-blue-500/10 px-2.5 flex items-center gap-1 rounded-lg border border-blue-500/30"
+                        >
+                          <Plus size={13} /> Thêm phiên bản xe
+                        </Button>
+                      </div>
+
+                      <Input
+                        value={block.title || ''}
+                        onChange={(e) => updateBlock(block.id, { title: e.target.value })}
+                        placeholder="Tiêu đề bảng giá (e.g. Bảng Giá Xe Hyundai Mới Nhất Tại TP. Vinh)..."
+                        className="h-10 bg-slate-900 border-white/10 text-slate-100 text-sm font-bold placeholder:text-slate-600"
+                      />
+
+                      <div className="space-y-3">
+                        {(block.prices && block.prices.length > 0
+                          ? block.prices
+                          : [
+                            {
+                              version: 'Hyundai Accent 1.5 AT',
+                              listedPrice: 489000000,
+                              discount: 30000000,
+                              rollingPrice: 512000000,
+                            },
+                          ]
+                        ).map((priceItem, pIdx) => (
+                          <div
+                            key={pIdx}
+                            className="p-3.5 rounded-xl bg-slate-900/90 border border-white/10 space-y-2.5 relative group/price"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[11px] font-mono text-blue-400 font-semibold bg-blue-500/10 px-2 py-0.5 rounded">
+                                Dòng phiên bản #{pIdx + 1}
+                              </span>
+                              {(block.prices?.length || 0) > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const nextPrices = [...(block.prices || [])];
+                                    nextPrices.splice(pIdx, 1);
+                                    updateBlock(block.id, { prices: nextPrices });
+                                  }}
+                                  className="text-slate-500 hover:text-red-400 p-1 rounded transition-colors"
+                                  title="Xóa phiên bản này"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              )}
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
+                              {/* ⚡ Cột 1: Tên phiên bản với Dropdown chọn từ kho xe (Chiếm 5/12 chiều rộng) */}
+                              <div className="lg:col-span-5 space-y-1">
+                                <label className="block text-[11px] font-semibold text-slate-300">
+                                  Tên phiên bản *
+                                </label>
+                                <Select
+                                  variant="dark"
+                                  placeholder="-- Bấm vào đây để chọn phiên bản xe --"
+                                  value={allVersionOptions.find((opt) => opt.fullLabel === priceItem.version || opt.value === priceItem.version)?.value || ''}
+                                  onChange={(e) => {
+                                    const found = allVersionOptions.find((opt) => opt.value === e.target.value);
+                                    if (found) {
+                                      const nextPrices = [...(block.prices || [])];
+                                      nextPrices[pIdx] = {
+                                        ...nextPrices[pIdx],
+                                        version: found.fullLabel,
+                                        listedPrice: found.listedPrice,
+                                        discount: found.discount,
+                                        rollingPrice: found.rollingPrice,
+                                      };
+                                      updateBlock(block.id, { prices: nextPrices });
+                                    }
+                                  }}
+                                  options={allVersionOptions.map((opt) => ({
+                                    value: opt.value,
+                                    label: opt.label,
+                                  }))}
+                                  className="h-9 bg-slate-950 border-white/10 text-slate-100 text-xs font-medium"
+                                />
+                              </div>
+
+                              {/* Giá niêm yết (2/12) */}
+                              <div className="lg:col-span-2">
+                                <label className="block text-[11px] text-slate-400 mb-1">
+                                  Giá niêm yết (VNĐ)
+                                </label>
+                                <Input
+                                  type="number"
+                                  value={priceItem.listedPrice || ''}
+                                  onChange={(e) => {
+                                    const val = Number(e.target.value) || 0;
+                                    const nextPrices = [...(block.prices || [])];
+                                    const discount = nextPrices[pIdx]?.discount || 0;
+                                    const promo = Math.max(0, val - discount);
+                                    nextPrices[pIdx] = {
+                                      ...nextPrices[pIdx],
+                                      listedPrice: val,
+                                      rollingPrice: Math.round(promo * 1.10 + 3500000),
+                                    };
+                                    updateBlock(block.id, { prices: nextPrices });
+                                  }}
+                                  placeholder="Giá niêm yết..."
+                                  className="h-9 bg-slate-950 border-white/10 text-slate-100 text-xs font-mono font-medium"
+                                />
+                              </div>
+
+                              {/* Ưu đãi giảm giá (2/12) */}
+                              <div className="lg:col-span-2">
+                                <label className="block text-[11px] text-slate-400 mb-1">
+                                  Ưu đãi giảm giá (VNĐ)
+                                </label>
+                                <Input
+                                  type="number"
+                                  value={priceItem.discount || ''}
+                                  onChange={(e) => {
+                                    const val = Number(e.target.value) || 0;
+                                    const nextPrices = [...(block.prices || [])];
+                                    const listed = nextPrices[pIdx]?.listedPrice || 0;
+                                    const promo = Math.max(0, listed - val);
+                                    nextPrices[pIdx] = {
+                                      ...nextPrices[pIdx],
+                                      discount: val,
+                                      rollingPrice: Math.round(promo * 1.10 + 3500000),
+                                    };
+                                    updateBlock(block.id, { prices: nextPrices });
+                                  }}
+                                  placeholder="Giảm giá..."
+                                  className="h-9 bg-slate-950 border-white/10 text-emerald-400 text-xs font-mono font-medium"
+                                />
+                              </div>
+
+                              {/* Giá lăn bánh tạm tính (3/12) */}
+                              <div className="lg:col-span-3">
+                                <label className="block text-[11px] text-slate-400 mb-1">
+                                  Giá lăn bánh tạm tính (VNĐ)
+                                </label>
+                                <Input
+                                  type="number"
+                                  value={priceItem.rollingPrice || ''}
+                                  onChange={(e) => {
+                                    const nextPrices = [...(block.prices || [])];
+                                    nextPrices[pIdx] = {
+                                      ...nextPrices[pIdx],
+                                      rollingPrice: Number(e.target.value) || 0,
+                                    };
+                                    updateBlock(block.id, { prices: nextPrices });
+                                  }}
+                                  placeholder="Lăn bánh..."
+                                  className="h-9 bg-slate-950 border-white/10 text-cyan-300 text-xs font-mono font-bold"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {block.type === 'relatedCar' && (
+                    <div className="space-y-3.5 p-4 bg-sky-500/5 rounded-xl border border-sky-500/20">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <label className="text-xs font-semibold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <Car size={14} /> Khối Giới Thiệu Mẫu Xe Liên Quan (Related Car)
+                        </label>
+                        {block.carName && (
+                          <span className="text-[11px] font-medium text-sky-300 bg-sky-500/10 px-2.5 py-0.5 rounded-full border border-sky-500/30 flex items-center gap-1 w-fit">
+                            <Sparkles size={11} className="text-sky-400" />
+                            Đang liên kết: <strong className="text-white">{block.carName}</strong>
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {/* Cột 1: Tên dòng xe kèm Dropdown chọn trực tiếp từ kho xe */}
+                        <div className="space-y-1">
+                          <label className="block text-[11px] font-semibold text-slate-300">
+                            Tên dòng xe *
+                          </label>
+                          <Select
+                            variant="dark"
+                            placeholder="-- Chọn xe từ kho hệ thống --"
+                            value={availableCars.find((c) => c.slug === block.carSlug)?.id || ''}
+                            onChange={(e) => {
+                              const selectedCar = availableCars.find((c) => c.id === e.target.value);
+                              if (selectedCar) {
+                                const firstVer = selectedCar.versions?.[0];
+                                const seatVal = typeof selectedCar.seatRange === 'string' && selectedCar.seatRange.includes('chỗ')
+                                  ? parseInt(selectedCar.seatRange, 10) || 5
+                                  : firstVer?.seatCount || 5;
+                                updateBlock(block.id, {
+                                  carName: selectedCar.tenXe,
+                                  carSlug: selectedCar.slug,
+                                  carPrice: selectedCar.minPrice || (firstVer?.giaKhuyenMai || firstVer?.giaNiemYet) || 0,
+                                  carImage: selectedCar.anhDaiDienUrl || firstVer?.anhDaiDienUrl || '',
+                                  seatCount: seatVal,
+                                  fuelType: selectedCar.fuelType || firstVer?.dongCo || 'Xăng',
+                                });
+                              }
+                            }}
+                            options={availableCars.map((c) => ({
+                              value: c.id,
+                              label: `${c.tenXe} • Từ ${(c.minPrice || 0).toLocaleString('vi-VN')} đ`,
+                            }))}
+                            className="h-8 bg-slate-950 border-white/10 text-slate-100 text-xs font-medium"
+                          />
+                          <Input
+                            value={block.carName || ''}
+                            onChange={(e) => updateBlock(block.id, { carName: e.target.value })}
+                            placeholder="Hoặc chỉnh sửa tên xe..."
+                            className="h-7 bg-slate-950/60 border-white/10 text-slate-200 text-xs font-semibold"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] text-slate-400 mb-1">Slug đường dẫn xe</label>
+                          <Input
+                            value={block.carSlug || ''}
+                            onChange={(e) => updateBlock(block.id, { carSlug: e.target.value })}
+                            placeholder="e.g. hyundai-accent"
+                            className="h-8 bg-slate-900 border-white/10 text-slate-100 text-xs font-mono"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] text-slate-400 mb-1">Giá niêm yết từ (VNĐ)</label>
+                          <Input
+                            type="number"
+                            value={block.carPrice || ''}
+                            onChange={(e) => updateBlock(block.id, { carPrice: Number(e.target.value) || 0 })}
+                            placeholder="e.g. 439000000"
+                            className="h-8 bg-slate-900 border-white/10 text-red-400 text-xs font-mono font-bold"
+                          />
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <label className="block text-[11px] text-slate-400 mb-1">Đường dẫn ảnh đại diện xe</label>
+                          <div className="flex items-center gap-2">
+                            {block.carImage && (
+                              <img
+                                src={block.carImage}
+                                alt={block.carName || 'Xe'}
+                                className="w-9 h-8 object-cover rounded border border-white/10 shrink-0 bg-slate-950"
+                              />
+                            )}
+                            <Input
+                              value={block.carImage || ''}
+                              onChange={(e) => updateBlock(block.id, { carImage: e.target.value })}
+                              placeholder="e.g. /images/cars/accent.webp"
+                              className="h-8 bg-slate-900 border-white/10 text-slate-100 text-xs flex-1"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[11px] text-slate-400 mb-1">Số chỗ</label>
+                            <Input
+                              type="number"
+                              value={block.seatCount || 5}
+                              onChange={(e) => updateBlock(block.id, { seatCount: Number(e.target.value) || 5 })}
+                              placeholder="5"
+                              className="h-8 bg-slate-900 border-white/10 text-slate-100 text-xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] text-slate-400 mb-1">Động cơ</label>
+                            <Input
+                              value={block.fuelType || ''}
+                              onChange={(e) => updateBlock(block.id, { fuelType: e.target.value })}
+                              placeholder="Xăng 1.5L"
+                              className="h-8 bg-slate-900 border-white/10 text-slate-100 text-xs"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {block.type === 'leadForm' && (
+                    <div className="space-y-3 p-4 bg-indigo-500/5 rounded-xl border border-indigo-500/20">
+                      <label className="text-xs font-semibold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <Send size={14} /> Khối Form Nhận Báo Giá Lăn Bánh Nhanh (Inline Lead Form)
+                      </label>
+                      <div className="space-y-2.5">
+                        {/* ⚡ Chọn nhanh dòng xe quan tâm */}
+                        <div className="p-2.5 rounded-lg bg-slate-950/80 border border-indigo-500/30">
+                          <label className="block text-[11px] font-semibold text-indigo-300 mb-1">
+                            Chọn dòng xe áp dụng cho Form báo giá:
+                          </label>
+                          <Select
+                            variant="dark"
+                            placeholder="-- Chọn dòng xe áp dụng --"
+                            value={availableCars.find((c) => c.tenXe === block.carName)?.id || ''}
+                            onChange={(e) => {
+                              const selectedCar = availableCars.find((c) => c.id === e.target.value);
+                              if (selectedCar) {
+                                updateBlock(block.id, { carName: selectedCar.tenXe });
+                              }
+                            }}
+                            options={availableCars.map((c) => ({
+                              value: c.id,
+                              label: c.tenXe,
+                            }))}
+                            className="h-8 bg-slate-900 border-white/10 text-slate-100 text-xs"
+                          />
+                        </div>
+
+                        <Input
+                          value={block.formHeadline || ''}
+                          onChange={(e) => updateBlock(block.id, { formHeadline: e.target.value })}
+                          placeholder="Tiêu đề Form (e.g. Nhận Báo Giá Lăn Bánh Chi Tiết Tận Tay)..."
+                          className="h-9 bg-slate-900 border-white/10 text-slate-100 text-xs font-bold"
+                        />
+                        <Textarea
+                          rows={2}
+                          value={block.formSubheadline || ''}
+                          onChange={(e) => updateBlock(block.id, { formSubheadline: e.target.value })}
+                          placeholder="Mô tả phụ cam kết tư vấn nhanh..."
+                          className="bg-slate-900 border-white/10 text-slate-200 text-xs min-h-[50px]"
+                        />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <Input
+                            value={block.carName || ''}
+                            onChange={(e) => updateBlock(block.id, { carName: e.target.value })}
+                            placeholder="Dòng xe áp dụng (e.g. Hyundai Accent / Creta)..."
+                            className="h-9 bg-slate-900 border-white/10 text-slate-100 text-xs"
+                          />
+                          <Input
+                            value={block.formButtonText || ''}
+                            onChange={(e) => updateBlock(block.id, { formButtonText: e.target.value })}
+                            placeholder="Chữ trên nút (e.g. Gửi Báo Giá Ngay)..."
+                            className="h-9 bg-slate-900 border-white/10 text-slate-100 text-xs font-semibold"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {block.type === 'tiktok' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 bg-slate-900/60 rounded-xl border border-white/10">
+                      <Input
+                        value={block.videoId || ''}
+                        onChange={(e) =>
+                          updateBlock(block.id, {
+                            videoId: e.target.value,
+                            videoUrl: `https://www.tiktok.com/@hyundai/video/${e.target.value}`,
+                          })
+                        }
+                        placeholder="TikTok Video ID (e.g. 7000000000000000000)"
+                        className="h-10 bg-slate-900 border-white/10 text-slate-100 text-sm font-mono"
+                      />
+                      <Input
+                        value={block.title || ''}
+                        onChange={(e) => updateBlock(block.id, { title: e.target.value })}
+                        placeholder="Tiêu đề video TikTok..."
+                        className="h-10 bg-slate-900 border-white/10 text-slate-200 text-sm"
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -885,10 +1581,28 @@ export default function PostEditorPage() {
                   type="button"
                   variant="secondary"
                   size="sm"
-                  onClick={() => addBlock('youtube')}
-                  className="text-xs h-9 text-red-400 hover:text-red-300"
+                  onClick={() => addBlock('priceTable')}
+                  className="text-xs h-9 text-blue-400 hover:text-blue-300 border-blue-500/20"
                 >
-                  <Video size={14} /> YouTube
+                  <TableIcon size={14} /> Bảng giá xe
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => addBlock('relatedCar')}
+                  className="text-xs h-9 text-sky-400 hover:text-sky-300 border-sky-500/20"
+                >
+                  <Car size={14} /> Xe gợi ý
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => addBlock('leadForm')}
+                  className="text-xs h-9 text-indigo-400 hover:text-indigo-300 border-indigo-500/20"
+                >
+                  <Send size={14} /> Form báo giá
                 </Button>
                 <Button
                   type="button"
@@ -908,6 +1622,24 @@ export default function PostEditorPage() {
                 >
                   <Lock size={14} /> Gated Content (Paywall)
                 </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => addBlock('youtube')}
+                  className="text-xs h-9 text-red-400 hover:text-red-300"
+                >
+                  <Video size={14} /> YouTube
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => addBlock('tiktok')}
+                  className="text-xs h-9 text-pink-400 hover:text-pink-300"
+                >
+                  <Video size={14} /> TikTok
+                </Button>
               </div>
             </div>
           </Card>
@@ -923,13 +1655,12 @@ export default function PostEditorPage() {
                 Động cơ SEO Real-Time
               </h3>
               <span
-                className={`text-lg font-black px-3 py-1 rounded-xl ${
-                  seoResult.status === 'good'
+                className={`text-lg font-black px-3 py-1 rounded-xl ${seoResult.status === 'good'
                     ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                     : seoResult.status === 'needs_improvement'
-                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                    : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                }`}
+                      ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                      : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                  }`}
               >
                 {seoResult.score}/{seoResult.maxScore || 100}
               </span>

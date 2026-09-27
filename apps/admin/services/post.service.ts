@@ -66,41 +66,68 @@ export const postService = {
     categoryId?: string;
     search?: string;
   }): Promise<PostListResponse> => {
-    return apiClient.get<PostListResponse>('/api/admin/posts', params);
+    const res = await apiClient.get<any>('/api/admin/posts', params);
+    if (Array.isArray(res)) {
+      return {
+        data: res,
+        pagination: {
+          page: params?.page || 1,
+          limit: params?.limit || 15,
+          totalItems: res.length,
+          totalPages: 1,
+        },
+      };
+    }
+    if (res && Array.isArray(res.data)) {
+      return res;
+    }
+    return {
+      data: [],
+      pagination: { page: 1, limit: 15, totalItems: 0, totalPages: 1 },
+    };
   },
 
   /**
    * Lấy danh sách chuyên mục tin tức
    */
   getCategories: async (): Promise<{ success: boolean; data: CategoryItem[] }> => {
-    return apiClient.get<{ success: boolean; data: CategoryItem[] }>('/api/admin/categories');
+    const res = await apiClient.get<any>('/api/admin/categories');
+    const list = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+    return { success: true, data: list };
   },
 
   /**
    * Lấy chi tiết bài viết theo ID
    */
   getPostById: async (id: string): Promise<{ success: boolean; data: PostItem & { noiDung: unknown } }> => {
-    return apiClient.get<{ success: boolean; data: PostItem & { noiDung: unknown } }>(`/api/admin/posts/${id}`);
+    const res = await apiClient.get<any>(`/api/admin/posts/${id}`);
+    const postData = (res && res.data) ? res.data : res;
+    return { success: true, data: postData };
   },
 
   /**
    * Tạo bài viết mới
    */
   createPost: async (payload: unknown): Promise<{ success: boolean; data: PostItem; message?: string }> => {
-    return apiClient.post<{ success: boolean; data: PostItem; message?: string }>('/api/admin/posts', payload);
+    const res = await apiClient.post<any>('/api/admin/posts', payload);
+    const postData = (res && res.data) ? res.data : res;
+    return { success: true, data: postData, message: 'Tạo bài viết mới thành công' };
   },
 
   /**
    * Cập nhật bài viết theo ID
    */
   updatePost: async (id: string, payload: unknown): Promise<{ success: boolean; data: PostItem; message?: string }> => {
-    return apiClient.put<{ success: boolean; data: PostItem; message?: string }>(`/api/admin/posts/${id}`, payload);
+    const res = await apiClient.put<any>(`/api/admin/posts/${id}`, payload);
+    const postData = (res && res.data) ? res.data : res;
+    return { success: true, data: postData, message: 'Cập nhật bài viết thành công' };
   },
 
   /**
    * Xóa bài viết theo ID
    */
   deletePost: async (id: string): Promise<{ success: boolean; message: string }> => {
-    return apiClient.delete<{ success: boolean; message: string }>(`/api/admin/posts/${id}`);
+    const res = await apiClient.delete<any>(`/api/admin/posts/${id}`);
+    return { success: true, message: res?.message || 'Xóa bài viết thành công' };
   },
 };

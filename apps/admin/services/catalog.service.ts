@@ -1,12 +1,28 @@
 import { apiClient } from '../lib/api-client';
 
+export interface CarVersionSummary {
+  id: string;
+  tenPhienBan: string;
+  slug: string;
+  giaNiemYet: number;
+  giaKhuyenMai?: number | null;
+  seatCount: number;
+  dongCo?: string | null;
+  hopSo?: string | null;
+  danDong?: string | null;
+  anhDaiDienUrl?: string | null;
+  sortOrder?: number;
+}
+
 export interface CarSummary {
   id: string;
   tenXe: string;
   slug: string;
   anhDaiDienUrl?: string | null;
   segment?: string | null;
-  traTruocTu?: string | null;
+  fuelType?: string | null;
+  seatRange?: string | null;
+  traTruocTu?: string | number | null;
   promotionSummary?: string | null;
   minPrice: number;
   maxPrice: number;
@@ -14,6 +30,7 @@ export interface CarSummary {
   status: 'published' | 'draft' | 'archived';
   isFeatured: boolean;
   sortOrder?: number;
+  versions?: CarVersionSummary[];
 }
 
 // 🧠 Mental Model: Service quản lý danh mục xe hơi, phiên bản và màu ngoại thất

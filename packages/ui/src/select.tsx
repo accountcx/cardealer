@@ -24,6 +24,7 @@ export interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectE
   options?: SelectOption[];
   variant?: 'dark' | 'light';
   containerClassName?: string;
+  dropdownClassName?: string;
   placeholder?: string;
 }
 
@@ -39,6 +40,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
       options,
       variant = 'dark',
       containerClassName,
+      dropdownClassName,
       children,
       value,
       defaultValue,
@@ -194,10 +196,11 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     const desktopDropdown = isOpen && !isMobile && (
       <div
         className={cn(
-          'absolute left-0 top-[calc(100%+6px)] w-full min-w-full z-50 rounded-2xl border shadow-2xl p-1.5 max-h-72 overflow-y-auto animate-in fade-in-50 zoom-in-95 duration-150',
+          'absolute left-0 top-[calc(100%+6px)] min-w-full sm:min-w-[440px] max-w-[95vw] z-50 rounded-2xl border shadow-2xl p-1.5 max-h-80 overflow-y-auto animate-in fade-in-50 zoom-in-95 duration-150',
           isLight
             ? 'border-slate-200 bg-white text-slate-900 shadow-slate-300/50'
-            : 'border-slate-800 bg-slate-900/98 text-slate-100 shadow-black/80'
+            : 'border-slate-800 bg-slate-900/98 text-slate-100 shadow-black/80',
+          dropdownClassName
         )}
       >
         {parsedOptions.length === 0 ? (
@@ -223,9 +226,9 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
                   opt.disabled && 'opacity-40 cursor-not-allowed'
                 )}
               >
-                <span className="truncate pr-2">{opt.label}</span>
+                <span className="pr-3 text-left whitespace-normal break-words leading-relaxed text-xs sm:text-sm font-medium">{opt.label}</span>
                 {isSelected && (
-                  <svg className="w-4 h-4 text-[#0072CE] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 text-[#0072CE] shrink-0 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                   </svg>
                 )}
@@ -352,7 +355,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     );
 
     const selectField = (
-      <div ref={containerRef} className={cn('relative w-full', extractedWidth, containerClassName)}>
+      <div ref={containerRef} className={cn('relative w-full', isOpen && 'z-50', extractedWidth, containerClassName)}>
         {/* Trigger Button hiển thị theo chuẩn UI 2026 */}
         <button
           type="button"
@@ -422,7 +425,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     }
 
     return (
-      <div className={cn('w-full space-y-1.5', extractedWidth, containerClassName)}>
+      <div className={cn('w-full space-y-1.5', isOpen && 'relative z-50', extractedWidth, containerClassName)}>
         {label && (
           <label
             htmlFor={selectId}

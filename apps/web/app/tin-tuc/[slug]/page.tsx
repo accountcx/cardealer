@@ -33,17 +33,11 @@ import {
   Tag,
   ArrowLeft,
   FileQuestion,
-  TrendingUp,
 } from 'lucide-react';
 import {
   Button,
   Badge,
   Card,
-  CalloutBlock,
-  FAQBlock,
-  InlineQuickForm,
-  RelatedCarBlock,
-  PriceTableBlock,
 } from '@cardealer/ui';
 import { generatePostMasterJsonLd, type PostForJsonLd } from '@cardealer/core';
 import { apiClient } from '../../../lib/api-client';
@@ -63,6 +57,7 @@ export interface PostDetailData {
   tomTat?: string | null;
   noiDungHtml?: string;
   noiDungAst?: Record<string, unknown> | null;
+  noiDung?: unknown;
   metaTitle?: string | null;
   metaDescription?: string | null;
   category?: {
@@ -82,7 +77,7 @@ export interface PostDetailData {
   readingTime: number;
   wordCount?: number;
   viewCount?: number;
-  tags?: Array<{ id: string; tenTag: string; slug: string }>;
+  tags?: Array<{ id: string; tenTag?: string; tag?: string; slug?: string }>;
   publishedAt?: string;
   createdAt: string;
   updatedAt?: string;
@@ -96,160 +91,263 @@ export interface PostDetailPageProps {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-// ============================================================================
-// DỮ LIỆU BÀI VIẾT FALLBACK ĐẦY ĐỦ (DỰ PHÒNG KHI DB TRỐNG)
-// ============================================================================
-const FALLBACK_DETAIL_ARTICLES: Record<string, PostDetailData> = {
-  'bang-gia-xe-hyundai-thang-09-2026-vinh': {
-    id: 'fb-1',
-    tieuDe: 'Bảng Giá Xe Hyundai Mới Nhất Tháng 09/2026 Tại TP. Vinh, Nghệ An: Ưu Đãi Lăn Bánh Lên Đến 100 Triệu',
-    slug: 'bang-gia-xe-hyundai-thang-09-2026-vinh',
-    anhDaiDienUrl: '/images/banners/hero-event.webp',
-    anhDaiDienAlt: 'Bảng giá xe Hyundai 2026 tại Nghệ An',
-    tomTat:
-      'Tổng hợp toàn bộ giá niêm yết, chính sách giảm giá tiền mặt, gói phụ kiện chính hãng và dự toán chi phí lăn bánh các dòng xe Accent, Creta, Tucson, Santa Fe mới nhất tại đại lý Hyundai Vinh.',
-    metaTitle: 'Bảng Giá Xe Hyundai Tháng 09/2026 Tại Vinh - Ưu Đãi Lăn Bánh 100 Triệu',
-    metaDescription:
-      'Cập nhật bảng giá xe Hyundai tháng 09/2026 tại TP. Vinh, Nghệ An. Giảm tiền mặt đến 100 triệu, tặng bảo hiểm thân vỏ và phụ kiện chính hãng. Hỗ trợ vay trả góp 85%.',
-    category: { id: 'cat-1', tenChuyenMuc: 'Bảng Giá & Khuyến Mãi', slug: 'bang-gia-khuyen-mai' },
-    author: {
-      id: 'u-1',
-      fullName: 'Ban Biên Tập Hyundai Vinh',
-      role: 'Chuyên gia Phân tích Thị trường Ô tô',
-      avatarUrl: '/images/avatars/consultant-1.webp',
-      phone: '0941.000.000',
-    },
-    readingTime: 4,
-    wordCount: 1450,
-    viewCount: 1820,
-    publishedAt: '2026-09-22T08:00:00.000Z',
-    createdAt: '2026-09-22T08:00:00.000Z',
-    tags: [
-      { id: 't-1', tenTag: 'Bảng Giá Xe', slug: 'bang-gia-xe' },
-      { id: 't-2', tenTag: 'Khuyến Mãi Hyundai', slug: 'khuyen-mai-hyundai' },
-      { id: 't-3', tenTag: 'Giá Lăn Bánh Vinh', slug: 'gia-lan-banh-vinh' },
-    ],
-    prices: [
-      { version: 'Hyundai Grand i10 1.2 AT', listedPrice: 405000000, discount: 25000000, rollingPrice: 425000000 },
-      { version: 'Hyundai Accent 1.5 AT Tiêu Chuẩn', listedPrice: 489000000, discount: 30000000, rollingPrice: 512000000 },
-      { version: 'Hyundai Accent 1.5 AT Đặc Biệt', listedPrice: 569000000, discount: 35000000, rollingPrice: 595000000 },
-      { version: 'Hyundai Creta 1.5 Cao Cấp', listedPrice: 699000000, discount: 45000000, rollingPrice: 735000000 },
-      { version: 'Hyundai Tucson 2.0 Xăng Đặc Biệt', listedPrice: 839000000, discount: 60000000, rollingPrice: 878000000 },
-      { version: 'Hyundai Santa Fe 2.5 Prestige', listedPrice: 1265000000, discount: 95000000, rollingPrice: 1320000000 },
-    ],
-    faqs: [
-      {
-        question: 'Giá lăn bánh xe Hyundai tại Nghệ An gồm những khoản chi phí nào?',
-        answer:
-          'Giá lăn bánh bao gồm: Giá sau giảm trừ của đại lý + Lệ phí trước bạ (10% tại Nghệ An) + Phí biển số (1.000.000đ) + Phí đăng kiểm + Phí bảo trì đường bộ 1 năm + Bảo hiểm TNDS bắt buộc.',
-      },
-      {
-        question: 'Mua xe trả góp tại Hyundai Vinh cần chuẩn bị trước bao nhiêu tiền?',
-        answer:
-          'Quý khách chỉ cần trả trước từ 15% - 20% giá trị xe (khoảng 80 - 120 triệu tùy dòng xe Accent hay Creta). Ngân hàng hỗ trợ vay tối đa 85% trong 8 năm.',
-      },
-      {
-        question: 'Đại lý có hỗ trợ giao xe tận nhà tại các huyện trong tỉnh Nghệ An và Hà Tĩnh không?',
-        answer:
-          'Hyundai Vinh hỗ trợ giao xe tận nơi bằng xe chuyên dụng miễn phí trên toàn địa bàn Nghệ An (Diễn Châu, Đô Lương, Quỳnh Lưu, Thái Hòa...) và Hà Tĩnh.',
-      },
-    ],
-  },
-  'thu-tuc-mua-xe-tra-gop-lai-suat-thap-2026': {
-    id: 'fb-2',
-    tieuDe: 'Thủ Tục Mua Xe Ô Tô Trả Góp Lãi Suất Thấp 2026: Hướng Dẫn Bao Đậu Hồ Sơ Trong 24 Giờ',
-    slug: 'thu-tuc-mua-xe-tra-gop-lai-suat-thap-2026',
-    anhDaiDienUrl: '/images/delivery/delivery-1.webp',
-    anhDaiDienAlt: 'Tư vấn mua xe Hyundai trả góp',
-    tomTat:
-      'Quy trình vay ngân hàng mua xe Hyundai đơn giản, vay tối đa 85% giá trị xe, thời hạn lên đến 8 năm với bảng tính số tiền trả góp gốc và lãi hàng tháng chi tiết.',
-    metaTitle: 'Hướng Dẫn Mua Xe Ô Tô Trả Góp 2026 - Lãi Suất Thấp, Duyệt 24 Giờ',
-    metaDescription:
-      'Thủ tục mua xe Hyundai trả góp năm 2026 đơn giản, giải ngân nhanh. Hỗ trợ khách hàng cá nhân và doanh nghiệp, chứng minh thu nhập linh hoạt, lãi suất ưu đãi chỉ từ 6.8%/năm.',
-    category: { id: 'cat-2', tenChuyenMuc: 'Cẩm Nang Mua Xe', slug: 'cam-nang-mua-xe' },
-    author: {
-      id: 'u-2',
-      fullName: 'Nguyễn Văn Tuấn',
-      role: 'Trưởng nhóm Tư vấn Tài chính & Tín dụng',
-      avatarUrl: '/images/avatars/consultant-2.webp',
-      phone: '0941.111.222',
-    },
-    readingTime: 5,
-    wordCount: 1650,
-    viewCount: 1420,
-    publishedAt: '2026-09-20T09:30:00.000Z',
-    createdAt: '2026-09-20T09:30:00.000Z',
-    tags: [
-      { id: 't-4', tenTag: 'Vay Mua Xe', slug: 'vay-mua-xe' },
-      { id: 't-5', tenTag: 'Thủ Tục Trả Góp', slug: 'thu-tuc-tra-gop' },
-    ],
-    faqs: [
-      {
-        question: 'Nợ xấu nhóm 2 hoặc không có sao kê lương có vay mua xe được không?',
-        answer:
-          'Chúng tôi liên kết với hơn 8 ngân hàng đối tác lớn, có gói chuyên biệt hỗ trợ chứng minh qua tài sản tích lũy, cơ sở kinh doanh hộ cá thể hoặc nhà đất.',
-      },
-      {
-        question: 'Thời gian xét duyệt hồ sơ vay mua xe Hyundai mất bao lâu?',
-        answer:
-          'Chỉ từ 4 đến 8 giờ làm việc kể từ lúc nhận đủ hồ sơ hình ảnh qua Zalo, ngân hàng sẽ ra cam kết cho vay chính thức.',
-      },
-    ],
-  },
-  'danh-gia-chi-tiet-hyundai-santa-fe-2026': {
-    id: 'fb-3',
-    tieuDe: 'Đánh Giá Chi Tiết Hyundai Santa Fe 2026 Hoàn Toàn Mới: Đột Phá Không Gian & Công Nghệ',
-    slug: 'danh-gia-chi-tiet-hyundai-santa-fe-2026',
-    anhDaiDienUrl: '/images/cars/tucson.webp',
-    anhDaiDienAlt: 'Hyundai Santa Fe 2026 thế hệ mới',
-    tomTat:
-      'Khám phá ngoại thất vuông vức việt dã, nội thất hạng thương gia 2 màn hình cong panoramic, gói an toàn SmartSense nâng cấp và khả năng vận hành mạnh mẽ trên cung đường miền Trung.',
-    metaTitle: 'Đánh Giá Xe Hyundai Santa Fe 2026 Thế Hệ Mới - Thiết Kế & Vận Hành',
-    metaDescription:
-      'Chi tiết đánh giá Hyundai Santa Fe 2026: Không gian 7 chỗ rộng rãi bậc nhất phân khúc, động cơ SmartStream thế hệ mới, trang bị ngập tràn cùng giá bán hấp dẫn tại Nghệ An.',
-    category: { id: 'cat-3', tenChuyenMuc: 'Đánh Giá Xe', slug: 'danh-gia-xe' },
-    author: {
-      id: 'u-3',
-      fullName: 'Lê Hoàng Nam',
-      role: 'Chuyên gia Đánh giá Xe & Lái thử',
-      avatarUrl: '/images/avatars/consultant-3.webp',
-      phone: '0941.333.444',
-    },
-    readingTime: 6,
-    wordCount: 1980,
-    viewCount: 3100,
-    publishedAt: '2026-09-18T14:15:00.000Z',
-    createdAt: '2026-09-18T14:15:00.000Z',
-    tags: [
-      { id: 't-6', tenTag: 'Santa Fe 2026', slug: 'santa-fe-2026' },
-      { id: 't-7', tenTag: 'Đánh Giá Xe SUV', slug: 'danh-gia-xe-suv' },
-    ],
-  },
-};
 
 // ============================================================================
-// HÀM LẤY BÀI VIẾT THEO SLUG (API + FALLBACK DEGRADATION)
+// CHUYỂN ĐỔI TIPTAP JSON AST SANG HTML ĐỘNG
 // ============================================================================
-async function getPostBySlug(slug: string): Promise<PostDetailData | null> {
+function convertTiptapToHtml(doc: any): string {
+  if (!doc) return '';
+  if (typeof doc === 'string') return doc;
+  if (!doc.content || !Array.isArray(doc.content)) return '';
+
+  const renderNodes = (nodes: any[]): string => {
+    return nodes
+      .map((node) => {
+        if (!node) return '';
+        if (node.type === 'text') {
+          let text = node.text || '';
+          if (node.marks && Array.isArray(node.marks)) {
+            for (const mark of node.marks) {
+              if (mark.type === 'bold') text = `<strong>${text}</strong>`;
+              if (mark.type === 'italic') text = `<em>${text}</em>`;
+              if (mark.type === 'strike') text = `<s>${text}</s>`;
+              if (mark.type === 'underline') text = `<u>${text}</u>`;
+              if (mark.type === 'link') {
+                const href = mark.attrs?.href || '#';
+                text = `<a href="${href}" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">${text}</a>`;
+              }
+            }
+          }
+          return text;
+        }
+
+        const innerHtml = node.content && Array.isArray(node.content) ? renderNodes(node.content) : '';
+
+        if (node.type === 'paragraph') {
+          return `<p class="my-4 text-slate-700 leading-relaxed">${innerHtml || '<br/>'}</p>`;
+        }
+        if (node.type === 'heading') {
+          const level = node.attrs?.level || 2;
+          const id = node.attrs?.id || '';
+          const idAttr = id ? ` id="${id}"` : '';
+          const headingClass =
+            level === 2
+              ? 'text-2xl font-bold mt-8 mb-4 text-slate-900 border-l-4 border-blue-600 pl-3.5 scroll-mt-20'
+              : 'text-xl font-bold mt-6 mb-3 text-slate-900 scroll-mt-20';
+          return `<h${level}${idAttr} class="${headingClass}">${innerHtml}</h${level}>`;
+        }
+        if (node.type === 'calloutBlock') {
+          const title = node.attrs?.title ? `<h4 class="font-bold text-blue-900 mb-1">${node.attrs.title}</h4>` : '';
+          const content = node.attrs?.content || innerHtml;
+          return `<div class="p-4 my-6 rounded-xl bg-blue-50/80 border-l-4 border-blue-600 text-slate-800">${title}<div>${content}</div></div>`;
+        }
+        if (node.type === 'bulletList') {
+          return `<ul class="list-disc pl-6 my-4 space-y-2 text-slate-700">${innerHtml}</ul>`;
+        }
+        if (node.type === 'orderedList') {
+          return `<ol class="list-decimal pl-6 my-4 space-y-2 text-slate-700">${innerHtml}</ol>`;
+        }
+        if (node.type === 'listItem') {
+          return `<li>${innerHtml}</li>`;
+        }
+        if (node.type === 'blockquote') {
+          return `<blockquote class="border-l-4 border-slate-300 pl-4 italic my-4 text-slate-600">${innerHtml}</blockquote>`;
+        }
+        if (node.type === 'image') {
+          const src = node.attrs?.src || '';
+          const alt = node.attrs?.alt || '';
+          return `<figure class="my-6 rounded-xl overflow-hidden"><img src="${src}" alt="${alt}" class="w-full object-cover rounded-xl" /><figcaption class="text-center text-xs text-slate-500 mt-2 italic">${alt}</figcaption></figure>`;
+        }
+        if (node.type === 'faqBlock') {
+          const questions = (node.attrs?.questions as Array<{ question: string; answer: string }>) || [];
+          if (!questions.length) return '';
+          const faqItems = questions
+            .map(
+              (q, i) => `
+            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm mb-3">
+              <div class="font-bold text-slate-900 flex items-center gap-2 mb-2 text-base">
+                <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs shrink-0 font-bold">${i + 1}</span>
+                ${q.question || 'Câu hỏi'}
+              </div>
+              <p class="text-slate-600 text-sm pl-8 leading-relaxed">${q.answer || 'Nội dung câu trả lời đang được cập nhật...'}</p>
+            </div>`
+            )
+            .join('');
+          return `
+            <div class="my-8">
+              <h3 class="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <span>❓</span> Câu Hỏi Khách Hàng Quan Tâm (FAQ)
+              </h3>
+              <div class="space-y-3">${faqItems}</div>
+            </div>`;
+        }
+        if (node.type === 'youtubeBlock') {
+          const videoId = node.attrs?.videoId || '';
+          const caption = node.attrs?.caption || '';
+          return `
+            <figure class="my-8">
+              <div class="relative w-full aspect-video rounded-xl overflow-hidden bg-slate-900 shadow-md">
+                <iframe
+                  src="https://www.youtube-nocookie.com/embed/${videoId}"
+                  title="YouTube video player"
+                  class="w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen
+                ></iframe>
+              </div>
+              ${caption ? `<figcaption class="text-center text-xs text-slate-500 mt-2 italic">${caption}</figcaption>` : ''}
+            </figure>`;
+        }
+        if (node.type === 'tikTokBlock') {
+          const videoId = node.attrs?.videoId || '';
+          const title = node.attrs?.title || '';
+          return `
+            <div class="my-8 p-4 rounded-xl border border-slate-200 bg-slate-50 flex flex-col items-center">
+              <p class="text-sm font-semibold text-slate-800 mb-2">🎬 ${title || 'Xem trên TikTok'}</p>
+              <a href="https://www.tiktok.com/@hyundai/video/${videoId}" target="_blank" rel="noopener noreferrer" class="text-xs text-blue-600 hover:underline">
+                Mở video TikTok (#${videoId}) &rarr;
+              </a>
+            </div>`;
+        }
+        if (node.type === 'relatedCarBlock') {
+          const carName = node.attrs?.carName || 'Hyundai Accent 2026';
+          const carSlug = node.attrs?.slug || 'hyundai-accent';
+          const minPrice = Number(node.attrs?.minPrice) || 439000000;
+          const imageUrl = node.attrs?.imageUrl || '/images/cars/accent.webp';
+          const seatCount = Number(node.attrs?.seatCount) || 5;
+          const fuelType = node.attrs?.fuelType || 'Xăng 1.5L Smartstream';
+          const formattedPrice = minPrice.toLocaleString('vi-VN');
+          return `
+            <div class="my-8 p-5 rounded-2xl border border-slate-200 bg-gradient-to-r from-blue-50/50 to-white flex flex-col sm:flex-row items-center gap-5 shadow-sm">
+              <img src="${imageUrl}" alt="${carName}" class="w-full sm:w-48 h-32 object-cover rounded-xl shrink-0" />
+              <div class="flex-1">
+                <span class="text-xs font-semibold text-blue-600 uppercase tracking-wider">Mẫu xe quan tâm</span>
+                <h4 class="text-lg font-bold text-slate-900 mt-1">${carName}</h4>
+                <div class="flex items-center gap-3 text-xs text-slate-500 mt-1 mb-2">
+                  <span>💺 ${seatCount} chỗ ngồi</span>
+                  <span>•</span>
+                  <span>⛽ ${fuelType}</span>
+                </div>
+                <p class="text-sm text-slate-600">Giá niêm yết từ: <strong class="text-red-600 font-bold text-base">${formattedPrice} đ</strong></p>
+                <a href="/xe/${carSlug}" class="inline-block mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors">
+                  Xem chi tiết xe &rarr;
+                </a>
+              </div>
+            </div>`;
+        }
+        if (node.type === 'priceTableBlock') {
+          const title = node.attrs?.title || 'Bảng Giá Xe Hyundai Mới Nhất';
+          const prices = (node.attrs?.prices as any[]) || [];
+          let tableHtml = '';
+          if (Array.isArray(prices) && prices.length > 0) {
+            const rows = prices
+              .map((p) => {
+                const version = p.version || p.name || 'Phiên bản';
+                const listed = Number(p.listedPrice || p.price || 0).toLocaleString('vi-VN');
+                const disc = Number(p.discount || 0);
+                const discStr = disc > 0 ? `-${disc.toLocaleString('vi-VN')} đ` : 'Liên hệ';
+                const rolling = Number(p.rollingPrice || p.onRoadPriceEstimate || 0);
+                const rollingStr = rolling > 0 ? `${rolling.toLocaleString('vi-VN')} đ` : 'Liên hệ';
+                return `
+                  <tr class="border-b border-slate-100 hover:bg-blue-50/30 transition-colors">
+                    <td class="py-3.5 px-4 font-semibold text-slate-900">${version}</td>
+                    <td class="py-3.5 px-4 text-slate-600 font-mono">${listed} đ</td>
+                    <td class="py-3.5 px-4 text-emerald-600 font-semibold">${discStr}</td>
+                    <td class="py-3.5 px-4 text-blue-700 font-bold font-mono">${rollingStr}</td>
+                  </tr>`;
+              })
+              .join('');
+
+            tableHtml = `
+              <div class="overflow-x-auto my-4 rounded-xl border border-slate-200 shadow-sm bg-white">
+                <table class="w-full text-left text-sm border-collapse">
+                  <thead class="bg-slate-50 border-b border-slate-200 text-xs uppercase font-bold text-slate-700">
+                    <tr>
+                      <th class="py-3 px-4">Phiên Bản Xe</th>
+                      <th class="py-3 px-4">Giá Niêm Yết</th>
+                      <th class="py-3 px-4">Ưu Đãi Đại Lý</th>
+                      <th class="py-3 px-4">Giá Lăn Bánh Tạm Tính</th>
+                    </tr>
+                  </thead>
+                  <tbody>${rows}</tbody>
+                </table>
+              </div>`;
+          }
+
+          return `
+            <div class="my-8 p-6 rounded-2xl border border-blue-200 bg-blue-50/40">
+              <h3 class="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+                ${title}
+              </h3>
+              ${tableHtml}
+              <p class="text-xs text-slate-500 mt-2">* Giá lăn bánh đã bao gồm VAT và có thể thay đổi tùy khu vực và thời điểm.</p>
+            </div>`;
+        }
+        if (node.type === 'leadFormBlock' || node.type === 'inlineQuickForm') {
+          const headline = node.attrs?.headline || 'Nhận Báo Giá Lăn Bánh Chi Tiết Tận Tay';
+          const subheadline = node.attrs?.subheadline || 'Để lại thông tin, chuyên viên tư vấn sẽ gửi bảng tính chi phí lăn bánh chính xác và số tiền trả góp hàng tháng qua Zalo trong 5 phút.';
+          const buttonText = node.attrs?.buttonText || 'Gửi Báo Giá Ngay';
+          const carName = node.attrs?.carName || 'Hyundai Accent / Creta';
+          return `
+            <div class="my-8 p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-blue-700 to-indigo-900 text-white shadow-xl">
+              <div class="max-w-xl mx-auto text-center space-y-3">
+                <span class="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-semibold uppercase tracking-wider text-amber-300">
+                  ⚡ Ưu Đãi Độc Quyền Showroom
+                </span>
+                <h3 class="text-2xl font-bold">${headline}</h3>
+                <p class="text-sm text-blue-100 leading-relaxed">${subheadline}</p>
+                <form class="mt-6 flex flex-col sm:flex-row gap-3 justify-center items-center max-w-md mx-auto" onsubmit="event.preventDefault(); alert('Cảm ơn bạn! Chuyên viên Hyundai Vinh sẽ liên hệ qua Zalo/SĐT trong 5 phút.');">
+                  <input type="tel" placeholder="Nhập số điện thoại Zalo..." required class="w-full sm:flex-1 px-4 py-3 rounded-xl bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder:text-slate-400 font-medium" />
+                  <button type="submit" class="w-full sm:w-auto px-6 py-3 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-sm rounded-xl shadow-lg transition-all shrink-0">
+                    ${buttonText}
+                  </button>
+                </form>
+                <p class="text-[11px] text-blue-200 mt-2">Áp dụng cho dòng xe: <strong>${carName}</strong> • Cam kết bảo mật thông tin 100%</p>
+              </div>
+            </div>`;
+        }
+        if (node.type === 'gatedContent') {
+          const badgeText = node.attrs?.badgeText || 'Nội dung độc quyền';
+          const title = node.attrs?.title || 'Tải Bảng Dự Toán Lăn Bánh Chi Tiết';
+          const description = node.attrs?.description || 'Để lại SĐT/Zalo nhận báo giá trong 5 phút.';
+          return `
+            <div class="my-8 p-6 rounded-2xl bg-gradient-to-br from-slate-900 to-blue-950 text-white text-center shadow-lg">
+              <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-amber-400 text-slate-950 uppercase tracking-wider mb-3">${badgeText}</span>
+              <h4 class="text-xl font-bold mb-2">${title}</h4>
+              <p class="text-sm text-slate-300 max-w-md mx-auto mb-4">${description}</p>
+              <a href="tel:0941000000" class="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-sm shadow-md transition-all">
+                <span>📞</span> Nhận Báo Giá Ngay (0941.000.000)
+              </a>
+            </div>`;
+        }
+        if (node.type === 'horizontalRule') {
+          return `<hr class="my-8 border-slate-200" />`;
+        }
+        return innerHtml;
+      })
+      .join('');
+  };
+
+  return renderNodes(doc.content);
+}
+
+// ============================================================================
+// HÀM LẤY BÀI VIẾT THEO SLUG (API)
+// ============================================================================
+async function getPostBySlug(slug: string, token?: string): Promise<PostDetailData | null> {
   try {
-    const res = await apiClient.get<any>(`/api/posts/${slug}`);
-    if (res && res.data && res.data.slug) {
-      return res.data;
+    const endpoint = token ? `/api/posts/preview?token=${encodeURIComponent(token)}` : `/api/posts/${slug}`;
+    const res = await apiClient.get<any>(endpoint, undefined, token ? { cache: 'no-store' } : undefined);
+    const postData: PostDetailData | undefined = (res && res.slug) ? res : res?.data;
+    if (postData && (postData.slug || postData.tieuDe)) {
+      if (!postData.slug) postData.slug = slug;
+      if (postData.noiDung && !postData.noiDungHtml) {
+        postData.noiDungHtml = convertTiptapToHtml(postData.noiDung);
+      }
+      return postData;
     }
-  } catch {
-    // Tiếp tục fallback
-  }
-
-  // Tìm trong fallback store
-  if (FALLBACK_DETAIL_ARTICLES[slug]) {
-    return FALLBACK_DETAIL_ARTICLES[slug];
-  }
-
-  // Fallback tổng quát nếu slug không tồn tại nhưng có từ khóa khớp
-  const generalKeys = Object.keys(FALLBACK_DETAIL_ARTICLES);
-  const matchedKey = generalKeys.find((k) => slug.includes(k) || k.includes(slug));
-  if (matchedKey) {
-    return FALLBACK_DETAIL_ARTICLES[matchedKey];
+  } catch (err) {
+    console.error('[getPostBySlug] Error fetching post:', err);
   }
 
   return null;
@@ -258,9 +356,11 @@ async function getPostBySlug(slug: string): Promise<PostDetailData | null> {
 // ============================================================================
 // SEO METADATA GENERATOR (CANONICAL + OPEN GRAPH + TWITTER)
 // ============================================================================
-export async function generateMetadata({ params }: PostDetailPageProps): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: PostDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const post = await getPostBySlug(slug);
+  const search = searchParams ? await searchParams : undefined;
+  const token = typeof search?.token === 'string' ? search.token : undefined;
+  const post = await getPostBySlug(slug, token);
 
   if (!post) {
     return {
@@ -295,7 +395,7 @@ export async function generateMetadata({ params }: PostDetailPageProps): Promise
       modifiedTime: post.updatedAt || post.publishedAt || post.createdAt,
       authors: [post.author?.fullName || 'Hyundai Vinh'],
       section: post.category?.tenChuyenMuc || 'Tin tức',
-      tags: post.tags?.map((t) => t.tenTag),
+      tags: post.tags?.map((t) => t.tenTag || t.tag || '').filter(Boolean),
       images: [
         {
           url: imageUrl,
@@ -317,9 +417,11 @@ export async function generateMetadata({ params }: PostDetailPageProps): Promise
 // ============================================================================
 // MAIN SERVER COMPONENT: POST DETAIL PAGE
 // ============================================================================
-export default async function PostDetailPage({ params }: PostDetailPageProps) {
+export default async function PostDetailPage({ params, searchParams }: PostDetailPageProps) {
   const { slug } = await params;
-  const post = await getPostBySlug(slug);
+  const search = searchParams ? await searchParams : undefined;
+  const token = typeof search?.token === 'string' ? search.token : undefined;
+  const post = await getPostBySlug(slug, token);
 
   // 1. EMPTY / 404 STATE
   if (!post) {
@@ -366,12 +468,12 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
     category: post.category ? { id: post.category.id, name: post.category.tenChuyenMuc, slug: post.category.slug } : undefined,
     author: post.author
       ? {
-          id: post.author.id,
-          name: post.author.fullName,
-          jobTitle: post.author.role,
-          avatarUrl: post.author.avatarUrl || undefined,
-          phone: post.author.phone || undefined,
-        }
+        id: post.author.id,
+        name: post.author.fullName,
+        jobTitle: post.author.role,
+        avatarUrl: post.author.avatarUrl || undefined,
+        phone: post.author.phone || undefined,
+      }
       : undefined,
     noiDung: post.noiDungAst || undefined,
   };
@@ -393,6 +495,16 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
 
   return (
     <article className="min-h-screen bg-slate-50 text-slate-800 antialiased">
+      {/* 🧠 Live Preview Banner nếu đang truy cập qua secret token */}
+      {token && (
+        <div className="bg-amber-400 text-slate-950 px-4 py-2.5 text-center text-xs sm:text-sm font-semibold sticky top-0 z-50 shadow-md flex items-center justify-center gap-2 border-b border-amber-500">
+          <Eye className="w-4 h-4 shrink-0 text-slate-900" />
+          <span>
+            Chế độ Xem Trước Bí Mật — Trạng thái: <strong className="uppercase bg-slate-900 text-white px-2 py-0.5 rounded text-xs">{(post as any).status === 'published' ? 'Đã xuất bản' : 'Bản nháp (Chưa xuất bản)'}</strong>
+          </span>
+        </div>
+      )}
+
       {/* 🧠 5 Schemas JSON-LD Master Graph */}
       <script
         type="application/ld+json"
@@ -530,91 +642,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
                   className="space-y-4"
                 />
               ) : (
-                <>
-                  <p>
-                    Đại lý <strong>Hyundai Dũng Lạc (Hyundai Vinh)</strong> xin gửi tới quý khách hàng chương trình ưu đãi đặc biệt và bảng giá chi tiết cập nhật mới nhất. Với cam kết mang đến sản phẩm chính hãng với mức chiết khấu tốt nhất khu vực miền Trung, chúng tôi luôn sẵn sàng hỗ trợ quý khách từ khâu lái thử đến khi bàn giao xe tận nhà.
-                  </p>
-
-                  {/* Block 1: Callout Lời khuyên tư vấn */}
-                  <CalloutBlock
-                    type="info"
-                    title="Mẹo Tiết Kiệm Chi Phí Khi Mua Xe"
-                    content="Đặt cọc trong tuần lễ vàng để nhận ngay gói bảo hiểm vật chất 1 năm chính hãng cùng bộ quà tặng phụ kiện dán phim cách nhiệt cao cấp trị giá 15.000.000đ."
-                  />
-
-                  {/* Block 2: Bảng giá niêm yết & Lăn bánh (PriceTableBlock) */}
-                  {post.prices && post.prices.length > 0 && (
-                    <div className="my-8">
-                      <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
-                        <TrendingUp className="w-5 h-5 text-blue-600" />
-                        Bảng Giá & Chi Phí Lăn Bánh Tham Khảo (Tháng 09/2026)
-                      </h3>
-                      <PriceTableBlock
-                        carName="Hyundai 2026"
-                        headline="Bảng Giá Xe Hyundai Mới Nhất Tại TP. Vinh"
-                        versions={post.prices.map((p) => ({
-                          name: p.version,
-                          price: p.listedPrice,
-                          promotionalPrice: p.listedPrice - p.discount,
-                          onRoadPriceEstimate: p.rollingPrice,
-                        }))}
-                      />
-                    </div>
-                  )}
-
-                  <p>
-                    Tất cả các dòng xe bán ra tại Hyundai Vinh đều được áp dụng chính sách bảo hành chính hãng 5 năm hoặc 100.000 km (tùy điều kiện nào đến trước). Đội ngũ kỹ thuật viên tay nghề cao được đào tạo bài bản theo tiêu chuẩn Hyundai Motor Company toàn cầu.
-                  </p>
-
-                  {/* Block 3: Xe Liên Quan (RelatedCarBlock) */}
-                  <div className="my-8">
-                    <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
-                      <Sparkles className="w-5 h-5 text-blue-600" />
-                      Mẫu Xe Được Quan Tâm Nhiều Nhất
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <RelatedCarBlock
-                        carSlug="hyundai-accent"
-                        tenXe="Hyundai Accent 2026"
-                        giaNiemYetTu={439000000}
-                        anhDaiDienUrl="/images/cars/accent.webp"
-                        seatCount={5}
-                        fuelType="Xăng 1.5L"
-                      />
-                      <RelatedCarBlock
-                        carSlug="hyundai-creta"
-                        tenXe="Hyundai Creta 2026"
-                        giaNiemYetTu={599000000}
-                        anhDaiDienUrl="/images/cars/creta.webp"
-                        seatCount={5}
-                        fuelType="Xăng 1.5L Smartstream"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Block 4: Inline Lead Form (Đăng ký nhận báo giá trong bài viết) */}
-                  <div className="my-8">
-                    <InlineQuickForm
-                      headline="Nhận Báo Giá Lăn Bánh Chi Tiết Tận Tay"
-                      subheadline="Để lại thông tin, chuyên viên tư vấn sẽ gửi bảng tính chi phí lăn bánh chính xác và số tiền trả góp hàng tháng qua Zalo trong 5 phút."
-                      buttonText="Gửi Báo Giá Ngay"
-                      carName="Hyundai Accent / Creta"
-                    />
-                  </div>
-
-                  {/* Block 5: Câu hỏi thường gặp (FAQBlock) */}
-                  {post.faqs && post.faqs.length > 0 && (
-                    <div className="my-8">
-                      <h3 className="text-xl font-bold text-slate-900 mb-4">
-                        Giải Đáp Thắc Mắc Thường Gặp
-                      </h3>
-                      <FAQBlock
-                        title="Câu Hỏi Khách Hàng Quan Tâm Khi Mua Xe"
-                        questions={post.faqs}
-                      />
-                    </div>
-                  )}
-                </>
+                <p className="text-slate-500 italic">Nội dung bài viết đang được cập nhật.</p>
               )}
             </div>
 
@@ -624,15 +652,19 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
                 <div className="flex items-center gap-2 flex-wrap">
                   <Tag className="w-4 h-4 text-slate-400 mr-1" />
                   <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Từ khóa:</span>
-                  {post.tags.map((tag) => (
-                    <Link
-                      key={tag.id}
-                      href={`/tin-tuc?q=${encodeURIComponent(tag.tenTag)}`}
-                      className="inline-block px-3 py-1 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-600 rounded-md text-xs font-medium transition-colors"
-                    >
-                      #{tag.tenTag}
-                    </Link>
-                  ))}
+                  {post.tags.map((tag) => {
+                    const tagLabel = tag.tenTag || tag.tag || '';
+                    if (!tagLabel) return null;
+                    return (
+                      <Link
+                        key={tag.id}
+                        href={`/tin-tuc?q=${encodeURIComponent(tagLabel)}`}
+                        className="inline-block px-3 py-1 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-600 rounded-md text-xs font-medium transition-colors"
+                      >
+                        #{tagLabel}
+                      </Link>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -642,11 +674,11 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
               author={
                 post.author
                   ? {
-                      fullName: post.author.fullName,
-                      role: post.author.role,
-                      avatarUrl: post.author.avatarUrl,
-                      phone: post.author.phone,
-                    }
+                    fullName: post.author.fullName,
+                    role: post.author.role,
+                    avatarUrl: post.author.avatarUrl,
+                    phone: post.author.phone,
+                  }
                   : null
               }
               postTitle={post.tieuDe}

@@ -11,6 +11,7 @@ import {
   Settings, 
   UserCheck,
   User as UserIcon,
+  FolderTree,
 } from 'lucide-react';
 import { clientEnv } from '@cardealer/env';
 import { AdminShell as SharedAdminShell, type AdminShellNavItem } from '@cardealer/ui';
@@ -78,6 +79,13 @@ export default function AdminShell({ children }: AdminShellProps) {
       icon: <FileText size={18} />,
       permission: 'posts:read',
       active: pathname.startsWith('/posts'),
+    },
+    {
+      label: 'Chuyên Mục Tin Tức',
+      href: '/categories',
+      icon: <FolderTree size={18} />,
+      permission: 'posts:read',
+      active: pathname.startsWith('/categories'),
     },
     {
       label: 'Cài Đặt Showroom',
