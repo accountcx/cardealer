@@ -1,5 +1,4 @@
-import { apiClient, AppError } from '../lib/api-client';
-import { clientEnv } from '@cardealer/env';
+import { apiClient } from '../lib/api-client';
 import type {
   MediaItem,
   MediaQueryInput,
@@ -8,8 +7,8 @@ import type {
 } from '@cardealer/types';
 
 // 🧠 Mental Model: Typed Media Service cho Admin Image Library (apps/admin).
-// Tương tác trực tiếp với API namespace /api/admin/media/*.
-// 1. Upload ảnh đơn qua XMLHttpRequest với onprogress để đo lường tiến trình % mượt mà (0% -> 100%).
+// Tương tác trực tiếp với API namespace /api/admin/media/* thông qua apiClient.
+// 1. Upload ảnh đơn qua apiClient.upload (bọc XHR tiến trình % + 401 Interceptor + typed AppError).
 // 2. Fetch danh sách ảnh phân trang, lọc và tìm kiếm theo DTOs chuẩn từ @cardealer/types.
 // 3. Update Alt Text và xóa ảnh (đơn lẻ / batch).
 
@@ -47,64 +46,20 @@ export async function batchDeleteMedia(
 }
 
 /**
- * Tải lên một tệp ảnh đơn lẻ có lắng nghe tiến trình % (XHR Stream)
+ * Tải lên một tệp ảnh đơn lẻ có lắng nghe tiến trình % (thông qua apiClient.upload)
  */
-export function uploadSingleMedia(
+export async function uploadSingleMedia(
   file: File,
   altText?: string,
   onProgress?: (percent: number) => void
 ): Promise<MediaItem> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    const baseUrl = clientEnv.NEXT_PUBLIC_API_URL.replace(/\/+$/, '');
-    const uploadUrl = baseUrl.endsWith('/api')
-      ? `${baseUrl}/admin/media/upload`
-      : `${baseUrl}/api/admin/media/upload`;
+  const formData = new FormData();
+  formData.append('file', file);
+  if (altText) {
+    formData.append('altText', altText);
+  }
 
-    xhr.open('POST', uploadUrl, true);
-    xhr.withCredentials = true; // Gửi cookie admin_token HttpOnly
-
-    if (onProgress && xhr.upload) {
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) {
-          const percent = Math.round((event.loaded / event.total) * 100);
-          onProgress(percent);
-        }
-      };
-    }
-
-    xhr.onload = () => {
-      try {
-        const response = JSON.parse(xhr.responseText);
-        if (xhr.status >= 200 && xhr.status < 300 && response.success) {
-          resolve(response.data as MediaItem);
-        } else {
-          const errorMsg = response.error?.message || `Lỗi tải lên (${xhr.status})`;
-          reject(new AppError(errorMsg, response.error?.code || 'UPLOAD_FAILED', xhr.status));
-        }
-      } catch {
-        reject(new AppError(`Lỗi máy chủ (${xhr.status})`, 'SERVER_ERROR', xhr.status));
-      }
-    };
-
-    xhr.onerror = () => {
-      reject(
-        new AppError(
-          'Không thể kết nối đến máy chủ khi tải ảnh lên. Vui lòng kiểm tra mạng.',
-          'NETWORK_ERROR',
-          0
-        )
-      );
-    };
-
-    const formData = new FormData();
-    formData.append('file', file);
-    if (altText) {
-      formData.append('altText', altText);
-    }
-
-    xhr.send(formData);
-  });
+  return apiClient.upload<MediaItem>('/api/admin/media/upload', formData, onProgress);
 }
 
 export const mediaService = {

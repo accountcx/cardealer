@@ -92,13 +92,7 @@ class HttpClient {
 
     // Global 401 Interceptor: Hết hạn phiên / chưa đăng nhập
     if (response.status === 401) {
-      if (typeof window !== 'undefined') {
-        // 🧠 Xóa cookie token để chống vòng lặp chuyển hướng giữa Client và Next.js Server Middleware
-        document.cookie = 'admin_token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-        if (!window.location.pathname.startsWith('/login')) {
-          window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
-        }
-      }
+      this.handleUnauthorized();
     }
 
     let json: ApiSuccessResponse<T> | ApiErrorResponse;
@@ -122,6 +116,87 @@ class HttpClient {
     }
 
     return json.data;
+  }
+
+  private handleUnauthorized(): void {
+    if (typeof window !== 'undefined') {
+      // 🧠 Xóa cookie token để chống vòng lặp chuyển hướng giữa Client và Next.js Server Middleware
+      document.cookie = 'admin_token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+      }
+    }
+  }
+
+  /**
+   * Tải tệp lên máy chủ với FormData và lắng nghe tiến trình % thời gian thực (XHR)
+   */
+  public upload<T>(
+    endpoint: string,
+    formData: FormData,
+    onProgress?: (percent: number) => void
+  ): Promise<T> {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      const url = this.buildUrl(endpoint);
+
+      xhr.open('POST', url, true);
+      xhr.withCredentials = true;
+
+      if (onProgress && xhr.upload) {
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percent = Math.round((event.loaded / event.total) * 100);
+            onProgress(percent);
+          }
+        };
+      }
+
+      xhr.onload = () => {
+        if (xhr.status === 401) {
+          this.handleUnauthorized();
+        }
+
+        let json: ApiSuccessResponse<T> | ApiErrorResponse;
+        try {
+          json = JSON.parse(xhr.responseText);
+        } catch {
+          if (xhr.status < 200 || xhr.status >= 300) {
+            reject(new AppError(`Lỗi máy chủ (${xhr.status})`, 'SERVER_ERROR', xhr.status));
+          } else {
+            resolve({} as T);
+          }
+          return;
+        }
+
+        if (xhr.status < 200 || xhr.status >= 300 || !json.success) {
+          const errorData = (json as ApiErrorResponse).error;
+          reject(
+            new AppError(
+              errorData?.message || 'Tải lên không thành công',
+              errorData?.code || 'UPLOAD_FAILED',
+              xhr.status,
+              errorData?.details
+            )
+          );
+          return;
+        }
+
+        resolve(json.data);
+      };
+
+      xhr.onerror = () => {
+        reject(
+          new AppError(
+            'Không thể kết nối tới máy chủ. Vui lòng kiểm tra kết nối mạng của bạn.',
+            'NETWORK_DISCONNECTED',
+            0
+          )
+        );
+      };
+
+      xhr.send(formData);
+    });
   }
 
   public get<T>(endpoint: string, params?: Record<string, string | number | boolean | undefined>, options?: RequestOptions): Promise<T> {
