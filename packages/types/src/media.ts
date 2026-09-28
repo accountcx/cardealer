@@ -14,7 +14,7 @@ export const MediaItemSchema = z.object({
   altText: z.string().max(255).nullable().optional(),
   width: z.number().int().positive().nullable().optional(),
   height: z.number().int().positive().nullable().optional(),
-  folder: z.string().max(100).default('cardealer'),
+  folder: z.string().max(100).nullable().default('cardealer'),
   uploaderId: z.string().uuid().nullable().optional(),
   createdAt: z.string().or(z.date()),
   updatedAt: z.string().or(z.date()).optional(),
