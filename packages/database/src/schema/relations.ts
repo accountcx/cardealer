@@ -6,6 +6,7 @@ import { users } from './users';
 import { auditLogs } from './audit_logs';
 import { leads } from './leads';
 import { posts, categories, postTags } from './posts';
+import { media } from './media';
 
 export const carsRelations = relations(cars, ({ many }) => ({
   versions: many(carVersions),
@@ -30,6 +31,11 @@ export const usersRelations = relations(users, ({ many }) => ({
   auditLogs: many(auditLogs),
   posts: many(posts),
   leads: many(leads),
+  media: many(media),
+}));
+
+export const mediaRelations = relations(media, ({ one }) => ({
+  uploader: one(users, { fields: [media.uploaderId], references: [users.id] }),
 }));
 
 export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
