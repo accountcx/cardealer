@@ -14,11 +14,14 @@
     "@cardealer/env": "workspace:*",
     "@cardealer/types": "workspace:*",
     "bcryptjs": "^3.0.3",
+    "busboy": "^1.6.0",
+    "cloudinary": "^2.11.0",
     "drizzle-orm": "^0.45.2",
     "jsonwebtoken": "^9.0.3"
   },
   "devDependencies": {
     "@cardealer/config-typescript": "workspace:*",
+    "@types/busboy": "^1.5.4",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.6.1",
     "tsx": "^4.23.13",
