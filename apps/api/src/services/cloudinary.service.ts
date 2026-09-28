@@ -11,11 +11,11 @@ import { Readable } from 'node:stream';
 
 const serverEnv = validateServerEnv();
 
-// Khởi tạo cấu hình Cloudinary an toàn phía Server (API Secret không bao giờ lộ ra Client)
+// Khởi tạo cấu hình Cloudinary an toàn phía Server qua Single Source of Truth `serverEnv`
 cloudinary.config({
-  cloud_name: serverEnv.CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: serverEnv.CLOUDINARY_API_KEY || process.env.CLOUDINARY_API_KEY,
-  api_secret: serverEnv.CLOUDINARY_API_SECRET || process.env.CLOUDINARY_API_SECRET,
+  cloud_name: serverEnv.CLOUDINARY_CLOUD_NAME,
+  api_key: serverEnv.CLOUDINARY_API_KEY,
+  api_secret: serverEnv.CLOUDINARY_API_SECRET,
   secure: true,
 });
 
@@ -42,7 +42,7 @@ export async function uploadStreamToCloudinary(
   stream: Readable,
   options: UploadStreamOptions
 ): Promise<CloudinaryUploadResult> {
-  const folder = options.folder || serverEnv.CLOUDINARY_FOLDER || 'cardealer';
+  const folder = options.folder || serverEnv.CLOUDINARY_FOLDER;
 
   // Trích xuất tên tệp sạch (khử đuôi file để làm public_id_prefix)
   const cleanBaseName = options.filename
