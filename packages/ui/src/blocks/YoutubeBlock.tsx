@@ -35,6 +35,18 @@ export function YoutubeBlock({
   const [isPlaying, setIsPlaying] = React.useState(false);
   const [isLoadingIframe, setIsLoadingIframe] = React.useState(true);
 
+  // Tự động nhận diện YouTube Video ID kể cả khi truyền full link URL
+  const resolvedVideoId = React.useMemo(() => {
+    const raw = videoId || videoUrl || '';
+    if (!raw) return '';
+    const trimmed = raw.trim();
+    if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) return trimmed;
+    const match = trimmed.match(
+      /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/i
+    );
+    return match ? match[1] : trimmed;
+  }, [videoId, videoUrl]);
+
   // 1. 4-STATE UI: LOADING STATE
   if (isLoading) {
     return (
@@ -46,7 +58,7 @@ export function YoutubeBlock({
   }
 
   // 2. 4-STATE UI: EMPTY / FALLBACK STATE
-  if (!videoId) {
+  if (!resolvedVideoId) {
     return (
       <div
         className={cn(
@@ -80,9 +92,9 @@ export function YoutubeBlock({
   }
 
   // URL thumbnail YouTube chất lượng cao
-  const thumbnailUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+  const thumbnailUrl = `https://i.ytimg.com/vi/${resolvedVideoId}/hqdefault.jpg`;
   // Embed URL với domain youtube-nocookie bảo vệ quyền riêng tư người dùng
-  const embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`;
+  const embedUrl = `https://www.youtube-nocookie.com/embed/${resolvedVideoId}?autoplay=1&rel=0`;
 
   return (
     <figure className={cn('not-prose my-8 mx-auto w-full max-w-3xl font-sans', className)}>

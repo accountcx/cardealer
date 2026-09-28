@@ -47,7 +47,6 @@ import {
   YoutubeBlock,
   TikTokBlock,
   FAQBlock,
-  GatedContent,
   RelatedCarBlock,
   PriceTableBlock,
 } from '@cardealer/ui';
@@ -506,16 +505,58 @@ function PreviewContent() {
                   );
                 }
 
-                // Gated Content (Paywall & Lead Magnet)
-                if (node.type === 'gatedContent') {
+                // Nút Kêu Gọi Hành Động (CTA Button Block)
+                if (node.type === 'ctaButton' || node.type === 'ctaButtonBlock') {
+                  const buttonText = ((node.attrs?.buttonText as string) || 'Liên Hệ Tư Vấn Ngay').replace(/^📞\s*/, '');
+                  const actionType = (node.attrs?.actionType as string) || 'hotline';
+                  const customUrl = (node.attrs?.customUrl as string) || '';
+                  const phoneNumber = (node.attrs?.phoneNumber as string) || post?.author?.phone || '0981.234.567';
+                  const cleanPhone = phoneNumber.replace(/\D/g, '') || '0981234567';
+                  const subtext = (node.attrs?.subtext as string) || '';
+                  const variant = (node.attrs?.variant as string) || 'red';
+
+                  let href = '#';
+                  if (actionType === 'hotline') {
+                    href = `tel:${cleanPhone}`;
+                  } else if (actionType === 'zalo') {
+                    href = `https://zalo.me/${cleanPhone}`;
+                  } else if (actionType === 'customLink') {
+                    href = customUrl || '#';
+                  }
+
+                  let btnColor = 'bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 text-white shadow-red-500/25';
+                  if (variant === 'blue') {
+                    btnColor = 'bg-gradient-to-r from-blue-700 via-blue-600 to-sky-600 hover:from-blue-800 text-white shadow-blue-500/25';
+                  } else if (variant === 'emerald') {
+                    btnColor = 'bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 text-white shadow-emerald-500/25';
+                  }
+
                   return (
-                    <GatedContent
-                      key={idx}
-                      rewardTitle={(node.attrs?.title as string) || 'Tải Bảng Dự Toán Lăn Bánh'}
-                      description={(node.attrs?.description as string) || 'Để lại số điện thoại/Zalo để nhận ngay.'}
-                      badgeText={(node.attrs?.badgeText as string) || 'Nội dung độc quyền'}
-                      buttonText="Nhận Báo Giá Ngay"
-                    />
+                    <div key={idx} className="my-6 mx-auto max-w-lg text-center p-5 rounded-2xl bg-slate-50 border border-slate-200/80 shadow-xs dark:bg-slate-900/40 dark:border-slate-800">
+                      <a
+                        href={href}
+                        className={`inline-flex items-center justify-center gap-2.5 w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-sm shadow-lg ${btnColor} transition-all transform hover:scale-[1.02] active:scale-95`}
+                      >
+                        <span>{buttonText}</span>
+                      </a>
+                      {subtext && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 font-medium">{subtext}</p>}
+                    </div>
+                  );
+                }
+
+                // Legacy gatedContent → hiển thị dưới dạng nút CTA đơn giản
+                if (node.type === 'gatedContent') {
+                  const ctaTitle = ((node.attrs?.title as string) || 'Nhận Báo Giá Lăn Bánh Ưu Đãi').replace(/^📞\s*/, '');
+                  const cleanPhone = (post?.author?.phone || '0981.234.567').replace(/\D/g, '') || '0981234567';
+                  return (
+                    <div key={idx} className="my-6 mx-auto max-w-lg text-center p-5 rounded-2xl bg-slate-50 border border-slate-200/80 shadow-xs dark:bg-slate-900/40 dark:border-slate-800">
+                      <a
+                        href={`tel:${cleanPhone}`}
+                        className="inline-flex items-center justify-center gap-2.5 w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-sm shadow-lg bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white transition-all transform hover:scale-[1.02] active:scale-95"
+                      >
+                        <span>{ctaTitle}</span>
+                      </a>
+                    </div>
                   );
                 }
 

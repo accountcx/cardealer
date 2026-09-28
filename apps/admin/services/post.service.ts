@@ -33,6 +33,7 @@ export interface PostItem {
     id: string;
     fullName: string;
     role: string;
+    phone?: string;
   } | null;
 }
 

@@ -52,16 +52,12 @@ export function PriceTableBlock({
   className,
   onRequestQuote,
 }: PriceTableBlockProps) {
-  // Format tiền tệ VND
+  // Format tiền tệ VND (không rớt ký hiệu tiền tệ)
   const formatCurrency = React.useCallback((amount?: number) => {
     if (typeof amount !== 'number' || amount <= 0) {
       return 'Liên hệ';
     }
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-      maximumFractionDigits: 0,
-    }).format(amount);
+    return `${amount.toLocaleString('vi-VN')}\u00A0₫`;
   }, []);
 
   const defaultHeadline = carName ? `Bảng Giá Xe ${carName} Mới Nhất` : 'Bảng Giá Niêm Yết & Lăn Bánh';
@@ -92,17 +88,20 @@ export function PriceTableBlock({
         <Table>
           <TableHeader className="bg-slate-900/80 border-b border-slate-700/60">
             <TableRow isHeader>
-              <TableHead className="font-semibold text-slate-200 text-xs uppercase tracking-wider py-3.5 px-4">
+              <TableHead className="font-semibold text-slate-200 text-xs uppercase tracking-wider py-3.5 px-4 text-left w-[36%] min-w-[200px]">
                 Phiên Bản Xe
               </TableHead>
-              <TableHead className="font-semibold text-slate-200 text-xs uppercase tracking-wider py-3.5 px-4 text-right">
+              <TableHead className="font-semibold text-slate-200 text-xs uppercase tracking-wider py-3.5 px-4 text-right whitespace-nowrap">
                 Giá Niêm Yết
               </TableHead>
-              <TableHead className="font-semibold text-slate-200 text-xs uppercase tracking-wider py-3.5 px-4 text-right">
-                Tạm Tính Lăn Bánh
+              <TableHead className="font-semibold text-slate-200 text-xs uppercase tracking-wider py-3.5 px-4 text-right whitespace-nowrap">
+                Ưu Đãi Đại Lý
               </TableHead>
-              <TableHead className="font-semibold text-slate-200 text-xs uppercase tracking-wider py-3.5 px-4 text-center">
-                Ưu Đãi
+              <TableHead className="font-semibold text-slate-200 text-xs uppercase tracking-wider py-3.5 px-4 text-right whitespace-nowrap">
+                Giá Lăn Bánh Tạm Tính
+              </TableHead>
+              <TableHead className="font-semibold text-slate-200 text-xs uppercase tracking-wider py-3.5 px-4 text-center whitespace-nowrap w-[110px]">
+                Hành Động
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -118,8 +117,8 @@ export function PriceTableBlock({
                     'even:bg-slate-900/20 hover:bg-slate-800/40'
                   )}
                 >
-                  <TableCell className="px-4 py-3.5">
-                    <p className="font-semibold text-sm text-white">
+                  <TableCell className="px-4 py-3.5 text-left align-middle">
+                    <p className="font-semibold text-sm text-white leading-snug">
                       {ver.name}
                     </p>
                     {ver.engine && (
@@ -129,21 +128,27 @@ export function PriceTableBlock({
                     )}
                   </TableCell>
 
-                  <TableCell className="px-4 py-3.5 text-right font-medium text-sm text-slate-200">
+                  <TableCell className="px-4 py-3.5 text-right whitespace-nowrap font-medium text-sm text-slate-200 font-mono align-middle">
                     {formatCurrency(ver.price)}
                   </TableCell>
 
-                  <TableCell className="px-4 py-3.5 text-right font-bold text-sm text-[#0072CE]">
+                  <TableCell className="px-4 py-3.5 text-right whitespace-nowrap font-semibold text-sm text-emerald-400 font-mono align-middle">
+                    {ver.promotionalPrice && ver.price > ver.promotionalPrice
+                      ? `-${(ver.price - ver.promotionalPrice).toLocaleString('vi-VN')}\u00A0₫`
+                      : 'Liên hệ'}
+                  </TableCell>
+
+                  <TableCell className="px-4 py-3.5 text-right whitespace-nowrap font-bold text-sm text-[#0072CE] font-mono text-base align-middle">
                     {formatCurrency(ver.onRoadPriceEstimate || ver.price)}
                   </TableCell>
 
-                  <TableCell className="px-4 py-3.5 text-center">
+                  <TableCell className="px-4 py-3.5 text-center whitespace-nowrap align-middle">
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
                       onClick={() => onRequestQuote?.(ver.name)}
-                      className="h-8 text-xs border-slate-700 bg-slate-800/60 text-slate-200 hover:bg-[#0072CE] hover:text-white hover:border-[#0072CE] transition-colors motion-reduce:transition-none"
+                      className="h-8 px-3 text-xs border-slate-700 bg-slate-800/80 text-white hover:bg-[#0072CE] hover:text-white hover:border-[#0072CE] transition-all active:scale-95 motion-reduce:transition-none"
                     >
                       Báo giá
                     </Button>
@@ -153,7 +158,7 @@ export function PriceTableBlock({
             ) : (
               // 4-State: EMPTY STATE
               <TableRow>
-                <TableCell colSpan={4} className="py-10 text-center">
+                <TableCell colSpan={5} className="py-10 text-center">
                   <div className="flex flex-col items-center justify-center space-y-2">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-800 text-slate-400">
                       <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">

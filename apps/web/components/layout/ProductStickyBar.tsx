@@ -53,7 +53,8 @@ export const ProductStickyBar = ({
     if (!settings.enabled) return;
 
     const handleScroll = () => {
-      const show = window.scrollY > 300;
+      const isMobileTablet = typeof window !== 'undefined' && window.innerWidth < 1024;
+      const show = isMobileTablet && window.scrollY > 300;
       setIsVisible(show);
       onVisibilityChange?.(show);
     };

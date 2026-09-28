@@ -30,8 +30,18 @@ export function TikTokBlock({
   const [isPlaying, setIsPlaying] = React.useState(false);
   const [isLoadingIframe, setIsLoadingIframe] = React.useState(true);
 
+  // Tự động nhận diện TikTok Video ID kể cả khi truyền full link URL
+  const resolvedVideoId = React.useMemo(() => {
+    const raw = videoId || videoUrl || '';
+    if (!raw) return '';
+    const trimmed = raw.trim();
+    if (/^\d{15,22}$/.test(trimmed)) return trimmed;
+    const match = trimmed.match(/\/video\/(\d+)/i) || trimmed.match(/\/v\/(\d+)/i) || trimmed.match(/(\d{15,22})/);
+    return match ? match[1] : trimmed;
+  }, [videoId, videoUrl]);
+
   // Fallback an toàn: nếu thiếu videoId thì không render player vỡ
-  if (!videoId) {
+  if (!resolvedVideoId) {
     return (
       <div
         className={cn(
@@ -58,7 +68,7 @@ export function TikTokBlock({
   }
 
   // Khử scrollbar cho iframe TikTok qua API v1 chính thức
-  const iframeSrc = `https://www.tiktok.com/player/v1/${videoId}?autoplay=1`;
+  const iframeSrc = `https://www.tiktok.com/player/v1/${resolvedVideoId}?autoplay=1`;
 
   return (
     <figure

@@ -179,33 +179,33 @@ export default function CalculatorMasterView({
       ) : (
         <div className="flex flex-col items-center gap-1 px-1 sm:px-2">
           {/* Segmented Control iOS Style */}
-          <div className="w-full max-w-md sm:max-w-lg grid grid-cols-2 p-1.5 rounded-2xl bg-slate-200/80 border border-slate-300/80 shadow-inner gap-1.5">
+          <div className="w-full max-w-md sm:max-w-xl md:max-w-2xl grid grid-cols-2 p-1.5 rounded-2xl bg-slate-200/80 border border-slate-300/80 shadow-inner gap-1.5 sm:gap-2">
             <Button
               type="button"
               onClick={() => setActiveTab('rolling')}
-              className={`w-full h-auto flex items-center justify-center gap-1 min-[360px]:gap-1.5 sm:gap-2 px-1 min-[360px]:px-2 sm:px-6 py-2.5 sm:py-3 rounded-xl transition-all cursor-pointer border-0 whitespace-nowrap overflow-hidden ${activeTab === 'rolling'
+              className={`w-full h-auto flex items-center justify-center gap-1 min-[360px]:gap-1.5 sm:gap-2 px-1 min-[360px]:px-2 sm:px-4 md:px-5 py-2.5 sm:py-3 rounded-xl transition-all cursor-pointer border-0 whitespace-nowrap ${activeTab === 'rolling'
                 ? 'bg-[#002C6C] text-white shadow-md shadow-blue-950/25'
-                : 'bg-white/80 text-slate-700 hover:text-slate-950 hover:bg-white shadow-sm border border-slate-200/60'
+                : 'bg-white/80 text-slate-700 hover:text-slate-950 hover:bg-white shadow-xs border border-slate-200/60'
                 }`}
             >
               <span className="shrink-0 text-xs min-[360px]:text-sm">🚗</span>
               <span className="sm:hidden font-black text-[11px] min-[360px]:text-xs tracking-tight truncate">1. GIÁ LĂN BÁNH</span>
-              <span className="hidden sm:inline font-black text-xs sm:text-sm tracking-wide">1. DỰ TOÁN GIÁ LĂN BÁNH</span>
+              <span className="hidden sm:inline font-black text-xs md:text-sm tracking-wide shrink-0">1. DỰ TOÁN GIÁ LĂN BÁNH</span>
             </Button>
 
             <Button
               type="button"
               onClick={() => setActiveTab('installment')}
-              className={`w-full h-auto flex items-center justify-center gap-1 min-[360px]:gap-1.5 sm:gap-2 px-1 min-[360px]:px-2 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all cursor-pointer border-0 whitespace-nowrap overflow-hidden relative ${activeTab === 'installment'
+              className={`w-full h-auto flex items-center justify-center gap-1 min-[360px]:gap-1.5 sm:gap-2 px-1 min-[360px]:px-2 sm:px-4 md:px-5 py-2.5 sm:py-3 rounded-xl transition-all cursor-pointer border-0 whitespace-nowrap relative ${activeTab === 'installment'
                 ? 'bg-[#002C6C] text-white shadow-md shadow-blue-950/25'
-                : 'bg-white/80 text-slate-700 hover:text-slate-950 hover:bg-white shadow-sm border border-slate-200/60'
+                : 'bg-white/80 text-slate-700 hover:text-slate-950 hover:bg-white shadow-xs border border-slate-200/60'
                 }`}
             >
               <span className="shrink-0 text-xs min-[360px]:text-sm">💳</span>
               <span className="sm:hidden font-black text-[11px] min-[360px]:text-xs tracking-tight truncate">2. VAY TRẢ GÓP</span>
-              <span className="hidden sm:inline font-black text-xs sm:text-sm tracking-wide">2. DỰ TOÁN VAY TRẢ GÓP</span>
+              <span className="hidden sm:inline font-black text-xs md:text-sm tracking-wide shrink-0">2. DỰ TOÁN VAY TRẢ GÓP</span>
               {/* Badge kích thích tò mò: Lãi 7.9% */}
-              <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-tight bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-sm shrink-0 animate-pulse">
+              <span className="ml-1 sm:ml-1.5 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] md:text-[11px] font-black uppercase tracking-tight bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-xs shrink-0 animate-pulse">
                 Lãi 7.9%
               </span>
             </Button>

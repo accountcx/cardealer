@@ -150,6 +150,44 @@ export function extractFaqsFromTiptap(doc: unknown): ExtractedFaq[] {
 }
 
 /**
+ * Trích xuất YouTube Video ID từ URL bất kỳ (watch?v=, youtu.be, shorts, embed) hoặc trả về ID nếu đã là ID
+ */
+export function extractYoutubeId(input: string): string {
+  if (!input) return '';
+  const trimmed = input.trim();
+  // Khớp chuỗi 11 ký tự nếu người dùng nhập trực tiếp ID
+  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
+    return trimmed;
+  }
+  // Khớp qua URL YouTube đa dạng
+  const match = trimmed.match(
+    /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/i
+  );
+  if (match && match[1]) {
+    return match[1];
+  }
+  return trimmed;
+}
+
+/**
+ * Trích xuất TikTok Video ID từ URL bất kỳ hoặc trả về ID nếu đã là số ID
+ */
+export function extractTikTokId(input: string): string {
+  if (!input) return '';
+  const trimmed = input.trim();
+  // Khớp chuỗi 15-22 chữ số nếu người dùng nhập trực tiếp ID
+  if (/^\d{15,22}$/.test(trimmed)) {
+    return trimmed;
+  }
+  // Khớp trong URL: /video/123456789... hoặc /v/123456789...
+  const match = trimmed.match(/\/video\/(\d+)/i) || trimmed.match(/\/v\/(\d+)/i) || trimmed.match(/(\d{15,22})/);
+  if (match && match[1]) {
+    return match[1];
+  }
+  return trimmed;
+}
+
+/**
  * 3. Trích xuất danh sách Video (YouTube & TikTok) phục vụ sinh Schema `VideoObject`
  */
 export function extractVideosFromTiptap(doc: unknown): ExtractedVideo[] {
@@ -161,25 +199,33 @@ export function extractVideosFromTiptap(doc: unknown): ExtractedVideo[] {
 
   const traverse = (nodes: TiptapNode[]) => {
     for (const node of nodes) {
-      if (node.type === 'youtubeBlock' && node.attrs?.videoId) {
-        videos.push({
-          type: 'youtube',
-          videoId: String(node.attrs.videoId),
-          url: String(node.attrs.videoUrl || `https://www.youtube.com/watch?v=${node.attrs.videoId}`),
-          title: node.attrs.caption ? String(node.attrs.caption) : undefined,
-          duration: node.attrs.duration ? String(node.attrs.duration) : undefined,
-          uploadDate: node.attrs.uploadDate ? String(node.attrs.uploadDate) : undefined,
-        });
-      } else if (node.type === 'tikTokBlock' && node.attrs?.videoId) {
-        videos.push({
-          type: 'tiktok',
-          videoId: String(node.attrs.videoId),
-          url: String(node.attrs.videoUrl || `https://www.tiktok.com/@hyundai/video/${node.attrs.videoId}`),
-          title: node.attrs.title ? String(node.attrs.title) : undefined,
-          posterUrl: node.attrs.posterImageUrl ? String(node.attrs.posterImageUrl) : undefined,
-          duration: node.attrs.duration ? String(node.attrs.duration) : undefined,
-          uploadDate: node.attrs.uploadDate ? String(node.attrs.uploadDate) : undefined,
-        });
+      if (node.type === 'youtubeBlock' && (node.attrs?.videoId || node.attrs?.videoUrl)) {
+        const raw = String(node.attrs.videoId || node.attrs.videoUrl || '');
+        const cleanId = extractYoutubeId(raw);
+        if (cleanId) {
+          videos.push({
+            type: 'youtube',
+            videoId: cleanId,
+            url: String(node.attrs.videoUrl || `https://www.youtube.com/watch?v=${cleanId}`),
+            title: node.attrs.caption ? String(node.attrs.caption) : undefined,
+            duration: node.attrs.duration ? String(node.attrs.duration) : undefined,
+            uploadDate: node.attrs.uploadDate ? String(node.attrs.uploadDate) : undefined,
+          });
+        }
+      } else if (node.type === 'tikTokBlock' && (node.attrs?.videoId || node.attrs?.videoUrl)) {
+        const raw = String(node.attrs.videoId || node.attrs?.videoUrl || '');
+        const cleanId = extractTikTokId(raw);
+        if (cleanId) {
+          videos.push({
+            type: 'tiktok',
+            videoId: cleanId,
+            url: String(node.attrs.videoUrl || `https://www.tiktok.com/@hyundai/video/${cleanId}`),
+            title: node.attrs.title ? String(node.attrs.title) : undefined,
+            posterUrl: node.attrs.posterImageUrl ? String(node.attrs.posterImageUrl) : undefined,
+            duration: node.attrs.duration ? String(node.attrs.duration) : undefined,
+            uploadDate: node.attrs.uploadDate ? String(node.attrs.uploadDate) : undefined,
+          });
+        }
       }
       if (Array.isArray(node.content)) {
         traverse(node.content);

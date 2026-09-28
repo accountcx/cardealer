@@ -20,27 +20,31 @@ export interface CalloutBlockProps {
 
 const variantStyles = {
   info: {
-    container: 'bg-blue-950/20 border-blue-500 text-blue-100 dark:bg-blue-950/30 dark:border-blue-400 dark:text-blue-100',
-    iconColor: 'text-blue-400 dark:text-blue-400',
-    titleColor: 'text-blue-200 dark:text-blue-200',
+    container: 'bg-blue-50 border-blue-600',
+    iconColor: 'text-blue-600',
+    titleColor: 'text-blue-900',
+    contentColor: 'text-slate-700',
     defaultTitle: 'Thông tin lưu ý',
   },
   warning: {
-    container: 'bg-amber-950/20 border-amber-500 text-amber-100 dark:bg-amber-950/30 dark:border-amber-400 dark:text-amber-100',
-    iconColor: 'text-amber-400 dark:text-amber-400',
-    titleColor: 'text-amber-200 dark:text-amber-200',
+    container: 'bg-amber-50 border-amber-500',
+    iconColor: 'text-amber-600',
+    titleColor: 'text-amber-950',
+    contentColor: 'text-amber-900',
     defaultTitle: 'Cảnh báo quan trọng',
   },
   success: {
-    container: 'bg-emerald-950/20 border-emerald-500 text-emerald-100 dark:bg-emerald-950/30 dark:border-emerald-400 dark:text-emerald-100',
-    iconColor: 'text-emerald-400 dark:text-emerald-400',
-    titleColor: 'text-emerald-200 dark:text-emerald-200',
+    container: 'bg-emerald-50 border-emerald-500',
+    iconColor: 'text-emerald-600',
+    titleColor: 'text-emerald-950',
+    contentColor: 'text-emerald-900',
     defaultTitle: 'Ưu đãi & Khuyến nghị',
   },
   note: {
-    container: 'bg-slate-900/60 border-slate-500 text-slate-200 dark:bg-slate-900/80 dark:border-slate-500 dark:text-slate-200',
-    iconColor: 'text-slate-400 dark:text-slate-400',
-    titleColor: 'text-slate-100 dark:text-slate-100',
+    container: 'bg-slate-100 border-slate-400',
+    iconColor: 'text-slate-500',
+    titleColor: 'text-slate-900',
+    contentColor: 'text-slate-600',
     defaultTitle: 'Ghi chú biên tập',
   },
 };
@@ -76,8 +80,11 @@ function CalloutIcon({ type, className }: { type: CalloutType; className?: strin
           strokeLinejoin="round"
           aria-hidden="true"
         >
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-          <polyline points="22 4 12 14.01 9 11.01" />
+          <polyline points="20 12 20 22 4 22 4 12" />
+          <rect width="20" height="5" x="2" y="7" />
+          <line x1="12" y1="22" x2="12" y2="7" />
+          <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+          <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
         </svg>
       );
     case 'note':
@@ -92,7 +99,8 @@ function CalloutIcon({ type, className }: { type: CalloutType; className?: strin
           strokeLinejoin="round"
           aria-hidden="true"
         >
-          <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
         </svg>
       );
     case 'info':
@@ -135,7 +143,7 @@ export function CalloutBlock({
   return (
     <aside
       className={cn(
-        'not-prose my-6 flex items-start gap-3.5 rounded-r-xl border-l-4 p-4 text-sm leading-relaxed shadow-xs',
+        'not-prose my-6 flex items-start gap-3.5 rounded-r-2xl rounded-l-sm border-l-4 p-4.5 sm:p-5 text-sm leading-relaxed shadow-xs',
         'transition-colors duration-200 motion-reduce:transition-none',
         currentVariant.container,
         className
@@ -143,15 +151,17 @@ export function CalloutBlock({
       role={type === 'warning' ? 'alert' : 'note'}
       aria-label={displayTitle || 'Ghi chú'}
     >
-      <CalloutIcon type={type} className={currentVariant.iconColor} />
-      <div className="flex-1 space-y-1">
+      <div className="mt-0.5 shrink-0">
+        <CalloutIcon type={type} className={currentVariant.iconColor} />
+      </div>
+      <div className="flex-1 space-y-1.5">
         {displayTitle && (
-          <h4 className={cn('font-semibold tracking-tight text-base', currentVariant.titleColor)}>
+          <h4 className={cn('font-bold tracking-tight text-base leading-snug', currentVariant.titleColor)}>
             {displayTitle}
           </h4>
         )}
         {bodyContent && (
-          <div className="text-inherit opacity-95">
+          <div className={cn('text-sm leading-relaxed', currentVariant.contentColor)}>
             {bodyContent}
           </div>
         )}

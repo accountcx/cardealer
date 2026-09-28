@@ -46,6 +46,23 @@ export const FloatingSeller = ({ settings, isStickyBarVisible = false }: Floatin
     };
   }, [isOpen]);
 
+  // Đóng hộp thoại tư vấn nếu Banner Voucher mở ra
+  useEffect(() => {
+    const handleBannerOpen = () => {
+      setIsOpen(false);
+    };
+    window.addEventListener('slide-in-banner-open', handleBannerOpen);
+    return () => window.removeEventListener('slide-in-banner-open', handleBannerOpen);
+  }, []);
+
+  const handleToggle = () => {
+    const nextState = !isOpen;
+    setIsOpen(nextState);
+    if (typeof window !== 'undefined' && nextState) {
+      window.dispatchEvent(new CustomEvent('floating-seller-open'));
+    }
+  };
+
   if (!settings.enabled) return null;
 
   const cleanPhone = sanitizePhoneNumber(settings.sellerPhone);
@@ -60,8 +77,8 @@ export const FloatingSeller = ({ settings, isStickyBarVisible = false }: Floatin
       aria-label="Tư vấn viên trực tuyến"
       className={`hidden md:block fixed right-4 sm:right-6 lg:right-8 z-50 transition-all duration-300 ease-in-out motion-reduce:transition-none ${
         isStickyBarVisible
-          ? 'bottom-24 sm:bottom-28 lg:bottom-16'
-          : 'bottom-16 sm:bottom-18 lg:bottom-16'
+          ? 'bottom-20 md:bottom-24 lg:bottom-6'
+          : 'bottom-4 sm:bottom-6 lg:bottom-6'
       }`}
     >
       {/* Expanded Card View (Hộp thoại tư vấn khi click mở) */}
@@ -133,7 +150,7 @@ export const FloatingSeller = ({ settings, isStickyBarVisible = false }: Floatin
       {/* Collapsed Bubble Trigger (Mặc định hiển thị nút tròn) */}
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggle}
         className="group relative flex items-center gap-2.5 p-1 bg-white hover:bg-slate-50 border-2 border-[#0072CE] rounded-full shadow-2xl transition-transform hover:scale-105 active:scale-95 motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none cursor-pointer ml-auto"
         aria-label="Mở chat tư vấn viên showroom"
       >

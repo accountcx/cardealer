@@ -110,6 +110,46 @@ export const FAQBlockAttrsSchema = z.object({
 });
 export type FAQBlockAttrs = z.infer<typeof FAQBlockAttrsSchema>;
 
+// 10. SingleImageBlock: Khối ảnh đơn có Alt Text chuẩn SEO & Chú thích chân ảnh (Caption)
+export const SingleImageBlockAttrsSchema = z.object({
+  url: z.string().url('URL ảnh không hợp lệ'),
+  alt: z.string().min(1, 'Thẻ Alt bắt buộc cho SEO'),
+  caption: z.string().optional().nullable(),
+});
+export type SingleImageBlockAttrs = z.infer<typeof SingleImageBlockAttrsSchema>;
+
+// 11. SpecComparisonBlock: Bảng so sánh thông số kỹ thuật giữa các phiên bản xe
+export const SpecRowSchema = z.object({
+  specName: z.string().min(1, 'Tên thông số kỹ thuật không được để trống'),
+  values: z.array(z.string()),
+});
+export type SpecRow = z.infer<typeof SpecRowSchema>;
+
+export const SpecComparisonBlockAttrsSchema = z.object({
+  title: z.string().default('Bảng So Sánh Thông Số Kỹ Thuật'),
+  versions: z.array(z.string()).min(1, 'Cần ít nhất 1 phiên bản'),
+  rows: z.array(SpecRowSchema).min(1, 'Cần ít nhất 1 thông số so sánh'),
+});
+export type SpecComparisonBlockAttrs = z.infer<typeof SpecComparisonBlockAttrsSchema>;
+
+// 12. CtaButtonBlock: Nút bấm chuyển đổi nhanh rải rác trong bài (Hotline, Zalo, Báo giá, Link)
+export const CtaButtonBlockAttrsSchema = z.object({
+  buttonText: z.string().min(1, 'Nhãn nút bắt buộc'),
+  actionType: z.enum(['hotline', 'zalo', 'quoteForm', 'customLink']).default('hotline'),
+  customUrl: z.string().optional().nullable(),
+  subtext: z.string().optional().nullable(),
+  variant: z.enum(['red', 'blue', 'emerald']).default('red'),
+});
+export type CtaButtonBlockAttrs = z.infer<typeof CtaButtonBlockAttrsSchema>;
+
+// 13. ProsConsBlock: Khối Ưu điểm & Nhược điểm (Google Featured Snippet Booster)
+export const ProsConsBlockAttrsSchema = z.object({
+  title: z.string().default('Đánh Giá Ưu & Nhược Điểm'),
+  pros: z.array(z.string()).default([]),
+  cons: z.array(z.string()).default([]),
+});
+export type ProsConsBlockAttrs = z.infer<typeof ProsConsBlockAttrsSchema>;
+
 // ============================================================================
 // 2. SCHEMAS CHO CÁC KHỐI INBOUND LEAD MARKETING (1-CHẠM CRO TINH GỌN)
 // ============================================================================
