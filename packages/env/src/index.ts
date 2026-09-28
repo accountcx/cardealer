@@ -11,6 +11,11 @@ const serverEnvSchema = z.object({
   API_PORT: z.coerce.number().default(4000),
   API_SECRET_KEY: z.string().min(8).optional(),
   INTERNAL_API_URL: z.string().url().optional(),
+  // 🧠 Mental Model: Cấu hình Cloudinary SDK phía Server (Bảo mật tuyệt đối, cấm expose Client)
+  CLOUDINARY_CLOUD_NAME: z.string().optional(),
+  CLOUDINARY_API_KEY: z.string().optional(),
+  CLOUDINARY_API_SECRET: z.string().optional(),
+  CLOUDINARY_FOLDER: z.string().default('cloudinary'),
 });
 
 const clientEnvSchema = z.object({

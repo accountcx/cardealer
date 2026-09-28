@@ -7,3 +7,4 @@ export * from './permission';
 export * from './user';
 export * from './content-blocks';
 export * from './category';
+export * from './media';

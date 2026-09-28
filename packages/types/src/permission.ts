@@ -17,7 +17,10 @@ export type PermissionAction =
   | 'leads:read'
   | 'leads:write'
   | 'system:read'
-  | 'system:write';
+  | 'system:write'
+  | 'media:read'
+  | 'media:write'
+  | 'media:delete';
 
 export const ROLE_PERMISSIONS: Record<Role, readonly PermissionAction[]> = {
   admin: [
@@ -35,6 +38,9 @@ export const ROLE_PERMISSIONS: Record<Role, readonly PermissionAction[]> = {
     'leads:write',
     'system:read',
     'system:write',
+    'media:read',
+    'media:write',
+    'media:delete',
   ],
   manager: [
     'users:read',
@@ -46,6 +52,9 @@ export const ROLE_PERMISSIONS: Record<Role, readonly PermissionAction[]> = {
     'leads:read',
     'leads:write',
     'system:read',
+    'media:read',
+    'media:write',
+    'media:delete',
   ],
   editor: [
     'cars:read',
@@ -53,12 +62,15 @@ export const ROLE_PERMISSIONS: Record<Role, readonly PermissionAction[]> = {
     'posts:read',
     'posts:write',
     'leads:read',
+    'media:read',
+    'media:write',
   ],
   sales: [
     'cars:read',
     'posts:read',
     'leads:read',
     'leads:write',
+    'media:read',
   ],
 } as const;
 
