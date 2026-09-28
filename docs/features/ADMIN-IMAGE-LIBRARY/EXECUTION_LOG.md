@@ -12,9 +12,9 @@
 | :---: | :--- | :---: | :---: | :---: | :---: | :--- |
 | **U-01** | • `packages/env/src/index.ts`<br>• `packages/types/src/media.ts`<br>• `packages/types/src/index.ts`<br>• `packages/types/src/permission.ts` | 🟡 LOW | **Có (Shared Types & Env)** | ✅ COMPLETED | `de6cc16` | Khai báo Zod Server Env cho Cloudinary (`CLOUDINARY_*`), DTOs `MediaItem`, query schemas và RBAC permissions (`media:read`, `media:write`, `media:delete`). |
 | **U-02** | • `packages/database/src/schema/media.ts`<br>• `packages/database/src/schema/relations.ts`<br>• `packages/database/drizzle/...` | 🔴 HIGH | **Không** | ✅ COMPLETED | `d846520` | Mở rộng Drizzle Schema `media` (`publicId`, `format`, `folder`, `uploaderId`, `updatedAt` + 4 Indexes), cập nhật relations và sinh migration DB. |
-| **U-03** | • `apps/api/package.json`<br>• `apps/api/src/services/cloudinary.service.ts` | 🔴 HIGH | **Không** | ✅ COMPLETED | `163a2a4` | Cài đặt `cloudinary` SDK & `busboy`, hiện thực service streaming upload vào Cloudinary (pipe stream) và destroy asset phục vụ rollback. |
-| **U-04** | • `apps/api/src/routes/admin/media.ts`<br>• `apps/api/src/routes/admin.ts`<br>• `apps/api/src/server.ts` | 🔴 HIGH | **Có (Route & Server Wire)** | PENDING | - | Hiện thực cụm REST Endpoints: Upload streaming single file, List/Search phân trang, Update AltText, Delete đơn & Batch Delete kèm RBAC Guards. |
-| **U-05** | • `scripts/verify_admin_image_library.sh` | 🟠 MEDIUM | **Không** | PENDING | - | Khởi tạo CLI Verification Runner, kiểm thử typecheck toàn repo, schema integrity, upload contract và trả về exit code 0. |
+| **U-03** | • `apps/api/package.json`<br>• `apps/api/src/services/cloudinary.service.ts` | 🔴 HIGH | **Không** | ✅ COMPLETED | `22cc515` | Cài đặt `cloudinary` SDK & `busboy`, hiện thực service streaming upload vào Cloudinary (pipe stream) và destroy asset phục vụ rollback. |
+| **U-04** | • `apps/api/src/routes/admin/media.ts`<br>• `apps/api/src/routes/admin.ts`<br>• `apps/api/src/server.ts` | 🔴 HIGH | **Có (Route & Server Wire)** | ✅ COMPLETED | `df1513d` | Hiện thực cụm REST Endpoints: Upload streaming single file, List/Search phân trang, Update AltText, Delete đơn & Batch Delete kèm RBAC Guards. |
+| **U-05** | • `scripts/verify_admin_image_library.sh`<br>• `packages/core/src/__tests__/admin-media.test.ts` | 🟠 MEDIUM | **Không** | ✅ COMPLETED | `801cd5f` | Khởi tạo CLI Verification Runner, kiểm thử typecheck toàn repo, schema integrity, upload contract và trả về exit code 0. |
 
 ---
 
@@ -51,7 +51,66 @@
 * **Kết quả Verify:**
   - Type-check `apps/api`: **Passed (0 errors)**.
   - Project-wide type-check: **8/8 packages passed (0 errors)**.
-* **Commit Hash:** `163a2a4`
+  - Code Cleanliness: Loại bỏ toàn bộ `|| process.env.*` fallback, bảo đảm `serverEnv` là Single Source of Truth duy nhất (chống phân mảnh logic).
+* **Commit Hash:** `22cc515` (rebased from `163a2a4`)
+
+### 🔹 [2026-09-29T01:56:00+07:00] - Unit U-04: Media REST API Endpoints & Server Integration
+* **Thay đổi chính:**
+  - Tạo mới `apps/api/src/routes/admin/media.ts` hiện thực trọn vẹn 5 REST endpoints:
+    1. `POST /api/admin/media/upload`: Nhận multipart stream qua Busboy, validate MIME whitelist và max size 10MB, pipe sang Cloudinary và lưu DB kèm rollback đền bù.
+    2. `GET /api/admin/media`: Phân trang, tìm kiếm gần đúng theo filename/altText, lọc format, sắp xếp (newest/oldest/size/name).
+    3. `PUT /api/admin/media/:id`: Cập nhật altText SEO và tên ảnh.
+    4. `DELETE /api/admin/media/:id`: Xóa asset Cloudinary và xóa PostgreSQL record, ghi audit log.
+    5. `POST /api/admin/media/batch-delete`: Xóa hàng loạt danh sách ảnh theo mảng IDs.
+  - Tích hợp `handleMediaRoutes` vào luồng phân giải Router chính tại `apps/api/src/routes/admin.ts`.
+  - Bảo vệ đa tầng bằng middleware `authenticateAdmin` và `checkPermission('media:write' | 'media:delete' | 'media:read')`.
+* **Kết quả Verify:**
+  - Type-check `apps/api`: **Passed (0 errors)**.
+  - Project-wide type-check: **8/8 packages passed (0 errors)**.
+* **Commit Hash:** `df1513d`
+
+### 🔹 [2026-09-29T01:57:00+07:00] - Unit U-05: Machine Verification Script & Core Tests
+* **Thay đổi chính:**
+  - Khởi tạo tệp kiểm thử tự động `packages/core/src/__tests__/admin-media.test.ts` kiểm thử 12 test cases về Zod schemas (`MediaItemSchema`, `MediaQuerySchema`, `UpdateMediaSchema`, `BatchDeleteMediaSchema`) và RBAC matrix.
+  - Thiết lập script máy kiểm chứng tự động `scripts/verify_admin_image_library.sh` độc lập (kiểm tra Node 24, Turbo check-types, schema DB 14 columns, Vitest 12 tests).
+  - Chạy thực tế `./scripts/verify_admin_image_library.sh` đạt kết quả **EXIT 0 (100% PASS)**.
+* **Kết quả Verify:**
+  - Machine Verification Script: **Passed with EXIT 0**.
+  - Vitest: **12/12 tests passed (100%)**.
+  - Project-wide Type Check: **8/8 packages passed (0 errors)**.
+* **Commit Hash:** `801cd5f`
+
+---
+🎉 **KẾT THÚC LÁT CẮT US-01:** Hoàn thành 100% Backend Integration, Data Contracts & Machine Verification.
+
+---
+
+## 3. Micro-Roadmap & Step-Gate Units (Lát cắt US-02: Admin Media Library Portal)
+
+| Unit ID | File(s) Tác Động | Risk Tier | Coupled Unit? | Trạng Thái | Commit Hash | Mục Tiêu & Mô Tả Đơn Vị |
+| :---: | :--- | :---: | :---: | :---: | :---: | :--- |
+| **U-06** | • `apps/admin/services/media.service.ts`<br>• `apps/admin/hooks/use-media-uploader.ts`<br>• `apps/admin/hooks/use-media-library.ts` | 🟠 MEDIUM | **Có (Service & Hooks)** | ✅ COMPLETED | `[Pending Commit]` | Hiện thực Client API Service (XHR đo lường tiến trình %, CRUD media) và Custom Hooks điều phối Concurrency Queue (max 3 luồng tải song song). |
+| **U-07** | • `apps/admin/app/media/components/MediaCard.tsx`<br>• `apps/admin/app/media/components/MediaDropzone.tsx`<br>• `apps/admin/app/media/components/MediaUploadQueue.tsx`<br>• `apps/admin/app/media/components/MediaDetailDrawer.tsx`<br>• `apps/admin/app/media/components/MediaFilterBar.tsx`<br>• `apps/admin/app/media/components/MediaBatchActions.tsx` | 🟡 LOW | **Có (Presentation Primitives)** | PENDING | - | Xây dựng bộ Presentational Components chuẩn 4-State UI (Loading Shimmer, Empty, Error, Data), Drag & Drop upload zone, và Drawer xem chi tiết/sửa Alt Text/copy URL. |
+| **U-08** | • `apps/admin/app/media/page.tsx`<br>• `apps/admin/app/components/AdminShell.tsx` | 🟠 MEDIUM | **Có (Page & Nav Wire)** | PENDING | - | Ghép nối trang quản lý ảnh `/media` hoàn chỉnh và bổ sung mục "Thư Viện Ảnh" vào Sidebar Navigation với quyền `media:read`. |
+| **U-09** | • `scripts/verify_admin_image_library.sh` | 🟠 MEDIUM | **Không** | PENDING | - | Cập nhật script kiểm chứng tự động kiểm tra Next.js Admin page, typecheck và xác nhận exit code 0 cho toàn bộ US-02. |
+
+---
+
+## 4. Nhật Ký Chi Tiết Thực Thi US-02
+
+### 🔹 [2026-09-29T02:02:00+07:00] - Unit U-06: Client Media Service & Concurrency Queue Hooks
+* **Thay đổi chính:**
+  - `apps/admin/services/media.service.ts`: Khởi tạo Typed Media Service kết nối REST API `/api/admin/media/*`, hỗ trợ XHR Upload đo lường % tiến trình thời gian thực, CRUD media và batch delete.
+  - `apps/admin/hooks/use-media-uploader.ts`: Custom hook điều phối Concurrency Queue (giới hạn tối đa 3 file upload song song), quản lý tiến trình từng file, hỗ trợ retry, hủy và clear completed tasks.
+  - `apps/admin/hooks/use-media-library.ts`: Custom hook quản lý kho ảnh, bao gồm debounce search (350ms), lọc định dạng, sắp xếp, phân trang, selection set (chọn nhiều ảnh) và xóa ảnh (đơn lẻ / batch).
+* **Kết quả Verify:**
+  - Type-check `@cardealer/admin`: **Passed (0 errors)**.
+  - Project-wide type-check: **8/8 packages passed (0 errors)**.
+  - Code Quality: 100% Named Exports, không nuốt lỗi `try/catch`.
+
+
+
+
 
 
 
