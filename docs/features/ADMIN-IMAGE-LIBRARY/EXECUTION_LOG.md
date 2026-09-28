@@ -103,9 +103,11 @@
   - `apps/admin/services/media.service.ts`: Khởi tạo Typed Media Service kết nối REST API `/api/admin/media/*`, hỗ trợ XHR Upload đo lường % tiến trình thời gian thực, CRUD media và batch delete.
   - `apps/admin/hooks/use-media-uploader.ts`: Custom hook điều phối Concurrency Queue (giới hạn tối đa 3 file upload song song), quản lý tiến trình từng file, hỗ trợ retry, hủy và clear completed tasks.
   - `apps/admin/hooks/use-media-library.ts`: Custom hook quản lý kho ảnh, bao gồm debounce search (350ms), lọc định dạng, sắp xếp, phân trang, selection set (chọn nhiều ảnh) và xóa ảnh (đơn lẻ / batch).
+  - `apps/admin/lib/api-client.ts`: Refactor đóng gói `upload<T>(endpoint, formData, onProgress)` vào `HttpClient`, tái sử dụng `buildUrl`, tự động kích hoạt Global 401 Interceptor khi hết hạn phiên, đồng thời rút gọn `uploadSingleMedia` trong `media.service.ts` về đúng 1 dòng sạch sẽ.
 * **Kết quả Verify:**
   - Type-check `@cardealer/admin`: **Passed (0 errors)**.
   - Project-wide type-check: **8/8 packages passed (0 errors)**.
+  - Verification Script `./scripts/verify_admin_image_library.sh`: **EXIT 0 (100% PASS)**.
   - Code Quality: 100% Named Exports, không nuốt lỗi `try/catch`.
 
 
