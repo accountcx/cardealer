@@ -20,7 +20,7 @@
 
 ## 🚀 GIAI ĐOẠN 4: THỰC THI CODE THEO LÁT CẮT DỌC (VERTICAL SLICES EXECUTION)
 - [ ] **Step 4.0 (Turn 0):** Baseline Scaffolding & Lập lộ trình vi mô (`EXECUTION_LOG.md`) — **Skill:** `@boilerplate-scaffolder`
-- [ ] **Lát cắt 1 (US-01):** Cloudinary Backend Integration, Media Schema Migration & REST Endpoints — **Skill:** `@fullstack-dev-executor`
+- [x] **Lát cắt 1 (US-01):** Cloudinary Backend Integration, Media Schema Migration & REST Endpoints — **Completed (exit code 0)**
 - [ ] **Lát cắt 2 (US-02):** Admin Media Library Management Portal (`/media`), Drag & Drop, Media Grid, Details Drawer — **Skill:** `@fullstack-dev-executor`
 - [ ] **Lát cắt 3 (US-03):** Reusable MediaPickerModal & Tích hợp vào Car Forms, Post Editors & Profile — **Skill:** `@fullstack-dev-executor`
 
