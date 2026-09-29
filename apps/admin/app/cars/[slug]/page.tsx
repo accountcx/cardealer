@@ -148,6 +148,39 @@ export default function CarEditPage() {
     setSaving(true);
     setSaveError(null);
 
+    // Đảm bảo mọi phiên bản đều sở hữu UUID hợp lệ
+    const isUuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const idMap = new Map<string, string>();
+    const generateFallbackUuid = () => {
+      if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+      }
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+      });
+    };
+
+    const sanitizedVersions = versions.map((v) => {
+      if (v.id && isUuidRegex.test(v.id)) {
+        return v;
+      }
+      const freshUuid = generateFallbackUuid();
+      idMap.set(v.id, freshUuid);
+      return { ...v, id: freshUuid };
+    });
+
+    const sanitizedColorConfigs = colorConfigs.map((c) => {
+      const mappedId = idMap.get(c.versionId);
+      return mappedId ? { ...c, versionId: mappedId } : c;
+    });
+
+    if (idMap.size > 0) {
+      setVersions(sanitizedVersions);
+      setColorConfigs(sanitizedColorConfigs);
+    }
+
     const payload = {
       tenXe: trimmedName,
       slug: computedSlug,
@@ -159,7 +192,7 @@ export default function CarEditPage() {
       status,
       isFeatured,
       highlightFeatures: features,
-      versions: versions.map((v, idx) => ({
+      versions: sanitizedVersions.map((v, idx) => ({
         id: v.id,
         tenPhienBan: v.tenPhienBan,
         slug: v.slug || toSlug(v.tenPhienBan),
@@ -181,7 +214,7 @@ export default function CarEditPage() {
       }
 
       // Lưu cấu hình màu cho các phiên bản nếu có
-      const selectedColors = colorConfigs.filter((c) => c.selected);
+      const selectedColors = sanitizedColorConfigs.filter((c) => c.selected);
       if (computedSlug && selectedColors.length > 0) {
         await colorService.saveVersionColors(
           computedSlug,

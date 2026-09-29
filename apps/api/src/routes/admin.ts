@@ -176,7 +176,9 @@ export async function handleAdminRoutes(
         for (const [idx, v] of body.versions.entries()) {
           const vName = String(v.tenPhienBan || `Phiên bản ${idx + 1}`).trim();
           const vSlug = String(v.slug || vName).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+          const isUuid = v.id && typeof v.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v.id);
           await db.insert(schema.carVersions).values({
+            ...(isUuid ? { id: v.id } : {}),
             carId: inserted.id,
             tenPhienBan: vName,
             slug: vSlug,
@@ -245,12 +247,18 @@ export async function handleAdminRoutes(
 
       // Cập nhật hoặc bổ sung các phiên bản
       if (Array.isArray(body.versions)) {
+        const existingVersions = await db.query.carVersions.findMany({
+          where: eq(schema.carVersions.carId, existing.id),
+        });
+        const existingVersionIds = new Set(existingVersions.map((v) => v.id));
+
         for (const [idx, v] of body.versions.entries()) {
           const vName = String(v.tenPhienBan || '').trim();
           const vSlug = String(v.slug || vName).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
           const isUuid = v.id && typeof v.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v.id);
+          const isExisting = isUuid && existingVersionIds.has(v.id);
 
-          if (isUuid) {
+          if (isExisting) {
             await db
               .update(schema.carVersions)
               .set({
@@ -268,6 +276,7 @@ export async function handleAdminRoutes(
               .where(eq(schema.carVersions.id, v.id));
           } else {
             await db.insert(schema.carVersions).values({
+              ...(isUuid ? { id: v.id } : {}),
               carId: existing.id,
               tenPhienBan: vName || `Phiên bản ${idx + 1}`,
               slug: vSlug || `ver-${Date.now()}-${idx}`,
@@ -280,6 +289,19 @@ export async function handleAdminRoutes(
               sortOrder: idx + 1,
             }).onConflictDoNothing();
           }
+        }
+
+        // Xóa các phiên bản không còn nằm trong danh sách gửi lên
+        const incomingVersionIds = new Set(
+          body.versions
+            .map((v: any) => v.id)
+            .filter((id: any): id is string => typeof id === 'string' && existingVersionIds.has(id))
+        );
+        const toDeleteVersionIds = existingVersions
+          .map((v) => v.id)
+          .filter((id) => !incomingVersionIds.has(id));
+        if (toDeleteVersionIds.length > 0) {
+          await db.delete(schema.carVersions).where(inArray(schema.carVersions.id, toDeleteVersionIds));
         }
       }
 
@@ -447,10 +469,23 @@ export async function handleAdminRoutes(
         await db.delete(schema.versionColors).where(inArray(schema.versionColors.versionId, versionIds));
       }
 
+      const validVersionIds = new Set(versionIds);
+      const isUuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+      // Lọc các item hợp lệ (versionId thuộc xe này và đúng định dạng UUID)
+      const validItems = items.filter(
+        (it) =>
+          it.versionId &&
+          isUuidRegex.test(it.versionId) &&
+          validVersionIds.has(it.versionId) &&
+          it.colorId &&
+          isUuidRegex.test(it.colorId)
+      );
+
       // Batch insert cấu hình màu mới
-      if (items.length > 0) {
+      if (validItems.length > 0) {
         await db.insert(schema.versionColors).values(
-          items.map((it) => ({
+          validItems.map((it) => ({
             versionId: it.versionId,
             colorId: it.colorId,
             anhXeTheoMauUrl: it.anhXeTheoMauUrl ? String(it.anhXeTheoMauUrl).trim() : null,
@@ -459,7 +494,7 @@ export async function handleAdminRoutes(
         );
       }
 
-      sendJson(200, { success: true, savedCount: items.length });
+      sendJson(200, { success: true, savedCount: validItems.length });
       return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Lỗi lưu bảng màu phiên bản';
