@@ -158,7 +158,7 @@
 | **U-10** | • `apps/admin/app/components/MediaPickerModal.tsx` | 🟠 MEDIUM | **Có (Picker Component)** | ✅ COMPLETED | `04ec621` | Xây dựng Modal dùng chung `MediaPickerModal` hỗ trợ 2 Tabs (Thư viện có sẵn + Tải ảnh mới), chế độ `mode="single"` & `mode="multiple"`, 100% `@cardealer/ui`. |
 | **U-11** | • `apps/admin/app/cars/components/CarFormModal.tsx` | 🟠 MEDIUM | **Có (Car Form)** | ✅ COMPLETED | `5b4ffee` | Tích hợp `MediaPickerModal` vào Form Quản lý Dòng xe: Thay thế việc gõ URL thủ công bằng chọn ảnh trực tiếp từ thư viện kèm preview thumbnail. |
 | **U-12** | • `apps/admin/app/posts/[id]/page.tsx` | 🟠 MEDIUM | **Có (Post Editor)** | ✅ COMPLETED | `9631e7f` | Tích hợp `MediaPickerModal` vào Trình soạn thảo Bài viết: Chọn ảnh bìa (Featured Image), chèn ảnh đơn (Single Image) và thư viện ảnh lướt (Image Gallery). |
-| **U-13** | • `apps/admin/app/profile/page.tsx` | 🟡 LOW | **Không** | PENDING | - | Tích hợp `MediaPickerModal` vào Hồ sơ cá nhân: Cho phép chọn ảnh đại diện Avatar từ kho ảnh. |
+| **U-13** | • `apps/admin/app/profile/page.tsx` | 🟡 LOW | **Không** | ✅ COMPLETED | PENDING_COMMIT | Tích hợp `MediaPickerModal` vào Hồ sơ cá nhân: Cho phép chọn ảnh đại diện Avatar từ kho ảnh. |
 | **U-14** | • `scripts/verify_admin_image_library.sh` | 🟠 MEDIUM | **Không** | PENDING | - | Nâng cấp kịch bản kiểm chứng tự động kiểm tra tích hợp US-03, chạy toàn bộ test suite và xác nhận exit code 0 cho toàn bộ tính năng Admin Image Library. |
 
 ---
@@ -201,6 +201,17 @@
   - Type-check `@cardealer/admin`: **Passed (0 errors)**.
   - Project-wide type-check: **8/8 packages passed (0 errors)**.
   - Verification Script `./scripts/verify_admin_image_library.sh`: **EXIT 0 (100% PASS)**.
+
+### 🔹 [2026-09-29T23:15:00+07:00] - Unit U-13: Profile Avatar Integration with MediaPickerModal
+* **Thay đổi chính:**
+  - `apps/admin/app/profile/page.tsx`: Tích hợp `MediaPickerModal` vào trang Hồ sơ Quản trị viên (Profile Admin):
+    1. **Nút đổi ảnh nhanh trên Overview Card:** Thêm nút `Button` "Đổi Ảnh Đại Diện" nhỏ gọn trực quan ngay dưới ảnh đại diện hiện tại.
+    2. **Trường nhập Ảnh Đại Diện (URL):** Thêm nút `Button` "Chọn Từ Thư Viện" cạnh nhãn trường kèm nút xóa nhanh `X` bằng `Button` ghost icon khi đã có ảnh.
+    3. **Tự động áp dụng URL:** Khi người dùng chọn bất kỳ ảnh nào trong thư viện, URL avatar cá nhân lập tức được cập nhật và hiển thị preview mượt mà trên cả Overview Card và Form.
+  - **Design System & Zero Raw Controls:** Sử dụng hoàn toàn `Button`, `Input` từ `@cardealer/ui`.
+* **Kết quả Verify:**
+  - Type-check `@cardealer/admin`: **Passed (0 errors)**.
+  - Project-wide type-check: **8/8 packages passed (0 errors)**.
 
 
 

@@ -15,10 +15,12 @@ import {
   KeyRound,
   Save,
   Clock,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { Button, Input, Badge, Skeleton } from '@cardealer/ui';
 import { userService } from '../../services/user.service';
 import type { UserResponse, Role } from '@cardealer/types';
+import { MediaPickerModal } from '../components/MediaPickerModal';
 
 interface NotificationState {
   type: 'success' | 'error';
@@ -36,6 +38,7 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
+  const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
 
   // Password Form state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -201,6 +204,19 @@ export default function ProfilePage() {
             )}
 
             <div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsMediaPickerOpen(true)}
+                className="text-xs flex items-center gap-1.5 mx-auto border-white/10 hover:border-sky-500/40 hover:text-sky-300 cursor-pointer h-7"
+              >
+                <ImageIcon size={13} />
+                <span>Đổi Ảnh Đại Diện</span>
+              </Button>
+            </div>
+
+            <div>
               <div className="text-base font-extrabold text-white">{fullName}</div>
               <div className="text-xs text-slate-400 mt-0.5">{profile?.email}</div>
             </div>
@@ -322,14 +338,42 @@ export default function ProfilePage() {
 
                 {/* Avatar URL */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Ảnh Đại Diện (URL)</label>
-                  <Input
-                    type="url"
-                    value={avatarUrl}
-                    onChange={(e) => setAvatarUrl(e.target.value)}
-                    placeholder="https://images.unsplash.com/..."
-                    className="h-11"
-                  />
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-300">
+                      Ảnh Đại Diện (URL)
+                    </label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsMediaPickerOpen(true)}
+                      className="h-7 text-xs flex items-center gap-1.5 cursor-pointer border-slate-700 bg-slate-800/60 hover:bg-slate-700 text-sky-400 hover:text-sky-300"
+                    >
+                      <ImageIcon size={13} />
+                      <span>Chọn Từ Thư Viện</span>
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="url"
+                      value={avatarUrl}
+                      onChange={(e) => setAvatarUrl(e.target.value)}
+                      placeholder="https://... hoặc chọn từ Thư Viện Ảnh"
+                      className="h-11 flex-1 font-mono text-xs"
+                    />
+                    {avatarUrl && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setAvatarUrl('')}
+                        aria-label="Xóa ảnh đại diện"
+                        className="h-11 w-11 shrink-0 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 cursor-pointer"
+                      >
+                        <X size={16} />
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Role (Readonly Badge) */}
@@ -461,6 +505,20 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
+      {/* Modal Chọn Ảnh Đại Diện Từ Thư Viện */}
+      <MediaPickerModal
+        isOpen={isMediaPickerOpen}
+        onClose={() => setIsMediaPickerOpen(false)}
+        mode="single"
+        title="Chọn Ảnh Đại Diện Cá Nhân Từ Thư Viện"
+        initialSelectedUrls={avatarUrl ? [avatarUrl] : []}
+        onSelect={(selected) => {
+          if (selected.length > 0) {
+            setAvatarUrl(selected[0].url);
+          }
+        }}
+      />
     </div>
   );
 }
