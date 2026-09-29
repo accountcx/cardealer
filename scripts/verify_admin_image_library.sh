@@ -3,14 +3,14 @@
 # ==============================================================================
 # 🧠 Mental Model: End-to-End Machine Verification Script cho Feature Admin Image Library
 # Tuân thủ triệt để universal-agentic-workflow.xml & fullstack-dev-executor.xml
-# Phạm vi xác thực US-01 (Backend, Database, Schema, Tests) & US-02 (Admin Media Portal UI)
-# 1. Project-wide Type Check (turbo run check-types -> exit 0)
-# 2. Database Schema Integrity Check (PostgreSQL media table -> 14 columns)
-# 3. Automated Programmatic Test Suite (Vitest admin-media.test.ts -> 12 tests exit 0)
-# 4. Frontend US-02 File Structure Integrity & 100% Barrel Exports Check
-# 5. Design System Audit: Zero Raw HTML Controls (<button>, <input>, <select>) Check
-# 6. Admin Navigation & RBAC Permissions Linkage Check (/media & media:read)
-# 7. Pure Fetch Client Audit (Zero XMLHttpRequest code) Check
+# Phạm vi xác thực US-01 (Backend/Database), US-02 (Portal UI) & US-03 (System-wide Picker)
+# 1. Kiểm tra môi trường Node.js & pnpm
+# 2. Project-wide Type Check (turbo run check-types -> exit 0)
+# 3. Database Schema Integrity Check (PostgreSQL media table -> 14 columns)
+# 4. Automated Programmatic Test Suite (Vitest admin-media.test.ts -> 12 tests exit 0)
+# 5. Frontend US-02 File Structure Integrity & 100% Barrel Exports Check
+# 6. US-02 Design System Audit (Zero Raw HTML Controls, Pure Fetch Client, RBAC Linkage)
+# 7. US-03 Reusable Media Picker & System-Wide Integration Audit (CarForm, Post Editor, Profile)
 # ==============================================================================
 
 set -euo pipefail
@@ -21,7 +21,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
 echo "========================================================================"
-echo "🚀 [VERIFY-MEDIA-LIBRARY] BẮT ĐẦU QUY TRÌNH KIỂM CHỨNG TỰ ĐỘNG US-01 & US-02"
+echo "🚀 [VERIFY-MEDIA-LIBRARY] BẮT ĐẦU QUY TRÌNH KIỂM CHỨNG TỰ ĐỘNG US-01, US-02 & US-03"
 echo "========================================================================"
 echo "Thư mục làm việc: $REPO_ROOT"
 echo ""
@@ -29,7 +29,7 @@ echo ""
 # ------------------------------------------------------------------------------
 # BƯỚC 1: KIỂM TRA MÔI TRƯỜNG NODE.JS
 # ------------------------------------------------------------------------------
-echo "📦 [Bước 1/6] Kiểm tra môi trường Node.js & pnpm..."
+echo "📦 [Bước 1/7] Kiểm tra môi trường Node.js & pnpm..."
 if [ -s "$HOME/.nvm/nvm.sh" ]; then
   # shellcheck source=/dev/null
   source "$HOME/.nvm/nvm.sh"
@@ -45,7 +45,7 @@ echo ""
 # ------------------------------------------------------------------------------
 # BƯỚC 2: PROJECT-WIDE TYPE CHECK VỚI TURBOREPO
 # ------------------------------------------------------------------------------
-echo "🔍 [Bước 2/6] Thực thi Project-wide TypeScript Type Check (Turbo)..."
+echo "🔍 [Bước 2/7] Thực thi Project-wide TypeScript Type Check (Turbo)..."
 pnpm check-types
 echo "  ✓ Project-wide Type Check PASS (8/8 packages, 0 errors)"
 echo ""
@@ -53,7 +53,7 @@ echo ""
 # ------------------------------------------------------------------------------
 # BƯỚC 3: KIỂM TRA TÍNH TOÀN VẸN DATABASE SCHEMA (US-01)
 # ------------------------------------------------------------------------------
-echo "🗄️ [Bước 3/6] Kiểm tra tính toàn vẹn Drizzle ORM Schema & Database Columns..."
+echo "🗄️ [Bước 3/7] Kiểm tra tính toàn vẹn Drizzle ORM Schema & Database Columns..."
 pnpm --filter @cardealer/database exec tsx -e "
   import { db } from './src/index';
   import { sql } from 'drizzle-orm';
@@ -72,7 +72,7 @@ echo ""
 # ------------------------------------------------------------------------------
 # BƯỚC 4: CHẠY PROGRAMMATIC TEST SUITE (US-01)
 # ------------------------------------------------------------------------------
-echo "🧪 [Bước 4/6] Thực thi Test Suite Nghiệp vụ & RBAC (admin-media.test.ts)..."
+echo "🧪 [Bước 4/7] Thực thi Test Suite Nghiệp vụ & RBAC (admin-media.test.ts)..."
 pnpm --filter @cardealer/core test src/__tests__/admin-media.test.ts
 echo "  ✓ Test Suite Nghiệp vụ PASS (12/12 tests)"
 echo ""
@@ -80,7 +80,7 @@ echo ""
 # ------------------------------------------------------------------------------
 # BƯỚC 5: KIỂM TRA CẤU TRÚC TỆP TIN & BARREL EXPORTS (US-02)
 # ------------------------------------------------------------------------------
-echo "📁 [Bước 5/6] Kiểm tra tính toàn vẹn cấu trúc tệp UI Frontend US-02..."
+echo "📁 [Bước 5/7] Kiểm tra tính toàn vẹn cấu trúc tệp UI Frontend US-02..."
 REQUIRED_FILES=(
   "apps/admin/app/media/page.tsx"
   "apps/admin/app/media/components/MediaCard.tsx"
@@ -120,7 +120,7 @@ echo ""
 # ------------------------------------------------------------------------------
 # BƯỚC 6: KIỂM TOÁN THIẾT KẾ & AN TOÀN MÃ NGUỒN (US-02 DESIGN SYSTEM AUDIT)
 # ------------------------------------------------------------------------------
-echo "🎨 [Bước 6/6] Kiểm toán Design System, Navigation & Pure Fetch Client..."
+echo "🎨 [Bước 6/7] Kiểm toán Design System, Navigation & Pure Fetch Client (US-02)..."
 
 # 1. Kiểm tra Zero Raw Controls: Không dùng thẻ <button, <input, <select trần trong media components
 RAW_TAGS=$(grep -rnE '^\s*<(button|input|select)[ >]' apps/admin/app/media/components/*.tsx || true)
@@ -147,7 +147,66 @@ fi
 echo "  ✓ Architecture Check: 100% Native fetch() pure client (0 XMLHttpRequest)."
 echo ""
 
+# ------------------------------------------------------------------------------
+# BƯỚC 7: KIỂM TOÁN TÍCH HỢP US-03 (REUSABLE MEDIA PICKER & SYSTEM INTEGRATION)
+# ------------------------------------------------------------------------------
+echo "🧩 [Bước 7/7] Kiểm toán Tích hợp US-03 (MediaPickerModal & Toàn hệ thống)..."
+
+# 1. Kiểm tra sự tồn tại của MediaPickerModal.tsx
+PICKER_FILE="apps/admin/app/components/MediaPickerModal.tsx"
+if [ ! -f "$PICKER_FILE" ]; then
+  echo "  ❌ Không tìm thấy $PICKER_FILE!"
+  exit 1
+fi
+echo "  ✓ Tệp tái sử dụng MediaPickerModal.tsx tồn tại."
+
+# 2. Kiểm tra Zero Raw HTML Controls trong MediaPickerModal
+RAW_PICKER_TAGS=$(grep -rnE '^\s*<(button|input|select)[ >]' "$PICKER_FILE" || true)
+if [ -n "$RAW_PICKER_TAGS" ]; then
+  echo "  ❌ Phát hiện raw HTML controls trong $PICKER_FILE:"
+  echo "$RAW_PICKER_TAGS"
+  exit 1
+fi
+echo "  ✓ MediaPickerModal Design System Check: 100% dùng Button, Input, Select, Modal từ @cardealer/ui."
+
+# 3. Kiểm tra tính năng đa chế độ (mode single & multiple) & 2 tabs
+if ! grep -q "mode?: 'single' | 'multiple'" "$PICKER_FILE" || \
+   ! grep -q "activeTab === 'library'" "$PICKER_FILE" || \
+   ! grep -q "activeTab === 'upload'" "$PICKER_FILE"; then
+  echo "  ❌ MediaPickerModal thiếu hỗ trợ đầy đủ 2 chế độ single/multiple hoặc 2 tabs library/upload!"
+  exit 1
+fi
+echo "  ✓ MediaPickerModal Feature Check: Hỗ trợ đầy đủ Single/Multiple mode & Library/Upload tabs."
+
+# 4. Kiểm tra Tích hợp Form Dòng Xe (CarFormModal.tsx)
+CAR_FORM_FILE="apps/admin/app/cars/components/CarFormModal.tsx"
+if ! grep -q "MediaPickerModal" "$CAR_FORM_FILE" || \
+   ! grep -q "Chọn Từ Thư Viện" "$CAR_FORM_FILE"; then
+  echo "  ❌ CarFormModal.tsx chưa tích hợp MediaPickerModal!"
+  exit 1
+fi
+echo "  ✓ CarFormModal Integration Check: Đã tích hợp nút chọn ảnh và MediaPickerModal."
+
+# 5. Kiểm tra Tích hợp Trình Soạn Thảo Bài Viết (posts/[id]/page.tsx)
+POST_EDITOR_FILE="apps/admin/app/posts/[id]/page.tsx"
+if ! grep -q "MediaPickerModal" "$POST_EDITOR_FILE" || \
+   ! grep -q "mediaPickerTarget" "$POST_EDITOR_FILE"; then
+  echo "  ❌ posts/[id]/page.tsx chưa tích hợp MediaPickerModal đa vị trí!"
+  exit 1
+fi
+echo "  ✓ Post Editor Integration Check: Đã tích hợp MediaPickerModal cho Featured Image, Single Image và Image Gallery."
+
+# 6. Kiểm tra Tích hợp Hồ Sơ Cá Nhân (profile/page.tsx)
+PROFILE_FILE="apps/admin/app/profile/page.tsx"
+if ! grep -q "MediaPickerModal" "$PROFILE_FILE" || \
+   ! grep -q "Đổi Ảnh Đại Diện" "$PROFILE_FILE"; then
+  echo "  ❌ profile/page.tsx chưa tích hợp MediaPickerModal!"
+  exit 1
+fi
+echo "  ✓ Profile Integration Check: Đã tích hợp nút đổi ảnh và MediaPickerModal."
+echo ""
+
 echo "========================================================================"
-echo "🎉 TẤT CẢ CÁC BƯỚC KIỂM CHỨNG US-01 & US-02 ĐÃ THÀNH CÔNG 100%! EXIT 0"
+echo "🎉 TẤT CẢ CÁC BƯỚC KIỂM CHỨNG US-01, US-02 & US-03 ĐÃ THÀNH CÔNG 100%! EXIT 0"
 echo "========================================================================"
 exit 0

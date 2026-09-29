@@ -159,7 +159,7 @@
 | **U-11** | • `apps/admin/app/cars/components/CarFormModal.tsx` | 🟠 MEDIUM | **Có (Car Form)** | ✅ COMPLETED | `5b4ffee` | Tích hợp `MediaPickerModal` vào Form Quản lý Dòng xe: Thay thế việc gõ URL thủ công bằng chọn ảnh trực tiếp từ thư viện kèm preview thumbnail. |
 | **U-12** | • `apps/admin/app/posts/[id]/page.tsx` | 🟠 MEDIUM | **Có (Post Editor)** | ✅ COMPLETED | `9631e7f` | Tích hợp `MediaPickerModal` vào Trình soạn thảo Bài viết: Chọn ảnh bìa (Featured Image), chèn ảnh đơn (Single Image) và thư viện ảnh lướt (Image Gallery). |
 | **U-13** | • `apps/admin/app/profile/page.tsx` | 🟡 LOW | **Không** | ✅ COMPLETED | `ab85a12` | Tích hợp `MediaPickerModal` vào Hồ sơ cá nhân: Cho phép chọn ảnh đại diện Avatar từ kho ảnh. |
-| **U-14** | • `scripts/verify_admin_image_library.sh` | 🟠 MEDIUM | **Không** | PENDING | - | Nâng cấp kịch bản kiểm chứng tự động kiểm tra tích hợp US-03, chạy toàn bộ test suite và xác nhận exit code 0 cho toàn bộ tính năng Admin Image Library. |
+| **U-14** | • `scripts/verify_admin_image_library.sh` | 🟠 MEDIUM | **Không** | ✅ COMPLETED | PENDING_COMMIT | Nâng cấp kịch bản kiểm chứng tự động kiểm tra tích hợp US-03, chạy toàn bộ test suite và xác nhận exit code 0 cho toàn bộ tính năng Admin Image Library. |
 
 ---
 
@@ -212,6 +212,30 @@
 * **Kết quả Verify:**
   - Type-check `@cardealer/admin`: **Passed (0 errors)**.
   - Project-wide type-check: **8/8 packages passed (0 errors)**.
+
+### 🔹 [2026-09-29T23:22:00+07:00] - Unit U-14: End-to-End Verification Runner for US-03
+* **Thay đổi chính:**
+  - `scripts/verify_admin_image_library.sh`: Mở rộng quy trình kiểm chứng tự động từ 6 lên 7 bước, bao quát đầy đủ 3 lát cắt US-01, US-02 và US-03.
+  - Bổ sung Bước 7 (Kiểm toán Tích hợp US-03):
+    1. Kiểm tra tồn tại `MediaPickerModal.tsx`.
+    2. Kiểm tra Zero raw HTML controls trong `MediaPickerModal.tsx`.
+    3. Kiểm tra tính năng đa chế độ (`mode="single" | "multiple"`) và 2 tabs (`library` | `upload`).
+    4. Kiểm tra tích hợp trong Quản lý Dòng xe `CarFormModal.tsx`.
+    5. Kiểm tra tích hợp trong Studio Bài viết `posts/[id]/page.tsx` (Featured Image, Single Image, Gallery).
+    6. Kiểm tra tích hợp trong Hồ sơ cá nhân `profile/page.tsx`.
+* **Kết quả Verify:**
+  - Toàn bộ 7/7 bước tự động: **PASS 100% (EXIT 0)**.
+  - Project-wide type-check: **8/8 packages passed (0 errors)**.
+  - Vitest test suite: **12/12 passed (0 errors)**.
+  - Database schema: **14 columns verified**.
+
+---
+
+🎉 **KẾT THÚC LÁT CẮT US-03 & TOÀN BỘ TÍNH NĂNG ADMIN IMAGE LIBRARY:**
+Đã hoàn thành 100% cả 3 Lát cắt:
+1. **US-01:** Backend Architecture, Cloudinary Presigned Signatures, Database Drizzle Schema & Programmatic Vitest Suites.
+2. **US-02:** Admin Media Library Portal UI (`/media`), Drag & Drop Upload, Concurrency Queue, Media Grid, Detail Drawer, Filter Bar, Batch Actions, AdminShell RBAC Linkage.
+3. **US-03:** Reusable Media Picker Modal (`MediaPickerModal.tsx`), tích hợp toàn diện vào Quản lý Dòng xe, Trình soạn thảo Bài viết và Hồ sơ cá nhân. 100% Design System `@cardealer/ui`.
 
 
 
