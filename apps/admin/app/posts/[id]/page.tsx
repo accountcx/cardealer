@@ -69,6 +69,7 @@ import { catalogService, type CarSummary } from '../../../services/catalog.servi
 import { calculateSeoScore, extractYoutubeId, extractTikTokId, type SeoAnalysisResult, type TiptapDoc } from '@cardealer/core';
 import { useAuth } from '../../../contexts/AuthContext';
 import { AccessDenied } from '../../components/AccessDenied';
+import { MediaPickerModal } from '../../components/MediaPickerModal';
 
 // Các loại Block trực quan chuẩn E-E-A-T & High Conversion
 type BlockType =
@@ -220,6 +221,14 @@ export default function PostEditorPage() {
   const [categoryId, setCategoryId] = useState('');
   const [anhDaiDienUrl, setAnhDaiDienUrl] = useState('');
   const [anhDaiDienAlt, setAnhDaiDienAlt] = useState('');
+
+  // Media Picker Modal State
+  const [mediaPickerTarget, setMediaPickerTarget] = useState<
+    | { type: 'featured' }
+    | { type: 'singleImage'; blockId: string }
+    | { type: 'gallery'; blockId: string }
+    | null
+  >(null);
   const [tomTat, setTomTat] = useState('');
   const [status, setStatus] = useState<'draft' | 'published' | 'scheduled' | 'archived'>('draft');
   const [isFeatured, setIsFeatured] = useState(false);
@@ -1154,13 +1163,68 @@ export default function PostEditorPage() {
                 className="h-10 rounded-lg bg-slate-950/60 border-white/10 text-slate-200 text-sm focus-visible:ring-cyan-500/20 focus-visible:border-cyan-500"
               />
 
-              <Input
-                label="Link ảnh đại diện (Featured Image) *"
-                value={anhDaiDienUrl}
-                onChange={(e) => setAnhDaiDienUrl(e.target.value)}
-                placeholder="https://.../anh-dai-dien.webp"
-                className="h-10 bg-slate-950/60 border-white/10 text-slate-100 text-sm focus-visible:ring-cyan-500/20 focus-visible:border-cyan-500"
-              />
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-300">
+                    Ảnh đại diện (Featured Image) *
+                  </label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setMediaPickerTarget({ type: 'featured' })}
+                    className="h-7 text-xs flex items-center gap-1.5 cursor-pointer border-slate-700 bg-slate-800/60 hover:bg-slate-700 text-sky-400 hover:text-sky-300"
+                  >
+                    <ImageIcon size={13} />
+                    <span>Chọn từ Thư Viện</span>
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={anhDaiDienUrl}
+                    onChange={(e) => setAnhDaiDienUrl(e.target.value)}
+                    placeholder="https://.../anh-dai-dien.webp"
+                    className="h-10 bg-slate-950/60 border-white/10 text-slate-100 text-sm focus-visible:ring-cyan-500/20 focus-visible:border-cyan-500 flex-1 font-mono"
+                  />
+                  {anhDaiDienUrl && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setAnhDaiDienUrl('');
+                        setAnhDaiDienAlt('');
+                      }}
+                      aria-label="Xóa ảnh đại diện"
+                      className="h-10 w-10 shrink-0 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 cursor-pointer"
+                    >
+                      <X size={16} />
+                    </Button>
+                  )}
+                </div>
+                {anhDaiDienUrl && (
+                  <div className="mt-2 flex items-center gap-3 p-2 rounded-xl bg-slate-950/60 border border-white/10">
+                    <div className="w-16 h-12 rounded-lg bg-slate-900 border border-white/10 overflow-hidden shrink-0">
+                      <img
+                        src={anhDaiDienUrl}
+                        alt={anhDaiDienAlt || 'Preview'}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLElement).style.display = 'none';
+                        }}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0 text-xs">
+                      <p className="text-slate-200 font-semibold truncate font-mono">
+                        {anhDaiDienUrl}
+                      </p>
+                      <p className="text-slate-400 truncate">
+                        Alt: {anhDaiDienAlt || 'Chưa thiết lập'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Alt text & Summary */}
@@ -2060,37 +2124,49 @@ export default function PostEditorPage() {
                             <label className="block text-[11px] text-slate-400 font-medium">
                               Đường dẫn ảnh (URL Image) *
                             </label>
-                            <label className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer bg-cyan-500/10 hover:bg-cyan-500/20 px-2 py-0.5 rounded border border-cyan-500/30 transition-colors">
-                              <Upload size={12} />
-                              <span>Tải ảnh từ máy</span>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (!file) return;
-                                  const reader = new FileReader();
-                                  reader.onload = (event) => {
-                                    const dataUrl = event.target?.result as string;
-                                    if (dataUrl) {
-                                      const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
-                                      updateBlock(block.id, {
-                                        imageUrl: dataUrl,
-                                        imageAlt: block.imageAlt || cleanName,
-                                        caption: block.caption || cleanName,
-                                      });
-                                    }
-                                  };
-                                  reader.readAsDataURL(file);
-                                }}
-                              />
-                            </label>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setMediaPickerTarget({ type: 'singleImage', blockId: block.id })}
+                                className="h-6 text-[11px] px-2 flex items-center gap-1 cursor-pointer border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300"
+                              >
+                                <ImageIcon size={12} />
+                                <span>Thư Viện Ảnh</span>
+                              </Button>
+                              <label className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer bg-cyan-500/10 hover:bg-cyan-500/20 px-2 py-0.5 rounded border border-cyan-500/30 transition-colors">
+                                <Upload size={12} />
+                                <span>Tải từ máy</span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+                                    const reader = new FileReader();
+                                    reader.onload = (event) => {
+                                      const dataUrl = event.target?.result as string;
+                                      if (dataUrl) {
+                                        const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+                                        updateBlock(block.id, {
+                                          imageUrl: dataUrl,
+                                          imageAlt: block.imageAlt || cleanName,
+                                          caption: block.caption || cleanName,
+                                        });
+                                      }
+                                    };
+                                    reader.readAsDataURL(file);
+                                  }}
+                                />
+                              </label>
+                            </div>
                           </div>
                           <Input
                             value={block.imageUrl || ''}
                             onChange={(e) => updateBlock(block.id, { imageUrl: e.target.value })}
-                            placeholder="Dán link ảnh https://... hoặc bấm nút Tải ảnh từ máy bên trên"
+                            placeholder="Dán link ảnh https://... hoặc chọn từ Thư Viện Ảnh bên trên"
                             className="h-9 bg-slate-950 border-white/10 text-slate-100 text-xs font-mono"
                           />
                         </div>
@@ -2191,6 +2267,17 @@ export default function PostEditorPage() {
                         </div>
 
                         <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setMediaPickerTarget({ type: 'gallery', blockId: block.id })}
+                            className="h-7 px-2.5 text-xs text-purple-300 hover:text-purple-200 bg-purple-500/10 hover:bg-purple-500/20 rounded-lg border border-purple-500/30 flex items-center gap-1.5 cursor-pointer transition-colors"
+                          >
+                            <ImageIcon size={13} />
+                            <span>Chọn từ Thư Viện</span>
+                          </Button>
+
                           {/* Tải ảnh từ máy tính (hỗ trợ chọn nhiều ảnh cùng lúc) */}
                           <label className="h-7 px-2.5 text-xs text-purple-300 hover:text-purple-200 bg-purple-500/10 hover:bg-purple-500/20 rounded-lg border border-purple-500/30 flex items-center gap-1.5 cursor-pointer transition-colors">
                             <Upload size={13} />
@@ -3186,6 +3273,58 @@ export default function PostEditorPage() {
           </Card>
         </div>
       </div>
+
+      {/* Modal Chọn Ảnh Từ Thư Viện Dùng Chung */}
+      <MediaPickerModal
+        isOpen={!!mediaPickerTarget}
+        onClose={() => setMediaPickerTarget(null)}
+        mode={mediaPickerTarget?.type === 'gallery' ? 'multiple' : 'single'}
+        title={
+          mediaPickerTarget?.type === 'featured'
+            ? 'Chọn Ảnh Đại Diện Bài Viết (Featured Image)'
+            : mediaPickerTarget?.type === 'gallery'
+            ? 'Chọn Nhiều Ảnh Cho Bộ Sưu Tập (Gallery)'
+            : 'Chọn Hình Ảnh Cho Bài Viết'
+        }
+        initialSelectedUrls={
+          mediaPickerTarget?.type === 'featured' && anhDaiDienUrl
+            ? [anhDaiDienUrl]
+            : []
+        }
+        onSelect={(selected) => {
+          if (!mediaPickerTarget || selected.length === 0) return;
+
+          if (mediaPickerTarget.type === 'featured') {
+            const first = selected[0];
+            setAnhDaiDienUrl(first.url);
+            if (first.altText) {
+              setAnhDaiDienAlt(first.altText);
+            }
+          } else if (mediaPickerTarget.type === 'singleImage') {
+            const first = selected[0];
+            updateBlock(mediaPickerTarget.blockId, {
+              imageUrl: first.url,
+              imageAlt: first.altText || first.filename,
+              caption: first.filename,
+            });
+          } else if (mediaPickerTarget.type === 'gallery') {
+            const newItems = selected.map((m) => ({
+              url: m.url,
+              alt: m.altText || m.filename,
+              caption: m.filename,
+            }));
+            setBlocks((prev) =>
+              prev.map((b) => {
+                if (b.id !== mediaPickerTarget.blockId) return b;
+                return {
+                  ...b,
+                  galleryImages: [...(b.galleryImages || []), ...newItems],
+                };
+              })
+            );
+          }
+        }}
+      />
     </div>
   );
 }
