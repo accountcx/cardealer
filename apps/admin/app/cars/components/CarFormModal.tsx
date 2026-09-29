@@ -332,7 +332,7 @@ export const CarFormModal: React.FC<CarFormModalProps> = ({
                         className="h-7 text-xs flex items-center gap-1.5 cursor-pointer border-slate-700 bg-slate-800/60 hover:bg-slate-700 text-sky-400 hover:text-sky-300"
                       >
                         <ImageIcon size={13} />
-                        <span>Chọn Từ Thư Viện</span>
+                        <span>Chọn Từ Thư Viện / Tải Mới</span>
                       </Button>
                     </div>
                     <div className="flex items-center gap-2">
@@ -340,6 +340,7 @@ export const CarFormModal: React.FC<CarFormModalProps> = ({
                         <Input
                           {...field}
                           placeholder="/images/cars/palisade-2025.webp hoặc URL Cloudinary"
+                          className="font-mono text-xs"
                         />
                       </FormControl>
                       {field.value && (
@@ -356,20 +357,24 @@ export const CarFormModal: React.FC<CarFormModalProps> = ({
                       )}
                     </div>
                     {field.value && (
-                      <div className="mt-2 flex items-center gap-2.5 rounded-lg border border-white/5 bg-slate-950/40 p-2">
-                        <div className="h-10 w-14 overflow-hidden rounded bg-slate-900 border border-white/10 shrink-0">
-                          <img
-                            src={field.value}
-                            alt="Preview thumbnail"
-                            className="h-full w-full object-contain"
-                            onError={(e) => {
-                              (e.currentTarget as HTMLElement).style.display = 'none';
-                            }}
-                          />
-                        </div>
-                        <span className="text-[11px] text-slate-400 truncate flex-1 font-mono">
-                          {field.value}
-                        </span>
+                      <div className="relative aspect-16/9 max-w-sm rounded-xl border border-slate-800 bg-slate-950/60 overflow-hidden p-2 flex items-center justify-center group shadow-md mt-2">
+                        <img
+                          src={field.value}
+                          alt="Preview thumbnail"
+                          className="h-full w-full object-contain"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLElement).style.display = 'none';
+                          }}
+                        />
+                        <a
+                          href={field.value}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="absolute bottom-2 right-2 flex items-center gap-1 rounded-lg bg-slate-900/80 px-2 py-1 text-[11px] font-medium text-slate-300 backdrop-blur-xs hover:bg-slate-800 hover:text-white transition-opacity"
+                        >
+                          <ExternalLink size={11} />
+                          <span>Xem ảnh</span>
+                        </a>
                       </div>
                     )}
                     <FormMessage />
