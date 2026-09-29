@@ -155,7 +155,7 @@
 
 | Unit ID | File(s) Tác Động | Risk Tier | Coupled Unit? | Trạng Thái | Commit Hash | Mục Tiêu & Mô Tả Đơn Vị |
 | :---: | :--- | :---: | :---: | :---: | :---: | :--- |
-| **U-10** | • `apps/admin/app/components/MediaPickerModal.tsx` | 🟠 MEDIUM | **Có (Picker Component)** | ✅ COMPLETED | `Pending` | Xây dựng Modal dùng chung `MediaPickerModal` hỗ trợ 2 Tabs (Thư viện có sẵn + Tải ảnh mới), chế độ `mode="single"` & `mode="multiple"`, 100% `@cardealer/ui`. |
+| **U-10** | • `apps/admin/app/components/MediaPickerModal.tsx` | 🟠 MEDIUM | **Có (Picker Component)** | ✅ COMPLETED | `04ec621` | Xây dựng Modal dùng chung `MediaPickerModal` hỗ trợ 2 Tabs (Thư viện có sẵn + Tải ảnh mới), chế độ `mode="single"` & `mode="multiple"`, 100% `@cardealer/ui`. |
 | **U-11** | • `apps/admin/app/cars/components/CarFormModal.tsx` | 🟠 MEDIUM | **Có (Car Form)** | PENDING | - | Tích hợp `MediaPickerModal` vào Form Quản lý Dòng xe: Thay thế việc gõ URL thủ công bằng chọn ảnh trực tiếp từ thư viện kèm preview thumbnail. |
 | **U-12** | • `apps/admin/app/posts/[id]/page.tsx` | 🟠 MEDIUM | **Có (Post Editor)** | PENDING | - | Tích hợp `MediaPickerModal` vào Trình soạn thảo Bài viết: Chọn ảnh bìa (Featured Image), chèn ảnh đơn (Single Image) và thư viện ảnh lướt (Image Gallery). |
 | **U-13** | • `apps/admin/app/profile/page.tsx` | 🟡 LOW | **Không** | PENDING | - | Tích hợp `MediaPickerModal` vào Hồ sơ cá nhân: Cho phép chọn ảnh đại diện Avatar từ kho ảnh. |
