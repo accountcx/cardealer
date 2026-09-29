@@ -15,7 +15,7 @@ import {
   HardDrive,
   Maximize2,
 } from 'lucide-react';
-import { Button } from '@cardealer/ui';
+import { Button, Input } from '@cardealer/ui';
 import type { MediaItem } from '@cardealer/types';
 import { formatBytes } from './MediaCard';
 
@@ -146,11 +146,11 @@ export function MediaDetailDrawer({
                 Đường dẫn ảnh CDN Cloudinary
               </label>
               <div className="flex items-center gap-2">
-                <input
+                <Input
                   type="text"
                   readOnly
                   value={media.url}
-                  className="w-full truncate rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 focus:outline-none dark:border-slate-800 dark:bg-slate-850 dark:text-slate-300"
+                  className="h-10 text-xs bg-slate-50 dark:bg-slate-850 truncate"
                 />
                 <Button
                   type="button"
@@ -158,7 +158,7 @@ export function MediaDetailDrawer({
                   variant={isCopied ? 'success' : 'primary'}
                   onClick={handleCopyUrl}
                   leftIcon={isCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                  className="shrink-0"
+                  className="shrink-0 h-10"
                 >
                   {isCopied ? 'Đã chép' : 'Sao chép'}
                 </Button>
@@ -171,12 +171,12 @@ export function MediaDetailDrawer({
                 Văn bản thay thế (Alt Text cho SEO)
               </label>
               <div className="flex gap-2">
-                <input
+                <Input
                   type="text"
                   placeholder="Mô tả ảnh cho công cụ tìm kiếm Google..."
                   value={altText}
                   onChange={(e) => setAltText(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  className="h-10 text-xs"
                 />
                 <Button
                   type="button"
@@ -186,7 +186,7 @@ export function MediaDetailDrawer({
                   isLoading={isSaving}
                   onClick={handleSaveAltText}
                   leftIcon={<Save className="h-3.5 w-3.5" />}
-                  className="shrink-0"
+                  className="shrink-0 h-10"
                 >
                   Lưu
                 </Button>

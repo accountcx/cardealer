@@ -1,14 +1,15 @@
 'use client';
 
 import React from 'react';
-import { Search, X, Filter, ArrowUpDown, RefreshCw } from 'lucide-react';
+import { Search, X, RefreshCw } from 'lucide-react';
+import { Select, Button, Input, type SelectOption } from '@cardealer/ui';
 import type { MediaQueryInput } from '@cardealer/types';
 
 // 🧠 Mental Model: Thanh tìm kiếm, lọc và sắp xếp ảnh trong kho.
-// - Tìm kiếm thời gian thực (đã debounce 350ms ở useMediaLibrary).
-// - Lọc nhanh theo định dạng ảnh (WEBP, PNG, JPG, SVG, GIF).
-// - Sắp xếp theo ngày tải lên, dung lượng hoặc tên file.
-// - Nút làm mới dữ liệu (Refresh).
+// - Dùng Input chuẩn từ @cardealer/ui (kèm leftIcon Search và rightIcon Button X clear search).
+// - Lọc nhanh theo định dạng ảnh sử dụng Select component chuẩn từ @cardealer/ui.
+// - Sắp xếp đa chiều (mới/cũ/kích thước/tên) đồng bộ Design System.
+// - Nút làm mới dữ liệu sử dụng Button size="icon" chuẩn từ @cardealer/ui.
 
 export interface MediaFilterBarProps {
   search: string;
@@ -22,7 +23,7 @@ export interface MediaFilterBarProps {
   onRefresh?: () => void;
 }
 
-const FORMAT_OPTIONS = [
+const FORMAT_OPTIONS: SelectOption[] = [
   { value: 'all', label: 'Tất cả định dạng' },
   { value: 'webp', label: 'WEBP' },
   { value: 'png', label: 'PNG' },
@@ -31,7 +32,7 @@ const FORMAT_OPTIONS = [
   { value: 'gif', label: 'GIF' },
 ];
 
-const SORT_OPTIONS: { value: MediaQueryInput['sortBy']; label: string }[] = [
+const SORT_OPTIONS: SelectOption[] = [
   { value: 'newest', label: 'Mới nhất trước' },
   { value: 'oldest', label: 'Cũ nhất trước' },
   { value: 'size_desc', label: 'Dung lượng giảm dần' },
@@ -52,80 +53,78 @@ export function MediaFilterBar({
 }: MediaFilterBarProps) {
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 md:flex-row md:items-center md:justify-between">
-      {/* Search Input */}
+      {/* Search Input dùng Input và Button chuẩn từ @cardealer/ui */}
       <div className="relative flex-1 max-w-md">
-        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-        <input
+        <Input
           type="text"
           placeholder="Tìm theo tên tệp hoặc Alt Text..."
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 pl-10 pr-9 text-xs text-slate-800 placeholder-slate-400 transition focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-100 dark:focus:bg-slate-800"
+          leftIcon={<Search className="h-4 w-4 text-slate-400" />}
+          rightIcon={
+            search ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => onSearchChange('')}
+                className="h-6 w-6 rounded-md p-0 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                title="Xóa tìm kiếm"
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            ) : undefined
+          }
+          className="h-10 rounded-xl text-xs bg-slate-50/50 border-slate-200 dark:border-slate-700 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 placeholder:text-slate-400"
         />
-        {search && (
-          <button
-            type="button"
-            onClick={() => onSearchChange('')}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-            title="Xóa tìm kiếm"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        )}
       </div>
 
-      {/* Filters and Sorters */}
+      {/* Filters, Sorters and Actions */}
       <div className="flex flex-wrap items-center gap-2.5">
-        {/* Format Filter */}
-        <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50/50 px-2.5 py-1.5 dark:border-slate-700 dark:bg-slate-800/60">
-          <Filter className="h-3.5 w-3.5 text-slate-400" />
-          <select
+        {/* Format Select Dropdown */}
+        <div className="w-full sm:w-44">
+          <Select
+            options={FORMAT_OPTIONS}
             value={format}
             onChange={(e) => onFormatChange(e.target.value)}
-            className="bg-transparent text-xs font-medium text-slate-700 focus:outline-none dark:text-slate-200 cursor-pointer"
-          >
-            {FORMAT_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value} className="dark:bg-slate-800">
-                {opt.label}
-              </option>
-            ))}
-          </select>
+            sheetTitle="Lọc Theo Định Dạng Ảnh"
+            className="h-10 text-xs rounded-xl"
+            containerClassName="w-full"
+          />
         </div>
 
-        {/* Sort By */}
-        <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50/50 px-2.5 py-1.5 dark:border-slate-700 dark:bg-slate-800/60">
-          <ArrowUpDown className="h-3.5 w-3.5 text-slate-400" />
-          <select
+        {/* Sort By Select Dropdown */}
+        <div className="w-full sm:w-48">
+          <Select
+            options={SORT_OPTIONS}
             value={sortBy}
             onChange={(e) => onSortChange(e.target.value as MediaQueryInput['sortBy'])}
-            className="bg-transparent text-xs font-medium text-slate-700 focus:outline-none dark:text-slate-200 cursor-pointer"
-          >
-            {SORT_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value} className="dark:bg-slate-800">
-                {opt.label}
-              </option>
-            ))}
-          </select>
+            sheetTitle="Sắp Xếp Danh Sách Ảnh"
+            className="h-10 text-xs rounded-xl"
+            containerClassName="w-full"
+          />
         </div>
 
         {/* Total Count Badge */}
         {totalItems !== undefined && (
-          <span className="hidden lg:inline-flex items-center rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+          <span className="hidden xl:inline-flex items-center rounded-xl bg-slate-100 px-3 py-2 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
             {totalItems} ảnh
           </span>
         )}
 
-        {/* Refresh Button */}
+        {/* Refresh Button from @cardealer/ui */}
         {onRefresh && (
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="icon"
             onClick={onRefresh}
             disabled={isLoading}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-xs transition hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-750"
+            className="h-10 w-10 shrink-0 rounded-xl border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800"
             title="Làm mới danh sách"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-          </button>
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </Button>
         )}
       </div>
     </div>
