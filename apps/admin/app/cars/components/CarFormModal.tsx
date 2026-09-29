@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Car as CarIcon, Sparkles, ExternalLink } from 'lucide-react';
+import { Car as CarIcon, Sparkles, ExternalLink, Image as ImageIcon, X } from 'lucide-react';
 import {
   Modal,
   Button,
@@ -15,6 +15,7 @@ import {
   FormControl,
   FormMessage,
 } from '@cardealer/ui';
+import { MediaPickerModal } from '../../components/MediaPickerModal';
 
 export const carFormSchema = z.object({
   tenXe: z.string().trim().min(1, 'Vui lòng nhập tên dòng xe'),
@@ -56,6 +57,8 @@ export const CarFormModal: React.FC<CarFormModalProps> = ({
   saving,
   errorMessage,
 }) => {
+  const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
+
   const form = useForm<CarFormData>({
     resolver: zodResolver(carFormSchema),
     defaultValues: {
@@ -319,10 +322,56 @@ export const CarFormModal: React.FC<CarFormModalProps> = ({
                 name="anhDaiDienUrl"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Đường Dẫn Ảnh Đại Diện Xe (URL)</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="/images/cars/palisade-2025.webp" />
-                    </FormControl>
+                    <div className="flex items-center justify-between mb-1">
+                      <FormLabel>Đường Dẫn Ảnh Đại Diện Xe (URL)</FormLabel>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsMediaPickerOpen(true)}
+                        className="h-7 text-xs flex items-center gap-1.5 cursor-pointer border-slate-700 bg-slate-800/60 hover:bg-slate-700 text-sky-400 hover:text-sky-300"
+                      >
+                        <ImageIcon size={13} />
+                        <span>Chọn Từ Thư Viện</span>
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <FormControl className="flex-1">
+                        <Input
+                          {...field}
+                          placeholder="/images/cars/palisade-2025.webp hoặc URL Cloudinary"
+                        />
+                      </FormControl>
+                      {field.value && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => field.onChange('')}
+                          aria-label="Xóa đường dẫn ảnh"
+                          className="h-10 w-10 shrink-0 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 cursor-pointer"
+                        >
+                          <X size={16} />
+                        </Button>
+                      )}
+                    </div>
+                    {field.value && (
+                      <div className="mt-2 flex items-center gap-2.5 rounded-lg border border-white/5 bg-slate-950/40 p-2">
+                        <div className="h-10 w-14 overflow-hidden rounded bg-slate-900 border border-white/10 shrink-0">
+                          <img
+                            src={field.value}
+                            alt="Preview thumbnail"
+                            className="h-full w-full object-contain"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLElement).style.display = 'none';
+                            }}
+                          />
+                        </div>
+                        <span className="text-[11px] text-slate-400 truncate flex-1 font-mono">
+                          {field.value}
+                        </span>
+                      </div>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -408,6 +457,23 @@ export const CarFormModal: React.FC<CarFormModalProps> = ({
           </div>
         </form>
       </Form>
+
+      {/* Modal Chọn Ảnh Từ Thư Viện */}
+      <MediaPickerModal
+        isOpen={isMediaPickerOpen}
+        onClose={() => setIsMediaPickerOpen(false)}
+        mode="single"
+        title="Chọn Ảnh Đại Diện Cho Dòng Xe"
+        initialSelectedUrls={watchedAnhDaiDienUrl ? [watchedAnhDaiDienUrl] : []}
+        onSelect={(selected) => {
+          if (selected.length > 0) {
+            setValue('anhDaiDienUrl', selected[0].url, {
+              shouldValidate: true,
+              shouldDirty: true,
+            });
+          }
+        }}
+      />
     </Modal>
   );
 };

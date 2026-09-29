@@ -156,7 +156,7 @@
 | Unit ID | File(s) Tác Động | Risk Tier | Coupled Unit? | Trạng Thái | Commit Hash | Mục Tiêu & Mô Tả Đơn Vị |
 | :---: | :--- | :---: | :---: | :---: | :---: | :--- |
 | **U-10** | • `apps/admin/app/components/MediaPickerModal.tsx` | 🟠 MEDIUM | **Có (Picker Component)** | ✅ COMPLETED | `04ec621` | Xây dựng Modal dùng chung `MediaPickerModal` hỗ trợ 2 Tabs (Thư viện có sẵn + Tải ảnh mới), chế độ `mode="single"` & `mode="multiple"`, 100% `@cardealer/ui`. |
-| **U-11** | • `apps/admin/app/cars/components/CarFormModal.tsx` | 🟠 MEDIUM | **Có (Car Form)** | PENDING | - | Tích hợp `MediaPickerModal` vào Form Quản lý Dòng xe: Thay thế việc gõ URL thủ công bằng chọn ảnh trực tiếp từ thư viện kèm preview thumbnail. |
+| **U-11** | • `apps/admin/app/cars/components/CarFormModal.tsx` | 🟠 MEDIUM | **Có (Car Form)** | ✅ COMPLETED | `Pending` | Tích hợp `MediaPickerModal` vào Form Quản lý Dòng xe: Thay thế việc gõ URL thủ công bằng chọn ảnh trực tiếp từ thư viện kèm preview thumbnail. |
 | **U-12** | • `apps/admin/app/posts/[id]/page.tsx` | 🟠 MEDIUM | **Có (Post Editor)** | PENDING | - | Tích hợp `MediaPickerModal` vào Trình soạn thảo Bài viết: Chọn ảnh bìa (Featured Image), chèn ảnh đơn (Single Image) và thư viện ảnh lướt (Image Gallery). |
 | **U-13** | • `apps/admin/app/profile/page.tsx` | 🟡 LOW | **Không** | PENDING | - | Tích hợp `MediaPickerModal` vào Hồ sơ cá nhân: Cho phép chọn ảnh đại diện Avatar từ kho ảnh. |
 | **U-14** | • `scripts/verify_admin_image_library.sh` | 🟠 MEDIUM | **Không** | PENDING | - | Nâng cấp kịch bản kiểm chứng tự động kiểm tra tích hợp US-03, chạy toàn bộ test suite và xác nhận exit code 0 cho toàn bộ tính năng Admin Image Library. |
@@ -179,6 +179,18 @@
   - Type-check `@cardealer/admin`: **Passed (0 errors)**.
   - Project-wide type-check: **8/8 packages passed (0 errors)**.
   - Verification Script `./scripts/verify_admin_image_library.sh`: **EXIT 0 (100% PASS)**.
+
+### 🔹 [2026-09-29T22:55:00+07:00] - Unit U-11: CarFormModal Integration with MediaPickerModal
+* **Thay đổi chính:**
+  - `apps/admin/app/cars/components/CarFormModal.tsx`: Tích hợp hộp thoại `MediaPickerModal` vào biểu mẫu tạo/sửa dòng xe Hyundai.
+  - Bổ sung nút bấm chuẩn `Button` "Chọn Từ Thư Viện" kèm icon `ImageIcon` ngay trên nhãn trường ảnh đại diện xe.
+  - Thêm tính năng xóa nhanh URL (nút `X`), preview thumbnail tức thì bo góc có viền kính mờ, và tự động điền URL khi chọn ảnh từ kho.
+  - Giữ lại khả năng gõ hoặc dán URL thủ công phục vụ linh hoạt cho quản trị viên.
+* **Kết quả Verify:**
+  - Type-check `@cardealer/admin`: **Passed (0 errors)**.
+  - Project-wide type-check: **8/8 packages passed (0 errors)**.
+  - Verification Script `./scripts/verify_admin_image_library.sh`: **EXIT 0 (100% PASS)**.
+
 
 
 
