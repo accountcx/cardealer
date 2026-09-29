@@ -44,21 +44,23 @@ export function MediaCard({
       }`}
     >
       {/* Checkbox chọn ảnh (Top Left) - Nút độc lập tách biệt để không lồng vào Button chính */}
-      <button
+      <Button
         type="button"
+        size="icon"
+        variant={isSelected ? 'primary' : 'ghost'}
         onClick={(e) => {
           e.stopPropagation();
           onToggleSelect?.(media.id, e);
         }}
         aria-label={isSelected ? 'Bỏ chọn ảnh' : 'Chọn ảnh'}
-        className={`absolute top-2.5 left-2.5 z-20 flex h-6 w-6 items-center justify-center rounded-lg border transition-all cursor-pointer ${
+        className={`absolute top-2.5 left-2.5 z-20 h-6 w-6 rounded-lg border transition-all cursor-pointer ${
           isSelected
             ? 'border-indigo-600 bg-indigo-600 text-white shadow-xs'
             : 'border-slate-300/80 bg-white/90 text-transparent hover:border-indigo-400 group-hover:opacity-100 opacity-70 backdrop-blur-xs dark:border-slate-700 dark:bg-slate-900/90'
         }`}
       >
         <Check className="h-3.5 w-3.5 stroke-[2.5]" />
-      </button>
+      </Button>
 
       {/* Format Badge (Top Right) */}
       <div className="absolute top-2.5 right-2.5 z-10 pointer-events-none">

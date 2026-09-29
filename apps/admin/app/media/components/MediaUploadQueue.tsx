@@ -12,6 +12,7 @@ import {
   FileImage,
 } from 'lucide-react';
 import type { UploadTask } from '@cardealer/types';
+import { Button } from '@cardealer/ui';
 import { formatBytes } from './MediaCard';
 
 // 🧠 Mental Model: Khay theo dõi hàng đợi tải ảnh (Upload Queue Drawer / Widget).
@@ -63,18 +64,22 @@ export function MediaUploadQueue({
 
         <div className="flex items-center gap-1">
           {completedCount > 0 && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={onClearCompleted}
-              className="text-[11px] font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 px-2 py-0.5 rounded-md hover:bg-slate-200/60 dark:hover:bg-slate-800"
+              className="h-6 px-2 text-[11px] font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
             >
               Xóa xong
-            </button>
+            </Button>
           )}
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={() => setIsCollapsed((prev) => !prev)}
-            className="rounded-lg p-1 text-slate-500 hover:bg-slate-200/60 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            className="h-7 w-7 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
             title={isCollapsed ? 'Mở rộng' : 'Thu nhỏ'}
           >
             {isCollapsed ? (
@@ -82,7 +87,7 @@ export function MediaUploadQueue({
             ) : (
               <ChevronDown className="h-4 w-4" />
             )}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -130,25 +135,29 @@ export function MediaUploadQueue({
                     >
                       Lỗi
                     </span>
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => onRetry(task.id)}
-                      className="rounded p-1 text-slate-500 hover:bg-slate-200 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
+                      className="h-6 w-6 rounded text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
                       title="Thử lại"
                     >
                       <RotateCcw className="h-3.5 w-3.5" />
-                    </button>
+                    </Button>
                   </div>
                 )}
 
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={() => onRemove(task.id)}
-                  className="rounded p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                  className="h-6 w-6 rounded text-slate-400 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                   title="Xóa khỏi hàng đợi"
                 >
                   <X className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               </div>
             </div>
           ))}

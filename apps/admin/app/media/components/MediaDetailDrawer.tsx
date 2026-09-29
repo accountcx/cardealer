@@ -111,13 +111,16 @@ export function MediaDetailDrawer({
             <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100">
               Chi Tiết Hình Ảnh
             </h2>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               onClick={onClose}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+              className="h-8 w-8 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+              aria-label="Đóng"
             >
               <X className="h-5 w-5" />
-            </button>
+            </Button>
           </div>
 
           {/* Body */}

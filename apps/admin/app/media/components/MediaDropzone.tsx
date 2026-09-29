@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useCallback } from 'react';
 import { UploadCloud, Image as ImageIcon, AlertCircle } from 'lucide-react';
-import { Button } from '@cardealer/ui';
+import { Button, Input } from '@cardealer/ui';
 
 // 🧠 Mental Model: Vùng kéo thả tệp tải lên (Drag & Drop Zone).
 // - Lắng nghe sự kiện dragover, dragleave, drop với visual feedback mượt mà.
@@ -112,7 +112,7 @@ export function MediaDropzone({
             : 'border-slate-300 bg-slate-50/60 hover:border-indigo-400 hover:bg-indigo-50/30 dark:border-slate-700/80 dark:bg-slate-900/40 dark:hover:border-indigo-500/50'
         }`}
       >
-        <input
+        <Input
           ref={fileInputRef}
           type="file"
           multiple
