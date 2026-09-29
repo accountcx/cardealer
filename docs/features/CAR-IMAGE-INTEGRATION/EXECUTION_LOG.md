@@ -19,7 +19,7 @@
 
 | Unit ID | File(s) Tác Động | Risk Tier | Coupled Unit? | Trạng Thái | Commit Hash | Mục Tiêu & Mô Tả Đơn Vị |
 | :---: | :--- | :---: | :---: | :---: | :---: | :--- |
-| **U-01** | `apps/admin/app/cars/[slug]/components/TabGeneralInfo.tsx` | 🟡 LOW | **Không** | ⏳ PENDING | - | Tích hợp `MediaPickerModal` vào Tab Thông tin chung: nút "Chọn Từ Thư Viện", preview thumbnail và nút xóa nhanh `X`. |
+| **U-01** | `apps/admin/app/cars/[slug]/components/TabGeneralInfo.tsx` | 🟡 LOW | **Không** | ✅ COMPLETED | PENDING_COMMIT | Tích hợp `MediaPickerModal` vào Tab Thông tin chung: nút "Chọn Từ Thư Viện", preview thumbnail và nút xóa nhanh `X`. |
 | **U-02** | `apps/admin/app/cars/[slug]/components/TabColors.tsx` | 🟠 MEDIUM | **Không** | ⏳ PENDING | - | Tích hợp `MediaPickerModal` vào Cấu hình Màu sắc & Mâm xe: nút chọn ảnh cho từng màu, preview thumbnail và cập nhật reactive state. |
 | **U-03** | `apps/admin/app/cars/components/CarFormModal.tsx` | 🟡 LOW | **Không** | ⏳ PENDING | - | Hoàn thiện trải nghiệm chọn và tải ảnh đại diện khi tạo mới dòng xe, đồng bộ hóa 100% UI/UX. |
 | **U-04** | `scripts/verify_car_image_integration.sh` | 🟡 LOW | **Không** | ⏳ PENDING | - | Tạo kịch bản kiểm chứng tự động toàn diện kiểm tra typecheck, design system và tích hợp của cả 3 điểm chạm. |
@@ -28,4 +28,13 @@
 
 ## 3. Nhật Ký Chi Tiết Thực Thi
 
-*(Sẽ được cập nhật sau mỗi Unit)*
+### 🔹 [2026-09-29T23:55:00+07:00] - Unit U-01: TabGeneralInfo Integration with MediaPickerModal
+* **Thay đổi chính:**
+  - `apps/admin/app/cars/[slug]/components/TabGeneralInfo.tsx`: Tích hợp hộp thoại `MediaPickerModal` vào Tab Thông tin cơ bản dòng xe.
+  - Thêm nút `Button` "Chọn Từ Thư Viện / Tải Mới" bên cạnh nhãn trường `Ảnh Đại Diện Xe (URL)`.
+  - Thêm nút xóa nhanh `X` bằng `Button` ghost icon khi đã có đường link ảnh.
+  - Thêm khung preview thumbnail 16:9 với viền kính mờ bo góc `rounded-xl border-slate-800 bg-slate-950/60`, hỗ trợ nút "Xem ảnh" mở tab mới và fallback ẩn ảnh nếu URL lỗi.
+  - Kết nối `MediaPickerModal` (`mode="single"`): hỗ trợ chọn từ 192+ ảnh trong kho thư viện hoặc kéo thả upload ảnh mới trực tiếp từ máy tính lên Cloudinary.
+* **Kết quả Verify:**
+  - Type-check `@cardealer/admin`: **Passed (0 errors)**.
+  - Monorepo-wide type-check: **8/8 packages passed (0 errors)**.
