@@ -149,46 +149,38 @@
 ---
 🎉 **KẾT THÚC LÁT CẮT US-02:** Hoàn thành 100% Admin Media Library Portal (`/media`), Drag & Drop, Concurrency Queue, Media Grid 4-State, Detail Drawer, Filter Bar, Batch Actions, Navigation RBAC & Automated Verification.
 
+---
+
+## 5. Micro-Roadmap & Step-Gate Units (Lát cắt US-03: Reusable Media Picker & System-Wide Integration)
+
+| Unit ID | File(s) Tác Động | Risk Tier | Coupled Unit? | Trạng Thái | Commit Hash | Mục Tiêu & Mô Tả Đơn Vị |
+| :---: | :--- | :---: | :---: | :---: | :---: | :--- |
+| **U-10** | • `apps/admin/app/components/MediaPickerModal.tsx` | 🟠 MEDIUM | **Có (Picker Component)** | ✅ COMPLETED | `Pending` | Xây dựng Modal dùng chung `MediaPickerModal` hỗ trợ 2 Tabs (Thư viện có sẵn + Tải ảnh mới), chế độ `mode="single"` & `mode="multiple"`, 100% `@cardealer/ui`. |
+| **U-11** | • `apps/admin/app/cars/components/CarFormModal.tsx` | 🟠 MEDIUM | **Có (Car Form)** | PENDING | - | Tích hợp `MediaPickerModal` vào Form Quản lý Dòng xe: Thay thế việc gõ URL thủ công bằng chọn ảnh trực tiếp từ thư viện kèm preview thumbnail. |
+| **U-12** | • `apps/admin/app/posts/[id]/page.tsx` | 🟠 MEDIUM | **Có (Post Editor)** | PENDING | - | Tích hợp `MediaPickerModal` vào Trình soạn thảo Bài viết: Chọn ảnh bìa (Featured Image), chèn ảnh đơn (Single Image) và thư viện ảnh lướt (Image Gallery). |
+| **U-13** | • `apps/admin/app/profile/page.tsx` | 🟡 LOW | **Không** | PENDING | - | Tích hợp `MediaPickerModal` vào Hồ sơ cá nhân: Cho phép chọn ảnh đại diện Avatar từ kho ảnh. |
+| **U-14** | • `scripts/verify_admin_image_library.sh` | 🟠 MEDIUM | **Không** | PENDING | - | Nâng cấp kịch bản kiểm chứng tự động kiểm tra tích hợp US-03, chạy toàn bộ test suite và xác nhận exit code 0 cho toàn bộ tính năng Admin Image Library. |
 
 ---
 
-## 4. Nhật Ký Chi Tiết Thực Thi US-02
+## 6. Nhật Ký Chi Tiết Thực Thi US-03
 
-### 🔹 [2026-09-29T02:02:00+07:00] - Unit U-06: Client Media Service & Concurrency Queue Hooks
+### 🔹 [2026-09-29T17:58:00+07:00] - Unit U-10: Reusable MediaPickerModal Component
 * **Thay đổi chính:**
-  - `apps/admin/lib/api-client.ts`: Nâng cấp `HttpClient.request` tự động nhận diện `body instanceof FormData` (không ép `application/json` và không `JSON.stringify`), hỗ trợ upload 100% bằng native `fetch()`. Loại bỏ hoàn toàn `XMLHttpRequest` khỏi toàn bộ codebase, đảm bảo an toàn tuyệt đối cho SSR (Server Components) và zero external dependencies (không cần axios).
-  - `apps/admin/services/media.service.ts`: Khởi tạo Typed Media Service kết nối REST API `/api/admin/media/*` qua `apiClient.post` thuần túy, CRUD media và batch delete.
-  - `apps/admin/hooks/use-media-uploader.ts`: Custom hook điều phối Concurrency Queue (giới hạn tối đa 3 file upload song song), quản lý tiến trình indeterminate loading mượt mà (`pending` ➡️ `uploading` ➡️ `success`/`error`), hỗ trợ retry và cleanup.
-  - `apps/admin/hooks/use-media-library.ts`: Custom hook quản lý kho ảnh, bao gồm debounce search (350ms), lọc định dạng, sắp xếp, phân trang, selection set (chọn nhiều ảnh) và xóa ảnh (đơn lẻ / batch).
-* **Kết quả Verify:**
-  - Type-check `@cardealer/admin`: **Passed (0 errors)**.
-  - Project-wide type-check: **8/8 packages passed (0 errors)**.
-  - Verification Script `./scripts/verify_admin_image_library.sh`: **EXIT 0 (100% PASS)**.
-  - Code Quality: 100% Named Exports, không nuốt lỗi `try/catch`, 100% fetch đồng nhất.
-
-### 🔹 [2026-09-29T07:37:00+07:00] - Unit U-07: Media Library Presentation Primitives
-* **Thay đổi chính:**
-  - `apps/admin/app/media/components/MediaCard.tsx`: Thẻ hiển thị ảnh bo góc sắc nét, badge định dạng, checkbox chọn nhiều ảnh, fallback khi ảnh hỏng và component `MediaCardSkeleton`.
-  - `apps/admin/app/media/components/MediaDropzone.tsx`: Vùng kéo thả tệp tải lên mượt mà với visual cues, kiểm tra MIME type whitelist và dung lượng tối đa 10MB/ảnh.
-  - `apps/admin/app/media/components/MediaUploadQueue.tsx`: Widget khay hàng đợi tải lên đa luồng (tối đa 3 task), indeterminate loading spinner, hỗ trợ retry từng file lỗi và dọn dẹp task hoàn tất.
-  - `apps/admin/app/media/components/MediaDetailDrawer.tsx`: Drawer trượt hiển thị ảnh to, thông số kỹ thuật (kích thước px, dung lượng, format, ngày tải), nút copy CDN URL 1-click, chỉnh sửa Alt Text SEO và xóa ảnh có bước xác nhận.
-  - `apps/admin/app/media/components/MediaFilterBar.tsx`: Thanh công cụ tìm kiếm debounce, lọc format (WEBP, PNG, JPG, SVG, GIF), sắp xếp (mới/cũ/size/tên) và nút làm mới dữ liệu.
-  - `apps/admin/app/media/components/MediaBatchActions.tsx`: Thanh tác vụ nổi glassmorphism khi chọn nhiều ảnh (Chọn tất cả trang, Bỏ chọn, Xóa hàng loạt bảo vệ).
-  - `apps/admin/app/media/components/index.ts`: Barrel export 100% Named Exports.
-  - **Zero Raw Controls:** Toàn bộ button, input, select trong `media/components` đã được chuẩn hóa sang `@cardealer/ui` (`Button`, `Input`, `Select`).
+  - `apps/admin/app/components/MediaPickerModal.tsx`: Xây dựng hộp thoại chọn hình ảnh tái sử dụng toàn hệ thống bọc trong `Modal` (@cardealer/ui) với độ rộng `max-w-4xl`.
+  - **2 Tabs Chuyển Đổi Trực Quan:**
+    1. **Tab Thư Viện Ảnh (Library):** Tích hợp tìm kiếm realtime, lọc định dạng ảnh (WEBP, PNG, JPG, SVG, GIF), làm mới, lưới ảnh responsive (2-5 cột) kèm Shimmer Skeletons, empty state thông minh, và thanh phân trang mini.
+    2. **Tab Tải Ảnh Mới (Upload):** Nhúng `MediaDropzone` và kết nối `useMediaUploader`, tự động đưa ảnh mới tải lên vào danh sách đã chọn và chuyển về Tab Thư Viện.
+  - **2 Chế Độ Linh Hoạt:**
+    - `mode="single"`: Chọn 1 ảnh duy nhất (hỗ trợ double-click để chọn và đóng modal ngay).
+    - `mode="multiple"`: Chọn nhiều ảnh (dành cho Gallery, Albums).
+  - **Design System & Code Quality:** 100% Named Exports, Zero Raw HTML Controls (sử dụng hoàn toàn `Button`, `Input`, `Select` từ `@cardealer/ui`).
 * **Kết quả Verify:**
   - Type-check `@cardealer/admin`: **Passed (0 errors)**.
   - Project-wide type-check: **8/8 packages passed (0 errors)**.
   - Verification Script `./scripts/verify_admin_image_library.sh`: **EXIT 0 (100% PASS)**.
 
-### 🔹 [2026-09-29T10:45:00+07:00] - Unit U-08: Media Page Controller & AdminShell Navigation
-* **Thay đổi chính:**
-  - `apps/admin/app/media/page.tsx`: Xây dựng Page Controller hoàn chỉnh kết nối `useMediaLibrary`, `useMediaUploader` với toàn bộ Presentation Components. Triển khai chuẩn 4-State UI (Loading 24 Shimmer Skeletons, Empty State thông minh, Error State không nuốt lỗi, Responsive Media Grid 2-6 cột). Tích hợp RBAC Permissions (`media:read`, `media:write`, `media:delete`), thanh phân trang (Pagination controls), Floating Batch Actions bar, và Concurrency Queue widget. 100% UI controls sử dụng `@cardealer/ui` (Zero raw HTML `<button>`, `<input>`).
-  - `apps/admin/app/components/AdminShell.tsx`: Bổ sung mục navigation "Thư Viện Ảnh" (`/media`, icon `Image`, quyền RBAC `media:read`).
-* **Kết quả Verify:**
-  - Type-check `@cardealer/admin`: **Passed (0 errors)**.
-  - Project-wide type-check: **8/8 packages passed (0 errors)**.
-  - Verification Script `./scripts/verify_admin_image_library.sh`: **EXIT 0 (100% PASS)**.
+
 
 
 
