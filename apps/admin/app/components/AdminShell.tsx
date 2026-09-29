@@ -12,6 +12,7 @@ import {
   UserCheck,
   User as UserIcon,
   FolderTree,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { clientEnv } from '@cardealer/env';
 import { AdminShell as SharedAdminShell, type AdminShellNavItem } from '@cardealer/ui';
@@ -52,6 +53,13 @@ export default function AdminShell({ children }: AdminShellProps) {
       icon: <Palette size={18} />,
       permission: 'cars:write',
       active: pathname.startsWith('/colors'),
+    },
+    {
+      label: 'Thư Viện Ảnh',
+      href: '/media',
+      icon: <ImageIcon size={18} />,
+      permission: 'media:read',
+      active: pathname.startsWith('/media'),
     },
     {
       label: 'Tài Khoản Nhân Sự',
