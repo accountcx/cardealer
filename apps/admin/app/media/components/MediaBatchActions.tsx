@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Trash2, X, CheckSquare, Loader2, AlertCircle } from 'lucide-react';
+import { Trash2, X, CheckSquare } from 'lucide-react';
+import { Button } from '@cardealer/ui';
 
 // 🧠 Mental Model: Thanh tác vụ nổi khi người dùng chọn nhiều ảnh (Batch Actions Bar).
 // - Nổi cố định ở đáy màn hình với hiệu ứng Glassmorphism hiện đại.
@@ -54,56 +55,55 @@ export function MediaBatchActions({
         {/* Select All / Deselect buttons */}
         <div className="flex items-center gap-1.5">
           {!isAllSelected && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={onSelectAll}
-              className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white"
+              leftIcon={<CheckSquare className="h-3.5 w-3.5" />}
+              className="text-slate-300 hover:text-white"
             >
-              <CheckSquare className="h-3.5 w-3.5" />
               Chọn {totalPageItems} ảnh
-            </button>
+            </Button>
           )}
 
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={onClearSelection}
-            className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white"
+            leftIcon={<X className="h-3.5 w-3.5" />}
+            className="text-slate-300 hover:text-white"
           >
-            <X className="h-3.5 w-3.5" />
             Bỏ chọn
-          </button>
+          </Button>
         </div>
 
         {/* Delete Action */}
         <div className="flex items-center gap-2 border-l border-slate-700/60 pl-3">
-          <button
+          <Button
             type="button"
+            variant={showConfirm ? 'danger' : 'outline'}
+            size="sm"
             onClick={handleDeleteClick}
-            disabled={isDeleting}
-            className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ${
-              showConfirm
-                ? 'bg-rose-600 text-white hover:bg-rose-700'
-                : 'bg-rose-500/20 text-rose-300 hover:bg-rose-500/30'
-            }`}
+            isLoading={isDeleting}
+            leftIcon={<Trash2 className="h-3.5 w-3.5" />}
           >
-            {isDeleting ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Trash2 className="h-3.5 w-3.5" />
-            )}
             {showConfirm
               ? `Xác nhận xóa ${selectedCount} ảnh?`
               : `Xóa ${selectedCount} ảnh`}
-          </button>
+          </Button>
 
           {showConfirm && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => setShowConfirm(false)}
-              className="rounded-xl px-2 py-1.5 text-xs text-slate-400 hover:text-white"
+              className="text-slate-400 hover:text-white"
             >
               Hủy
-            </button>
+            </Button>
           )}
         </div>
       </div>

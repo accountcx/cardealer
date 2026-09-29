@@ -2,6 +2,7 @@
 
 import React, { useRef, useState, useCallback } from 'react';
 import { UploadCloud, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { Button } from '@cardealer/ui';
 
 // 🧠 Mental Model: Vùng kéo thả tệp tải lên (Drag & Drop Zone).
 // - Lắng nghe sự kiện dragover, dragleave, drop với visual feedback mượt mà.
@@ -142,14 +143,16 @@ export function MediaDropzone({
           </p>
         </div>
 
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           disabled={disabled}
-          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-xs ring-1 ring-slate-200 transition hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700 dark:hover:bg-slate-750"
+          leftIcon={<ImageIcon className="h-3.5 w-3.5 text-indigo-500" />}
+          className="mt-4"
         >
-          <ImageIcon className="h-3.5 w-3.5 text-indigo-500" />
           Chọn Tệp Từ Thiết Bị
-        </button>
+        </Button>
       </div>
 
       {warning && (

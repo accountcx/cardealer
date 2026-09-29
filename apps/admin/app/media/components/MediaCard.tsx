@@ -1,14 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Check, ImageOff, Eye, ExternalLink } from 'lucide-react';
+import { Check, ImageOff, Eye } from 'lucide-react';
+import { Button } from '@cardealer/ui';
 import type { MediaItem } from '@cardealer/types';
 
 // 🧠 Mental Model: Thẻ ảnh đơn lẻ trong Thư Viện Media.
+// - Dùng Button chuẩn từ @cardealer/ui cho tương tác click xem chi tiết (Accessibility & Design System chuẩn).
+// - Checkbox độc lập bên ngoài để phục vụ chọn nhiều ảnh (Batch operations) không bị xung đột event.
 // - Hiển thị ảnh vuông sắc nét kèm Image Fallback nếu ảnh hỏng.
-// - Checkbox độc lập để phục vụ chọn nhiều ảnh (Batch operations).
 // - Badge định dạng (WEBP, PNG, JPG...) và dung lượng tệp.
-// - Bấm vào thẻ để mở Drawer xem chi tiết và chỉnh sửa Alt Text.
 
 export interface MediaCardProps {
   media: MediaItem;
@@ -36,86 +37,92 @@ export function MediaCard({
 
   return (
     <div
-      onClick={() => onClick?.(media)}
-      className={`group relative flex flex-col overflow-hidden rounded-2xl border bg-white shadow-xs transition-all duration-200 hover:-translate-y-1 hover:shadow-md dark:bg-slate-900 cursor-pointer ${
+      className={`group relative flex flex-col overflow-hidden rounded-2xl border bg-white shadow-xs transition-all duration-200 hover:-translate-y-1 hover:shadow-md dark:bg-slate-900 ${
         isSelected
           ? 'border-indigo-600 ring-2 ring-indigo-500/30 dark:border-indigo-500'
           : 'border-slate-200/80 hover:border-slate-300 dark:border-slate-800 dark:hover:border-slate-700'
       }`}
     >
-      {/* Thumbnail Container */}
-      <div className="relative aspect-4/3 w-full overflow-hidden bg-slate-100 dark:bg-slate-800/60">
-        {hasError ? (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 text-slate-400 dark:text-slate-500">
-            <ImageOff className="h-7 w-7 stroke-1" />
-            <span className="text-[11px] font-medium">Không thể tải ảnh</span>
-          </div>
-        ) : (
-          <img
-            src={media.url}
-            alt={media.altText || media.filename}
-            onError={() => setHasError(true)}
-            loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
-        )}
+      {/* Checkbox chọn ảnh (Top Left) - Nút độc lập tách biệt để không lồng vào Button chính */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleSelect?.(media.id, e);
+        }}
+        aria-label={isSelected ? 'Bỏ chọn ảnh' : 'Chọn ảnh'}
+        className={`absolute top-2.5 left-2.5 z-20 flex h-6 w-6 items-center justify-center rounded-lg border transition-all cursor-pointer ${
+          isSelected
+            ? 'border-indigo-600 bg-indigo-600 text-white shadow-xs'
+            : 'border-slate-300/80 bg-white/90 text-transparent hover:border-indigo-400 group-hover:opacity-100 opacity-70 backdrop-blur-xs dark:border-slate-700 dark:bg-slate-900/90'
+        }`}
+      >
+        <Check className="h-3.5 w-3.5 stroke-[2.5]" />
+      </button>
 
-        {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-slate-950/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100 dark:bg-slate-950/40" />
-
-        {/* Checkbox chọn ảnh (Top Left) */}
-        <div
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleSelect?.(media.id, e);
-          }}
-          className={`absolute top-2.5 left-2.5 z-10 flex h-6 w-6 items-center justify-center rounded-lg border transition-all ${
-            isSelected
-              ? 'border-indigo-600 bg-indigo-600 text-white shadow-xs'
-              : 'border-slate-300/80 bg-white/90 text-transparent hover:border-indigo-400 group-hover:opacity-100 opacity-70 backdrop-blur-xs dark:border-slate-700 dark:bg-slate-900/90'
-          }`}
-          role="checkbox"
-          aria-checked={isSelected}
-          title={isSelected ? 'Bỏ chọn' : 'Chọn ảnh'}
-        >
-          <Check className="h-3.5 w-3.5 stroke-[2.5]" />
-        </div>
-
-        {/* Format Badge (Top Right) */}
-        <div className="absolute top-2.5 right-2.5 z-10">
-          <span className="inline-flex items-center rounded-md bg-slate-900/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white backdrop-blur-xs">
-            {media.format || media.mimeType.split('/')[1] || 'IMG'}
-          </span>
-        </div>
-
-        {/* Quick View Icon (Center on hover) */}
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900/80 px-3 py-1.5 text-xs font-medium text-white shadow-lg backdrop-blur-xs">
-            <Eye className="h-3.5 w-3.5" />
-            Chi tiết
-          </span>
-        </div>
+      {/* Format Badge (Top Right) */}
+      <div className="absolute top-2.5 right-2.5 z-10 pointer-events-none">
+        <span className="inline-flex items-center rounded-md bg-slate-900/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white backdrop-blur-xs">
+          {media.format || media.mimeType.split('/')[1] || 'IMG'}
+        </span>
       </div>
 
-      {/* Info Container */}
-      <div className="flex flex-1 flex-col justify-between p-3">
-        <p
-          className="truncate text-xs font-medium text-slate-800 dark:text-slate-200"
-          title={media.filename}
-        >
-          {media.filename}
-        </p>
-        <div className="mt-1.5 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
-          <span>{formatBytes(media.fileSize)}</span>
-          {media.width && media.height ? (
-            <span>
-              {media.width}×{media.height}
-            </span>
+      {/* Button chính kích hoạt xem chi tiết sử dụng Button chuẩn từ @cardealer/ui */}
+      <Button
+        type="button"
+        variant="ghost"
+        onClick={() => onClick?.(media)}
+        className="h-full w-full p-0 flex flex-col items-stretch justify-start rounded-none text-left font-normal hover:bg-transparent focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer"
+      >
+        {/* Thumbnail Container */}
+        <div className="relative aspect-4/3 w-full overflow-hidden bg-slate-100 dark:bg-slate-800/60">
+          {hasError ? (
+            <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 text-slate-400 dark:text-slate-500">
+              <ImageOff className="h-7 w-7 stroke-1" />
+              <span className="text-[11px] font-medium">Không thể tải ảnh</span>
+            </div>
           ) : (
-            <span className="capitalize">{media.folder || 'media'}</span>
+            <img
+              src={media.url}
+              alt={media.altText || media.filename}
+              onError={() => setHasError(true)}
+              loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
           )}
+
+          {/* Hover Overlay */}
+          <div className="absolute inset-0 bg-slate-950/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100 dark:bg-slate-950/40" />
+
+          {/* Quick View Icon */}
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900/80 px-3 py-1.5 text-xs font-medium text-white shadow-lg backdrop-blur-xs">
+              <Eye className="h-3.5 w-3.5" />
+              Chi tiết
+            </span>
+          </div>
         </div>
-      </div>
+
+        {/* Info Container */}
+        <div className="flex flex-1 flex-col justify-between p-3 w-full">
+          <p
+            className="truncate text-xs font-medium text-slate-800 dark:text-slate-200"
+            title={media.filename}
+          >
+            {media.filename}
+          </p>
+          <div className="mt-1.5 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+            <span>{formatBytes(media.fileSize)}</span>
+            {media.width && media.height ? (
+              <span>
+                {media.width}×{media.height}
+              </span>
+            ) : (
+              <span className="capitalize">{media.folder || 'media'}</span>
+            )}
+          </div>
+        </div>
+      </Button>
     </div>
   );
 }

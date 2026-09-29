@@ -15,6 +15,7 @@ import {
   HardDrive,
   Maximize2,
 } from 'lucide-react';
+import { Button } from '@cardealer/ui';
 import type { MediaItem } from '@cardealer/types';
 import { formatBytes } from './MediaCard';
 
@@ -151,27 +152,16 @@ export function MediaDetailDrawer({
                   value={media.url}
                   className="w-full truncate rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 focus:outline-none dark:border-slate-800 dark:bg-slate-850 dark:text-slate-300"
                 />
-                <button
+                <Button
                   type="button"
+                  size="sm"
+                  variant={isCopied ? 'success' : 'primary'}
                   onClick={handleCopyUrl}
-                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition ${
-                    isCopied
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-xs'
-                  }`}
+                  leftIcon={isCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  className="shrink-0"
                 >
-                  {isCopied ? (
-                    <>
-                      <Check className="h-3.5 w-3.5" />
-                      Đã chép
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-3.5 w-3.5" />
-                      Sao chép
-                    </>
-                  )}
-                </button>
+                  {isCopied ? 'Đã chép' : 'Sao chép'}
+                </Button>
               </div>
             </div>
 
@@ -188,19 +178,18 @@ export function MediaDetailDrawer({
                   onChange={(e) => setAltText(e.target.value)}
                   className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                 />
-                <button
+                <Button
                   type="button"
+                  size="sm"
+                  variant="secondary"
                   disabled={isSaving || altText === (media.altText || '')}
+                  isLoading={isSaving}
                   onClick={handleSaveAltText}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-slate-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-slate-800 disabled:opacity-40 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+                  leftIcon={<Save className="h-3.5 w-3.5" />}
+                  className="shrink-0"
                 >
-                  {isSaving ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Save className="h-3.5 w-3.5" />
-                  )}
                   Lưu
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -261,31 +250,25 @@ export function MediaDetailDrawer({
 
           {/* Footer Actions */}
           <div className="border-t border-slate-200 p-4 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-850/60 flex items-center justify-between">
-            <button
+            <Button
               type="button"
+              variant={confirmDelete ? 'danger' : 'outline'}
+              size="sm"
               onClick={handleDelete}
-              disabled={isDeleting}
-              className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-semibold transition ${
-                confirmDelete
-                  ? 'bg-rose-600 text-white hover:bg-rose-700'
-                  : 'text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40'
-              }`}
+              isLoading={isDeleting}
+              leftIcon={<Trash2 className="h-4 w-4" />}
             >
-              {isDeleting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Trash2 className="h-4 w-4" />
-              )}
               {confirmDelete ? 'Xác nhận xóa vĩnh viễn?' : 'Xóa ảnh này'}
-            </button>
+            </Button>
 
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={onClose}
-              className="rounded-xl px-4 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-200/60 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               Đóng
-            </button>
+            </Button>
           </div>
         </div>
       </div>
