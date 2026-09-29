@@ -46,7 +46,7 @@ export function MediaUploadQueue({
   return (
     <div className="fixed bottom-5 right-5 z-40 w-96 max-w-[calc(100vw-2.5rem)] overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-2xl backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/95 transition-all duration-300">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-slate-200/80 bg-slate-50/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-850/80">
+      <div className="flex items-center justify-between border-b border-slate-200/80 bg-slate-50/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/80">
         <div className="flex items-center gap-2">
           {activeCount > 0 ? (
             <Loader2 className="h-4 w-4 animate-spin text-indigo-600 dark:text-indigo-400" />
