@@ -6,8 +6,8 @@ import type { MediaItem, UploadTask } from '@cardealer/types';
 
 // 🧠 Mental Model: Concurrency Queue Hook cho việc Upload nhiều ảnh đồng thời.
 // - Khống chế tối đa MAX_CONCURRENT_UPLOADS (3 luồng) song song để tránh nghẽn bandwidth hoặc Cloudinary rate limit.
-// - Cập nhật tiến trình % thời gian thực (0% -> 100%) cho từng tệp.
-// - Cung cấp khả năng Retry cho từng file lỗi và thông báo callback khi hoàn tất.
+// - Vận hành 100% bằng fetch thuần túy thông qua mediaService.uploadSingleMedia.
+// - Quản lý trạng thái đa tầng: pending, uploading (indeterminate state), success, error kèm khả năng Retry.
 
 const MAX_CONCURRENT_UPLOADS = 3;
 
@@ -45,22 +45,14 @@ export function useMediaUploader(options?: UseMediaUploaderOptions) {
 
       activeCountRef.current += 1;
 
-      // Cập nhật trạng thái bắt đầu upload
+      // Cập nhật trạng thái bắt đầu upload (Indeterminate Loading)
       setTasks((prev) =>
         prev.map((t) =>
-          t.id === nextTask.id ? { ...t, status: 'uploading', progress: 5 } : t
+          t.id === nextTask.id ? { ...t, status: 'uploading', progress: 50 } : t
         )
       );
 
-      uploadSingleMedia(
-        nextTask.file,
-        undefined,
-        (progress) => {
-          setTasks((prev) =>
-            prev.map((t) => (t.id === nextTask.id ? { ...t, progress } : t))
-          );
-        }
-      )
+      uploadSingleMedia(nextTask.file)
         .then((mediaItem) => {
           setTasks((prev) =>
             prev.map((t) =>

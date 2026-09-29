@@ -7,8 +7,8 @@ import type {
 } from '@cardealer/types';
 
 // 🧠 Mental Model: Typed Media Service cho Admin Image Library (apps/admin).
-// Tương tác trực tiếp với API namespace /api/admin/media/* thông qua apiClient.
-// 1. Upload ảnh đơn qua apiClient.upload (bọc XHR tiến trình % + 401 Interceptor + typed AppError).
+// Tương tác trực tiếp với API namespace /api/admin/media/* thông qua apiClient thuần fetch.
+// 1. Upload ảnh đơn qua apiClient.post với FormData trực tiếp.
 // 2. Fetch danh sách ảnh phân trang, lọc và tìm kiếm theo DTOs chuẩn từ @cardealer/types.
 // 3. Update Alt Text và xóa ảnh (đơn lẻ / batch).
 
@@ -46,12 +46,11 @@ export async function batchDeleteMedia(
 }
 
 /**
- * Tải lên một tệp ảnh đơn lẻ có lắng nghe tiến trình % (thông qua apiClient.upload)
+ * Tải lên một tệp ảnh đơn lẻ qua fetch thuần túy (FormData)
  */
 export async function uploadSingleMedia(
   file: File,
-  altText?: string,
-  onProgress?: (percent: number) => void
+  altText?: string
 ): Promise<MediaItem> {
   const formData = new FormData();
   formData.append('file', file);
@@ -59,7 +58,7 @@ export async function uploadSingleMedia(
     formData.append('altText', altText);
   }
 
-  return apiClient.upload<MediaItem>('/api/admin/media/upload', formData, onProgress);
+  return apiClient.post<MediaItem>('/api/admin/media/upload', formData);
 }
 
 export const mediaService = {

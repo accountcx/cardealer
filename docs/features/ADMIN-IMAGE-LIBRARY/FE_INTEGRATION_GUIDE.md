@@ -203,84 +203,172 @@ export const MediaPickerModal = ({
 ## 4. Hook Điều Phối Tải Lên Hàng Đợi (Concurrency Queue Hook)
 
 Tệp: `apps/admin/hooks/use-media-uploader.ts` (100% Named Export)
+- **Kiến trúc HTTP:** 100% Native `fetch()` thuần túy thông qua `mediaService.uploadSingleMedia` (tự động nhận diện `FormData`, hỗ trợ SSR, không dùng `XMLHttpRequest`).
+- **Trạng thái UI:** Indeterminate Loading State (Spinner / Shimmer Pulse) kèm các trạng thái trực quan: `pending` (chờ) ➡️ `uploading` (đang tải) ➡️ `success` (xong) / `error` (thất bại kèm Retry).
 
 ```typescript
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { uploadSingleMedia } from '../services/media.service';
-import type { MediaItem, UploadTask } from '../types/media.types';
+import type { MediaItem, UploadTask } from '@cardealer/types';
 
 const MAX_CONCURRENT_UPLOADS = 3;
 
-export const useMediaUploader = (onSuccessSingle?: (media: MediaItem) => void) => {
+export interface UseMediaUploaderOptions {
+  onSuccessSingle?: (media: MediaItem) => void;
+  onCompleteAll?: () => void;
+}
+
+export function useMediaUploader(options?: UseMediaUploaderOptions) {
+  const { onSuccessSingle, onCompleteAll } = options || {};
+
   const [tasks, setTasks] = useState<UploadTask[]>([]);
-  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const activeCountRef = useRef(0);
+  const queueRef = useRef<UploadTask[]>([]);
 
-  const processQueue = useCallback(async (initialTasks: UploadTask[]) => {
-    setIsUploading(true);
-    const queue = [...initialTasks];
-    let active = 0;
+  const onSuccessSingleRef = useRef(onSuccessSingle);
+  onSuccessSingleRef.current = onSuccessSingle;
 
-    const runNext = async () => {
-      if (queue.length === 0 && active === 0) {
-        setIsUploading(false);
-        return;
-      }
+  const onCompleteAllRef = useRef(onCompleteAll);
+  onCompleteAllRef.current = onCompleteAll;
 
-      while (active < MAX_CONCURRENT_UPLOADS && queue.length > 0) {
-        const task = queue.shift()!;
-        active++;
+  const isUploading = tasks.some(
+    (t) => t.status === 'uploading' || t.status === 'pending'
+  );
 
-        // Update state to uploading
-        setTasks((prev) =>
-          prev.map((t) => (t.id === task.id ? { ...t, status: 'uploading', progress: 10 } : t))
-        );
+  const processNext = useCallback(() => {
+    while (
+      activeCountRef.current < MAX_CONCURRENT_UPLOADS &&
+      queueRef.current.length > 0
+    ) {
+      const nextTask = queueRef.current.shift();
+      if (!nextTask) break;
 
-        uploadSingleMedia(task.file, (progress) => {
+      activeCountRef.current += 1;
+
+      // Cập nhật trạng thái bắt đầu upload (Indeterminate loading)
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === nextTask.id ? { ...t, status: 'uploading', progress: 50 } : t
+        )
+      );
+
+      uploadSingleMedia(nextTask.file)
+        .then((mediaItem) => {
           setTasks((prev) =>
-            prev.map((t) => (t.id === task.id ? { ...t, progress } : t))
+            prev.map((t) =>
+              t.id === nextTask.id
+                ? {
+                    ...t,
+                    status: 'success',
+                    progress: 100,
+                    result: mediaItem,
+                    errorMessage: undefined,
+                  }
+                : t
+            )
+          );
+          if (onSuccessSingleRef.current) {
+            onSuccessSingleRef.current(mediaItem);
+          }
+        })
+        .catch((error: unknown) => {
+          const message =
+            error instanceof Error ? error.message : 'Tải lên thất bại';
+          setTasks((prev) =>
+            prev.map((t) =>
+              t.id === nextTask.id
+                ? { ...t, status: 'error', errorMessage: message }
+                : t
+            )
           );
         })
-          .then((mediaItem) => {
-            setTasks((prev) =>
-              prev.map((t) =>
-                t.id === task.id ? { ...t, status: 'success', progress: 100, result: mediaItem } : t
-              )
-            );
-            if (onSuccessSingle) onSuccessSingle(mediaItem);
-          })
-          .catch((err) => {
-            setTasks((prev) =>
-              prev.map((t) =>
-                t.id === task.id ? { ...t, status: 'error', errorMessage: err.message } : t
-              )
-            );
-          })
-          .finally(() => {
-            active--;
-            runNext();
-          });
-      }
+        .finally(() => {
+          activeCountRef.current = Math.max(0, activeCountRef.current - 1);
+
+          if (activeCountRef.current === 0 && queueRef.current.length === 0) {
+            if (onCompleteAllRef.current) {
+              onCompleteAllRef.current();
+            }
+          }
+
+          processNext();
+        });
+    }
+  }, []);
+
+  const addFilesToQueue = useCallback(
+    (files: File[]) => {
+      if (!files.length) return;
+
+      const newTasks: UploadTask[] = files.map((file) => ({
+        id:
+          typeof crypto !== 'undefined' && crypto.randomUUID
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        file,
+        progress: 0,
+        status: 'pending',
+      }));
+
+      queueRef.current.push(...newTasks);
+      setTasks((prev) => [...prev, ...newTasks]);
+      processNext();
+    },
+    [processNext]
+  );
+
+  const retryTask = useCallback(
+    (taskId: string) => {
+      setTasks((prev) => {
+        const target = prev.find((t) => t.id === taskId);
+        if (!target) return prev;
+
+        const updatedTask: UploadTask = {
+          ...target,
+          status: 'pending',
+          progress: 0,
+          errorMessage: undefined,
+        };
+
+        queueRef.current.push(updatedTask);
+        setTimeout(() => processNext(), 0);
+        return prev.map((t) => (t.id === taskId ? updatedTask : t));
+      });
+    },
+    [processNext]
+  );
+
+  const removeTask = useCallback((taskId: string) => {
+    queueRef.current = queueRef.current.filter((t) => t.id !== taskId);
+    setTasks((prev) => prev.filter((t) => t.id !== taskId));
+  }, []);
+
+  const clearCompletedTasks = useCallback(() => {
+    setTasks((prev) => prev.filter((t) => t.status !== 'success'));
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      queueRef.current = [];
+      activeCountRef.current = 0;
     };
+  }, []);
 
-    runNext();
-  }, [onSuccessSingle]);
-
-  const addFilesToQueue = useCallback((files: File[]) => {
-    const newTasks: UploadTask[] = files.map((file) => ({
-      id: crypto.randomUUID(),
-      file,
-      progress: 0,
-      status: 'pending',
-    }));
-    setTasks((prev) => [...prev, ...newTasks]);
-    processQueue(newTasks);
-  }, [processQueue]);
+  const activeCount = tasks.filter((t) => t.status === 'uploading').length;
+  const completedCount = tasks.filter((t) => t.status === 'success').length;
+  const failedCount = tasks.filter((t) => t.status === 'error').length;
 
   return {
     tasks,
     isUploading,
+    activeCount,
+    completedCount,
+    failedCount,
     addFilesToQueue,
-    clearCompletedTasks: () => setTasks((prev) => prev.filter((t) => t.status !== 'success')),
+    retryTask,
+    removeTask,
+    clearCompletedTasks,
   };
-};
+}
 ```
+

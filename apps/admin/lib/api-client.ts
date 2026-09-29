@@ -34,7 +34,8 @@ interface RequestOptions extends Omit<RequestInit, 'body'> {
   params?: Record<string, string | number | boolean | undefined>;
 }
 
-// 🧠 Mental Model: Centralized HTTP Client bọc quanh fetch với baseURL từ clientEnv, credentials và Interceptor bắt lỗi 401 toàn cục
+// 🧠 Mental Model: Centralized HTTP Client thuần fetch với baseURL từ clientEnv, credentials và Interceptor bắt lỗi 401 toàn cục.
+// Hỗ trợ tự động cả JSON Payload và FormData (tải tệp) mà không cần dùng đến XMLHttpRequest hay thư viện ngoài.
 class HttpClient {
   private readonly baseUrl: string;
 
@@ -64,12 +65,24 @@ class HttpClient {
     return url.toString();
   }
 
+  private handleUnauthorized(): void {
+    if (typeof window !== 'undefined') {
+      // 🧠 Xóa cookie token để chống vòng lặp chuyển hướng giữa Client và Next.js Server Middleware
+      document.cookie = 'admin_token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+      }
+    }
+  }
+
   public async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
     const { body, params, headers, ...restOptions } = options;
     const url = this.buildUrl(endpoint, params);
 
+    const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+
     const requestHeaders: Record<string, string> = {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(headers as Record<string, string>),
     };
 
@@ -79,7 +92,11 @@ class HttpClient {
         ...restOptions,
         headers: requestHeaders,
         credentials: 'include',
-        body: body !== undefined ? JSON.stringify(body) : undefined,
+        body: isFormData
+          ? (body as FormData)
+          : body !== undefined
+            ? JSON.stringify(body)
+            : undefined,
       });
     } catch (networkError) {
       throw new AppError(
@@ -116,87 +133,6 @@ class HttpClient {
     }
 
     return json.data;
-  }
-
-  private handleUnauthorized(): void {
-    if (typeof window !== 'undefined') {
-      // 🧠 Xóa cookie token để chống vòng lặp chuyển hướng giữa Client và Next.js Server Middleware
-      document.cookie = 'admin_token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-      if (!window.location.pathname.startsWith('/login')) {
-        window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
-      }
-    }
-  }
-
-  /**
-   * Tải tệp lên máy chủ với FormData và lắng nghe tiến trình % thời gian thực (XHR)
-   */
-  public upload<T>(
-    endpoint: string,
-    formData: FormData,
-    onProgress?: (percent: number) => void
-  ): Promise<T> {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      const url = this.buildUrl(endpoint);
-
-      xhr.open('POST', url, true);
-      xhr.withCredentials = true;
-
-      if (onProgress && xhr.upload) {
-        xhr.upload.onprogress = (event) => {
-          if (event.lengthComputable) {
-            const percent = Math.round((event.loaded / event.total) * 100);
-            onProgress(percent);
-          }
-        };
-      }
-
-      xhr.onload = () => {
-        if (xhr.status === 401) {
-          this.handleUnauthorized();
-        }
-
-        let json: ApiSuccessResponse<T> | ApiErrorResponse;
-        try {
-          json = JSON.parse(xhr.responseText);
-        } catch {
-          if (xhr.status < 200 || xhr.status >= 300) {
-            reject(new AppError(`Lỗi máy chủ (${xhr.status})`, 'SERVER_ERROR', xhr.status));
-          } else {
-            resolve({} as T);
-          }
-          return;
-        }
-
-        if (xhr.status < 200 || xhr.status >= 300 || !json.success) {
-          const errorData = (json as ApiErrorResponse).error;
-          reject(
-            new AppError(
-              errorData?.message || 'Tải lên không thành công',
-              errorData?.code || 'UPLOAD_FAILED',
-              xhr.status,
-              errorData?.details
-            )
-          );
-          return;
-        }
-
-        resolve(json.data);
-      };
-
-      xhr.onerror = () => {
-        reject(
-          new AppError(
-            'Không thể kết nối tới máy chủ. Vui lòng kiểm tra kết nối mạng của bạn.',
-            'NETWORK_DISCONNECTED',
-            0
-          )
-        );
-      };
-
-      xhr.send(formData);
-    });
   }
 
   public get<T>(endpoint: string, params?: Record<string, string | number | boolean | undefined>, options?: RequestOptions): Promise<T> {

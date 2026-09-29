@@ -100,15 +100,16 @@
 
 ### 🔹 [2026-09-29T02:02:00+07:00] - Unit U-06: Client Media Service & Concurrency Queue Hooks
 * **Thay đổi chính:**
-  - `apps/admin/services/media.service.ts`: Khởi tạo Typed Media Service kết nối REST API `/api/admin/media/*`, hỗ trợ XHR Upload đo lường % tiến trình thời gian thực, CRUD media và batch delete.
-  - `apps/admin/hooks/use-media-uploader.ts`: Custom hook điều phối Concurrency Queue (giới hạn tối đa 3 file upload song song), quản lý tiến trình từng file, hỗ trợ retry, hủy và clear completed tasks.
+  - `apps/admin/lib/api-client.ts`: Nâng cấp `HttpClient.request` tự động nhận diện `body instanceof FormData` (không ép `application/json` và không `JSON.stringify`), hỗ trợ upload 100% bằng native `fetch()`. Loại bỏ hoàn toàn `XMLHttpRequest` khỏi toàn bộ codebase, đảm bảo an toàn tuyệt đối cho SSR (Server Components) và zero external dependencies (không cần axios).
+  - `apps/admin/services/media.service.ts`: Khởi tạo Typed Media Service kết nối REST API `/api/admin/media/*` qua `apiClient.post` thuần túy, CRUD media và batch delete.
+  - `apps/admin/hooks/use-media-uploader.ts`: Custom hook điều phối Concurrency Queue (giới hạn tối đa 3 file upload song song), quản lý tiến trình indeterminate loading mượt mà (`pending` ➡️ `uploading` ➡️ `success`/`error`), hỗ trợ retry và cleanup.
   - `apps/admin/hooks/use-media-library.ts`: Custom hook quản lý kho ảnh, bao gồm debounce search (350ms), lọc định dạng, sắp xếp, phân trang, selection set (chọn nhiều ảnh) và xóa ảnh (đơn lẻ / batch).
-  - `apps/admin/lib/api-client.ts`: Refactor đóng gói `upload<T>(endpoint, formData, onProgress)` vào `HttpClient`, tái sử dụng `buildUrl`, tự động kích hoạt Global 401 Interceptor khi hết hạn phiên, đồng thời rút gọn `uploadSingleMedia` trong `media.service.ts` về đúng 1 dòng sạch sẽ.
 * **Kết quả Verify:**
   - Type-check `@cardealer/admin`: **Passed (0 errors)**.
   - Project-wide type-check: **8/8 packages passed (0 errors)**.
   - Verification Script `./scripts/verify_admin_image_library.sh`: **EXIT 0 (100% PASS)**.
-  - Code Quality: 100% Named Exports, không nuốt lỗi `try/catch`.
+  - Code Quality: 100% Named Exports, không nuốt lỗi `try/catch`, 100% fetch đồng nhất.
+
 
 
 
