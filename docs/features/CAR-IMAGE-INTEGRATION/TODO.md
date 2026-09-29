@@ -13,7 +13,7 @@
 | **U-01** | `apps/admin/app/cars/[slug]/components/TabGeneralInfo.tsx` | 🟡 LOW | **Không** | ✅ COMPLETED | Tích hợp `MediaPickerModal` vào màn hình sửa xe (Tab Thông tin chung), nút "Chọn Từ Thư Viện / Tải Mới", nút xóa nhanh `X`, và thumbnail preview. |
 | **U-02** | `apps/admin/app/cars/[slug]/components/TabColors.tsx` | 🟠 MEDIUM | **Không** | ✅ COMPLETED | Tích hợp `MediaPickerModal` vào màn hình cấu hình màu sắc xe & mâm, lưu đúng ngữ cảnh `(versionId, colorId)`, thumbnail preview ảnh màu xe. |
 | **U-03** | `apps/admin/app/cars/components/CarFormModal.tsx` | 🟡 LOW | **Không** | ✅ COMPLETED | Rà soát và hoàn thiện trải nghiệm chọn & tải ảnh đại diện trong modal tạo xe mới, đảm bảo tính nhất quán UI/UX với màn hình sửa. |
-| **U-04** | `scripts/verify_car_image_integration.sh` | 🟡 LOW | **Không** | ⏳ PENDING | Xây dựng kịch bản kiểm chứng tự động toàn diện kiểm tra typecheck, design system và tích hợp của cả 3 điểm chạm. |
+| **U-04** | `scripts/verify_car_image_integration.sh` | 🟡 LOW | **Không** | ✅ COMPLETED | Xây dựng kịch bản kiểm chứng tự động toàn diện kiểm tra typecheck, design system và tích hợp của cả 3 điểm chạm. |
 
 ---
 

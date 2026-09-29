@@ -10,8 +10,8 @@
 | Chỉ Số | Giá Trị |
 | :--- | :--- |
 | **Tổng số Units** | 4 Units (**U-01** ➡️ **U-04**) |
-| **Đã hoàn thành** | 0 / 4 Units |
-| **Trạng thái hiện tại** | 🎯 Khởi tạo Phase 1, Phase 2, Phase 3 hoàn tất. Chuẩn bị bước vào Unit U-01. |
+| **Đã hoàn thành** | 4 / 4 Units (100%) |
+| **Trạng thái hiện tại** | 🎉 Hoàn thành 100% tất cả các Units. Toàn bộ kịch bản kiểm chứng tự động đạt EXIT 0. |
 
 ---
 
@@ -22,7 +22,7 @@
 | **U-01** | `apps/admin/app/cars/[slug]/components/TabGeneralInfo.tsx` | 🟡 LOW | **Không** | ✅ COMPLETED | `4b12d01` | Tích hợp `MediaPickerModal` vào Tab Thông tin chung: nút "Chọn Từ Thư Viện", preview thumbnail và nút xóa nhanh `X`. |
 | **U-02** | `apps/admin/app/cars/[slug]/components/TabColors.tsx` | 🟠 MEDIUM | **Không** | ✅ COMPLETED | `a8f444e` | Tích hợp `MediaPickerModal` vào Cấu hình Màu sắc & Mâm xe: nút chọn ảnh cho từng màu, preview thumbnail và cập nhật reactive state. |
 | **U-03** | `apps/admin/app/cars/components/CarFormModal.tsx` | 🟡 LOW | **Không** | ✅ COMPLETED | `cf4defb` | Hoàn thiện trải nghiệm chọn và tải ảnh đại diện khi tạo mới dòng xe, đồng bộ hóa 100% UI/UX. |
-| **U-04** | `scripts/verify_car_image_integration.sh` | 🟡 LOW | **Không** | ⏳ PENDING | - | Tạo kịch bản kiểm chứng tự động toàn diện kiểm tra typecheck, design system và tích hợp của cả 3 điểm chạm. |
+| **U-04** | `scripts/verify_car_image_integration.sh` | 🟡 LOW | **Không** | ✅ COMPLETED | `97d588d` | Tạo kịch bản kiểm chứng tự động toàn diện kiểm tra typecheck, design system và tích hợp của cả 3 điểm chạm. |
 
 ---
 
@@ -60,3 +60,26 @@
 * **Kết quả Verify:**
   - Type-check `@cardealer/admin`: **Passed (0 errors)**.
   - Monorepo-wide type-check: **8/8 packages passed (0 errors)**.
+
+### 🔹 [2026-09-30T00:10:00+07:00] - Unit U-04: End-to-End Automated Verification Script
+* **Thay đổi chính:**
+  - `scripts/verify_car_image_integration.sh`: Xây dựng kịch bản kiểm chứng tự động khép kín gồm 6 bước:
+    1. Kiểm tra môi trường Node.js & pnpm.
+    2. Project-wide TypeScript Type Check Turbo (8/8 packages passed).
+    3. Kiểm tra tính toàn vẹn tích hợp tại `CarFormModal.tsx`.
+    4. Kiểm tra tính toàn vẹn tích hợp tại `TabGeneralInfo.tsx`.
+    5. Kiểm tra tính toàn vẹn tích hợp tại `TabColors.tsx`.
+    6. Kiểm toán Design System & Zero Raw Controls (0 raw HTML `<button>`).
+* **Kết quả Verify:**
+  - Kịch bản kiểm chứng tự động: **PASS 100% (EXIT 0)**.
+  - Type-check `@cardealer/admin`: **Passed (0 errors)**.
+  - Monorepo-wide type-check: **8/8 packages passed (0 errors)**.
+
+---
+
+🎉 **KẾT THÚC FEATURE CAR IMAGE INTEGRATION:**
+Đã tích hợp thành công 100% tính năng chọn ảnh từ thư viện hoặc tải ảnh mới trực tiếp trên toàn bộ phân hệ Quản trị Xe:
+1. Modal tạo mới dòng xe (`CarFormModal.tsx`)
+2. Tab thông tin cơ bản xe (`TabGeneralInfo.tsx`)
+3. Tab cấu hình màu sắc xe & mâm xe (`TabColors.tsx`)
+100% Design System `@cardealer/ui`, không có lỗi TypeScript, kiểm chứng tự động EXIT 0.
