@@ -16,8 +16,8 @@
 | **Vị trí Auth/Validation** | `apps/admin/contexts/AuthContext.tsx`, `can('posts:write')` RBAC Guard |
 | **Baseline Type-check** | 8/8 packages passed (0 errors) |
 | **Tổng số Units** | 10 Units (**U-01** ➡️ **U-10**) |
-| **Tiến độ** | 7 / 10 Units hoàn thành (U-07 Green) |
-| **Last Green Commit** | `3c81d0e` |
+| **Tiến độ** | 8 / 10 Units hoàn thành (U-08 Green) |
+| **Last Green Commit** | `b47ec66` |
 
 ---
 
@@ -123,4 +123,16 @@
 * **Kết quả Verify:**
   - `pnpm --filter @cardealer/admin check-types`: **Passed (0 errors)**.
   - Tách nhỏ theo SRP (145 - 250 dòng/file), cô lập logic phụ thuộc catalog service, 100% `@cardealer/ui`.
+
+### 🔹 Unit U-08: Extract PostEditorSidebar
+* **Commit Code:** `b47ec66` (Diff: 228 lines added)
+* **File tạo mới:**
+  - `apps/admin/app/posts/[id]/components/PostEditorSidebar.tsx` (213 lines): Cột Phải Sidebar module hóa cao gồm:
+    1. Động cơ SEO Real-Time (`calculateSeoScore`), badge trạng thái 3 cấp (good / needs_improvement / poor), input Focus Keyword, số liệu thống kê (từ vựng, thời gian đọc, mật độ từ khóa), danh sách 10 tiêu chí E-E-A-T.
+    2. Mô phỏng trực quan kết quả Google Search (SERP Snippet Preview).
+    3. Cài đặt Meta & Lập chỉ mục: Meta Title, Meta Description (kèm đếm ký tự chuẩn SEO), Canonical URL, Switch Ghim bài nổi bật, Switch Chặn Google index (NoIndex).
+* **Kết quả Verify:**
+  - `pnpm --filter @cardealer/admin check-types`: **Passed (0 errors)**.
+  - Tuân thủ nghiêm ngặt `unit_size_limit` (228 dòng < 300 dòng), 100% `@cardealer/ui`, zero any.
+
 
