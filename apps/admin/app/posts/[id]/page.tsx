@@ -2135,8 +2135,8 @@ export default function PostEditorPage() {
                                 <ImageIcon size={12} />
                                 <span>Thư Viện Ảnh</span>
                               </Button>
-                              <label className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer bg-cyan-500/10 hover:bg-cyan-500/20 px-2 py-0.5 rounded border border-cyan-500/30 transition-colors">
-                                <Upload size={12} />
+                              <label className="text-xs text-cyan-400 hover:text-cyan-300 inline-flex items-center gap-1 cursor-pointer bg-cyan-500/10 hover:bg-cyan-500/20 px-2 py-0.5 rounded border border-cyan-500/30 transition-colors whitespace-nowrap shrink-0 select-none">
+                                <Upload size={12} className="shrink-0" />
                                 <span>Tải từ máy</span>
                                 <input
                                   type="file"
@@ -2216,7 +2216,7 @@ export default function PostEditorPage() {
                     <div className="space-y-3.5 p-3.5 bg-slate-900/60 rounded-xl border border-purple-500/20">
                       {/* Header bar: Title & Layout selector */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-950/70 p-2.5 rounded-xl border border-white/5">
-                        <div className="flex items-center gap-2 flex-1">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
                           <label className="text-xs font-semibold text-purple-400 shrink-0 flex items-center gap-1.5">
                             <Images size={15} /> Tiêu đề bộ sưu tập:
                           </label>
@@ -2224,7 +2224,7 @@ export default function PostEditorPage() {
                             value={block.title || ''}
                             onChange={(e) => updateBlock(block.id, { title: e.target.value })}
                             placeholder="Ví dụ: Chùm ảnh ngoại thất & nội thất Hyundai Tucson thực tế..."
-                            className="h-8 bg-slate-900 border-white/10 text-slate-100 text-xs font-semibold flex-1"
+                            className="h-8 bg-slate-900 border-white/10 text-slate-100 text-xs font-semibold flex-1 min-w-0"
                           />
                         </div>
 
@@ -2233,7 +2233,7 @@ export default function PostEditorPage() {
                           <button
                             type="button"
                             onClick={() => updateBlock(block.id, { galleryStyle: 'slider' })}
-                            className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-colors ${
+                            className={`px-2.5 py-1 text-xs rounded-lg font-medium whitespace-nowrap transition-colors cursor-pointer ${
                               block.galleryStyle !== 'grid'
                                 ? 'bg-purple-600 text-white shadow-xs'
                                 : 'bg-slate-800 text-slate-400 hover:text-white'
@@ -2244,7 +2244,7 @@ export default function PostEditorPage() {
                           <button
                             type="button"
                             onClick={() => updateBlock(block.id, { galleryStyle: 'grid' })}
-                            className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-colors ${
+                            className={`px-2.5 py-1 text-xs rounded-lg font-medium whitespace-nowrap transition-colors cursor-pointer ${
                               block.galleryStyle === 'grid'
                                 ? 'bg-purple-600 text-white shadow-xs'
                                 : 'bg-slate-800 text-slate-400 hover:text-white'
@@ -2257,30 +2257,30 @@ export default function PostEditorPage() {
 
                       {/* Action Toolbar: Count + Batch Upload + Add Row */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-slate-400 font-medium pt-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-slate-200 font-semibold">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-slate-200 font-semibold whitespace-nowrap">
                             Danh sách hình ảnh ({(block.galleryImages || []).length} ảnh)
                           </span>
-                          <span className="text-[10px] text-slate-500 hidden sm:inline">
+                          <span className="text-[10px] text-slate-500 hidden sm:inline truncate">
                             (Khuyến nghị: Đầu xe ➔ Thân xe ➔ Đuôi xe ➔ Nội thất)
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
                           <Button
                             type="button"
                             variant="outline"
                             size="sm"
                             onClick={() => setMediaPickerTarget({ type: 'gallery', blockId: block.id })}
-                            className="h-7 px-2.5 text-xs text-purple-300 hover:text-purple-200 bg-purple-500/10 hover:bg-purple-500/20 rounded-lg border border-purple-500/30 flex items-center gap-1.5 cursor-pointer transition-colors"
+                            className="h-7 px-2.5 text-xs text-purple-300 hover:text-purple-200 bg-purple-500/10 hover:bg-purple-500/20 rounded-lg border border-purple-500/30 inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer transition-colors"
                           >
-                            <ImageIcon size={13} />
+                            <ImageIcon size={13} className="shrink-0" />
                             <span>Chọn từ Thư Viện</span>
                           </Button>
 
                           {/* Tải ảnh từ máy tính (hỗ trợ chọn nhiều ảnh cùng lúc) */}
-                          <label className="h-7 px-2.5 text-xs text-purple-300 hover:text-purple-200 bg-purple-500/10 hover:bg-purple-500/20 rounded-lg border border-purple-500/30 flex items-center gap-1.5 cursor-pointer transition-colors">
-                            <Upload size={13} />
+                          <label className="h-7 px-2.5 text-xs text-purple-300 hover:text-purple-200 bg-purple-500/10 hover:bg-purple-500/20 rounded-lg border border-purple-500/30 inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer transition-colors select-none">
+                            <Upload size={13} className="shrink-0" />
                             <span>Tải ảnh từ máy</span>
                             <input
                               type="file"
@@ -2426,9 +2426,9 @@ export default function PostEditorPage() {
                                       }}
                                     />
                                     {/* Overlay click đổi ảnh */}
-                                    <label className="absolute inset-0 bg-black/70 backdrop-blur-xs flex flex-col items-center justify-center text-white opacity-0 group-hover/thumb:opacity-100 transition-opacity cursor-pointer text-[10px] font-medium gap-1 text-center p-1">
-                                      <Upload size={14} className="text-purple-400" />
-                                      <span>Đổi ảnh</span>
+                                    <label className="absolute inset-0 bg-black/70 backdrop-blur-xs flex flex-col items-center justify-center text-white opacity-0 group-hover/thumb:opacity-100 transition-opacity cursor-pointer text-[10px] font-medium gap-1 text-center p-1 select-none">
+                                      <Upload size={14} className="text-purple-400 shrink-0" />
+                                      <span className="whitespace-nowrap">Đổi ảnh</span>
                                       <input
                                         type="file"
                                         accept="image/*"
@@ -2451,9 +2451,9 @@ export default function PostEditorPage() {
                                     </label>
                                   </>
                                 ) : (
-                                  <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer border border-dashed border-purple-500/40 hover:border-purple-400 hover:bg-purple-500/10 rounded-xl p-1 text-center transition-colors">
-                                    <ImagePlus size={18} className="text-purple-400 mb-0.5" />
-                                    <span className="text-[10px] text-purple-300 font-medium leading-tight">+ Tải ảnh</span>
+                                  <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer border border-dashed border-purple-500/40 hover:border-purple-400 hover:bg-purple-500/10 rounded-xl p-1 text-center transition-colors select-none">
+                                    <ImagePlus size={18} className="text-purple-400 mb-0.5 shrink-0" />
+                                    <span className="text-[10px] text-purple-300 font-medium leading-tight whitespace-nowrap">+ Tải ảnh</span>
                                     <input
                                       type="file"
                                       accept="image/*"
