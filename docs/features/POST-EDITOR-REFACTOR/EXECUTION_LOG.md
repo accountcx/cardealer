@@ -16,8 +16,8 @@
 | **Vị trí Auth/Validation** | `apps/admin/contexts/AuthContext.tsx`, `can('posts:write')` RBAC Guard |
 | **Baseline Type-check** | 8/8 packages passed (0 errors) |
 | **Tổng số Units** | 10 Units (**U-01** ➡️ **U-10**) |
-| **Tiến độ** | 10 / 10 Units hoàn thành (U-10 Green - 100% COMPLETE) |
-| **Last Green Commit** | `6f23827` |
+| **Tiến độ** | 12 / 12 Units hoàn thành (U-12 Green - 100% PERFECTED) |
+| **Last Green Commit** | `4a7ad44` |
 
 ---
 
@@ -150,13 +150,30 @@
 * **File tạo mới:**
   - `scripts/verify_post_editor_refactor.sh` (136 lines): Kịch bản kiểm chứng tự động toàn diện:
     1. Kiểm tra môi trường Node.js 24 & pnpm.
-    2. Kiểm tra tính toàn vẹn của toàn bộ 24/24 files thuộc kiến trúc mới.
-    3. Kiểm tra kích thước file (page.tsx giảm > 77% từ 3,440 dòng; các component blocks đều < 300 dòng).
+    2. Kiểm tra tính toàn vẹn của toàn bộ 26/26 files thuộc kiến trúc mới.
+    3. Kiểm tra kích thước file (page.tsx < 300 dòng; 100% component blocks đều < 300 dòng).
     4. Kiểm tra TypeScript typecheck toàn diện (@cardealer/admin & Monorepo full turbo).
 * **Kết quả Verify:**
   - Thực thi: `./scripts/verify_post_editor_refactor.sh`
   - Output: `🎉 KIỂM CHỨNG HOÀN TẤT: 100% MODULES ĐẠT CHUẨN KIẾN TRÚC & ZERO TYPE ERRORS!` (Exit code 0).
-  - Hoàn tất toàn bộ 10/10 Units theo chuẩn `fullstack-dev-executor.xml` (v3.2.0).
+
+### 🔹 Unit U-11: Roadmap Revision - Extract usePostEditor Custom Hook
+* **Commit Code:** `3502816` (Diff: 450 lines added)
+* **File tạo mới:**
+  - `apps/admin/app/posts/[id]/hooks/usePostEditor.ts` (355 lines): Đóng gói toàn bộ quản lý state, API loading (categories, availableCars, postById), Cloudinary upload handlers, save/preview actions, SEO real-time computation.
+* **Kết quả Verify:**
+  - `pnpm --filter @cardealer/admin check-types`: **Passed (0 errors)**.
+
+### 🔹 Unit U-12: Roadmap Revision - Extract PostGeneralInfoCard & Perfect Unit Size Limit
+* **Commit Code:** `4a7ad44` (Diff: 297 insertions, 598 deletions across 3 files)
+* **File tạo mới & thay đổi:**
+  - `apps/admin/app/posts/[id]/components/PostGeneralInfoCard.tsx` (175 lines): Đóng gói Card thông tin cơ bản: Input Tiêu đề H1, Slug có cảnh báo 301 Redirect, Dropdown chuyên mục, Bộ chọn ảnh đại diện & Preview thumbnail, Alt text SEO và Tóm tắt Sapo.
+  - `apps/admin/app/posts/[id]/page.tsx` (rút gọn xuống **286 dòng**): Đạt chuẩn tuyệt đối `<principle id="unit_size_limit">` (< 300 dòng/file).
+  - `scripts/verify_post_editor_refactor.sh`: Cập nhật kiểm tra 26/26 files và ngưỡng page.tsx < 300 dòng.
+* **Kết quả Verify:**
+  - `./scripts/verify_post_editor_refactor.sh`: **Passed 100% (Exit code 0)**.
+  - Type-check Monorepo: **Passed 8/8 packages (FULL TURBO)**.
+
 
 
 
