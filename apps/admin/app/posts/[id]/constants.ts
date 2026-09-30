@@ -1,0 +1,66 @@
+import type { CalloutThemeConfig, BlockType } from './types';
+
+// 🎨 Theme hệ thống cho Khối Callout Box
+export const CALLOUT_THEMES: Record<string, CalloutThemeConfig> = {
+  info: {
+    label: 'Thông tin (Info)',
+    badge: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+    icon: 'ℹ️',
+    cardClass: 'border-l-4 border-l-blue-600 border-blue-500/40 bg-blue-950/20 shadow-blue-950/20',
+    headerTextClass: 'text-blue-400',
+    selectBorderClass: 'border-blue-500/40 text-blue-300',
+    placeholderTitle: 'Ví dụ: Lưu ý khi chuẩn bị hồ sơ vay mua xe trả góp...',
+    placeholderContent: 'Nhập nội dung lưu ý, hướng dẫn chi tiết dành cho người đọc...',
+    previewCue: 'Nền blue-50 nhạt, Viền blue-600, Chữ xám chì slate-700',
+  },
+  warning: {
+    label: 'Cảnh báo (Warning)',
+    badge: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+    icon: '⚠️',
+    cardClass: 'border-l-4 border-l-amber-500 border-amber-500/40 bg-amber-950/20 shadow-amber-950/20',
+    headerTextClass: 'text-amber-400',
+    selectBorderClass: 'border-amber-500/40 text-amber-300',
+    placeholderTitle: 'Ví dụ: Cảnh báo rủi ro khi mua phụ tùng trôi nổi...',
+    placeholderContent: 'Nhập nội dung cảnh báo các nguy cơ hoặc điều kiện bảo hành...',
+    previewCue: 'Nền amber-50 hổ phách, Viền amber-500, Chữ amber-900',
+  },
+  success: {
+    label: 'Ưu đãi (Success)',
+    badge: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+    icon: '🎁',
+    cardClass: 'border-l-4 border-l-emerald-500 border-emerald-500/40 bg-emerald-950/20 shadow-emerald-950/20',
+    headerTextClass: 'text-emerald-400',
+    selectBorderClass: 'border-emerald-500/40 text-emerald-300',
+    placeholderTitle: 'Ví dụ: Gói quà tặng phụ kiện chính hãng 15 triệu đồng...',
+    placeholderContent: 'Nhập thông tin quà tặng, chiết khấu đặc biệt hoặc khuyến mãi...',
+    previewCue: 'Nền mint emerald-50, Viền emerald-500, Chữ emerald-900',
+  },
+  note: {
+    label: 'Ghi chú (Note)',
+    badge: 'bg-slate-500/15 text-slate-300 border-slate-500/30',
+    icon: '📝',
+    cardClass: 'border-l-4 border-l-slate-400 border-slate-500/40 bg-slate-900/50 shadow-slate-950/20',
+    headerTextClass: 'text-slate-300',
+    selectBorderClass: 'border-slate-500/40 text-slate-300',
+    placeholderTitle: 'Ví dụ: Ghi chú cập nhật từ ban biên tập...',
+    placeholderContent: 'Nhập ghi chú biên tập, chú thích thêm cho bài viết...',
+    previewCue: 'Nền slate-100 xám mát, Viền slate-400, Chữ slate-600',
+  },
+};
+
+export const BLOCK_TYPE_LABELS: Record<BlockType, { label: string; icon: string; category: 'content' | 'media' | 'conversion' | 'data' }> = {
+  paragraph: { label: 'Đoạn Văn', icon: 'Type', category: 'content' },
+  heading: { label: 'Tiêu Đề (H2 / H3)', icon: 'Heading', category: 'content' },
+  callout: { label: 'Khối Lưu Ý / Callout', icon: 'Info', category: 'content' },
+  singleImage: { label: 'Ảnh Đơn Có Chú Thích', icon: 'Image', category: 'media' },
+  imageGallery: { label: 'Thư Viện Ảnh Lướt', icon: 'Images', category: 'media' },
+  youtube: { label: 'Video YouTube', icon: 'Video', category: 'media' },
+  tiktok: { label: 'Video TikTok', icon: 'Video', category: 'media' },
+  faq: { label: 'Hỏi Đáp FAQ (Schema)', icon: 'FileQuestion', category: 'conversion' },
+  prosCons: { label: 'Đánh Giá Ưu / Nhược Điểm', icon: 'Scale', category: 'conversion' },
+  ctaButton: { label: 'Nút Kêu Gọi CTA', icon: 'MousePointerClick', category: 'conversion' },
+  leadForm: { label: 'Form Đăng Ký Báo Giá', icon: 'Send', category: 'conversion' },
+  relatedCar: { label: 'Card Xe Liên Quan', icon: 'Car', category: 'data' },
+  priceTable: { label: 'Bảng Giá & Lăn Bánh', icon: 'Table', category: 'data' },
+  specTable: { label: 'Bảng So Sánh Thông Số', icon: 'SlidersHorizontal', category: 'data' },
+};
