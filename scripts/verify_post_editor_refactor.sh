@@ -6,8 +6,8 @@
 # Feature: POST-EDITOR-REFACTOR
 #
 # Kiểm tra:
-# 1. Toàn vẹn cấu trúc file module hóa (24 files)
-# 2. Giới hạn số dòng theo SRP & Unit Size Limit (< 300 dòng/component, page.tsx < 600 dòng)
+# 1. Toàn vẹn cấu trúc file module hóa (26 files chuẩn SRP)
+# 2. Giới hạn số dòng theo SRP & Unit Size Limit (< 300 dòng cho 100% components & page.tsx)
 # 3. TypeScript Type-check nghiêm ngặt tại @cardealer/admin & Monorepo (0 errors)
 # 4. Design System Compliance (@cardealer/ui & Zero unstyled elements)
 # ==============================================================================
@@ -44,7 +44,7 @@ echo ""
 # ------------------------------------------------------------------------------
 # BƯỚC 2: KIỂM TRA TOÀN VẸN CÁC MODULE COMPONENT ĐÃ TÁCH
 # ------------------------------------------------------------------------------
-echo "📁 [Bước 2/4] Kiểm tra sự hiện diện của 24 files thuộc kiến trúc mới..."
+echo "📁 [Bước 2/4] Kiểm tra sự hiện diện của 26 files thuộc kiến trúc mới..."
 
 POSTS_DIR="apps/admin/app/posts/[id]"
 REQUIRED_FILES=(
@@ -52,8 +52,10 @@ REQUIRED_FILES=(
   "$POSTS_DIR/constants.ts"
   "$POSTS_DIR/utils.ts"
   "$POSTS_DIR/ast.ts"
+  "$POSTS_DIR/hooks/usePostEditor.ts"
   "$POSTS_DIR/page.tsx"
   "$POSTS_DIR/components/PostEditorHeader.tsx"
+  "$POSTS_DIR/components/PostGeneralInfoCard.tsx"
   "$POSTS_DIR/components/AddBlockMenu.tsx"
   "$POSTS_DIR/components/BlockItemWrapper.tsx"
   "$POSTS_DIR/components/PostEditorSidebar.tsx"
@@ -86,23 +88,35 @@ if [ "$MISSING_COUNT" -gt 0 ]; then
   echo "❌ Kiểm tra cấu trúc thất bại: Có $MISSING_COUNT tệp không tìm thấy!"
   exit 1
 fi
-echo "  ✓ Tất cả 24/24 tệp cấu trúc kiến trúc đã hiện diện đầy đủ."
+echo "  ✓ Tất cả 26/26 tệp cấu trúc kiến trúc đã hiện diện đầy đủ."
 echo ""
 
 # ------------------------------------------------------------------------------
 # BƯỚC 3: KIỂM TRA ĐỘ DÀI FILE (SLIM PAGE & COMPONENT SRP)
 # ------------------------------------------------------------------------------
-echo "📏 [Bước 3/4] Kiểm tra tiêu chuẩn kích thước file (Unit Size Limit)..."
+echo "📏 [Bước 3/4] Kiểm tra tiêu chuẩn kích thước file (Unit Size Limit < 300 dòng)..."
 
 PAGE_LINES=$(wc -l < "$POSTS_DIR/page.tsx" | tr -d ' ')
-echo "  ✓ File page.tsx: $PAGE_LINES dòng (Mục tiêu: < 800 dòng, giảm hơn 77% từ 3,440 dòng ban đầu)"
+echo "  ✓ File page.tsx: $PAGE_LINES dòng (Chuẩn SRP: < 300 dòng, giảm hơn 91% từ 3,440 dòng ban đầu)"
 
-if [ "$PAGE_LINES" -gt 800 ]; then
-  echo "  ❌ CẢNH BÁO: page.tsx vượt quá 800 dòng ($PAGE_LINES dòng)!"
+if [ "$PAGE_LINES" -gt 300 ]; then
+  echo "  ❌ CẢNH BÁO: page.tsx vượt quá 300 dòng ($PAGE_LINES dòng)!"
   exit 1
 fi
 
-# Kiểm tra các sub-components không vượt quá 300 dòng
+# Kiểm tra các components cấp 1
+for file in "$POSTS_DIR"/components/*.tsx; do
+  LINES=$(wc -l < "$file" | tr -d ' ')
+  BASENAME=$(basename "$file")
+  if [ "$LINES" -gt 300 ]; then
+    echo "  ❌ CẢNH BÁO: $BASENAME có $LINES dòng (vượt quá 300 dòng)!"
+    exit 1
+  else
+    echo "  ✓ components/$BASENAME: $LINES dòng"
+  fi
+done
+
+# Kiểm tra các sub-components block
 for file in "$POSTS_DIR/components/blocks/"*.tsx; do
   LINES=$(wc -l < "$file" | tr -d ' ')
   BASENAME=$(basename "$file")
@@ -110,7 +124,7 @@ for file in "$POSTS_DIR/components/blocks/"*.tsx; do
     echo "  ❌ CẢNH BÁO: $BASENAME có $LINES dòng (vượt quá 300 dòng)!"
     exit 1
   else
-    echo "  ✓ $BASENAME: $LINES dòng"
+    echo "  ✓ blocks/$BASENAME: $LINES dòng"
   fi
 done
 echo ""
