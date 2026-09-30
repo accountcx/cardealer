@@ -52,6 +52,7 @@ import {
   Check,
   X,
   RefreshCw,
+  Loader2,
 } from 'lucide-react';
 import {
   Button,
@@ -70,6 +71,7 @@ import { calculateSeoScore, extractYoutubeId, extractTikTokId, type SeoAnalysisR
 import { useAuth } from '../../../contexts/AuthContext';
 import { AccessDenied } from '../../components/AccessDenied';
 import { MediaPickerModal } from '../../components/MediaPickerModal';
+import { mediaService } from '../../../services/media.service';
 
 // Các loại Block trực quan chuẩn E-E-A-T & High Conversion
 type BlockType =
@@ -229,6 +231,11 @@ export default function PostEditorPage() {
     | { type: 'gallery'; blockId: string }
     | null
   >(null);
+
+  // Cloudinary Direct Upload State (Image Gallery & Single Image)
+  const [uploadingGalleryBlockId, setUploadingGalleryBlockId] = useState<string | null>(null);
+  const [uploadingItemKey, setUploadingItemKey] = useState<string | null>(null);
+  const [uploadingSingleImageBlockId, setUploadingSingleImageBlockId] = useState<string | null>(null);
   const [tomTat, setTomTat] = useState('');
   const [status, setStatus] = useState<'draft' | 'published' | 'scheduled' | 'archived'>('draft');
   const [isFeatured, setIsFeatured] = useState(false);
@@ -851,6 +858,119 @@ export default function PostEditorPage() {
 
   const updateBlock = (id: string, updates: Partial<EditorBlock>) => {
     setBlocks((prev) => prev.map((b) => (b.id === id ? { ...b, ...updates } : b)));
+  };
+
+  // 🧠 Mental Model: Tải lên hàng loạt ảnh cho Khối Thư viện ảnh lướt (Image Gallery) trực tiếp lên Cloudinary
+  const handleUploadGalleryImages = async (blockId: string, files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploadingGalleryBlockId(blockId);
+    try {
+      const fileArray = Array.from(files);
+      const uploadPromises = fileArray.map(async (file) => {
+        const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+        const mediaItem = await mediaService.uploadSingleMedia(file, cleanName);
+        return {
+          url: mediaItem.url,
+          alt: mediaItem.altText || cleanName || 'Hình ảnh chi tiết xe',
+          caption: cleanName || '',
+        };
+      });
+
+      const newGalleryImages = await Promise.all(uploadPromises);
+
+      setBlocks((prev) =>
+        prev.map((b) => {
+          if (b.id !== blockId) return b;
+          const current = b.galleryImages || [];
+          return {
+            ...b,
+            galleryImages: [...current, ...newGalleryImages],
+          };
+        })
+      );
+      setToast({
+        type: 'success',
+        message: `Đã tải ${newGalleryImages.length} ảnh lên Cloudinary thành công!`,
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi khi tải ảnh lên Cloudinary';
+      console.error('❌ [Gallery Upload]', msg);
+      setToast({
+        type: 'error',
+        message: `Lỗi tải ảnh lên Cloudinary: ${msg}`,
+      });
+    } finally {
+      setUploadingGalleryBlockId(null);
+    }
+  };
+
+  // 🧠 Mental Model: Đổi hoặc tải ảnh đơn lẻ trong một vị trí của Khối Thư viện ảnh lướt lên Cloudinary
+  const handleUploadGalleryImageAt = async (blockId: string, imgIdx: number, file: File | null) => {
+    if (!file) return;
+    const itemKey = `${blockId}-${imgIdx}`;
+    setUploadingItemKey(itemKey);
+    try {
+      const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+      const mediaItem = await mediaService.uploadSingleMedia(file, cleanName);
+      const url = mediaItem.url;
+
+      setBlocks((prev) =>
+        prev.map((b) => {
+          if (b.id !== blockId) return b;
+          const current = [...(b.galleryImages || [])];
+          current[imgIdx] = {
+            ...current[imgIdx],
+            url,
+            alt: current[imgIdx]?.alt || cleanName || 'Hình ảnh chi tiết xe',
+            caption: current[imgIdx]?.caption || cleanName || '',
+          };
+          return { ...b, galleryImages: current };
+        })
+      );
+      setToast({
+        type: 'success',
+        message: 'Đã tải ảnh lên Cloudinary thành công!',
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi khi tải ảnh lên Cloudinary';
+      console.error('❌ [Gallery Item Upload]', msg);
+      setToast({
+        type: 'error',
+        message: `Lỗi tải ảnh lên Cloudinary: ${msg}`,
+      });
+    } finally {
+      setUploadingItemKey(null);
+    }
+  };
+
+  // 🧠 Mental Model: Tải ảnh đơn cho Khối Single Image trực tiếp lên Cloudinary
+  const handleUploadSingleImage = async (blockId: string, file: File | null) => {
+    if (!file) return;
+    setUploadingSingleImageBlockId(blockId);
+    try {
+      const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+      const mediaItem = await mediaService.uploadSingleMedia(file, cleanName);
+      const url = mediaItem.url;
+
+      updateBlock(blockId, {
+        imageUrl: url,
+        imageAlt: cleanName,
+        caption: cleanName,
+      });
+      setToast({
+        type: 'success',
+        message: 'Đã tải ảnh lên Cloudinary thành công!',
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi khi tải ảnh lên Cloudinary';
+      console.error('❌ [Single Image Upload]', msg);
+      setToast({
+        type: 'error',
+        message: `Lỗi tải ảnh lên Cloudinary: ${msg}`,
+      });
+    } finally {
+      setUploadingSingleImageBlockId(null);
+    }
   };
 
   const removeBlock = (id: string) => {
@@ -2135,29 +2255,30 @@ export default function PostEditorPage() {
                                 <ImageIcon size={12} />
                                 <span>Thư Viện Ảnh</span>
                               </Button>
-                              <label className="text-xs text-cyan-400 hover:text-cyan-300 inline-flex items-center gap-1 cursor-pointer bg-cyan-500/10 hover:bg-cyan-500/20 px-2 py-0.5 rounded border border-cyan-500/30 transition-colors whitespace-nowrap shrink-0 select-none">
-                                <Upload size={12} className="shrink-0" />
-                                <span>Tải từ máy</span>
+                              <label
+                                className={`text-xs text-cyan-400 hover:text-cyan-300 inline-flex items-center gap-1 bg-cyan-500/10 hover:bg-cyan-500/20 px-2 py-0.5 rounded border border-cyan-500/30 transition-colors whitespace-nowrap shrink-0 select-none ${
+                                  uploadingSingleImageBlockId === block.id
+                                    ? 'opacity-60 cursor-not-allowed pointer-events-none'
+                                    : 'cursor-pointer'
+                                }`}
+                              >
+                                {uploadingSingleImageBlockId === block.id ? (
+                                  <Loader2 size={12} className="shrink-0 animate-spin text-cyan-400" />
+                                ) : (
+                                  <Upload size={12} className="shrink-0" />
+                                )}
+                                <span>
+                                  {uploadingSingleImageBlockId === block.id ? 'Đang đẩy lên...' : 'Tải từ máy'}
+                                </span>
                                 <input
                                   type="file"
                                   accept="image/*"
                                   className="hidden"
+                                  disabled={uploadingSingleImageBlockId === block.id}
                                   onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (!file) return;
-                                    const reader = new FileReader();
-                                    reader.onload = (event) => {
-                                      const dataUrl = event.target?.result as string;
-                                      if (dataUrl) {
-                                        const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
-                                        updateBlock(block.id, {
-                                          imageUrl: dataUrl,
-                                          imageAlt: block.imageAlt || cleanName,
-                                          caption: block.caption || cleanName,
-                                        });
-                                      }
-                                    };
-                                    reader.readAsDataURL(file);
+                                    const file = e.target.files?.[0] || null;
+                                    handleUploadSingleImage(block.id, file);
+                                    e.target.value = '';
                                   }}
                                 />
                               </label>
@@ -2278,45 +2399,33 @@ export default function PostEditorPage() {
                             <span>Chọn từ Thư Viện</span>
                           </Button>
 
-                          {/* Tải ảnh từ máy tính (hỗ trợ chọn nhiều ảnh cùng lúc) */}
-                          <label className="h-7 px-2.5 text-xs text-purple-300 hover:text-purple-200 bg-purple-500/10 hover:bg-purple-500/20 rounded-lg border border-purple-500/30 inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer transition-colors select-none">
-                            <Upload size={13} className="shrink-0" />
-                            <span>Tải ảnh từ máy</span>
+                          {/* Tải ảnh từ máy tính (hỗ trợ chọn nhiều ảnh cùng lúc) đẩy lên Cloudinary */}
+                          <label
+                            className={`h-7 px-2.5 text-xs text-purple-300 hover:text-purple-200 bg-purple-500/10 hover:bg-purple-500/20 rounded-lg border border-purple-500/30 inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-colors select-none ${
+                              uploadingGalleryBlockId === block.id
+                                ? 'opacity-60 cursor-not-allowed pointer-events-none'
+                                : 'cursor-pointer'
+                            }`}
+                          >
+                            {uploadingGalleryBlockId === block.id ? (
+                              <Loader2 size={13} className="shrink-0 animate-spin text-purple-400" />
+                            ) : (
+                              <Upload size={13} className="shrink-0" />
+                            )}
+                            <span>
+                              {uploadingGalleryBlockId === block.id
+                                ? 'Đang đẩy lên Cloudinary...'
+                                : 'Tải ảnh từ máy'}
+                            </span>
                             <input
                               type="file"
                               multiple
                               accept="image/*"
                               className="hidden"
+                              disabled={uploadingGalleryBlockId === block.id}
                               onChange={(e) => {
-                                const files = e.target.files;
-                                if (!files || files.length === 0) return;
-                                Array.from(files).forEach((file) => {
-                                  const reader = new FileReader();
-                                  reader.onload = (event) => {
-                                    const dataUrl = event.target?.result as string;
-                                    if (dataUrl) {
-                                      const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
-                                      setBlocks((prev) =>
-                                        prev.map((b) => {
-                                          if (b.id !== block.id) return b;
-                                          const current = b.galleryImages || [];
-                                          return {
-                                            ...b,
-                                            galleryImages: [
-                                              ...current,
-                                              {
-                                                url: dataUrl,
-                                                alt: cleanName || 'Hình ảnh chi tiết xe',
-                                                caption: cleanName || '',
-                                              },
-                                            ],
-                                          };
-                                        })
-                                      );
-                                    }
-                                  };
-                                  reader.readAsDataURL(file);
-                                });
+                                handleUploadGalleryImages(block.id, e.target.files);
+                                e.target.value = '';
                               }}
                             />
                           </label>
@@ -2427,56 +2536,56 @@ export default function PostEditorPage() {
                                     />
                                     {/* Overlay click đổi ảnh */}
                                     <label className="absolute inset-0 bg-black/70 backdrop-blur-xs flex flex-col items-center justify-center text-white opacity-0 group-hover/thumb:opacity-100 transition-opacity cursor-pointer text-[10px] font-medium gap-1 text-center p-1 select-none">
-                                      <Upload size={14} className="text-purple-400 shrink-0" />
-                                      <span className="whitespace-nowrap">Đổi ảnh</span>
+                                      {uploadingItemKey === `${block.id}-${imgIdx}` ? (
+                                        <>
+                                          <Loader2 size={16} className="text-purple-400 animate-spin" />
+                                          <span className="whitespace-nowrap text-purple-300">Đang tải...</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Upload size={14} className="text-purple-400 shrink-0" />
+                                          <span className="whitespace-nowrap">Đổi ảnh</span>
+                                        </>
+                                      )}
                                       <input
                                         type="file"
                                         accept="image/*"
                                         className="hidden"
+                                        disabled={uploadingItemKey === `${block.id}-${imgIdx}`}
                                         onChange={(e) => {
-                                          const file = e.target.files?.[0];
-                                          if (!file) return;
-                                          const reader = new FileReader();
-                                          reader.onload = (event) => {
-                                            const dataUrl = event.target?.result as string;
-                                            if (dataUrl) {
-                                              const nextImages = [...(block.galleryImages || [])];
-                                              nextImages[imgIdx] = { ...nextImages[imgIdx], url: dataUrl };
-                                              updateBlock(block.id, { galleryImages: nextImages });
-                                            }
-                                          };
-                                          reader.readAsDataURL(file);
+                                          const file = e.target.files?.[0] || null;
+                                          handleUploadGalleryImageAt(block.id, imgIdx, file);
+                                          e.target.value = '';
                                         }}
                                       />
                                     </label>
                                   </>
                                 ) : (
                                   <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer border border-dashed border-purple-500/40 hover:border-purple-400 hover:bg-purple-500/10 rounded-xl p-1 text-center transition-colors select-none">
-                                    <ImagePlus size={18} className="text-purple-400 mb-0.5 shrink-0" />
-                                    <span className="text-[10px] text-purple-300 font-medium leading-tight whitespace-nowrap">+ Tải ảnh</span>
+                                    {uploadingItemKey === `${block.id}-${imgIdx}` ? (
+                                      <>
+                                        <Loader2 size={18} className="text-purple-400 animate-spin mb-0.5" />
+                                        <span className="text-[10px] text-purple-300 font-medium leading-tight whitespace-nowrap">
+                                          Đang tải...
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <ImagePlus size={18} className="text-purple-400 mb-0.5 shrink-0" />
+                                        <span className="text-[10px] text-purple-300 font-medium leading-tight whitespace-nowrap">
+                                          + Tải ảnh
+                                        </span>
+                                      </>
+                                    )}
                                     <input
                                       type="file"
                                       accept="image/*"
                                       className="hidden"
+                                      disabled={uploadingItemKey === `${block.id}-${imgIdx}`}
                                       onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (!file) return;
-                                        const reader = new FileReader();
-                                        reader.onload = (event) => {
-                                          const dataUrl = event.target?.result as string;
-                                          if (dataUrl) {
-                                            const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
-                                            const nextImages = [...(block.galleryImages || [])];
-                                            nextImages[imgIdx] = {
-                                              ...nextImages[imgIdx],
-                                              url: dataUrl,
-                                              alt: cleanName || 'Hình ảnh chi tiết xe',
-                                              caption: cleanName || '',
-                                            };
-                                            updateBlock(block.id, { galleryImages: nextImages });
-                                          }
-                                        };
-                                        reader.readAsDataURL(file);
+                                        const file = e.target.files?.[0] || null;
+                                        handleUploadGalleryImageAt(block.id, imgIdx, file);
+                                        e.target.value = '';
                                       }}
                                     />
                                   </label>
