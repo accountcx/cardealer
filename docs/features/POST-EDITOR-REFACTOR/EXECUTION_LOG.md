@@ -16,8 +16,8 @@
 | **Vị trí Auth/Validation** | `apps/admin/contexts/AuthContext.tsx`, `can('posts:write')` RBAC Guard |
 | **Baseline Type-check** | 8/8 packages passed (0 errors) |
 | **Tổng số Units** | 10 Units (**U-01** ➡️ **U-10**) |
-| **Tiến độ** | 5 / 10 Units hoàn thành (U-05 Green) |
-| **Last Green Commit** | `dfc1b49` |
+| **Tiến độ** | 6 / 10 Units hoàn thành (U-06 Green) |
+| **Last Green Commit** | `470abc0` |
 
 ---
 
@@ -44,7 +44,7 @@
 | **U-03** | `apps/admin/app/posts/[id]/components/BlockItemWrapper.tsx` | 🟡 LOW | **Không** | ✅ COMPLETED | `fbdb51d` | Tách khung bao bọc Card Block kèm thanh action (lên, xuống, badge loại khối, xóa). |
 | **U-04** | `apps/admin/app/posts/[id]/components/blocks/HeadingBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/ParagraphBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/CalloutBlock.tsx` | 🟠 MEDIUM | **Có** (Text Blocks) | ✅ COMPLETED | `19598d0` | Tách nhóm khối văn bản cơ bản: Tiêu đề H2/H3, Đoạn văn bản, Callout Alert đa phong cách. |
 | **U-05** | `apps/admin/app/posts/[id]/components/blocks/SingleImageBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/ImageGalleryBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/GalleryImageItemCard.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/VideoBlocks.tsx` | 🟠 MEDIUM | **Có** (Media Blocks) | ✅ COMPLETED | `dfc1b49` | Tách nhóm khối Media tích hợp Cloudinary CDN direct upload: Ảnh đơn, Gallery lướt, Video Youtube/TikTok. |
-| **U-06** | `apps/admin/app/posts/[id]/components/blocks/FaqBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/ProsConsBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/CtaButtonBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/LeadFormBlock.tsx` | 🟠 MEDIUM | **Có** (Interactive Blocks) | ⏳ PENDING | - | Tách nhóm khối tương tác & chuyển đổi: FAQ chuẩn Schema, Ưu/Nhược điểm, Nút CTA, Form báo giá. |
+| **U-06** | `apps/admin/app/posts/[id]/components/blocks/FaqBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/ProsConsBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/CtaButtonBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/LeadFormBlock.tsx` | 🟠 MEDIUM | **Có** (Interactive Blocks) | ✅ COMPLETED | `470abc0` | Tách nhóm khối tương tác & chuyển đổi: FAQ chuẩn Schema, Ưu/Nhược điểm, Nút CTA, Form báo giá. |
 | **U-07** | `apps/admin/app/posts/[id]/components/blocks/RelatedCarBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/PriceTableBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/SpecTableBlock.tsx` | 🟠 MEDIUM | **Có** (Car Data Blocks) | ⏳ PENDING | - | Tách nhóm khối dữ liệu ô tô: Xe liên quan, Bảng giá lăn bánh kèm lọc dòng xe, Bảng thông số kỹ thuật. |
 | **U-08** | `apps/admin/app/posts/[id]/components/PostEditorSidebar.tsx` | 🟠 MEDIUM | **Không** | ⏳ PENDING | - | Tách cột phải Sidebar: Điểm SEO Real-Time, Danh mục, Ảnh đại diện, Trạng thái và Meta SEO. |
 | **U-09** | `apps/admin/app/posts/[id]/page.tsx` | 🟠 MEDIUM | **Không** | ⏳ PENDING | - | Tái cấu trúc file chính `page.tsx`, liên kết các components, rút gọn từ 3,440 dòng xuống < 400 dòng. |
@@ -101,3 +101,14 @@
 * **Kết quả Verify:**
   - `pnpm --filter @cardealer/admin check-types`: **Passed (0 errors)**.
   - Tách nhỏ từng file module hóa (110 - 227 dòng/file), tuân thủ SRP và `unit_size_limit`.
+
+### 🔹 Unit U-06: Extract Interactive & Conversion Blocks
+* **Commit Code:** `470abc0` (Diff: 502 lines added across 4 modular files)
+* **File tạo mới:**
+  - `apps/admin/app/posts/[id]/components/blocks/FaqBlock.tsx` (94 lines): Danh sách câu hỏi & giải đáp chuẩn Schema FAQPage, thêm/xóa động.
+  - `apps/admin/app/posts/[id]/components/blocks/ProsConsBlock.tsx` (160 lines): Khối đánh giá Ưu / Nhược điểm chuẩn Featured Snippet.
+  - `apps/admin/app/posts/[id]/components/blocks/CtaButtonBlock.tsx` (169 lines): Nút CTA chuyển đổi cao với màu sắc, hotline/zalo và live preview.
+  - `apps/admin/app/posts/[id]/components/blocks/LeadFormBlock.tsx` (79 lines): Form thu thập báo giá lăn bánh gắn với catalog xe.
+* **Kết quả Verify:**
+  - `pnpm --filter @cardealer/admin check-types`: **Passed (0 errors)**.
+  - Tách nhỏ từng file độc lập (79 - 169 dòng/file), tuân thủ SRP và `unit_size_limit`.
