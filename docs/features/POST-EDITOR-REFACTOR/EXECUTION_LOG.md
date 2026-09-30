@@ -16,8 +16,8 @@
 | **Vị trí Auth/Validation** | `apps/admin/contexts/AuthContext.tsx`, `can('posts:write')` RBAC Guard |
 | **Baseline Type-check** | 8/8 packages passed (0 errors) |
 | **Tổng số Units** | 10 Units (**U-01** ➡️ **U-10**) |
-| **Tiến độ** | 0 / 10 Units hoàn thành (Đang ở Turn 0: Hard Stop chờ duyệt) |
-| **Last Green Commit** | `36a89f8` |
+| **Tiến độ** | 1 / 10 Units hoàn thành (U-01 Green) |
+| **Last Green Commit** | `6d8fc77` |
 
 ---
 
@@ -39,7 +39,7 @@
 
 | Unit ID | File(s) Tác Động | Risk Tier | Coupled Unit? | Trạng Thái | Commit Hash | Mục Tiêu & Mô Tả Đơn Vị |
 | :---: | :--- | :---: | :---: | :---: | :---: | :--- |
-| **U-01** | `apps/admin/app/posts/[id]/types.ts`<br>`apps/admin/app/posts/[id]/constants.ts`<br>`apps/admin/app/posts/[id]/utils.ts` | 🟡 LOW | **Có** (Core contracts) | ⏳ PENDING | - | Tách toàn bộ interface, type định nghĩa khối block, theme bảng biểu và các helper tiền tệ/slug. |
+| **U-01** | `apps/admin/app/posts/[id]/types.ts`<br>`apps/admin/app/posts/[id]/constants.ts`<br>`apps/admin/app/posts/[id]/utils.ts` | 🟡 LOW | **Có** (Core contracts) | ✅ COMPLETED | `6d8fc77` | Tách toàn bộ interface, type định nghĩa khối block, theme bảng biểu và các helper tiền tệ/slug. |
 | **U-02** | `apps/admin/app/posts/[id]/components/PostEditorHeader.tsx`<br>`apps/admin/app/posts/[id]/components/AddBlockMenu.tsx` | 🟡 LOW | **Không** | ⏳ PENDING | - | Tách Header Toolbar (Quay lại, Trạng thái, Xem trước, Lưu nháp, Xuất bản) và Menu thêm block trực quan. |
 | **U-03** | `apps/admin/app/posts/[id]/components/BlockItemWrapper.tsx` | 🟡 LOW | **Không** | ⏳ PENDING | - | Tách khung bao bọc Card Block kèm thanh action (lên, xuống, badge loại khối, xóa). |
 | **U-04** | `apps/admin/app/posts/[id]/components/blocks/HeadingBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/ParagraphBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/CalloutBlock.tsx` | 🟠 MEDIUM | **Có** (Text Blocks) | ⏳ PENDING | - | Tách nhóm khối văn bản cơ bản: Tiêu đề H2/H3, Đoạn văn bản, Callout Alert đa phong cách. |
@@ -53,4 +53,13 @@
 ---
 
 ## 4. Nhật Ký Chi Tiết Từng Lượt Thực Thi
-*(Sẽ được cập nhật sau mỗi Unit tương ứng)*
+
+### 🔹 Unit U-01: Extract Core Types, Constants & Utilities
+* **Commit Code:** `6d8fc77` (Diff: 329 lines added across 3 files)
+* **File tạo mới:**
+  - `apps/admin/app/posts/[id]/types.ts`: `BlockType`, `PriceVersionItem`, `EditorBlock`, `MediaPickerTarget`, `PostStatus`, `CalloutThemeConfig`.
+  - `apps/admin/app/posts/[id]/constants.ts`: `CALLOUT_THEMES`, `BLOCK_TYPE_LABELS`.
+  - `apps/admin/app/posts/[id]/utils.ts`: `toSlug`, `formatVnd`, `parseVnd`, `toShortMillion`, `createDefaultBlock`.
+* **Kết quả Verify:**
+  - `pnpm --filter @cardealer/admin check-types`: **Passed (0 errors)**.
+  - Tuân thủ nghiêm ngặt `unit_size_limit` (3 files nhỏ gọn, tách biệt theo SRP).
