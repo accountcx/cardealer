@@ -16,8 +16,8 @@
 | **Vị trí Auth/Validation** | `apps/admin/contexts/AuthContext.tsx`, `can('posts:write')` RBAC Guard |
 | **Baseline Type-check** | 8/8 packages passed (0 errors) |
 | **Tổng số Units** | 10 Units (**U-01** ➡️ **U-10**) |
-| **Tiến độ** | 2 / 10 Units hoàn thành (U-02 Green) |
-| **Last Green Commit** | `a547742` |
+| **Tiến độ** | 3 / 10 Units hoàn thành (U-03 Green) |
+| **Last Green Commit** | `fbdb51d` |
 
 ---
 
@@ -41,7 +41,7 @@
 | :---: | :--- | :---: | :---: | :---: | :---: | :--- |
 | **U-01** | `apps/admin/app/posts/[id]/types.ts`<br>`apps/admin/app/posts/[id]/constants.ts`<br>`apps/admin/app/posts/[id]/utils.ts` | 🟡 LOW | **Có** (Core contracts) | ✅ COMPLETED | `6d8fc77` | Tách toàn bộ interface, type định nghĩa khối block, theme bảng biểu và các helper tiền tệ/slug. |
 | **U-02** | `apps/admin/app/posts/[id]/components/PostEditorHeader.tsx`<br>`apps/admin/app/posts/[id]/components/AddBlockMenu.tsx` | 🟡 LOW | **Không** | ✅ COMPLETED | `a547742` | Tách Header Toolbar (Quay lại, Trạng thái, Xem trước, Lưu nháp, Xuất bản) và Menu thêm block trực quan. |
-| **U-03** | `apps/admin/app/posts/[id]/components/BlockItemWrapper.tsx` | 🟡 LOW | **Không** | ⏳ PENDING | - | Tách khung bao bọc Card Block kèm thanh action (lên, xuống, badge loại khối, xóa). |
+| **U-03** | `apps/admin/app/posts/[id]/components/BlockItemWrapper.tsx` | 🟡 LOW | **Không** | ✅ COMPLETED | `fbdb51d` | Tách khung bao bọc Card Block kèm thanh action (lên, xuống, badge loại khối, xóa). |
 | **U-04** | `apps/admin/app/posts/[id]/components/blocks/HeadingBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/ParagraphBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/CalloutBlock.tsx` | 🟠 MEDIUM | **Có** (Text Blocks) | ⏳ PENDING | - | Tách nhóm khối văn bản cơ bản: Tiêu đề H2/H3, Đoạn văn bản, Callout Alert đa phong cách. |
 | **U-05** | `apps/admin/app/posts/[id]/components/blocks/SingleImageBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/ImageGalleryBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/VideoBlocks.tsx` | 🟠 MEDIUM | **Có** (Media Blocks) | ⏳ PENDING | - | Tách nhóm khối Media tích hợp Cloudinary CDN direct upload: Ảnh đơn, Gallery lướt, Video Youtube/TikTok. |
 | **U-06** | `apps/admin/app/posts/[id]/components/blocks/FaqBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/ProsConsBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/CtaButtonBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/LeadFormBlock.tsx` | 🟠 MEDIUM | **Có** (Interactive Blocks) | ⏳ PENDING | - | Tách nhóm khối tương tác & chuyển đổi: FAQ chuẩn Schema, Ưu/Nhược điểm, Nút CTA, Form báo giá. |
@@ -72,3 +72,11 @@
 * **Kết quả Verify:**
   - `pnpm --filter @cardealer/admin check-types`: **Passed (0 errors)**.
   - Tuân thủ nghiêm ngặt `unit_size_limit` (257 dòng < 300 dòng).
+
+### 🔹 Unit U-03: Extract BlockItemWrapper
+* **Commit Code:** `fbdb51d` (Diff: 116 lines added)
+* **File tạo mới:**
+  - `apps/admin/app/posts/[id]/components/BlockItemWrapper.tsx` (116 lines): Khung bao bọc card block chuẩn glassmorphism, tự động gắn theme viền cho Callout Box và bộ điều hướng (lên, xuống, xóa).
+* **Kết quả Verify:**
+  - `pnpm --filter @cardealer/admin check-types`: **Passed (0 errors)**.
+  - Tuân thủ nghiêm ngặt `unit_size_limit` (116 dòng < 300 dòng).
