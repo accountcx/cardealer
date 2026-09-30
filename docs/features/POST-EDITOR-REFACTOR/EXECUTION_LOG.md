@@ -16,8 +16,8 @@
 | **Vị trí Auth/Validation** | `apps/admin/contexts/AuthContext.tsx`, `can('posts:write')` RBAC Guard |
 | **Baseline Type-check** | 8/8 packages passed (0 errors) |
 | **Tổng số Units** | 10 Units (**U-01** ➡️ **U-10**) |
-| **Tiến độ** | 4 / 10 Units hoàn thành (U-04 Green) |
-| **Last Green Commit** | `19598d0` |
+| **Tiến độ** | 5 / 10 Units hoàn thành (U-05 Green) |
+| **Last Green Commit** | `dfc1b49` |
 
 ---
 
@@ -43,7 +43,7 @@
 | **U-02** | `apps/admin/app/posts/[id]/components/PostEditorHeader.tsx`<br>`apps/admin/app/posts/[id]/components/AddBlockMenu.tsx` | 🟡 LOW | **Không** | ✅ COMPLETED | `a547742` | Tách Header Toolbar (Quay lại, Trạng thái, Xem trước, Lưu nháp, Xuất bản) và Menu thêm block trực quan. |
 | **U-03** | `apps/admin/app/posts/[id]/components/BlockItemWrapper.tsx` | 🟡 LOW | **Không** | ✅ COMPLETED | `fbdb51d` | Tách khung bao bọc Card Block kèm thanh action (lên, xuống, badge loại khối, xóa). |
 | **U-04** | `apps/admin/app/posts/[id]/components/blocks/HeadingBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/ParagraphBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/CalloutBlock.tsx` | 🟠 MEDIUM | **Có** (Text Blocks) | ✅ COMPLETED | `19598d0` | Tách nhóm khối văn bản cơ bản: Tiêu đề H2/H3, Đoạn văn bản, Callout Alert đa phong cách. |
-| **U-05** | `apps/admin/app/posts/[id]/components/blocks/SingleImageBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/ImageGalleryBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/VideoBlocks.tsx` | 🟠 MEDIUM | **Có** (Media Blocks) | ⏳ PENDING | - | Tách nhóm khối Media tích hợp Cloudinary CDN direct upload: Ảnh đơn, Gallery lướt, Video Youtube/TikTok. |
+| **U-05** | `apps/admin/app/posts/[id]/components/blocks/SingleImageBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/ImageGalleryBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/GalleryImageItemCard.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/VideoBlocks.tsx` | 🟠 MEDIUM | **Có** (Media Blocks) | ✅ COMPLETED | `dfc1b49` | Tách nhóm khối Media tích hợp Cloudinary CDN direct upload: Ảnh đơn, Gallery lướt, Video Youtube/TikTok. |
 | **U-06** | `apps/admin/app/posts/[id]/components/blocks/FaqBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/ProsConsBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/CtaButtonBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/LeadFormBlock.tsx` | 🟠 MEDIUM | **Có** (Interactive Blocks) | ⏳ PENDING | - | Tách nhóm khối tương tác & chuyển đổi: FAQ chuẩn Schema, Ưu/Nhược điểm, Nút CTA, Form báo giá. |
 | **U-07** | `apps/admin/app/posts/[id]/components/blocks/RelatedCarBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/PriceTableBlock.tsx`<br>`apps/admin/app/posts/[id]/components/blocks/SpecTableBlock.tsx` | 🟠 MEDIUM | **Có** (Car Data Blocks) | ⏳ PENDING | - | Tách nhóm khối dữ liệu ô tô: Xe liên quan, Bảng giá lăn bánh kèm lọc dòng xe, Bảng thông số kỹ thuật. |
 | **U-08** | `apps/admin/app/posts/[id]/components/PostEditorSidebar.tsx` | 🟠 MEDIUM | **Không** | ⏳ PENDING | - | Tách cột phải Sidebar: Điểm SEO Real-Time, Danh mục, Ảnh đại diện, Trạng thái và Meta SEO. |
@@ -90,3 +90,14 @@
 * **Kết quả Verify:**
   - `pnpm --filter @cardealer/admin check-types`: **Passed (0 errors)**.
   - Tuân thủ nghiêm ngặt `unit_size_limit` (142 dòng < 300 dòng).
+
+### 🔹 Unit U-05: Extract Media Blocks & Cloudinary Direct Upload
+* **Commit Code:** `dfc1b49` (Diff: 681 lines added across 4 modular files)
+* **File tạo mới:**
+  - `apps/admin/app/posts/[id]/components/blocks/SingleImageBlock.tsx` (129 lines): Khối ảnh đơn có Alt SEO, Caption và tải trực tiếp lên Cloudinary.
+  - `apps/admin/app/posts/[id]/components/blocks/GalleryImageItemCard.tsx` (227 lines): Thẻ ảnh đơn lẻ trong thư viện lướt với kéo thả drag-and-drop, upload/đổi ảnh.
+  - `apps/admin/app/posts/[id]/components/blocks/ImageGalleryBlock.tsx` (213 lines): Khối thư viện ảnh lướt (Slider / Grid), quản lý danh sách và batch upload.
+  - `apps/admin/app/posts/[id]/components/blocks/VideoBlocks.tsx` (112 lines): Khối video YouTube và TikTok có trích xuất video ID tự động.
+* **Kết quả Verify:**
+  - `pnpm --filter @cardealer/admin check-types`: **Passed (0 errors)**.
+  - Tách nhỏ từng file module hóa (110 - 227 dòng/file), tuân thủ SRP và `unit_size_limit`.
