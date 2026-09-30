@@ -16,8 +16,8 @@
 | **Vị trí Auth/Validation** | `apps/admin/contexts/AuthContext.tsx`, `can('posts:write')` RBAC Guard |
 | **Baseline Type-check** | 8/8 packages passed (0 errors) |
 | **Tổng số Units** | 10 Units (**U-01** ➡️ **U-10**) |
-| **Tiến độ** | 6 / 10 Units hoàn thành (U-06 Green) |
-| **Last Green Commit** | `470abc0` |
+| **Tiến độ** | 7 / 10 Units hoàn thành (U-07 Green) |
+| **Last Green Commit** | `3c81d0e` |
 
 ---
 
@@ -112,3 +112,15 @@
 * **Kết quả Verify:**
   - `pnpm --filter @cardealer/admin check-types`: **Passed (0 errors)**.
   - Tách nhỏ từng file độc lập (79 - 169 dòng/file), tuân thủ SRP và `unit_size_limit`.
+
+### 🔹 Unit U-07: Extract Car Data Blocks
+* **Commit Code:** `3c81d0e` (Diff: 830 lines added across 4 modular files)
+* **File tạo mới:**
+  - `apps/admin/app/posts/[id]/components/blocks/RelatedCarBlock.tsx` (145 lines): Khối card hiển thị mẫu xe liên quan gắn với catalog xe, hiển thị ảnh và giá tham khảo.
+  - `apps/admin/app/posts/[id]/components/blocks/PriceTableRow.tsx` (220 lines): Từng hàng phiên bản trong bảng giá lăn bánh (tên bản, niêm yết, lăn bánh HN/HCM/Tỉnh, ưu đãi, nút xóa).
+  - `apps/admin/app/posts/[id]/components/blocks/PriceTableBlock.tsx` (215 lines): Bảng giá lăn bánh chi tiết với bộ lọc chọn dòng xe catalog, thêm/sửa/xóa phiên bản.
+  - `apps/admin/app/posts/[id]/components/blocks/SpecTableBlock.tsx` (250 lines): Bảng ma trận so sánh thông số kỹ thuật đa phiên bản (thêm/xóa cột phiên bản, thêm/xóa hàng thông số).
+* **Kết quả Verify:**
+  - `pnpm --filter @cardealer/admin check-types`: **Passed (0 errors)**.
+  - Tách nhỏ theo SRP (145 - 250 dòng/file), cô lập logic phụ thuộc catalog service, 100% `@cardealer/ui`.
+
