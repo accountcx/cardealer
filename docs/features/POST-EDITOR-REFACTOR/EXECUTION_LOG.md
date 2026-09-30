@@ -16,8 +16,8 @@
 | **Vị trí Auth/Validation** | `apps/admin/contexts/AuthContext.tsx`, `can('posts:write')` RBAC Guard |
 | **Baseline Type-check** | 8/8 packages passed (0 errors) |
 | **Tổng số Units** | 10 Units (**U-01** ➡️ **U-10**) |
-| **Tiến độ** | 8 / 10 Units hoàn thành (U-08 Green) |
-| **Last Green Commit** | `b47ec66` |
+| **Tiến độ** | 9 / 10 Units hoàn thành (U-09 Green) |
+| **Last Green Commit** | `526c002` |
 
 ---
 
@@ -134,5 +134,16 @@
 * **Kết quả Verify:**
   - `pnpm --filter @cardealer/admin check-types`: **Passed (0 errors)**.
   - Tuân thủ nghiêm ngặt `unit_size_limit` (228 dòng < 300 dòng), 100% `@cardealer/ui`, zero any.
+
+### 🔹 Unit U-09: Modularize Post Editor Page
+* **Commit Code:** `526c002` (Diff: 467 insertions, 2,835 deletions across 2 files)
+* **File thay đổi & tạo mới:**
+  - `apps/admin/app/posts/[id]/ast.ts` (140 lines): Trích xuất bộ đôi hàm `serializeTiptapDoc` và `deserializeTiptapDoc` xử lý chuyển đổi 2 chiều cấu trúc Tiptap JSON AST Tree.
+  - `apps/admin/app/posts/[id]/page.tsx` (giảm từ 3,440 dòng xuống 514 dòng sạch sẽ): Tích hợp toàn bộ hệ thống sub-components đã tách (PostEditorHeader, AddBlockMenu, BlockItemWrapper, PostEditorSidebar, 13 loại Content Block E-E-A-T, MediaPickerModal).
+* **Kết quả Verify:**
+  - `pnpm --filter @cardealer/admin check-types`: **Passed (0 errors)**.
+  - `pnpm turbo run check-types`: **Passed 8/8 packages (0 errors)**.
+  - Loại bỏ hoàn toàn khối mã cồng kềnh (> 2,800 dòng dư thừa), tuân thủ 100% SRP và Clean Architecture.
+
 
 
