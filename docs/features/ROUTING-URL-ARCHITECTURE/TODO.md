@@ -17,7 +17,7 @@
 ## 🚀 GIAI ĐOẠN 4: THỰC THI CODE THEO LÁT CẮT (VERTICAL SLICES)
 *(Lộ trình chi tiết từng file do Coder thiết lập tại Step 4.0)*
 - [x] **Lát cắt 1 (US-01):** Chuẩn hóa Navigation & Footer Settings Data Contract (Types, Seeds & Layout Links) — **Skill:** `@fullstack-dev-executor` — **Completed**
-- [ ] **Lát cắt 2 (US-02):** Dynamic Route Tĩnh `/dong-xe/[slug]` (RSC, `getCatalogCars()`, <h1>, Mô tả SEO 200 chữ, Lưới xe) — **Skill:** `@fullstack-dev-executor`
+- [x] **Lát cắt 2 (US-02):** Dynamic Route Tĩnh `/dong-xe/[slug]` (RSC, `getCatalogCars()`, <h1>, Mô tả SEO 200 chữ, Lưới xe) — **Skill:** `@fullstack-dev-executor` — **Completed**
 - [-] **Lát cắt 3 (US-03):** Cơ chế 301 Redirects & Canonical URLs — **Skipped (Môi trường Dev không yêu cầu)**
 
 ## 🔍 GIAI ĐOẠN 5 VÀ HOÀN THIỆN: REVIEW VÀ MEMORY
