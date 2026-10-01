@@ -15,10 +15,10 @@ export const createStaticPageSchema = z.object({
     .min(2, 'Slug tối thiểu 2 ký tự')
     .max(255)
     .regex(/^[a-z0-9-]+$/, 'Slug chỉ chứa chữ thường không dấu, số và dấu gạch ngang')
-    .refine((val) => !RESERVED_SLUGS.includes(val as any), {
+    .refine((val) => !(RESERVED_SLUGS as readonly string[]).includes(val), {
       message: 'Slug này trùng với đường dẫn cố định của hệ thống, vui lòng chọn tên khác!',
     }),
-  content: z.record(z.string(), z.any()).default({}),
+  content: z.record(z.string(), z.unknown()).default({}),
   templateType: z.enum(['DEFAULT', 'PROFILE_SHOWROOM', 'TIMELINE', 'FINANCE']).default('DEFAULT'),
   isPublished: z.boolean().default(false),
   metaTitle: z.string().max(255).optional().nullable(),
@@ -35,7 +35,7 @@ export interface StaticPage {
   id: string;
   title: string;
   slug: string;
-  content: Record<string, any>;
+  content: Record<string, unknown>;
   templateType: StaticPageTemplate;
   isPublished: boolean;
   metaTitle: string | null;

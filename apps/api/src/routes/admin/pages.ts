@@ -1,14 +1,52 @@
 import { IncomingMessage, ServerResponse } from 'node:http';
-import { db, schema } from '@cardealer/database';
-import { eq, desc, and, or, ilike, count } from 'drizzle-orm';
 import { authenticateAdmin, checkPermission } from '../../middleware/rbac';
 import {
   createStaticPageSchema,
   updateStaticPageSchema,
-  RESERVED_SLUGS,
   type StaticPageTemplate,
-  type StaticPageSchemaType,
 } from '@cardealer/types';
+import {
+  listPagesService,
+  findPageBySlugService,
+  findPageByIdService,
+  createPageService,
+  updatePageService,
+  deletePageService,
+} from '../../services/pages.service';
+
+// WHY: Regex kiểm tra tính hợp lệ của UUID v4 trước khi truy vấn database (CWE-20 / OWASP API1 Input Boundary Guard).
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+// WHY: Structured Logger & Error Taxonomy (CWE-117, CWE-200, Observability Readiness).
+// Khử \r\n chống Log Injection, phân loại Permanent (4xx logic) vs Transient (5xx/DB drop). Cấm ghi secret hay PII.
+interface LogContext {
+  action: string;
+  method: string;
+  path: string;
+  userId?: string;
+  errorType: 'TRANSIENT' | 'PERMANENT';
+  error: unknown;
+}
+
+function logApiError(ctx: LogContext): void {
+  const safeMessage = String(
+    ctx.error instanceof Error ? ctx.error.message : ctx.error
+  ).replace(/[\r\n]/g, ' ');
+
+  console.error(
+    JSON.stringify({
+      timestamp: new Date().toISOString(),
+      level: 'ERROR',
+      source: 'ADMIN_PAGES_ROUTER',
+      action: ctx.action,
+      method: ctx.method,
+      path: ctx.path,
+      userId: ctx.userId ?? 'ANONYMOUS',
+      errorType: ctx.errorType,
+      message: safeMessage,
+    })
+  );
+}
 
 export async function handleAdminPageRoutes(
   req: IncomingMessage,
@@ -21,6 +59,7 @@ export async function handleAdminPageRoutes(
 
   // 1. GET /api/admin/pages: Danh sách trang tĩnh có phân trang & bộ lọc
   if (pathname === '/api/admin/pages' && req.method === 'GET') {
+    // WHY: Fail-Closed Auth Guard (R5). Bắt buộc xác thực và kiểm tra quyền trước khi truy xuất dữ liệu.
     const auth = await authenticateAdmin(req);
     if (auth.error) {
       sendJson(auth.error.statusCode, { success: false, error: auth.error });
@@ -29,76 +68,30 @@ export async function handleAdminPageRoutes(
     const currentUser = auth.user!;
 
     if (!checkPermission(currentUser.role, 'pages:read')) {
-      sendJson(403, {
-        success: false,
-        error: { code: 'FORBIDDEN', message: 'Bạn không có quyền xem danh sách trang tĩnh' },
-      });
+      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền xem danh sách trang tĩnh' } });
       return true;
     }
 
     try {
       const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
       const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit')) || 20));
-      const offset = (page - 1) * limit;
       const statusFilter = url.searchParams.get('status');
       const templateFilter = url.searchParams.get('templateType') as StaticPageTemplate | null;
       const searchQuery = url.searchParams.get('search')?.trim();
 
-      const conditions = [];
-
-      if (statusFilter === 'published') {
-        conditions.push(eq(schema.staticPages.isPublished, true));
-      } else if (statusFilter === 'draft') {
-        conditions.push(eq(schema.staticPages.isPublished, false));
-      }
-
-      if (templateFilter && ['DEFAULT', 'PROFILE_SHOWROOM', 'TIMELINE', 'FINANCE'].includes(templateFilter)) {
-        conditions.push(eq(schema.staticPages.templateType, templateFilter));
-      }
-
-      if (searchQuery) {
-        conditions.push(
-          or(
-            ilike(schema.staticPages.title, `%${searchQuery}%`),
-            ilike(schema.staticPages.slug, `%${searchQuery}%`)
-          )
-        );
-      }
-
-      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-
-      const [items, totalRes] = await Promise.all([
-        db.query.staticPages.findMany({
-          where: whereClause,
-          orderBy: [desc(schema.staticPages.updatedAt)],
-          limit,
-          offset,
-        }),
-        db.select({ count: count() }).from(schema.staticPages).where(whereClause),
-      ]);
-
-      const totalItems = totalRes[0]?.count || 0;
-      const totalPages = Math.ceil(totalItems / limit) || 1;
-
-      sendJson(200, {
-        success: true,
-        data: {
-          items,
-          pagination: {
-            page,
-            limit,
-            totalItems,
-            totalPages,
-          },
-        },
-      });
+      const result = await listPagesService({ page, limit, statusFilter, templateFilter, searchQuery });
+      sendJson(200, { success: true, data: result });
       return true;
     } catch (error) {
-      console.error('[API] Lỗi khi lấy danh sách trang tĩnh:', error);
-      sendJson(500, {
-        success: false,
-        error: { code: 'INTERNAL_SERVER_ERROR', message: 'Lỗi máy chủ khi lấy danh sách trang tĩnh' },
+      logApiError({
+        action: 'LIST_PAGES',
+        method: req.method || 'GET',
+        path: pathname,
+        userId: currentUser.id,
+        errorType: 'TRANSIENT',
+        error,
       });
+      sendJson(500, { success: false, error: { code: 'INTERNAL_SERVER_ERROR', message: 'Lỗi máy chủ khi lấy danh sách trang tĩnh' } });
       return true;
     }
   }
@@ -113,10 +106,7 @@ export async function handleAdminPageRoutes(
     const currentUser = auth.user!;
 
     if (!checkPermission(currentUser.role, 'pages:write')) {
-      sendJson(403, {
-        success: false,
-        error: { code: 'FORBIDDEN', message: 'Bạn không có quyền tạo trang tĩnh' },
-      });
+      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền tạo trang tĩnh' } });
       return true;
     }
 
@@ -138,112 +128,81 @@ export async function handleAdminPageRoutes(
 
       const validated = parseResult.data;
 
-      // Kiểm tra trùng lặp slug trong DB
-      const existing = await db.query.staticPages.findFirst({
-        where: eq(schema.staticPages.slug, validated.slug),
-      });
-
+      // WHY: Kiểm tra tính duy nhất của slug trước khi insert để trả thông báo 409 thân thiện (R13 Idempotency).
+      const existing = await findPageBySlugService(validated.slug);
       if (existing) {
-        sendJson(409, {
-          success: false,
-          error: { code: 'SLUG_ALREADY_EXISTS', message: `Slug '${validated.slug}' đã tồn tại, vui lòng chọn tên khác` },
-        });
+        sendJson(409, { success: false, error: { code: 'SLUG_ALREADY_EXISTS', message: `Slug '${validated.slug}' đã tồn tại, vui lòng chọn tên khác` } });
         return true;
       }
 
-      const [newPage] = await db.insert(schema.staticPages).values({
-        title: validated.title,
-        slug: validated.slug,
-        content: validated.content,
-        templateType: validated.templateType,
-        isPublished: validated.isPublished,
-        metaTitle: validated.metaTitle,
-        metaDescription: validated.metaDescription,
-        canonicalUrl: validated.canonicalUrl,
-        ogImage: validated.ogImage,
-        noIndex: validated.noIndex,
-        schemaType: validated.schemaType,
-        createdBy: currentUser.id,
-        updatedBy: currentUser.id,
-      }).returning();
-
-      sendJson(201, {
-        success: true,
-        data: newPage,
-      });
+      const newPage = await createPageService(validated, currentUser.id);
+      sendJson(201, { success: true, data: newPage });
       return true;
     } catch (error) {
-      console.error('[API] Lỗi khi tạo trang tĩnh:', error);
-      sendJson(500, {
-        success: false,
-        error: { code: 'INTERNAL_SERVER_ERROR', message: 'Lỗi máy chủ khi tạo trang tĩnh' },
+      logApiError({
+        action: 'CREATE_PAGE',
+        method: req.method || 'POST',
+        path: pathname,
+        userId: currentUser.id,
+        errorType: 'TRANSIENT',
+        error,
       });
+      sendJson(500, { success: false, error: { code: 'INTERNAL_SERVER_ERROR', message: 'Lỗi máy chủ khi tạo trang tĩnh' } });
       return true;
     }
   }
 
-  // 3. GET /api/admin/pages/:id: Lấy chi tiết trang tĩnh
+  // Phân tích route có param :id
   const idMatch = pathname.match(/^\/api\/admin\/pages\/([a-zA-Z0-9-]+)$/);
-  if (idMatch && req.method === 'GET') {
-    const pageId = idMatch[1];
-    const auth = await authenticateAdmin(req);
-    if (auth.error) {
-      sendJson(auth.error.statusCode, { success: false, error: auth.error });
-      return true;
-    }
-    const currentUser = auth.user!;
+  if (!idMatch) return false;
 
+  const pageId = idMatch[1];
+  // WHY: Xác thực định dạng UUID ngăn chặn tấn công malformed ID hoặc quét bừa bãi (CWE-20 Input Validation).
+  if (!UUID_REGEX.test(pageId)) {
+    sendJson(400, { success: false, error: { code: 'INVALID_ID', message: 'ID trang tĩnh không đúng định dạng UUID' } });
+    return true;
+  }
+
+  const auth = await authenticateAdmin(req);
+  if (auth.error) {
+    sendJson(auth.error.statusCode, { success: false, error: auth.error });
+    return true;
+  }
+  const currentUser = auth.user!;
+
+  // 3. GET /api/admin/pages/:id: Lấy chi tiết trang tĩnh
+  if (req.method === 'GET') {
     if (!checkPermission(currentUser.role, 'pages:read')) {
-      sendJson(403, {
-        success: false,
-        error: { code: 'FORBIDDEN', message: 'Bạn không có quyền xem chi tiết trang tĩnh' },
-      });
+      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền xem chi tiết trang tĩnh' } });
       return true;
     }
 
     try {
-      const page = await db.query.staticPages.findFirst({
-        where: eq(schema.staticPages.id, pageId),
-      });
-
+      const page = await findPageByIdService(pageId);
       if (!page) {
-        sendJson(404, {
-          success: false,
-          error: { code: 'PAGE_NOT_FOUND', message: 'Không tìm thấy trang tĩnh' },
-        });
+        sendJson(404, { success: false, error: { code: 'PAGE_NOT_FOUND', message: 'Không tìm thấy trang tĩnh' } });
         return true;
       }
-
-      sendJson(200, {
-        success: true,
-        data: page,
-      });
+      sendJson(200, { success: true, data: page });
       return true;
     } catch (error) {
-      console.error('[API] Lỗi khi lấy chi tiết trang tĩnh:', error);
-      sendJson(500, {
-        success: false,
-        error: { code: 'INTERNAL_SERVER_ERROR', message: 'Lỗi máy chủ khi lấy chi tiết trang tĩnh' },
+      logApiError({
+        action: 'GET_PAGE_DETAIL',
+        method: req.method || 'GET',
+        path: pathname,
+        userId: currentUser.id,
+        errorType: 'TRANSIENT',
+        error,
       });
+      sendJson(500, { success: false, error: { code: 'INTERNAL_SERVER_ERROR', message: 'Lỗi máy chủ khi lấy chi tiết trang tĩnh' } });
       return true;
     }
   }
 
   // 4. PUT /api/admin/pages/:id: Cập nhật trang tĩnh
-  if (idMatch && req.method === 'PUT') {
-    const pageId = idMatch[1];
-    const auth = await authenticateAdmin(req);
-    if (auth.error) {
-      sendJson(auth.error.statusCode, { success: false, error: auth.error });
-      return true;
-    }
-    const currentUser = auth.user!;
-
+  if (req.method === 'PUT') {
     if (!checkPermission(currentUser.role, 'pages:write')) {
-      sendJson(403, {
-        success: false,
-        error: { code: 'FORBIDDEN', message: 'Bạn không có quyền cập nhật trang tĩnh' },
-      });
+      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền cập nhật trang tĩnh' } });
       return true;
     }
 
@@ -264,103 +223,64 @@ export async function handleAdminPageRoutes(
       }
 
       const validated = parseResult.data;
-
-      // Kiểm tra trang có tồn tại không
-      const existing = await db.query.staticPages.findFirst({
-        where: eq(schema.staticPages.id, pageId),
-      });
-
+      const existing = await findPageByIdService(pageId);
       if (!existing) {
-        sendJson(404, {
-          success: false,
-          error: { code: 'PAGE_NOT_FOUND', message: 'Không tìm thấy trang tĩnh để cập nhật' },
-        });
+        sendJson(404, { success: false, error: { code: 'PAGE_NOT_FOUND', message: 'Không tìm thấy trang tĩnh để cập nhật' } });
         return true;
       }
 
-      // Nếu có cập nhật slug, kiểm tra slug mới có bị trùng không
       if (validated.slug && validated.slug !== existing.slug) {
-        const slugConflict = await db.query.staticPages.findFirst({
-          where: eq(schema.staticPages.slug, validated.slug),
-        });
-
+        const slugConflict = await findPageBySlugService(validated.slug);
         if (slugConflict) {
-          sendJson(409, {
-            success: false,
-            error: { code: 'SLUG_ALREADY_EXISTS', message: `Slug '${validated.slug}' đã tồn tại ở trang khác` },
-          });
+          sendJson(409, { success: false, error: { code: 'SLUG_ALREADY_EXISTS', message: `Slug '${validated.slug}' đã tồn tại ở trang khác` } });
           return true;
         }
       }
 
-      const [updatedPage] = await db.update(schema.staticPages)
-        .set({
-          ...validated,
-          updatedBy: currentUser.id,
-          updatedAt: new Date(),
-        })
-        .where(eq(schema.staticPages.id, pageId))
-        .returning();
-
-      sendJson(200, {
-        success: true,
-        data: updatedPage,
-      });
+      const updatedPage = await updatePageService(pageId, validated, currentUser.id);
+      sendJson(200, { success: true, data: updatedPage });
       return true;
     } catch (error) {
-      console.error('[API] Lỗi khi cập nhật trang tĩnh:', error);
-      sendJson(500, {
-        success: false,
-        error: { code: 'INTERNAL_SERVER_ERROR', message: 'Lỗi máy chủ khi cập nhật trang tĩnh' },
+      logApiError({
+        action: 'UPDATE_PAGE',
+        method: req.method || 'PUT',
+        path: pathname,
+        userId: currentUser.id,
+        errorType: 'TRANSIENT',
+        error,
       });
+      sendJson(500, { success: false, error: { code: 'INTERNAL_SERVER_ERROR', message: 'Lỗi máy chủ khi cập nhật trang tĩnh' } });
       return true;
     }
   }
 
   // 5. DELETE /api/admin/pages/:id: Xóa trang tĩnh
-  if (idMatch && req.method === 'DELETE') {
-    const pageId = idMatch[1];
-    const auth = await authenticateAdmin(req);
-    if (auth.error) {
-      sendJson(auth.error.statusCode, { success: false, error: auth.error });
-      return true;
-    }
-    const currentUser = auth.user!;
-
+  if (req.method === 'DELETE') {
     if (!checkPermission(currentUser.role, 'pages:delete')) {
-      sendJson(403, {
-        success: false,
-        error: { code: 'FORBIDDEN', message: 'Bạn không có quyền xóa trang tĩnh' },
-      });
+      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền xóa trang tĩnh' } });
       return true;
     }
 
     try {
-      const existing = await db.query.staticPages.findFirst({
-        where: eq(schema.staticPages.id, pageId),
-      });
-
+      const existing = await findPageByIdService(pageId);
       if (!existing) {
-        sendJson(404, {
-          success: false,
-          error: { code: 'PAGE_NOT_FOUND', message: 'Không tìm thấy trang tĩnh để xóa' },
-        });
+        sendJson(404, { success: false, error: { code: 'PAGE_NOT_FOUND', message: 'Không tìm thấy trang tĩnh để xóa' } });
         return true;
       }
 
-      await db.delete(schema.staticPages).where(eq(schema.staticPages.id, pageId));
-
-      sendJson(200, {
-        success: true,
-        message: 'Đã xóa trang tĩnh thành công',
-      });
+      await deletePageService(pageId);
+      sendJson(200, { success: true, message: 'Đã xóa trang tĩnh thành công' });
       return true;
     } catch (error) {
-      console.error('[API] Lỗi khi xóa trang tĩnh:', error);
-      sendJson(500, {
-        success: false,
-        error: { code: 'INTERNAL_SERVER_ERROR', message: 'Lỗi máy chủ khi xóa trang tĩnh' },
+      logApiError({
+        action: 'DELETE_PAGE',
+        method: req.method || 'DELETE',
+        path: pathname,
+        userId: currentUser.id,
+        errorType: 'TRANSIENT',
+        error,
       });
+      sendJson(500, { success: false, error: { code: 'INTERNAL_SERVER_ERROR', message: 'Lỗi máy chủ khi xóa trang tĩnh' } });
       return true;
     }
   }
