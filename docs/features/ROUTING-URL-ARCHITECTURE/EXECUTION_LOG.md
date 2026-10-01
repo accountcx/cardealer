@@ -1,10 +1,10 @@
 # EXECUTION LOG: ROUTING-URL-ARCHITECTURE
 
 ## 0. CURRENT STATE
-- **Trạng thái:** HOÀN THÀNH LÁT CẮT US-01 — SẴN SÀNG CHUYỂN SANG US-02
-- **Slice hiện tại:** [US-02] Dynamic Route Tĩnh `/dong-xe/[slug]` (RSC, `getCatalogCars()`, `<h1>`, Mô tả SEO 200 chữ, Lưới xe)
-- **Unit kế tiếp:** [U-04 / Turn 0 của US-02]
-- **last_green:** `c96b3de`
+- **Trạng thái:** ĐANG THỰC THI (PHASE 4 - LÁT CẮT US-02)
+- **Slice hiện tại:** [US-02] Dynamic Route Tĩnh `/dong-xe/[slug]`
+- **Unit kế tiếp:** [U-05] `apps/web/lib/car-segment-filter.ts` (Risk: LOW)
+- **last_green:** `5eb1ad4`
 - **gate_mode:** strict
 - **verify_commands:**
   - Type-check types: `export PATH="$HOME/.nvm/versions/node/v24.21.0/bin:$PATH" && pnpm --filter @cardealer/types check-types`
@@ -29,6 +29,16 @@
 | **U-01** | `packages/types/src/settings.ts` | LOW | Không | TS-01 (Contract Type Check & Default URLs) | DONE | `8bbeaca` |
 | **U-02** | `packages/database/src/seed-settings.ts` | LOW | Không | TS-02 (Seed Data Consistency) | DONE | `ac7df3b` |
 | **U-03** | `apps/web/components/layout/Navbar.tsx` + `apps/web/components/layout/MobileDrawer.tsx` | MEDIUM | Có (Đồng bộ active state highlight cả Desktop & Mobile) | TS-03 (UI Active State Verification) | DONE | `c96b3de` |
+
+---
+
+## 1.1. Micro-Roadmap Lát Cắt US-02: Dynamic Route Tĩnh `/dong-xe/[slug]`
+
+| Unit | File(s) | Risk | Coupled? (lý do) | Test IDs | Trạng thái | Commit |
+| :--- | :--- | :---: | :---: | :--- | :---: | :---: |
+| **U-04** | `apps/web/config/segments.ts` | LOW | Không | TS-01, TS-07, TS-08 (Whitelist Registry & SEO Metadata) | DONE | `5eb1ad4` |
+| **U-05** | `apps/web/lib/car-segment-filter.ts` | LOW | Không | TS-13 (Pure In-Memory Filter Logic) | PENDING | - |
+| **U-06** | `apps/web/app/dong-xe/[slug]/page.tsx` + `apps/web/app/dong-xe/[slug]/error.tsx` | HIGH | Có (Server Component + Local Error Boundary) | TS-04..06, TS-07..12 | PENDING | - |
 
 ---
 
@@ -72,3 +82,16 @@
 - **Scope guard:** ✅ diff ⊆ Roadmap (`Navbar.tsx` & `MobileDrawer.tsx`); ✅ không chạm protected_paths; +115/-29 dòng (< 300 lines limit).
 - **Sửa lỗi:** Không có lỗi phát sinh.
 - **Commit:** `c96b3de`
+
+### [2026-10-01] Unit U-04: apps/web/config/segments.ts
+- **Thay đổi chính:** Khởi tạo Segment Registry (SSOT) chứa Whitelist 3 phân khúc hợp lệ (`sedan`, `suv`, `mpv`), bảng ánh xạ sang giá trị DB `kieuDang`, siêu dữ liệu SEO (Title, Description, OG Image, H1) và đoạn văn bản E-E-A-T chuẩn SEO 200 chữ; hàm type guard an toàn `isSegmentSlug`, `getSegmentConfig`, `getAllSegmentSlugs`.
+- **Red check:** Khẳng định trước đó chưa có cấu hình Registry tập trung, nguy cơ lỗi Soft-404 và XSS (TS-07, TS-08).
+- **Verify:**
+  | Lệnh | Exit | Tóm tắt |
+  | :--- | :---: | :--- |
+  | `pnpm --filter @cardealer/web check-types` | 0 | 0 errors |
+  | `pnpm --filter @cardealer/types check-types` | 0 | 0 errors |
+  | `pnpm --filter @cardealer/core test` | 0 | 14 passed (127 tests passed), 0 failed |
+- **Scope guard:** ✅ diff ⊆ Roadmap (chỉ tạo `apps/web/config/segments.ts`); ✅ không chạm protected_paths; +83 dòng (< 300 dòng).
+- **Sửa lỗi:** Không có lỗi phát sinh.
+- **Commit:** `5eb1ad4`
