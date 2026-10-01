@@ -22,19 +22,29 @@
 
 ## 📝 NHẬT KÝ THỰC THI CHI TIẾT THEO TỪNG UNIT
 
-### 📍 Unit U-01: Data Model & Contracts (US-01)
+### 📍 Unit U-01: Data Model, Contracts & Migration (US-01)
 * **Thời gian hoàn thành:** 2026-10-01
-* **Git Commit:** `dc646bb` (`feat(US-01): implement static_pages schema and types contracts`)
+* **Git Commits:**
+  * `dc646bb` (`feat(US-01): implement static_pages schema and types contracts`)
+  * `df6ce97` (`fix(US-01): add mental model comments and drizzle migration with rollback script`, `Risk: HIGH`)
 * **Tệp tin tác động:**
   * `packages/types/src/static-pages.ts` (Tạo mới: `StaticPage`, `CreateStaticPageDTO`, `StaticPageTemplate`, `StaticPageSchemaType`)
   * `packages/types/src/index.ts` (Export `static-pages`)
-  * `packages/database/src/schema/static-pages.ts` (Tạo mới: Drizzle table `static_pages` 12 trường + 3 indexes)
+  * `packages/database/src/schema/static-pages.ts` (Drizzle table `static_pages` 12 trường + 4 indexes + mental model comments `// WHY:`)
   * `packages/database/src/schema/index.ts` (Export `staticPages`)
   * `packages/database/src/schema/relations.ts` (Khai báo `staticPagesRelations` liên kết với `users`)
+  * `packages/database/drizzle/0005_secret_betty_ross.sql` (Migration SQL tạo bảng và constraints)
+  * `packages/database/drizzle/0005_secret_betty_ross.down.sql` (Rollback down script: `DROP TABLE IF EXISTS "static_pages" CASCADE;`)
+  * `packages/database/drizzle/meta/*` (Drizzle migration journal metadata)
   * `packages/core/src/__tests__/static-pages-schema.test.ts` (Tạo mới: 4 unit tests kiểm tra contracts)
+* **Tuân thủ quy tắc Kỹ thuật (`fullstack-dev-executor.xml:L87-L198`):**
+  * `db_migration`: Đã có migration SQL up (`0005_secret_betty_ross.sql`) và down rollback (`0005_secret_betty_ross.down.sql`).
+  * `risk_tiering`: Gắn đúng nhãn `Risk: HIGH` cho Unit chạm tầng DB Schema & Migration.
+  * `mental_model_comments`: Bổ sung đầy đủ `// WHY:` cho Unique B-Tree Index, R14 Composite Index, CMS Admin Composite Index, và Audit Foreign Keys.
 * **Bằng chứng nghiệm thu máy (Machine Verification):**
-  * `vitest run`: **15/15 test files passed (131/131 tests passed - Exit Code 0)**.
-  * `turbo run check-types`: **8/8 packages passed (0 errors - Exit Code 0)**.
+  * `pnpm --filter @cardealer/database check-types`: **Exit Code 0**.
+  * `pnpm --filter @cardealer/api exec tsc --noEmit`: **Exit Code 0**.
+  * `vitest run`: **16/16 test files passed (136/136 tests passed - Exit Code 0)**.
 * **Trạng thái:** ✅ **HOÀN THÀNH & NGHIỆM THU (VERIFIED)**.
 
 ### 📍 Unit U-02: Backend REST API Endpoints & Route Guards (US-02)
