@@ -6,6 +6,7 @@ import { handleLeadRoutes } from './routes/leads';
 import { handleAdminRoutes } from './routes/admin';
 import { handleRedirectRoutes } from './routes/redirects';
 import { handlePostRoutes } from './routes/posts';
+import { handlePublicPageRoutes } from './routes/pages';
 
 // 🧠 Mental Model: Micro REST API Server & Central Dispatcher.
 // Thiết kế theo chuẩn Router Delegation Pattern, phân tách routes thành các module con (< 100 dòng mỗi file).
@@ -95,6 +96,9 @@ const server = http.createServer(async (req, res) => {
 
   // 3.7. Posts Management & Inbound Leads (REST CRUD, Preview, Honeypot)
   if (await handlePostRoutes(req, res, url, readBody, sendJson)) return;
+
+  // 3.8. Public Static Pages Lookup (GET /api/public/pages/:slug)
+  if (await handlePublicPageRoutes(req, res, url, sendJson)) return;
 
   // 4. Admin Protected Routes
   if (await handleAdminRoutes(req, res, url, readBody, sendJson)) return;
