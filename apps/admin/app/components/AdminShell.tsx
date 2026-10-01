@@ -13,6 +13,7 @@ import {
   User as UserIcon,
   FolderTree,
   Image as ImageIcon,
+  Globe,
 } from 'lucide-react';
 import { clientEnv } from '@cardealer/env';
 import { AdminShell as SharedAdminShell, type AdminShellNavItem } from '@cardealer/ui';
@@ -94,6 +95,13 @@ export default function AdminShell({ children }: AdminShellProps) {
       icon: <FolderTree size={18} />,
       permission: 'posts:read',
       active: pathname.startsWith('/categories'),
+    },
+    {
+      label: 'Trang Tĩnh (SEO)',
+      href: '/pages',
+      icon: <Globe size={18} />,
+      permission: 'pages:read',
+      active: pathname.startsWith('/pages'),
     },
     {
       label: 'Cài Đặt Showroom',
