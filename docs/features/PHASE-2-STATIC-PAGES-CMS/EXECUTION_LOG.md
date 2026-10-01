@@ -15,7 +15,7 @@
 | **U-01** | `US-01` | • `packages/database/src/schema/static-pages.ts`<br/>• `packages/database/src/schema/index.ts`<br/>• `packages/database/src/schema/relations.ts`<br/>• `packages/types/src/static-pages.ts`<br/>• `packages/types/src/index.ts` | Khởi tạo Schema Drizzle `static_pages` (12 trường + 3 indexes) và TypeScript Contracts. Verify typecheck & 131 unit tests exit code 0. | ✅ VERIFIED |
 | **U-02** | `US-02` | • `packages/types/src/permission.ts`<br/>• `apps/api/src/routes/admin/pages.ts`<br/>• `apps/api/src/routes/admin.ts`<br/>• `apps/api/src/routes/pages.ts`<br/>• `apps/api/src/server.ts` | Xây dựng bộ REST API: Admin CRUD có RBAC, Zod validation, kiểm tra `RESERVED_SLUGS` & Public Query theo slug (`isPublished = true`). Verify 136 tests & typecheck exit code 0. | ✅ VERIFIED |
 | **U-03** | `US-03` | • `apps/admin/app/pages/`<br/>• `apps/admin/components/pages/`<br/>• `apps/admin/app/components/AdminShell.tsx`<br/>• `apps/admin/services/pages.service.ts` | CMS Admin UI: Trang danh sách `/pages`, Form soạn thảo 2 cột (Tiptap AST + Sidebar Google SERP Preview thời gian thực), Menu Admin Navigation. | ✅ VERIFIED |
-| **U-04** | `US-04` | • `apps/web/app/[slug]/page.tsx`<br/>• `apps/web/components/pages/templates/*` | Web Storefront: Dynamic route `[slug]` với SSR metadata injection & 4 Templates (`PROFILE_SHOWROOM`, `DEFAULT`, `TIMELINE`, `FINANCE`). | ⏸️ QUEUED |
+| **U-04** | `US-04` | • `apps/web/app/(main)/[slug]/page.tsx`<br/>• `apps/web/components/pages/templates/*`<br/>• `apps/web/components/pages/StaticPageJsonLd.tsx`<br/>• `apps/web/services/pages.service.ts` | Web Storefront: Dynamic Resolver catch-all route `[slug]` với SSR metadata injection & 6 Templates (`DEFAULT`, `PROFILE_SHOWROOM`, `TIMELINE`, `FINANCE`, `CONTACT`, `FAQ`). | ✅ VERIFIED |
 | **U-05** | `Verification` | • `packages/database`, `apps/api`, `apps/admin`, `apps/web` | Kiểm thử toàn diện 14 kịch bản từ `TEST_PLAN.md`, chạy `check-types` và `pnpm test` đạt exit code 0. | ⏸️ QUEUED |
 
 ---
@@ -101,6 +101,35 @@
   * `pnpm --filter @cardealer/api exec tsc --noEmit`: **Exit Code 0**.
   * `pnpm --filter @cardealer/database check-types`: **Exit Code 0**.
   * `vitest run`: **16/16 test files passed (136/136 tests passed - Exit Code 0)**.
+* **Trạng thái:** ✅ **HOÀN THÀNH & NGHIỆM THU (VERIFIED)**.
+
+### 📍 Unit U-04: Web Storefront Dynamic Template Resolver (US-04)
+* **Thời gian hoàn thành:** 2026-10-02
+* **Git Commit:** `d7c273b` (`feat(US-04): implement dynamic template resolver and schema mapping for storefront static pages`)
+* **Tệp tin tác động:**
+  * `packages/types/src/static-pages.ts` (Nâng cấp 6 Templates, 6 Schema Types và mapping `TEMPLATE_DEFAULT_SCHEMA`)
+  * `apps/api/src/services/pages.service.ts` (Mở rộng bộ lọc template hỗ trợ CONTACT và FAQ)
+  * `apps/admin/components/pages/PageSeoSidebar.tsx` (Dropdown 6 Templates, 6 Schemas kèm logic tự động gán Schema theo Template)
+  * `apps/admin/app/pages/page.tsx` (Bộ lọc danh sách trang tĩnh hỗ trợ đầy đủ 6 Templates)
+  * `apps/web/services/pages.service.ts` (Tạo mới: Typed Service client gọi public API có ISR cache 60s, 25 dòng)
+  * `apps/web/components/pages/StaticPageJsonLd.tsx` (Tạo mới: Script generator JSON-LD Schema.org động, 78 dòng)
+  * `apps/web/components/pages/templates/DefaultTemplate.tsx` (Tạo mới: Layout văn bản chuẩn, 83 dòng)
+  * `apps/web/components/pages/templates/ProfileShowroomTemplate.tsx` (Tạo mới: Layout hồ sơ showroom, 88 dòng)
+  * `apps/web/components/pages/templates/TimelineTemplate.tsx` (Tạo mới: Layout quy trình 5 bước, 73 dòng)
+  * `apps/web/components/pages/templates/FinanceTemplate.tsx` (Tạo mới: Layout chính sách tài chính, 97 dòng)
+  * `apps/web/components/pages/templates/ContactTemplate.tsx` (Tạo mới: Layout liên hệ & bản đồ, 118 dòng)
+  * `apps/web/components/pages/templates/FaqTemplate.tsx` (Tạo mới: Layout accordion hỏi đáp, 102 dòng)
+  * `apps/web/app/(main)/[slug]/page.tsx` (Tạo mới: Dynamic Resolver Catch-All route với SSR metadata injection, 96 dòng)
+* **Tuân thủ quy tắc Kỹ thuật (`fullstack-dev-executor.xml:L87-L198`):**
+  * `unit_size_limit`: 100% tệp tin đều < 210 dòng (dưới ngưỡng quy định 300 dòng).
+  * `mental_model_comments`: Có `// WHY:` cho Dynamic Resolver, StaticPageJsonLd và từng Template component.
+  * `type_safety_zero_hardcode`: Zero `any`, types chuẩn xác.
+  * `fail_safe_defaults`: Fail-Closed chặn trang chưa xuất bản (R14) trả về 404 qua `notFound()`.
+* **Bằng chứng nghiệm thu máy (Machine Verification):**
+  * `pnpm --filter @cardealer/web exec tsc --noEmit`: **Exit Code 0** (Zero errors).
+  * `pnpm --filter @cardealer/admin exec tsc --noEmit`: **Exit Code 0**.
+  * `pnpm --filter @cardealer/api exec tsc --noEmit`: **Exit Code 0**.
+  * `vitest run`: **16/16 test files passed (137/137 tests passed - Exit Code 0)**.
 * **Trạng thái:** ✅ **HOÀN THÀNH & NGHIỆM THU (VERIFIED)**.
 
 

@@ -30,21 +30,50 @@ describe('Unit U-01: Static Pages Contracts & Types Verification', () => {
     expect(mockPage.schemaType).toBe('AboutPage');
   });
 
-  it('should support all 4 required template types', () => {
-    const templates: StaticPageTemplate[] = ['DEFAULT', 'PROFILE_SHOWROOM', 'TIMELINE', 'FINANCE'];
-    expect(templates).toHaveLength(4);
+  it('should support all 6 required template types', () => {
+    const templates: StaticPageTemplate[] = [
+      'DEFAULT',
+      'PROFILE_SHOWROOM',
+      'TIMELINE',
+      'FINANCE',
+      'CONTACT',
+      'FAQ',
+    ];
+    expect(templates).toHaveLength(6);
     expect(templates).toContain('DEFAULT');
     expect(templates).toContain('PROFILE_SHOWROOM');
     expect(templates).toContain('TIMELINE');
     expect(templates).toContain('FINANCE');
+    expect(templates).toContain('CONTACT');
+    expect(templates).toContain('FAQ');
   });
 
-  it('should support all 3 required schema types', () => {
-    const schemaTypes: StaticPageSchemaType[] = ['AboutPage', 'HowTo', 'WebPage'];
-    expect(schemaTypes).toHaveLength(3);
+  it('should support all 6 required schema types', () => {
+    const schemaTypes: StaticPageSchemaType[] = [
+      'WebPage',
+      'AboutPage',
+      'HowTo',
+      'FinancialProduct',
+      'ContactPage',
+      'FAQPage',
+    ];
+    expect(schemaTypes).toHaveLength(6);
+    expect(schemaTypes).toContain('WebPage');
     expect(schemaTypes).toContain('AboutPage');
     expect(schemaTypes).toContain('HowTo');
-    expect(schemaTypes).toContain('WebPage');
+    expect(schemaTypes).toContain('FinancialProduct');
+    expect(schemaTypes).toContain('ContactPage');
+    expect(schemaTypes).toContain('FAQPage');
+  });
+
+  it('should automatically map each Template to its corresponding default Schema.org type', async () => {
+    const { TEMPLATE_DEFAULT_SCHEMA } = await import('@cardealer/types');
+    expect(TEMPLATE_DEFAULT_SCHEMA.DEFAULT).toBe('WebPage');
+    expect(TEMPLATE_DEFAULT_SCHEMA.PROFILE_SHOWROOM).toBe('AboutPage');
+    expect(TEMPLATE_DEFAULT_SCHEMA.TIMELINE).toBe('HowTo');
+    expect(TEMPLATE_DEFAULT_SCHEMA.FINANCE).toBe('FinancialProduct');
+    expect(TEMPLATE_DEFAULT_SCHEMA.CONTACT).toBe('ContactPage');
+    expect(TEMPLATE_DEFAULT_SCHEMA.FAQ).toBe('FAQPage');
   });
 
   it('should validate CreateStaticPageDTO input contract', () => {

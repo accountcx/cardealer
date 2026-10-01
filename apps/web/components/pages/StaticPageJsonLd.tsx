@@ -44,6 +44,32 @@ export function StaticPageJsonLd({ page }: StaticPageJsonLdProps) {
         email: 'info@cardealer.vn',
       },
     };
+  } else if (schemaType === 'HowTo') {
+    schemaData = {
+      ...schemaData,
+      step: [
+        {
+          '@type': 'HowToStep',
+          name: 'Bước 1: Chọn mẫu xe và đăng ký lái thử',
+          text: 'Tham khảo thông số, hình ảnh và trải nghiệm lái thử thực tế tại showroom hoặc tại nhà.',
+        },
+        {
+          '@type': 'HowToStep',
+          name: 'Bước 2: Nhận báo giá lăn bánh và ưu đãi',
+          text: 'Nhận bảng dự toán chi tiết các khoản thuế phí và chương trình khuyến mãi tiền mặt.',
+        },
+        {
+          '@type': 'HowToStep',
+          name: 'Bước 3: Ký hợp đồng và thẩm định hồ sơ trả góp',
+          text: 'Ký kết hợp đồng mua bán minh bạch và hỗ trợ phê duyệt hồ sơ vay vốn ngân hàng trong 24 giờ.',
+        },
+        {
+          '@type': 'HowToStep',
+          name: 'Bước 4: Bàn giao xe trang trọng và hậu mãi',
+          text: 'Kiểm định PDI tiêu chuẩn, bàn giao xe tại showroom hoặc giao xe tận nhà an tâm.',
+        },
+      ],
+    };
   } else if (schemaType === 'FinancialProduct') {
     schemaData = {
       ...schemaData,

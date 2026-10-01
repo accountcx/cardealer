@@ -1,12 +1,11 @@
 'use client';
 
 import React from 'react';
-import { Card, Input, Select, Badge, Button } from '@cardealer/ui';
+import { Card, Input, Badge } from '@cardealer/ui';
 import { SerpPreview } from './SerpPreview';
 import { clientEnv } from '@cardealer/env';
 import type { StaticPageTemplate, StaticPageSchemaType } from '@cardealer/types';
 import { TEMPLATE_DEFAULT_SCHEMA } from '@cardealer/types';
-import { CheckCircle2, FileCode, ShieldAlert } from 'lucide-react';
 
 interface PageSeoSidebarProps {
   title: string;
