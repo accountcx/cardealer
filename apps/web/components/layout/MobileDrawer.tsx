@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { X, ChevronDown, PhoneCall, MessageCircle, MapPin, Clock, FileText } from 'lucide-react';
 import type { NavLink, ContactSettings } from '@cardealer/types';
 import { sanitizePhoneNumber, normalizeZaloUrl } from '@cardealer/types';
@@ -17,6 +18,7 @@ export interface MobileDrawerProps {
 // 🧠 Mental Model: Drawer điều hướng trên thiết bị di động với khả năng mở rộng danh mục đa cấp (Accordion).
 // 1. Phân chia độc lập: Khu vực danh mục cuộn dọc mượt mà; 2 nút CTA Gọi & Zalo luôn ghim cố định ở đáy.
 // 2. Chiều cao nút bấm tối thiểu 48px (h-12) đáp ứng chuẩn WCAG 2.1 AAA Touch Targets cho người dùng lái xe.
+// 3. Tự động highlight trạng thái Active khi duyệt các phân khúc tĩnh /dong-xe/[slug] qua usePathname().
 export const MobileDrawer = ({
   isOpen,
   onClose,
@@ -24,12 +26,33 @@ export const MobileDrawer = ({
   contact,
   onOpenLeadModal,
 }: MobileDrawerProps) => {
+  const pathname = usePathname();
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
     'nav-cars': true, // Mặc định mở menu Dòng xe cho khách dễ chọn
   });
 
+  // WHY: Tự động mở accordion Dòng Xe nếu khách đang ở route /xe hoặc /dong-xe/*
+  useEffect(() => {
+    if (pathname && (pathname.startsWith('/xe') || pathname.startsWith('/dong-xe'))) {
+      setExpandedMenus((prev) => ({ ...prev, 'nav-cars': true }));
+    }
+  }, [pathname]);
+
   const cleanHotline = sanitizePhoneNumber(contact.hotlineKinhDoanh);
   const cleanZaloUrl = normalizeZaloUrl(contact.zaloNumber || contact.hotlineKinhDoanh);
+
+  const isLinkActive = (link: NavLink) => {
+    if (!pathname) return false;
+    if (pathname === link.url) return true;
+    if (link.url === '/xe' && (pathname.startsWith('/xe') || pathname.startsWith('/dong-xe'))) {
+      return true;
+    }
+    return link.subLinks?.some((sub) => sub.url === pathname) ?? false;
+  };
+
+  const isSubLinkActive = (subUrl: string) => {
+    return pathname === subUrl;
+  };
 
   const toggleSubMenu = (id: string) => {
     setExpandedMenus((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -69,6 +92,7 @@ export const MobileDrawer = ({
           {headerLinks.map((link) => {
             const hasSub = Boolean(link.subLinks && link.subLinks.length > 0);
             const isExpanded = Boolean(expandedMenus[link.id]);
+            const isActive = isLinkActive(link);
 
             return (
               <div key={link.id} className="border-b border-slate-50 pb-1">
@@ -76,7 +100,11 @@ export const MobileDrawer = ({
                   <Link
                     href={link.url}
                     onClick={onClose}
-                    className="flex-1 py-2.5 px-2 text-sm font-bold text-slate-800 hover:text-[#0072CE] hover:bg-sky-50/70 rounded-xl transition-all duration-150"
+                    className={`flex-1 py-2.5 px-2 text-sm font-bold rounded-xl transition-all duration-150 ${
+                      isActive
+                        ? 'text-[#0072CE] bg-sky-50/90'
+                        : 'text-slate-800 hover:text-[#0072CE] hover:bg-sky-50/70'
+                    }`}
                   >
                     {link.label}
                   </Link>
@@ -100,16 +128,23 @@ export const MobileDrawer = ({
                 {/* Submenu Accordion */}
                 {hasSub && isExpanded && (
                   <div className="pl-4 py-1 space-y-1 bg-slate-50 rounded-xl mb-2">
-                    {link.subLinks?.map((sub) => (
-                      <Link
-                        key={sub.id}
-                        href={sub.url}
-                        onClick={onClose}
-                        className="block py-2 px-3 text-xs font-semibold text-slate-600 hover:text-[#0072CE] hover:bg-sky-100/60 rounded-lg transition-all duration-150"
-                      >
-                        {sub.label}
-                      </Link>
-                    ))}
+                    {link.subLinks?.map((sub) => {
+                      const isSubActive = isSubLinkActive(sub.url);
+                      return (
+                        <Link
+                          key={sub.id}
+                          href={sub.url}
+                          onClick={onClose}
+                          className={`block py-2 px-3 text-xs rounded-lg transition-all duration-150 ${
+                            isSubActive
+                              ? 'font-bold text-[#002C6C] bg-sky-100/90'
+                              : 'font-semibold text-slate-600 hover:text-[#0072CE] hover:bg-sky-100/60'
+                          }`}
+                        >
+                          {sub.label}
+                        </Link>
+                      );
+                    })}
                   </div>
                 )}
               </div>

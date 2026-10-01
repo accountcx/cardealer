@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { PhoneCall, Menu, ChevronDown, ChevronRight, FileText, MapPin, Clock, Sparkles } from 'lucide-react';
 import type { NavLink, ContactSettings } from '@cardealer/types';
 import { sanitizePhoneNumber } from '@cardealer/types';
@@ -17,15 +18,31 @@ export interface NavbarProps {
 // 1. Ghim cố định vị trí trên cùng (Sticky Header): Luôn neo chặt vào mép trên trình duyệt.
 // 2. Độ ưu tiên hiển thị lớp cao nhất (z-50): Luôn nằm đè lên trên banner và nội dung phía dưới.
 // 3. Hiệu ứng cuộn thông minh (Smart Scroll): Tự động thu gọn & ẩn khi cuộn xuống sâu, xuất hiện ngay khi cuộn lên.
+// 4. Active State Đồng bộ: Tự động highlight mục menu tương ứng khi đang ở route tĩnh /dong-xe/[slug] qua usePathname().
 export const Navbar = ({
   headerLinks,
   contact,
   onOpenLeadModal,
   onOpenMobileMenu,
 }: NavbarProps) => {
+  const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
 
   const cleanServiceHotline = sanitizePhoneNumber(contact.hotlineDichVu);
+
+  // WHY: Nhận diện trạng thái kích hoạt của Menu cha khi người dùng ở trang /xe hoặc /dong-xe/*
+  const isLinkActive = (link: NavLink) => {
+    if (!pathname) return false;
+    if (pathname === link.url) return true;
+    if (link.url === '/xe' && (pathname.startsWith('/xe') || pathname.startsWith('/dong-xe'))) {
+      return true;
+    }
+    return link.subLinks?.some((sub) => sub.url === pathname) ?? false;
+  };
+
+  const isSubLinkActive = (subUrl: string) => {
+    return pathname === subUrl;
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -100,23 +117,38 @@ export const Navbar = ({
           <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1.5 flex-nowrap">
             {headerLinks.map((link) => {
               const hasSub = Boolean(link.subLinks && link.subLinks.length > 0);
+              const isActive = isLinkActive(link);
               return (
                 <div key={link.id} className="relative group flex-shrink-0">
                   <Link
                     href={link.url}
                     target={link.newTab ? '_blank' : undefined}
-                    className="relative px-2.5 xl:px-3.5 py-2 text-xs xl:text-sm font-bold text-slate-700 hover:text-[#0072CE] rounded-xl hover:bg-sky-50/70 transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap focus-visible:ring-2 focus-visible:ring-[#0072CE] focus-visible:outline-none group/link"
+                    className={`relative px-2.5 xl:px-3.5 py-2 text-xs xl:text-sm font-bold rounded-xl transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap focus-visible:ring-2 focus-visible:ring-[#0072CE] focus-visible:outline-none group/link ${
+                      isActive
+                        ? 'text-[#0072CE] bg-sky-50/80 shadow-xs'
+                        : 'text-slate-700 hover:text-[#0072CE] hover:bg-sky-50/70'
+                    }`}
                   >
                     <span className="whitespace-nowrap relative z-10 transition-colors duration-200">
                       {link.label}
                     </span>
 
                     {hasSub && (
-                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#0072CE] group-hover:rotate-180 transition-all duration-200 motion-reduce:transition-none flex-shrink-0" />
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 transition-all duration-200 motion-reduce:transition-none flex-shrink-0 ${
+                          isActive
+                            ? 'text-[#0072CE] group-hover:rotate-180'
+                            : 'text-slate-400 group-hover:text-[#0072CE] group-hover:rotate-180'
+                        }`}
+                      />
                     )}
 
                     {/* Hiệu ứng gạch chân trượt mở (Bottom Accent Underline Indicator) */}
-                    <span className="absolute bottom-1 left-3 right-3 h-[2px] bg-[#0072CE] rounded-full scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-center pointer-events-none" />
+                    <span
+                      className={`absolute bottom-1 left-3 right-3 h-[2px] bg-[#0072CE] rounded-full transition-transform duration-200 origin-center pointer-events-none ${
+                        isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
+                      }`}
+                    />
                   </Link>
 
                   {/* Mega Dropdown Menu với Hover Effect cho từng mục */}
@@ -126,20 +158,39 @@ export const Navbar = ({
                         <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                           Danh Mục {link.label}
                         </div>
-                        {link.subLinks?.map((sub) => (
-                          <Link
-                            key={sub.id}
-                            href={sub.url}
-                            target={sub.newTab ? '_blank' : undefined}
-                            className="flex items-center justify-between px-3 py-2.5 text-xs xl:text-sm text-slate-700 hover:text-[#002C6C] hover:bg-sky-50/80 rounded-xl transition-all duration-200 font-semibold group/sub whitespace-nowrap"
-                          >
-                            <span className="whitespace-nowrap group-hover/sub:translate-x-1 transition-transform duration-200 flex items-center gap-1.5">
-                              <ChevronRight className="w-3 h-3 text-[#0072CE] opacity-0 -translate-x-1 group-hover/sub:opacity-100 group-hover/sub:translate-x-0 transition-all duration-200" />
-                              {sub.label}
-                            </span>
-                            <Sparkles className="w-3.5 h-3.5 text-[#0072CE] opacity-0 -translate-x-1 group-hover/sub:opacity-100 group-hover/sub:translate-x-0 transition-all duration-200 flex-shrink-0 ml-2" />
-                          </Link>
-                        ))}
+                        {link.subLinks?.map((sub) => {
+                          const isSubActive = isSubLinkActive(sub.url);
+                          return (
+                            <Link
+                              key={sub.id}
+                              href={sub.url}
+                              target={sub.newTab ? '_blank' : undefined}
+                              className={`flex items-center justify-between px-3 py-2.5 text-xs xl:text-sm rounded-xl transition-all duration-200 font-semibold group/sub whitespace-nowrap ${
+                                isSubActive
+                                  ? 'text-[#002C6C] bg-sky-100/90 font-bold shadow-xs'
+                                  : 'text-slate-700 hover:text-[#002C6C] hover:bg-sky-50/80'
+                              }`}
+                            >
+                              <span className="whitespace-nowrap group-hover/sub:translate-x-1 transition-transform duration-200 flex items-center gap-1.5">
+                                <ChevronRight
+                                  className={`w-3 h-3 text-[#0072CE] transition-all duration-200 ${
+                                    isSubActive
+                                      ? 'opacity-100 translate-x-0'
+                                      : 'opacity-0 -translate-x-1 group-hover/sub:opacity-100 group-hover/sub:translate-x-0'
+                                  }`}
+                                />
+                                {sub.label}
+                              </span>
+                              <Sparkles
+                                className={`w-3.5 h-3.5 text-[#0072CE] transition-all duration-200 flex-shrink-0 ml-2 ${
+                                  isSubActive
+                                    ? 'opacity-100 translate-x-0'
+                                    : 'opacity-0 -translate-x-1 group-hover/sub:opacity-100 group-hover/sub:translate-x-0'
+                                }`}
+                              />
+                            </Link>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
