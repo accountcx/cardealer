@@ -20,6 +20,7 @@ export async function seedSystemSettings(dbInstance = db) {
     },
     {
       key: 'navigation_settings',
+      // WHY: Tự động kế thừa URL tĩnh chuẩn SEO (/dong-xe/sedan, /dong-xe/suv, /dong-xe/mpv) từ NavigationSettingsSchema
       data: NavigationSettingsSchema.parse({}),
     },
     {
@@ -36,6 +37,7 @@ export async function seedSystemSettings(dbInstance = db) {
     },
     {
       key: 'footer_settings',
+      // WHY: Tự động kế thừa liên kết phân khúc chân trang chuẩn SEO từ FooterSettingsSchema
       data: FooterSettingsSchema.parse({}),
     },
     {
