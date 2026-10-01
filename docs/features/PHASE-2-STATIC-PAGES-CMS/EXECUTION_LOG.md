@@ -14,7 +14,7 @@
 | :---: | :---: | :--- | :--- | :---: |
 | **U-01** | `US-01` | • `packages/database/src/schema/static-pages.ts`<br/>• `packages/database/src/schema/index.ts`<br/>• `packages/database/src/schema/relations.ts`<br/>• `packages/types/src/static-pages.ts`<br/>• `packages/types/src/index.ts` | Khởi tạo Schema Drizzle `static_pages` (12 trường + 3 indexes) và TypeScript Contracts. Verify typecheck & 131 unit tests exit code 0. | ✅ VERIFIED |
 | **U-02** | `US-02` | • `packages/types/src/permission.ts`<br/>• `apps/api/src/routes/admin/pages.ts`<br/>• `apps/api/src/routes/admin.ts`<br/>• `apps/api/src/routes/pages.ts`<br/>• `apps/api/src/server.ts` | Xây dựng bộ REST API: Admin CRUD có RBAC, Zod validation, kiểm tra `RESERVED_SLUGS` & Public Query theo slug (`isPublished = true`). Verify 136 tests & typecheck exit code 0. | ✅ VERIFIED |
-| **U-03** | `US-03` | • `apps/admin/app/pages/`<br/>• `apps/admin/components/pages/`<br/>• `apps/admin/components/layout/sidebar.tsx` | CMS Admin UI: Trang danh sách `/pages`, Form soạn thảo 2 cột (Tiptap + Sidebar Google SERP Preview thời gian thực). | ⏸️ QUEUED |
+| **U-03** | `US-03` | • `apps/admin/app/pages/`<br/>• `apps/admin/components/pages/`<br/>• `apps/admin/app/components/AdminShell.tsx`<br/>• `apps/admin/services/pages.service.ts` | CMS Admin UI: Trang danh sách `/pages`, Form soạn thảo 2 cột (Tiptap AST + Sidebar Google SERP Preview thời gian thực), Menu Admin Navigation. | ✅ VERIFIED |
 | **U-04** | `US-04` | • `apps/web/app/[slug]/page.tsx`<br/>• `apps/web/components/pages/templates/*` | Web Storefront: Dynamic route `[slug]` với SSR metadata injection & 4 Templates (`PROFILE_SHOWROOM`, `DEFAULT`, `TIMELINE`, `FINANCE`). | ⏸️ QUEUED |
 | **U-05** | `Verification` | • `packages/database`, `apps/api`, `apps/admin`, `apps/web` | Kiểm thử toàn diện 14 kịch bản từ `TEST_PLAN.md`, chạy `check-types` và `pnpm test` đạt exit code 0. | ⏸️ QUEUED |
 
@@ -71,6 +71,32 @@
 * **Bằng chứng nghiệm thu máy (Machine Verification):**
   * `vitest run`: **16/16 test files passed (136/136 tests passed - Exit Code 0)**.
   * `pnpm --filter @cardealer/api exec tsc --noEmit`: **Exit Code 0**.
+* **Trạng thái:** ✅ **HOÀN THÀNH & NGHIỆM THU (VERIFIED)**.
+
+### 📍 Unit U-03: CMS Admin UI & SERP Preview (US-03)
+* **Thời gian hoàn thành:** 2026-10-02
+* **Git Commit:** `a43a836` (`feat(US-03): implement CMS admin static pages management UI and SERP preview`)
+* **Tệp tin tác động:**
+  * `apps/admin/services/pages.service.ts` (Tạo mới: Typed Service client kết nối API /admin/pages, 67 dòng)
+  * `apps/admin/app/components/AdminShell.tsx` (Bổ sung menu "Trang Tĩnh (SEO)" vào Sidebar với RBAC `pages:read`)
+  * `apps/admin/components/pages/SerpPreview.tsx` (Tạo mới: Component mô phỏng Google SERP thời gian thực & bộ đếm ký tự, 91 dòng)
+  * `apps/admin/components/pages/PageSeoSidebar.tsx` (Tạo mới: Sidebar cấu hình Technical SEO, Schema Type & Toggle xuất bản, 184 dòng)
+  * `apps/admin/components/pages/StaticPagesTable.tsx` (Tạo mới: Table 4-State UI Matrix, 194 dòng)
+  * `apps/admin/app/pages/page.tsx` (Tạo mới: Trang danh sách quản trị có bộ lọc tìm kiếm, 183 dòng)
+  * `apps/admin/app/pages/[id]/hooks/usePageEditor.ts` (Tạo mới: Custom Hook quản lý form state, auto slug & mutations, 192 dòng)
+  * `apps/admin/app/pages/[id]/page.tsx` (Tạo mới: Trang soạn thảo 2 cột Layout 8/4, 182 dòng)
+  * `apps/admin/app/pages/new/page.tsx` (Tạo mới: Route tạo trang mới, 5 dòng)
+* **Tuân thủ quy tắc Kỹ thuật (`fullstack-dev-executor.xml:L87-L198`):**
+  * `unit_size_limit`: 100% tệp tin đều < 200 dòng (dưới ngưỡng quy định 300 dòng).
+  * `mental_model_comments`: Đầy đủ `// WHY:` cho SerpPreview, PageSeoSidebar, StaticPagesTable, usePageEditor.
+  * `type_safety_zero_hardcode`: Zero `any`, dùng tường minh các DTO từ `@cardealer/types`.
+  * `access_control_security`: RBAC guard chặt chẽ (`pages:read` cho xem, `pages:write` cho soạn thảo, `pages:delete` cho xóa).
+  * `logging_security`: Khử `\r\n` (CWE-117) trong xử lý lỗi phía client.
+* **Bằng chứng nghiệm thu máy (Machine Verification):**
+  * `pnpm --filter @cardealer/admin exec tsc --noEmit`: **Exit Code 0** (Zero errors).
+  * `pnpm --filter @cardealer/api exec tsc --noEmit`: **Exit Code 0**.
+  * `pnpm --filter @cardealer/database check-types`: **Exit Code 0**.
+  * `vitest run`: **16/16 test files passed (136/136 tests passed - Exit Code 0)**.
 * **Trạng thái:** ✅ **HOÀN THÀNH & NGHIỆM THU (VERIFIED)**.
 
 
