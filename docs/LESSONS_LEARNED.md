@@ -65,3 +65,47 @@ Tài liệu này ghi lại các bài học kiến trúc, kinh nghiệm xử lý 
    - Chạy `pnpm turbo run check-types` đảm bảo 100% 8/8 packages không có bất kỳ lỗi TypeScript nào.
 2. **Kịch bản tự động khép kín (End-to-End Verification):**
    - Viết và duy trì các bash script tự động (như `scripts/verify_car_image_integration.sh`) để kiểm tra cú pháp, sự hiện diện của component và bảo đảm nguyên tắc Zero Raw HTML Controls.
+
+---
+
+## 5. Kiến Trúc Routing Tĩnh & SEO Landing Pages (Next.js 15 App Router & Segment Whitelist)
+
+### 1. Bối cảnh & Thách thức Kỹ thuật
+* **Mô tả bài toán:** Chuyển đổi toàn bộ cấu trúc URL lọc xe bằng query params (`/xe?kieuDang=...`) sang các URL tĩnh chuẩn SEO chuyên sâu (`/dong-xe/[slug]`), tích hợp vào hệ thống Menu điều hướng và Footer đa cấp.
+* **Mức độ nghiêm trọng tiềm ẩn:** 🔴 HIGH
+* **Phân loại bài học:** Architecture Pattern & Security Defense
+
+### 2. Phân Tích Nguyên Nhân Gốc Rễ & Giải Pháp Khắc Phục
+* **Root Cause 1 (Next.js 15 Async Params Breaking Change):** Trong Next.js 15, `params` của Server Component Page và hàm `generateMetadata` đã chuyển thành một `Promise<{ slug: string }>`. Việc truy cập đồng bộ trực tiếp `params.slug` sẽ ném cảnh báo runtime hoặc crash quá trình build.
+* **Root Cause 2 (Soft-404 & XSS qua Dynamic Slugs):** Nếu chấp nhận slug bất kỳ và render thẻ H1, Title hay chèn vào JSON-LD script, kẻ tấn công có thể chèn mã độc (XSS) hoặc bot tìm kiếm tạo ra hàng triệu URL rác làm giảm PageRank (Soft-404).
+* **Root Cause 3 (DB Overload nếu Query Riêng Lẻ):** Tạo query mới riêng vào database cho từng phân khúc sẽ làm tăng tải DB pool và phá vỡ cơ chế Next.js Data Cache đã tối ưu cho danh mục xe.
+
+### Solution Patterns Đã Áp Dụng Thành Công:
+1. **Next.js 15 Async Params Invariant:**
+   Luôn khai báo kiểu `params: Promise<{ slug: string }>` và sử dụng `const { slug } = await params;` ở cả `Page` lẫn `generateMetadata`.
+2. **Segment Whitelist Registry (SSOT Guard):**
+   Tập trung quản lý phân khúc tại `apps/web/config/segments.ts` với `VALID_SEGMENT_SLUGS = ['sedan', 'suv', 'mpv'] as const`. Mọi slug không khớp đều kích hoạt ngay `notFound()` của Next.js trả về HTTP 404 thực thụ.
+3. **In-Memory Pure Filter kết hợp ISR Cache Tag:**
+   Tái sử dụng hàm `getCatalogCars()` vốn đã được cache ngầm với tag `'catalog-cars'` (ISR 60s), sau đó lọc in-memory bằng pure function `filterCarsBySegment` với Set lookup O(1) đạt hiệu năng < 1ms, không làm biến đổi mảng gốc.
+4. **Dual Schema JSON-LD Injection:**
+   Bơm đồng thời cả `BreadcrumbList` và `ItemList` (chứa `AggregateOffer` giá thấp nhất/cao nhất) trực tiếp vào Server Component HTML cho Google Search và Merchant Center.
+5. **Next.js `usePathname` Active Matching:**
+   Sử dụng hook chính thức `usePathname()` để so khớp active link trên cả Desktop Navbar và Mobile Drawer, loại bỏ hoàn toàn hydration warning.
+
+### 3. Cấu Trúc Nén Cho AI (Compressed Machine Metadata)
+```json
+{
+  "date": "2026-10-01",
+  "feature": "ROUTING-URL-ARCHITECTURE",
+  "category": "routing-seo-architecture",
+  "patterns_discovered": [
+    "NextJs15AsyncParamsPattern",
+    "SegmentWhitelistGuardPattern",
+    "InMemoryISRFilterPattern",
+    "DualJsonLdSchemaPattern"
+  ],
+  "impact_scope": ["apps/web", "packages/types", "packages/database"],
+  "actionable_invariant": "Luon await params trong Next.js 15 RSC, chan soft-404 bang Whitelist Registry + notFound(), va loc in-memory tu getCatalogCars() cache tag",
+  "tags": ["nextjs-15", "async-params", "routing", "seo", "json-ld", "whitelist", "soft-404", "cwe-79"]
+}
+```
