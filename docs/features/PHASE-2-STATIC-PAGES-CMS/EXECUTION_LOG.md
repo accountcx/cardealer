@@ -78,6 +78,7 @@
 * **Git Commits:**
   * `a43a836` (`feat(US-03): implement CMS admin static pages management UI and SERP preview`)
   * `eabed7f` (`feat(US-03): implement visual content blocks editor and Tiptap AST serialization for static pages`)
+  * `84754b1` (`fix(US-03): remove hardcoded domain prefix and use clientEnv dynamically`)
 * **Tệp tin tác động:**
   * `apps/admin/services/pages.service.ts` (Tạo mới: Typed Service client kết nối API /admin/pages, 67 dòng)
   * `apps/admin/app/components/AdminShell.tsx` (Bổ sung menu "Trang Tĩnh (SEO)" vào Sidebar với RBAC `pages:read`)
