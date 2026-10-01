@@ -24,7 +24,7 @@ export async function listPagesService(params: ListPagesParams) {
     conditions.push(eq(schema.staticPages.isPublished, false));
   }
 
-  if (templateFilter && ['DEFAULT', 'PROFILE_SHOWROOM', 'TIMELINE', 'FINANCE'].includes(templateFilter)) {
+  if (templateFilter && ['DEFAULT', 'PROFILE_SHOWROOM', 'TIMELINE', 'FINANCE', 'CONTACT', 'FAQ'].includes(templateFilter)) {
     conditions.push(eq(schema.staticPages.templateType, templateFilter));
   }
 

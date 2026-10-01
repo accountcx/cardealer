@@ -5,6 +5,7 @@ import { Card, Input, Select, Badge, Button } from '@cardealer/ui';
 import { SerpPreview } from './SerpPreview';
 import { clientEnv } from '@cardealer/env';
 import type { StaticPageTemplate, StaticPageSchemaType } from '@cardealer/types';
+import { TEMPLATE_DEFAULT_SCHEMA } from '@cardealer/types';
 import { CheckCircle2, FileCode, ShieldAlert } from 'lucide-react';
 
 interface PageSeoSidebarProps {
@@ -50,7 +51,17 @@ export function PageSeoSidebar({
   schemaType,
   setSchemaType,
 }: PageSeoSidebarProps) {
-  const siteUrl = clientEnv.NEXT_PUBLIC_SITE_URL || 'https://cardealer.vn';
+  const siteUrl = clientEnv.NEXT_PUBLIC_SITE_URL || '';
+
+  // WHY: Tự động cập nhật Schema.org tương ứng làm mặc định khi chọn Template (Mental Model Resolver).
+  // Vẫn cho phép người dùng chủ động chọn lại Schema khác ở dropdown bên dưới để ghi đè.
+  const handleTemplateChange = (val: StaticPageTemplate) => {
+    setTemplateType(val);
+    const defaultSchema = TEMPLATE_DEFAULT_SCHEMA[val];
+    if (defaultSchema) {
+      setSchemaType(defaultSchema);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -82,13 +93,15 @@ export function PageSeoSidebar({
           <label className="text-xs font-medium text-slate-300">Giao diện hiển thị (Template)</label>
           <select
             value={templateType}
-            onChange={(e) => setTemplateType(e.target.value as StaticPageTemplate)}
+            onChange={(e) => handleTemplateChange(e.target.value as StaticPageTemplate)}
             className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
           >
-            <option value="DEFAULT">Default (Nội dung văn bản chuẩn)</option>
-            <option value="PROFILE_SHOWROOM">Profile Showroom (Hồ sơ Showroom & Giới thiệu)</option>
-            <option value="TIMELINE">Timeline (Lịch sử & Quy trình mua xe)</option>
-            <option value="FINANCE">Finance (Bảng biểu trả góp & Dự toán chi phí)</option>
+            <option value="DEFAULT">DEFAULT (WebPage - Văn bản chuẩn)</option>
+            <option value="PROFILE_SHOWROOM">PROFILE_SHOWROOM (AboutPage - Giới thiệu Showroom)</option>
+            <option value="TIMELINE">TIMELINE (HowTo - Lịch sử & Quy trình mua xe)</option>
+            <option value="FINANCE">FINANCE (FinancialProduct - Dự toán & Trả góp)</option>
+            <option value="CONTACT">CONTACT (ContactPage - Liên hệ Showroom & Bản đồ)</option>
+            <option value="FAQ">FAQ (FAQPage - Hỏi đáp thường gặp & Hỗ trợ)</option>
           </select>
         </div>
       </Card>
@@ -122,15 +135,21 @@ export function PageSeoSidebar({
 
         {/* Schema Type */}
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-slate-300">Dữ liệu có cấu trúc (Schema.org)</label>
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-medium text-slate-300">Dữ liệu có cấu trúc (Schema.org)</label>
+            <span className="text-[11px] text-blue-400">Tự gán theo Template</span>
+          </div>
           <select
-            value={schemaType}
+            value={schemaType || 'WebPage'}
             onChange={(e) => setSchemaType(e.target.value as StaticPageSchemaType)}
             className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
           >
             <option value="WebPage">WebPage (Trang thông tin thông thường)</option>
             <option value="AboutPage">AboutPage (Trang giới thiệu Showroom)</option>
             <option value="HowTo">HowTo (Trang hướng dẫn / Quy trình mua xe)</option>
+            <option value="FinancialProduct">FinancialProduct (Sản phẩm tài chính / Trả góp)</option>
+            <option value="ContactPage">ContactPage (Trang liên hệ Showroom)</option>
+            <option value="FAQPage">FAQPage (Trang hỏi đáp thường gặp)</option>
           </select>
         </div>
 

@@ -141,6 +141,8 @@ export default function StaticPagesListPage() {
           <option value="PROFILE_SHOWROOM">Profile Showroom</option>
           <option value="TIMELINE">Timeline / Quy trình</option>
           <option value="FINANCE">Finance / Trả góp</option>
+          <option value="CONTACT">Contact / Liên hệ</option>
+          <option value="FAQ">FAQ / Hỏi đáp</option>
         </select>
 
         <Button variant="ghost" onClick={fetchPages} className="text-slate-300 hover:text-white">
