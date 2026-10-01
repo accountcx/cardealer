@@ -366,6 +366,186 @@ graph LR
 
 ---
 
+## 🛠️ HƯỚNG DẪN TRIỂN KHAI TỪNG BƯỚC (STEP-BY-STEP IMPLEMENTATION RUNBOOK)
+
+> **Mục đích**: Đây là bản cẩm nang tra cứu nhanh (Runbook) phục vụ trực tiếp khi bắt tay vào code từng phase. Developer hoặc AI Agent chỉ cần mở mục này là biết chính xác: **File nào cần tạo mới, file nào cần sửa, thứ tự code từng bước, và lệnh xác nhận hoàn thành.**
+
+---
+
+### 🟢 BƯỚC 1: TRIỂN KHAI PHASE 2 — MODULE TRANG TĨNH ĐỘNG (STATIC-PAGES-CMS)
+
+#### 1. Danh sách tệp tin tác động:
+* **Tạo mới (New Files):**
+  * `packages/database/src/schema/static-pages.ts` (Drizzle schema)
+  * `packages/types/src/static-pages.ts` (TypeScript interfaces)
+  * `apps/api/src/routes/admin/pages.ts` (Admin CRUD API)
+  * `apps/api/src/routes/public/pages.ts` (Public API get by slug)
+  * `apps/admin/app/(dashboard)/pages/page.tsx` (Danh sách trang tĩnh)
+  * `apps/admin/app/(dashboard)/pages/[id]/page.tsx` (Trang soạn thảo 2 cột)
+  * `apps/admin/app/(dashboard)/pages/new/page.tsx` (Tạo mới)
+  * `apps/admin/components/pages/page-form.tsx` (Form 2 cột: Tiptap + SEO Sidebar)
+  * `apps/admin/components/pages/serp-preview.tsx` (SERP Preview Card)
+  * `apps/web/app/(main)/[slug]/page.tsx` (Dynamic catch-all route Server Component)
+  * `apps/web/components/pages/templates/profile-showroom.tsx` (Template `/gioi-thieu`)
+  * `apps/web/components/pages/templates/default-legal.tsx` (Template `/chinh-sach-bao-mat`)
+  * `apps/web/components/pages/templates/timeline-process.tsx` (Template `/quy-trinh-mua-xe`)
+  * `apps/web/components/pages/templates/finance-calc.tsx` (Template `/tra-gop`)
+* **Chỉnh sửa (Modified Files):**
+  * `packages/database/src/schema/index.ts` (Export `staticPages`)
+  * `packages/types/src/index.ts` (Export types static-pages)
+  * `apps/admin/components/layout/sidebar.tsx` (Thêm menu "Trang tĩnh" vào sidebar admin)
+  * `apps/api/src/app.ts` (Đăng ký routes `/api/admin/pages` và `/api/public/pages`)
+
+#### 2. Thứ tự thực hiện tuần tự:
+* **Bước 2.1: Database & Contracts**
+  1. Viết schema `packages/database/src/schema/static-pages.ts` với Drizzle (`pgTable`, `uuid`, `varchar`, `text`, `jsonb`, `boolean`, `timestamp`).
+  2. Export vào `packages/database/src/schema/index.ts`.
+  3. Định nghĩa types trong `packages/types/src/static-pages.ts` và export ra `@cardealer/types`.
+  4. Chạy `pnpm --filter @cardealer/database db:push` hoặc migration script.
+* **Bước 2.2: Backend API**
+  1. Viết `apps/api/src/routes/admin/pages.ts`: Danh sách phân trang, chi tiết, tạo mới (kiểm tra trùng slug), sửa, xóa.
+  2. Viết `apps/api/src/routes/public/pages.ts`: Query theo slug (`isPublished = true`), trả về `404` nếu không tìm thấy.
+  3. Mount vào API app.
+* **Bước 2.3: CMS Admin UI**
+  1. Xây dựng component `serp-preview.tsx`: Mô phỏng Google Desktop/Mobile search snippet với title, URL, description tự cập nhật khi gõ.
+  2. Xây dựng `page-form.tsx` 2 cột:
+     * Cột trái: Title, Slug (auto-slugify), Tiptap Editor (Rich-Text).
+     * Cột phải: SERP Preview, Meta Title & Desc (có bộ đếm ký tự), OG Image, Template selector, Schema selector, noIndex switch, isPublished switch.
+  3. Xây dựng trang danh sách `/pages` (bảng dữ liệu, search, badge trạng thái, action buttons) và trang `/pages/[id]`, `/pages/new`.
+  4. Thêm mục "Trang tĩnh" vào Sidebar Admin navigation.
+* **Bước 2.4: Storefront Client Dynamic Route**
+  1. Tạo `apps/web/app/(main)/[slug]/page.tsx`:
+     * Bắt `params.slug`.
+     * Gọi API hoặc query DB lấy trang tĩnh. Nếu không thấy ➡️ `notFound()`.
+     * `generateMetadata()`: Điền title, description, canonical, robots (`noIndex`).
+     * Dispatcher switch-case render 1 trong 4 templates (`PROFILE_SHOWROOM`, `DEFAULT`, `TIMELINE`, `FINANCE`).
+  2. Lần lượt hoàn thiện 4 components template trong `apps/web/components/pages/templates/`.
+* **Bước 2.5: Seed Data & Verification**
+  1. Tạo dữ liệu mẫu 4 trang: `/gioi-thieu` (PROFILE_SHOWROOM), `/chinh-sach-bao-mat` (DEFAULT), `/quy-trinh-mua-xe` (TIMELINE), `/tra-gop` (FINANCE).
+  2. Chạy `pnpm check-types` monorepo.
+  3. Mở trình duyệt kiểm tra hiển thị và thẻ meta trong `<head>`.
+
+---
+
+### 🔵 BƯỚC 2: TRIỂN KHAI PHASE 4 — PACKAGE SEO UTILS & 7 SCHEMAS JSON-LD
+
+#### 1. Danh sách tệp tin tác động:
+* **Tạo mới (New Files):**
+  * `packages/utils/src/seo/metadata.ts` (Hàm `generatePageMetadata`, làm sạch canonical)
+  * `packages/utils/src/seo/schemas.ts` (7 hàm sinh JSON-LD schemas)
+  * `packages/utils/src/seo/types.ts` (SEO schema interfaces)
+* **Chỉnh sửa (Modified Files):**
+  * `packages/utils/src/index.ts` (hoặc `packages/core/src/index.ts` nếu monorepo gộp vào core)
+  * `apps/web/app/(main)/xe/[carSlug]/page.tsx` (Inject Schema `Car` & `Product`, Breadcrumb)
+  * `apps/web/app/(main)/page.tsx` (Inject Schema `AutoDealer`)
+  * `apps/web/app/(main)/tin-tuc/[slug]/page.tsx` (Inject Schema `NewsArticle`, `FAQPage`, `VideoObject`)
+  * `apps/web/app/(main)/gia-lan-banh/page.tsx` (Inject Schema `SoftwareApplication`)
+
+#### 2. Thứ tự thực hiện tuần tự:
+* **Bước 4.1: Viết `metadata.ts`**
+  1. Viết hàm `cleanCanonicalUrl(url: string)`: Dùng `new URL()`, xóa sạch params `utm_*`, `fbclid`, `gclid`, `phien-ban`, `mau`.
+  2. Viết hàm `generatePageMetadata(opts)`: Chuẩn hóa title format `%s | Đại lý Hyundai Vinh`, openGraph, robots `index: true, follow: true, max-image-preview: 'large'`.
+* **Bước 4.2: Lập trình 7 hàm sinh Schema JSON-LD trong `schemas.ts`**
+  1. `buildCarSchema(car, version)`: Schema `Car` + `Product`, tích hợp `priceValidUntil` (cuối tháng hiện tại), return policy 7 ngày, bảo hành 5 năm.
+  2. `buildAutoDealerSchema(dealerInfo)`: Schema `AutoDealer` (địa chỉ, hotline, GPS lat/lng, giờ mở cửa).
+  3. `buildNewsArticleSchema(post)`: Schema `NewsArticle` (headline, author, publisher).
+  4. `buildFAQSchema(faqList)`: Schema `FAQPage` (mảng Question / Answer).
+  5. `buildFinanceAppSchema()`: Schema `SoftwareApplication` (category: FinanceApplication).
+  6. `buildVideoSchema(video)`: Schema `VideoObject` (thumbnail, embedUrl).
+  7. `buildBreadcrumbSchema(items)`: Schema `BreadcrumbList` (vị trí cấp bậc 1..N).
+* **Bước 4.3: Tích hợp vào Web Client**
+  1. Tạo component helper `<JsonLd data={schema} />` render thẻ `<script type="application/ld+json">`.
+  2. Nhúng vào các trang chi tiết xe, trang chủ, bài viết và công cụ tính giá.
+* **Bước 4.4: Verification**
+  1. Chạy unit tests kiểm tra `cleanCanonicalUrl` và cấu trúc JSON schema.
+  2. Dán mã nguồn vào công cụ Google Rich Results Test để kiểm tra 0 cảnh báo.
+
+---
+
+### 🟡 BƯỚC 3: TRIỂN KHAI PHASE 3 — CHUẨN HÓA NGỮ NGHĨA 7 BLOCK TRANG CHỦ
+
+#### 1. Danh sách tệp tin tác động:
+* **Chỉnh sửa (Modified Files):**
+  * `apps/web/app/(main)/page.tsx` (Cấu trúc phân cấp trang chủ)
+  * `apps/web/components/home/hero-banner.tsx` (Khu 1: Đổi thành `<h1>` duy nhất, WebP/AVIF priority)
+  * `apps/web/components/home/quick-filter.tsx` (Khu 2: Đổi nút click thành `<Link href="/xe/[carSlug]">`)
+  * `apps/web/components/home/featured-cars.tsx` (Khu 3: `<h2>`, link trực tiếp `/xe/[carSlug]`)
+  * `apps/web/components/home/pricing-cta.tsx` (Khu 4: `<h2>`, link sang `/gia-lan-banh`)
+  * `apps/web/components/home/vip-showroom.tsx` (Khu 5: `<h2>`, thông tin showroom chuẩn 3S & Google Map)
+  * `apps/web/components/home/social-proof-delivery.tsx` (Khu 6: `<h2>`, alt chuẩn Local SEO Nghệ An/Hà Tĩnh)
+  * `apps/web/components/home/latest-promotions.tsx` (Khu 7: `<h2>`, query tin khuyến mại tươi mới từ DB)
+
+#### 2. Thứ tự thực hiện tuần tự:
+* **Bước 3.1: Audit & Phân cấp Heading**
+  1. Kiểm tra DOM toàn trang: Đảm bảo chỉ có 1 thẻ `<h1>` duy nhất tại Hero Banner.
+  2. Gắn thẻ `<h2>` cho từng khối 2 đến 7 với từ khóa chuẩn SEO địa phương.
+* **Bước 3.2: Chuẩn hóa Crawleable Links (Internal Linking)**
+  1. Tại Khu 2 (Quick Filter) & Khu 3 (Featured Cars): Thay thế các button JS bằng thẻ `<Link href="/xe/[carSlug]">` hợp lệ để crawler thu thập được link xe.
+* **Bước 3.3: Tối ưu LCP & Core Web Vitals**
+  1. Hero Banner: Thêm `priority={true}` và `fetchPriority="high"`.
+  2. Toàn bộ ảnh phân khu 5, 6: Thêm `loading="lazy"`, khai báo rõ `width` và `height` để CLS = 0.
+  3. Cập nhật `alt` hình ảnh bàn giao xe chứa tên xe và địa phương Nghệ An.
+* **Bước 3.4: Verification**
+  1. Chạy Lighthouse Audit kiểm tra điểm Performance (>=90) và SEO (100).
+  2. Kiểm tra `document.querySelectorAll('h1').length === 1`.
+
+---
+
+### 🟣 BƯỚC 4: TRIỂN KHAI PHASE 5 — DYNAMIC SITEMAP BẤT ĐỒNG BỘ
+
+#### 1. Danh sách tệp tin tác động:
+* **Chỉnh sửa / Tạo mới:**
+  * `apps/web/app/sitemap.ts` (Next.js Dynamic Sitemap generator)
+
+#### 2. Thứ tự thực hiện tuần tự:
+* **Bước 5.1: Xây dựng hàm fetch song song**
+  1. Dùng `Promise.allSettled` gom 4 luồng:
+     * Dòng xe: `fetchActiveCars()`
+     * Bài viết: `fetchPublishedPosts()`
+     * Trang tĩnh CMS: `fetchPublishedStaticPages()` (loại trừ `noIndex: true`)
+     * Danh mục cố định: `/`, `/xe`, `/dong-xe/sedan`, `/dong-xe/suv`, `/dong-xe/mpv`, `/gia-lan-banh`, `/tra-gop`.
+* **Bước 5.2: Gán ma trận trọng số Priority**
+  * `priority 1.0` (`daily`): `/`
+  * `priority 0.9` (`daily`): `/xe/[carSlug]` và bài viết có slug chứa `gia-lan-banh`, `khuyen-mai`, `uu-dai`.
+  * `priority 0.8` (`weekly`): Trang tĩnh CMS (`/[slug]`), `/xe`, `/dong-xe/*`, `/gia-lan-banh`.
+  * `priority 0.7` (`weekly`): Bài viết tin tức thông thường.
+* **Bước 5.3: Verification**
+  1. Truy cập `http://localhost:3000/sitemap.xml`.
+  2. Xác nhận XML hợp lệ, có đầy đủ các trang tĩnh vừa tạo ở Phase 2, không có URL trùng hoặc lỗi.
+
+---
+
+### 🔴 BƯỚC 5: TRIỂN KHAI PHASE 6 — GOOGLE INDEXING API V3 & ADMIN BULK TOOL
+
+#### 1. Danh sách tệp tin tác động:
+* **Tạo mới (New Files):**
+  * `packages/utils/src/google/indexing.ts` (Google Service Account JWT client & ping API)
+  * `apps/admin/app/api/indexing/route.ts` (API endpoint kích hoạt gửi URL)
+  * `apps/admin/app/(dashboard)/google-indexing/page.tsx` (Giao diện tool)
+  * `apps/admin/components/google-indexing/bulk-submit-form.tsx` (Form dán URL)
+  * `apps/admin/components/google-indexing/indexing-logs-table.tsx` (Bảng log)
+* **Chỉnh sửa (Modified Files):**
+  * `apps/api/src/services/cars.service.ts` (Hook ping khi publish xe)
+  * `apps/api/src/services/posts.service.ts` (Hook ping khi publish bài viết)
+  * `apps/api/src/services/pages.service.ts` (Hook ping khi publish trang tĩnh)
+
+#### 2. Thứ tự thực hiện tuần tự:
+* **Bước 6.1: Service Account & Token Service**
+  1. Khai báo env `GOOGLE_CLIENT_EMAIL`, `GOOGLE_PRIVATE_KEY`, `GOOGLE_PROJECT_ID`.
+  2. Viết hàm ký JWT và gửi HTTP POST tới `https://indexing.googleapis.com/v3/urlNotifications:publish` với payload `{ url, type: "URL_UPDATED" }`.
+* **Bước 6.2: Hook tự động `indexOnPublish`**
+  1. Đặt hook bất đồng bộ (fire-and-forget kèm log) khi bài viết/xe/trang tĩnh đổi trạng thái sang `Published`.
+  2. Ghi kết quả vào bảng `audit_logs`.
+* **Bước 6.3: Giao diện Bulk Tool trong Admin**
+  1. Tạo trang `/google-indexing` trong Admin.
+  2. Form textarea nhận nhiều URL, gửi tuần tự với rate limit (5 req/sec).
+  3. Bảng logs hiển thị mã phản hồi HTTP 200, thời gian và link đã gửi.
+* **Bước 6.4: Verification (Sandbox)**
+  1. Kiểm tra cơ chế mock/bypass khi chưa có Google Key thực tế để không gây crash app.
+  2. Test gửi 1 URL mẫu và kiểm tra log hiển thị đúng trên giao diện.
+
+---
+
 ## 🏁 Trình Tự Thực Thi Khuyến Nghị Cho Môi Trường Sandbox
 
 Dựa trên nguyên tắc tối ưu tốc độ lặp trong môi trường `SANDBOX_GREENFIELD`:
@@ -374,3 +554,4 @@ Dựa trên nguyên tắc tối ưu tốc độ lặp trong môi trường `SAND
 3. **Bước 3**: Chạy **PHASE 3** (Chuẩn hóa ngữ nghĩa 7 khu vực Trang chủ trỏ link trực tiếp về từng xe).
 4. **Bước 4**: Chạy **PHASE 5** (Hoàn thiện Dynamic `sitemap.ts` kết nối với DB `StaticPage` vừa tạo).
 5. **Bước 5**: Chạy **PHASE 6** (Cấu hình Google Indexing API khi hoàn thành toàn bộ nội dung mẫu và chuẩn bị deploy).
+
