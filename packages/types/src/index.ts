@@ -8,3 +8,4 @@ export * from './user';
 export * from './content-blocks';
 export * from './category';
 export * from './media';
+export * from './static-pages';

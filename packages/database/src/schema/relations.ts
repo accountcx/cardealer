@@ -7,6 +7,7 @@ import { auditLogs } from './audit_logs';
 import { leads } from './leads';
 import { posts, categories, postTags } from './posts';
 import { media } from './media';
+import { staticPages } from './static-pages';
 
 export const carsRelations = relations(cars, ({ many }) => ({
   versions: many(carVersions),
@@ -61,4 +62,9 @@ export const postsRelations = relations(posts, ({ one, many }) => ({
 
 export const postTagsRelations = relations(postTags, ({ one }) => ({
   post: one(posts, { fields: [postTags.postId], references: [posts.id] }),
+}));
+
+export const staticPagesRelations = relations(staticPages, ({ one }) => ({
+  creator: one(users, { fields: [staticPages.createdBy], references: [users.id] }),
+  updater: one(users, { fields: [staticPages.updatedBy], references: [users.id] }),
 }));

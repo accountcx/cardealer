@@ -8,3 +8,4 @@ export * from './system_settings';
 export * from './leads';
 export * from './posts';
 export * from './relations';
+export * from './static-pages';
