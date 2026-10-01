@@ -24,6 +24,7 @@
 
 ### 📍 Unit U-01: Data Model & Contracts (US-01)
 * **Thời gian hoàn thành:** 2026-10-01
+* **Git Commit:** `dc646bb` (`feat(US-01): implement static_pages schema and types contracts`)
 * **Tệp tin tác động:**
   * `packages/types/src/static-pages.ts` (Tạo mới: `StaticPage`, `CreateStaticPageDTO`, `StaticPageTemplate`, `StaticPageSchemaType`)
   * `packages/types/src/index.ts` (Export `static-pages`)
@@ -38,6 +39,7 @@
 
 ### 📍 Unit U-02: Backend REST API Endpoints & Route Guards (US-02)
 * **Thời gian hoàn thành:** 2026-10-01
+* **Git Commit:** `fc1077f` (`feat(US-02): implement static pages REST API endpoints with RBAC and reserved slug guard`)
 * **Tệp tin tác động:**
   * `packages/types/src/permission.ts` (Thêm các quyền: `'pages:read'`, `'pages:write'`, `'pages:delete'`)
   * `packages/types/src/static-pages.ts` (Cập nhật `createStaticPageSchema`, `updateStaticPageSchema`, `RESERVED_SLUGS`)
