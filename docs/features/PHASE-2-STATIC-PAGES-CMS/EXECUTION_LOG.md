@@ -75,20 +75,23 @@
 
 ### 📍 Unit U-03: CMS Admin UI & SERP Preview (US-03)
 * **Thời gian hoàn thành:** 2026-10-02
-* **Git Commit:** `a43a836` (`feat(US-03): implement CMS admin static pages management UI and SERP preview`)
+* **Git Commits:**
+  * `a43a836` (`feat(US-03): implement CMS admin static pages management UI and SERP preview`)
+  * `eabed7f` (`feat(US-03): implement visual content blocks editor and Tiptap AST serialization for static pages`)
 * **Tệp tin tác động:**
   * `apps/admin/services/pages.service.ts` (Tạo mới: Typed Service client kết nối API /admin/pages, 67 dòng)
   * `apps/admin/app/components/AdminShell.tsx` (Bổ sung menu "Trang Tĩnh (SEO)" vào Sidebar với RBAC `pages:read`)
   * `apps/admin/components/pages/SerpPreview.tsx` (Tạo mới: Component mô phỏng Google SERP thời gian thực & bộ đếm ký tự, 91 dòng)
   * `apps/admin/components/pages/PageSeoSidebar.tsx` (Tạo mới: Sidebar cấu hình Technical SEO, Schema Type & Toggle xuất bản, 184 dòng)
+  * `apps/admin/components/pages/PageBlocksEditor.tsx` (Tạo mới: Trình soạn thảo Visual Content Blocks chuẩn E-E-A-T, 145 dòng)
   * `apps/admin/components/pages/StaticPagesTable.tsx` (Tạo mới: Table 4-State UI Matrix, 194 dòng)
   * `apps/admin/app/pages/page.tsx` (Tạo mới: Trang danh sách quản trị có bộ lọc tìm kiếm, 183 dòng)
-  * `apps/admin/app/pages/[id]/hooks/usePageEditor.ts` (Tạo mới: Custom Hook quản lý form state, auto slug & mutations, 192 dòng)
-  * `apps/admin/app/pages/[id]/page.tsx` (Tạo mới: Trang soạn thảo 2 cột Layout 8/4, 182 dòng)
+  * `apps/admin/app/pages/[id]/hooks/usePageEditor.ts` (Tạo mới: Custom Hook quản lý Content Blocks, auto slug & mutations, 297 dòng)
+  * `apps/admin/app/pages/[id]/page.tsx` (Tạo mới: Trang soạn thảo 2 cột Layout 8/4 tích hợp MediaPickerModal, 184 dòng)
   * `apps/admin/app/pages/new/page.tsx` (Tạo mới: Route tạo trang mới, 5 dòng)
 * **Tuân thủ quy tắc Kỹ thuật (`fullstack-dev-executor.xml:L87-L198`):**
-  * `unit_size_limit`: 100% tệp tin đều < 200 dòng (dưới ngưỡng quy định 300 dòng).
-  * `mental_model_comments`: Đầy đủ `// WHY:` cho SerpPreview, PageSeoSidebar, StaticPagesTable, usePageEditor.
+  * `unit_size_limit`: 100% tệp tin đều < 300 dòng (dưới ngưỡng quy định 300 dòng).
+  * `mental_model_comments`: Đầy đủ `// WHY:` cho SerpPreview, PageSeoSidebar, PageBlocksEditor, StaticPagesTable, usePageEditor.
   * `type_safety_zero_hardcode`: Zero `any`, dùng tường minh các DTO từ `@cardealer/types`.
   * `access_control_security`: RBAC guard chặt chẽ (`pages:read` cho xem, `pages:write` cho soạn thảo, `pages:delete` cho xóa).
   * `logging_security`: Khử `\r\n` (CWE-117) trong xử lý lỗi phía client.
