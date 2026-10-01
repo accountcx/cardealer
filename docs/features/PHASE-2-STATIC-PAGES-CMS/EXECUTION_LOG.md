@@ -120,16 +120,25 @@
   * `apps/web/components/pages/templates/ContactTemplate.tsx` (Tạo mới: Layout liên hệ & bản đồ, 118 dòng)
   * `apps/web/components/pages/templates/FaqTemplate.tsx` (Tạo mới: Layout accordion hỏi đáp, 102 dòng)
   * `apps/web/app/(main)/[slug]/page.tsx` (Tạo mới: Dynamic Resolver Catch-All route với SSR metadata injection, 96 dòng)
+  * `packages/core/src/tiptap/steps-extractor.ts` (Tạo mới: Bóc tách động timelineStep và Step Headings từ Tiptap AST, 73 dòng)
+  * `packages/core/src/seo/static-page-json-ld.ts` (Tạo mới: Core generator JSON-LD cho static pages kèm XSS sanitization và fail-safe fallback, 96 dòng)
+  * `packages/core/src/__tests__/static-page-json-ld.test.ts` (Tạo mới: Unit test suite 7 kịch bản cho dynamic schema & AST extraction, 189 dòng)
+  * `apps/web/components/pages/StaticPageJsonLd.tsx` (Refactor: Tinh gọn còn 34 dòng, ủy quyền core generator, escape \u003c chống XSS CWE-79)
+  * `apps/web/app/(main)/[slug]/page.tsx` (Nạp song song settings/page, truyền dealerInfo thực tế từ DB vào JSON-LD và templates)
+  * `apps/web/components/pages/templates/ContactTemplate.tsx` (Render NAP động từ dealerInfo thực tế)
+  * `apps/web/components/pages/templates/FaqTemplate.tsx` (Render hotline động từ dealerInfo thực tế)
 * **Tuân thủ quy tắc Kỹ thuật (`fullstack-dev-executor.xml:L87-L198`):**
-  * `unit_size_limit`: 100% tệp tin đều < 210 dòng (dưới ngưỡng quy định 300 dòng).
-  * `mental_model_comments`: Có `// WHY:` cho Dynamic Resolver, StaticPageJsonLd và từng Template component.
+  * `unit_size_limit`: 100% tệp tin đều < 190 dòng (dưới ngưỡng quy định 300 dòng).
+  * `mental_model_comments`: Có `// WHY:` cho Dynamic Resolver, StaticPageJsonLd, steps-extractor và static-page-json-ld.
   * `type_safety_zero_hardcode`: Zero `any`, types chuẩn xác.
-  * `fail_safe_defaults`: Fail-Closed chặn trang chưa xuất bản (R14) trả về 404 qua `notFound()`.
+  * `fail_safe_defaults`: Fail-Closed chặn trang chưa xuất bản (R14), tự động fallback về WebPage nếu HowTo/FAQPage không có dữ liệu thật.
+  * `security_xss_protection`: Sanitize JSON-LD với replace(/</g, '\\u003c') ngăn chặn XSS script tag injection (CWE-79).
 * **Bằng chứng nghiệm thu máy (Machine Verification):**
   * `pnpm --filter @cardealer/web exec tsc --noEmit`: **Exit Code 0** (Zero errors).
   * `pnpm --filter @cardealer/admin exec tsc --noEmit`: **Exit Code 0**.
   * `pnpm --filter @cardealer/api exec tsc --noEmit`: **Exit Code 0**.
-  * `vitest run`: **16/16 test files passed (137/137 tests passed - Exit Code 0)**.
+  * `pnpm --filter @cardealer/core exec tsc --noEmit`: **Exit Code 0**.
+  * `vitest run`: **17/17 test files passed (144/144 tests passed - Exit Code 0)**.
 * **Trạng thái:** ✅ **HOÀN THÀNH & NGHIỆM THU (VERIFIED)**.
 
 

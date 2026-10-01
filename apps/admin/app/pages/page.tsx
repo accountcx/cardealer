@@ -32,7 +32,7 @@ export default function StaticPagesListPage() {
   const [deleteTarget, setDeleteTarget] = useState<StaticPage | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const siteUrl = clientEnv.NEXT_PUBLIC_SITE_URL || 'https://cardealer.vn';
+  const siteUrl = clientEnv.NEXT_PUBLIC_SITE_URL;
 
   const fetchPages = useCallback(async () => {
     try {

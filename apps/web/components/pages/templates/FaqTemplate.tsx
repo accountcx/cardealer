@@ -3,14 +3,16 @@
 import React, { useState } from 'react';
 import { HelpCircle, ChevronDown, MessageCircleQuestion, PhoneCall } from 'lucide-react';
 import type { StaticPage } from '@cardealer/types';
+import type { AutoDealerInfo } from '@cardealer/core';
 
 interface FaqTemplateProps {
   page: StaticPage;
+  dealerInfo?: AutoDealerInfo;
 }
 
 // WHY: Template hỏi đáp thường gặp dạng Accordion tương tác mượt mà (FAQ / FAQPage).
 // Trực tiếp hỗ trợ Google FAQ Rich Results và nâng cao trải nghiệm giải đáp thắc mắc khách hàng.
-export function FaqTemplate({ page }: FaqTemplateProps) {
+export function FaqTemplate({ page, dealerInfo }: FaqTemplateProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   const faqs = [
@@ -91,10 +93,10 @@ export function FaqTemplate({ page }: FaqTemplateProps) {
           Đội ngũ chuyên viên tư vấn của chúng tôi luôn túc trực 24/7 để giải đáp cụ thể theo từng trường hợp của bạn.
         </p>
         <a
-          href="tel:0912345678"
+          href={`tel:${(dealerInfo?.telephone || '0981.234.567').replace(/[^0-9+]/g, '')}`}
           className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md"
         >
-          <PhoneCall size={16} /> Gọi Hotline 0912 345 678
+          <PhoneCall size={16} /> Gọi Hotline {dealerInfo?.telephone || '0981.234.567'}
         </a>
       </div>
     </div>

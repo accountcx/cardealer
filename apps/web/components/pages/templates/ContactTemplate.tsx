@@ -1,14 +1,21 @@
 import React from 'react';
-import { MapPin, Phone, Mail, Clock, Send, ShieldCheck } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, Send } from 'lucide-react';
 import type { StaticPage } from '@cardealer/types';
+import type { AutoDealerInfo } from '@cardealer/core';
 
 interface ContactTemplateProps {
   page: StaticPage;
+  dealerInfo?: AutoDealerInfo;
 }
 
 // WHY: Template thông tin liên hệ & bản đồ Showroom (CONTACT / ContactPage).
-// Cung cấp thông tin địa chỉ NAP (Name, Address, Phone) chuẩn SEO Local Business và form tiếp nhận yêu cầu.
-export function ContactTemplate({ page }: ContactTemplateProps) {
+// Cung cấp thông tin địa chỉ NAP (Name, Address, Phone) chuẩn SEO Local Business từ Cấu hình Showroom tập trung.
+export function ContactTemplate({ page, dealerInfo }: ContactTemplateProps) {
+  const showroomName = dealerInfo?.name || 'Showroom Hyundai Vinh';
+  const address = dealerInfo?.address?.streetAddress || 'Km 3+500 Đại lộ Lê Nin, Xã Nghi Phú, TP. Vinh, Nghệ An';
+  const phone = dealerInfo?.telephone || '0981.234.567';
+  const cleanPhone = phone.replace(/[^0-9+]/g, '');
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-12 space-y-12 font-sans">
       <div className="text-center space-y-3">
@@ -19,7 +26,7 @@ export function ContactTemplate({ page }: ContactTemplateProps) {
           {page.title}
         </h1>
         <p className="text-sm text-slate-500 max-w-xl mx-auto">
-          {page.metaDescription || 'Showroom Hyundai Vinh luôn sẵn sàng đón tiếp quý khách lái thử, bảo dưỡng và tư vấn mua xe 7 ngày trong tuần.'}
+          {page.metaDescription || `${showroomName} luôn sẵn sàng đón tiếp quý khách lái thử, bảo dưỡng và tư vấn mua xe 7 ngày trong tuần.`}
         </p>
       </div>
 
@@ -28,7 +35,7 @@ export function ContactTemplate({ page }: ContactTemplateProps) {
         <div className="md:col-span-5 space-y-6">
           <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-6">
             <h2 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">
-              Thông Tin Showroom
+              {showroomName}
             </h2>
 
             <div className="space-y-4 text-xs text-slate-700">
@@ -36,7 +43,7 @@ export function ContactTemplate({ page }: ContactTemplateProps) {
                 <MapPin className="text-blue-600 flex-shrink-0 mt-0.5" size={18} />
                 <div>
                   <span className="font-bold block text-slate-900 text-sm">Địa Chỉ Showroom</span>
-                  <span>Km 3, Đại lộ Lê Nin, Xã Nghi Phú, TP. Vinh, Nghệ An</span>
+                  <span>{address}</span>
                 </div>
               </div>
 
@@ -44,8 +51,8 @@ export function ContactTemplate({ page }: ContactTemplateProps) {
                 <Phone className="text-blue-600 flex-shrink-0 mt-0.5" size={18} />
                 <div>
                   <span className="font-bold block text-slate-900 text-sm">Hotline Kinh Doanh</span>
-                  <a href="tel:0912345678" className="text-blue-600 font-semibold hover:underline">
-                    0912 345 678 (24/7)
+                  <a href={`tel:${cleanPhone}`} className="text-blue-600 font-semibold hover:underline">
+                    {phone} (24/7)
                   </a>
                 </div>
               </div>
@@ -54,7 +61,7 @@ export function ContactTemplate({ page }: ContactTemplateProps) {
                 <Mail className="text-blue-600 flex-shrink-0 mt-0.5" size={18} />
                 <div>
                   <span className="font-bold block text-slate-900 text-sm">Hòm Thư Điện Tử</span>
-                  <span>hotro@hyundaivinh.vn</span>
+                  <span>hotro@xehyundaivinh.com</span>
                 </div>
               </div>
 
