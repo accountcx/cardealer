@@ -1,332 +1,376 @@
-# 🗺️ LỘ TRÌNH TRIỂN KHAI PHÂN TẦNG 7 GIAI ĐOẠN (PHASED ROADMAP)
-## CHIẾN LƯỢC PHÁT TRIỂN & CHUYỂN GIAO NỀN TẢNG CARDEALER THEO CHUẨN UNIVERSAL AGENTIC WORKFLOW (v2.2)
+# 🗺️ MASTER PLAN & LỘ TRÌNH PHÁT TRIỂN KỸ THUẬT: CARDEALER CMS & TECHNICAL SEO ENTERPRISE
 
-> **Mục tiêu tài liệu**: Phân rã toàn bộ khối lượng kỹ thuật từ các tài liệu đặc tả ([`02`](./02-DATABASE-SCHEMA-PAYLOAD-CMS.md), [`03`](./03-HE-THONG-CONTENT-BLOCKS-LEXICAL.md), [`04`](./04-TINH-NANG-FRONTEND-VA-TRAI-NGHIEM-UI-UX.md), [`05`](./05-TECHNICAL-SEO-VA-SCHEMA-JSONLD.md)) thành **7 Phases độc lập, có tính kế thừa và chuyển giao nguyên tử**. Mỗi Phase vận hành trọn vẹn chu trình 5 Gates (Phân tích ➡️ Thiết kế ➡️ Audit Rủi ro ➡️ Code & Test ➡️ Review Độc lập) nhằm đảm bảo hệ thống có thể chạy thử và nghiệm thu từng bước.
+> **Chuẩn vận hành**: Universal Agentic Workflow (v2.2)  
+> **Dự án**: Nền Tảng Showroom Ô Tô & Đại Lý Ủy Quyền Chính Hãng (CarDealer)  
+> **Cập nhật gần nhất**: 2026-10-01  
+> **Trạng thái tổng thể**: Phase 1 & Nền Tảng Routing URL đã hoàn thành (100% DONE). Đang kích hoạt lộ trình 5 giai đoạn Master Plan từ **Phase 2**.
 
 ---
 
-## 🧭 Tổng Quan Lộ Trình 7 Giai Đoạn
+## 🏛️ Quản Trị Môi Trường (Environment Governance)
+
+```xml
+<environment_governance>
+  <environment id="case_a" mode="SANDBOX_GREENFIELD">
+    <condition>Giai đoạn phát triển / Dev Sandbox / Chưa Live Production</condition>
+    <behavior>Tối ưu tốc độ lặp, quản trị toàn bộ trang tĩnh từ CMS Admin; hoãn ping API bên ngoài (Google Indexing) cho đến giai đoạn kiểm thử cuối.</behavior>
+  </environment>
+</environment_governance>
+```
+
+---
+
+## 🧭 Sơ Đồ Tổng Quan Lộ Trình Triển Khai (Phased Roadmap)
+
+```mermaid
+graph TD
+    subgraph COMPLETED ["✅ ĐÃ HOÀN THÀNH & NGHIỆM THU"]
+        P1["Phase 1: Core Data Layer, Catalog & Routing URL Architecture<br/>(100% Verified)"]
+    end
+
+    subgraph MASTER_PLAN ["🚀 LỘ TRÌNH 5 GIAI ĐOẠN ENTERPRISE (TỪ PHASE 2)"]
+        direction TB
+        STEP1["<b>BƯỚC 1: PHASE 2</b><br/>Quản Trị Module Trang Tĩnh Động<br/>(StaticPage CMS, Tiptap Editor & Dynamic Route [slug])"]
+        STEP2["<b>BƯỚC 2: PHASE 4</b><br/>Package @cardealer/utils (hoặc @cardealer/core)<br/>(Meta Generator & Hệ Thống 7 Schema JSON-LD Chuẩn SEO)"]
+        STEP3["<b>BƯỚC 3: PHASE 3</b><br/>Chuẩn Hóa Ngữ Nghĩa & 7 Phân Khu Trang Chủ<br/>(H1/H2 Hierarchy, Direct Car Links, LCP/CLS Optimization)"]
+        STEP4["<b>BƯỚC 4: PHASE 5</b><br/>Tự Động Hóa Dynamic Sitemap Bất Đồng Bộ<br/>(Promise.allSettled, Smart Priority Matrix)"]
+        STEP5["<b>BƯỚC 5: PHASE 6</b><br/>Google Indexing API v3 & Admin Bulk Tool<br/>(Instant Indexing on Publish - Go-Live Activation)"]
+
+        STEP1 --> STEP2
+        STEP2 --> STEP3
+        STEP3 --> STEP4
+        STEP4 --> STEP5
+    end
+
+    P1 --> STEP1
+```
+
+---
+
+## 📊 Bảng Ma Trận Tổng Quan Các Giai Đoạn (Execution Matrix)
+
+| Bước | Giai Đoạn | Tên Phân Hệ (Epic) | Trọng Tâm Kỹ Thuật | Phạm Vi Tệp Tin Tác Động | Trạng Thái / Ưu Tiên |
+| :---: | :---: | :--- | :--- | :--- | :---: |
+| **0** | **Phase 1** | **Core Data Layer, Catalog & Routing** | 10 thực thể PostgreSQL, CRUD API, Admin Skeleton Zero-CLS, SSG Routing (`/dong-xe/[segment]`, `/xe/[carSlug]`) | `packages/database`, `packages/types`, `apps/api`, `apps/admin`, `apps/web` | ✅ **HOÀN THÀNH (100%)** |
+| **1** | **Phase 2** | **Quản Trị Trang Tĩnh Động (E-E-A-T)** | Bảng `StaticPage`, CMS Editor 2 cột (Tiptap + SEO Sidebar), dynamic catch-all route `[slug]` với 4 layout templates | `packages/database/src/schema/static-pages.ts`<br/>`apps/admin/app/pages/`<br/>`apps/web/app/[slug]/page.tsx` | ⏳ **TIẾP THEO (Bước 1)** |
+| **2** | **Phase 4** | **Package Utils: Meta & 7 Schema JSON-LD** | Đóng gói SEO technical, `generatePageMetadata()`, Canonical dọn query params, 7 Schemas (Car, AutoDealer, News, FAQ, FinanceApp, Video, Breadcrumb) | `packages/utils/src/seo/metadata.ts`<br/>`packages/utils/src/seo/schemas.ts`<br/>`packages/utils/src/index.ts` | 📌 **Bước 2** |
+| **3** | **Phase 3** | **Chuẩn Hóa Ngữ Nghĩa 7 Block Trang Chủ** | H1 duy nhất, banner WebP/AVIF priority LCP, liên kết nội bộ trực tiếp `/xe/[carSlug]`, alt Local SEO Nghệ An, Freshness news | `apps/web/app/page.tsx`<br/>`apps/web/components/home/*` | 📌 **Bước 3** |
+| **4** | **Phase 5** | **Dynamic Sitemap Bất Đồng Bộ** | `sitemap.ts` dùng `Promise.allSettled`, phân bổ priority tự động: 1.0 (Trang chủ), 0.9 (Dòng xe lẻ & Bài viết bán hàng), 0.8 (Static pages & /xe), 0.7 (Tin tức) | `apps/web/app/sitemap.ts` | 📌 **Bước 4** |
+| **5** | **Phase 6** | **Google Indexing API v3 & Admin Bulk Tool** | Service Account JWT auth, hook `indexOnPublish`, giao diện Admin submit hàng loạt URL và bảng theo dõi logs | `packages/utils/src/google/indexing.ts`<br/>`apps/admin/app/api/indexing/`<br/>`apps/admin/app/google-indexing/` | 📌 **Bước 5 (Go-Live)** |
+
+---
+
+## 📋 Chi Tiết Từng Giai Đoạn Triển Khai (Detail Specifications)
+
+### 📦 Phase 1: Core Data Layer, Catalog & Routing URL Architecture (ĐÃ HOÀN THÀNH)
+> **Trạng thái thực thi**: ✅ **ĐÃ HOÀN THÀNH & NGHIỆM THU 100% (Delivered to Main)**  
+> **Tài liệu tham chiếu**: [`docs/features/PHASE-1-CATALOG-DATA/`](./features/PHASE-1-CATALOG-DATA/), [`docs/features/ROUTING-URL-ARCHITECTURE/`](./features/ROUTING-URL-ARCHITECTURE/)
+
+* **Thành quả cốt lõi:**
+  * Cơ sở dữ liệu PostgreSQL chuẩn hóa với Drizzle ORM: Bảng `cars`, `car_versions`, `colors`, `version_colors`, `posts`, `categories`, `leads`, `system_settings`, `users`, `audit_logs`.
+  * Bộ APIs xác thực JWT an toàn (`/api/auth/login`, `/api/auth/me`, `/api/auth/logout`), RBAC Middleware và Protected Routes.
+  * Giao diện Admin quản trị danh mục xe (`/cars`), chi tiết xe (`/cars/[slug]`), bảng màu ngoại thất (`/colors`), cấu hình toàn cục (`/settings`) với Skeleton Shimmer Loading (Zero-CLS).
+  * Kiến trúc Routing URL chuẩn SEO:
+    * Tuyến cố định phân khúc xe: `/dong-xe/sedan`, `/dong-xe/suv`, `/dong-xe/mpv` (Static Site Generation 100%).
+    * Tuyến chi tiết xe kết hợp tham số: `/xe/[carSlug]?phien-ban=[versionSlug]&mau=[colorSlug]`.
+    * Bộ lọc danh mục `/xe` lọc tức thì bằng query parameters.
+    * 127/127 unit tests pass, type-check monorepo 0 errors.
+
+---
+
+### 📄 PHASE 2: Quản Trị Module Trang Tĩnh Động (E-E-A-T & Custom SEO Management)
+> **Mã Epic**: `EPIC-PHASE-2-STATIC-PAGES-CMS`  
+> **Trọng tâm**: Quản trị trang tĩnh chuẩn E-E-A-T từ Admin & Render động qua Server Component tại Web Client  
+> **Trạng thái**: ⏳ **SẴN SÀNG KHỞI ĐỘNG (BƯỚC 1)**
+
+#### 1. Mục tiêu & Giá trị
+Xây dựng module Static Pages hoàn chỉnh trong CMS Admin cho phép ban biên tập và chuyên viên marketing tạo/sửa các trang tĩnh quan trọng (`/gioi-thieu`, `/chinh-sach-bao-mat`, `/quy-trinh-mua-xe`, `/tra-gop`...) với bộ cấu hình SEO riêng biệt từng trang và render động mượt mà qua một catch-all route duy nhất ở web client.
+
+#### 2. Tệp tin tác động
+* **Database & Contracts:**
+  * `packages/database/src/schema/static-pages.ts` (Drizzle Schema) hoặc `packages/database/prisma/schema.prisma`
+  * `packages/types/src/static-pages.ts`
+  * `packages/database/src/schema/index.ts`
+* **Admin CMS (`apps/admin`):**
+  * `apps/admin/app/pages/page.tsx` *(Danh sách trang tĩnh, tìm kiếm, lọc trạng thái, thao tác nhanh)*
+  * `apps/admin/app/pages/[id]/page.tsx` *(Editor soạn thảo 2 cột: Content + SEO Sidebar)*
+  * `apps/admin/app/pages/new/page.tsx` *(Tạo trang tĩnh mới)*
+  * `apps/admin/components/pages/page-form.tsx`
+  * `apps/admin/components/pages/serp-preview.tsx`
+* **API Route (`apps/api`):**
+  * `apps/api/src/routes/admin/pages.ts` *(CRUD APIs)*
+  * `apps/api/src/routes/public/pages.ts` *(Public API fetch trang tĩnh theo slug)*
+* **Web Client (`apps/web`):**
+  * `apps/web/app/[slug]/page.tsx` *(Server Component render động phía client)*
+  * `apps/web/components/pages/templates/profile-showroom.tsx`
+  * `apps/web/components/pages/templates/default-legal.tsx`
+  * `apps/web/components/pages/templates/timeline-process.tsx`
+  * `apps/web/components/pages/templates/finance-calc.tsx`
+
+#### 3. Nhiệm vụ kỹ thuật chi tiết
+1. **Thiết kế Schema Database (`StaticPage`):**
+   * *Trường nội dung*:
+     * `id`: UUID Primary Key.
+     * `title`: Tiêu đề trang (ví dụ: "Giới thiệu Hyundai Vinh").
+     * `slug`: Đường dẫn URL duy nhất (Unique), tự động slugify từ title (`gioi-thieu`, `chinh-sach-bao-mat`...).
+     * `content`: Dữ liệu Rich-text JSON của Tiptap Editor.
+     * `templateType`: Kiểu mẫu hiển thị (`DEFAULT`, `PROFILE_SHOWROOM`, `TIMELINE`, `FINANCE`).
+     * `isPublished`: Trạng thái xuất bản (boolean).
+     * `createdAt`, `updatedAt`: Timestamps.
+   * *Trường SEO chuyên biệt (Custom SEO fields)*:
+     * `metaTitle`: Tiêu đề hiển thị trên Google SERP (50-60 ký tự).
+     * `metaDescription`: Mô tả tóm tắt chuẩn SEO (150-160 ký tự).
+     * `canonicalUrl`: URL chuẩn hóa (nếu muốn override).
+     * `ogImage`: Ảnh chia sẻ mạng xã hội (OpenGraph / Zalo / Facebook).
+     * `noIndex`: Cờ chặn bot Google thu thập thông tin (boolean).
+     * `schemaType`: Loại Schema JSON-LD tương ứng (`AboutPage`, `HowTo`, `WebPage`).
+
+2. **Giao diện CMS Admin (`apps/admin`):**
+   * **Bố cục 2 khu vực chuyên nghiệp**:
+     * **Khu vực nội dung (Chính - 70% width):** Ô nhập Tiêu đề, Slug (kèm nút tạo tự động), bộ soạn thảo Rich-text Tiptap (hỗ trợ chèn Callout Box, Image upload, Table, FAQ Accordion).
+     * **Khu vực Sidebar SEO (Phải - 30% width):**
+       * Khung xem trước kết quả tìm kiếm Google (SERP Preview) mô phỏng chính xác giao diện tìm kiếm Mobile & Desktop.
+       * Ô nhập `Meta Title` và `Meta Description` kèm thanh đo độ dài ký tự tối ưu (Progress Bar màu xanh/vàng/đỏ).
+       * Ô tải ảnh đại diện `OG:Image` (tích hợp Media Library).
+       * Toggle chuyển đổi `noIndex` (Bật để ngăn index trang nháp hoặc chính sách nội bộ).
+       * Dropdown chọn `templateType` và `schemaType`.
+
+3. **Server Component động tại Web Client (`apps/web/app/[slug]/page.tsx`):**
+   * **Hàm `generateMetadata({ params })`**:
+     * Truy vấn bản ghi `StaticPage` theo `params.slug`.
+     * Tự động inject `title`, `description`, `openGraph`, `canonicalUrl`, và `robots` (`index: !page.noIndex, follow: !page.noIndex`) vào thẻ `<head>` của Next.js.
+     * Trả về `notFound()` nếu trang không tồn tại hoặc `isPublished === false` (ở môi trường người dùng).
+   * **Render layout linh hoạt theo `templateType`**:
+     * `PROFILE_SHOWROOM` (`/gioi-thieu`): Bố cục hồ sơ Saler/Đại lý (ảnh đại diện chuyên nghiệp, chứng nhận hãng Hyundai Thành Công, số năm kinh nghiệm, 4 cam kết vàng) kết hợp thông tin quy mô showroom 3S và Google Maps nhúng.
+     * `DEFAULT` (`/chinh-sach-bao-mat`, `/dieu-khoan-su-dung`): Trình bày văn bản pháp lý mạch lạc, typography thoáng đãng, cam kết bảo mật số điện thoại và thông tin liên hệ Zalo của khách.
+     * `TIMELINE` (`/quy-trinh-mua-xe`): Trình bày quy trình 5 bước mua xe đồ họa sinh động (Đặt cọc ➡️ Hoàn tất hồ sơ ngân hàng ➡️ Đăng ký biển số ➡️ Kiểm tra PDI ➡️ Bàn giao xe).
+     * `FINANCE` (`/tra-gop`): Tích hợp bảng kiểm tra điều kiện vay vốn ngân hàng, lãi suất ưu đãi đại lý và công cụ tính nhẩm dư nợ trả góp hàng tháng.
+
+#### 4. Tiêu chí nghiệm thu (DoD)
+- [ ] Chạy migration bảng `static_pages` thành công vào database PostgreSQL.
+- [ ] Admin CRUD trang tĩnh hoạt động 100%: Tạo mới, sửa nội dung Tiptap, chỉnh sửa meta SEO, bật/tắt xuất bản.
+- [ ] SERP Preview trong Admin cập nhật thời gian thực khi gõ Meta Title và Meta Description.
+- [ ] Route web client `/[slug]` render chính xác 4 loại template và tự động inject meta tags vào `<head>`.
+- [ ] Thử nghiệm với các trang cốt lõi: `/gioi-thieu` (PROFILE_SHOWROOM), `/chinh-sach-bao-mat` (DEFAULT), `/quy-trinh-mua-xe` (TIMELINE) hiển thị chuẩn mực và không lỗi layout.
+- [ ] `check-types` monorepo 0 errors, unit test cho service StaticPage pass 100%.
+
+---
+
+### 📦 PHASE 4: Xây Dựng Package `@cardealer/utils` — Meta & Hệ Thống 7 Schema JSON-LD
+> **Mã Epic**: `EPIC-PHASE-4-SEO-SCHEMAS-UTILS`  
+> **Trọng tâm**: Đóng gói toàn bộ logic SEO kỹ thuật vào Monorepo Package tái sử dụng, render dữ liệu có cấu trúc SSR chuẩn xác 100%  
+> **Trạng thái**: 📌 **BƯỚC 2 (Khuyến nghị thực hiện sau Phase 2 để chuẩn hóa schema cho toàn hệ thống)**
+
+#### 1. Mục tiêu & Giá trị
+Xây dựng package `@cardealer/utils` (hoặc mở rộng module SEO trong `@cardealer/core`) cung cấp thư viện utilities dùng chung cho cả Web Client và API: sinh meta tags chuẩn hóa, làm sạch canonical URL và render tự động 7 loại Schema JSON-LD chuẩn Google Rich Results.
+
+#### 2. Tệp tin tác động
+* `packages/utils/src/seo/metadata.ts` (hoặc `packages/core/src/seo/metadata.ts`)
+* `packages/utils/src/seo/schemas.ts` (hoặc `packages/core/src/seo/schemas.ts`)
+* `packages/utils/src/seo/types.ts`
+* `packages/utils/src/index.ts`
+* `packages/utils/package.json`
+
+#### 3. Nhiệm vụ kỹ thuật chi tiết
+1. **`metadata.ts` (Trình sinh Metadata tự động):**
+   * Xây dựng hàm `generatePageMetadata(options)`:
+     * Định dạng title template: `%s | Đại lý ủy quyền chính hãng`.
+     * Tự động làm sạch URL: Loại bỏ toàn bộ query parameters tracking và rác (`fbclid`, `utm_*`, `gclid`, `phien-ban`, `mau`) để sinh thẻ `canonical` trỏ về URL gốc duy nhất (ví dụ: truy cập `https://xehyundaivinh.com/xe/custin?fbclid=xyz&phien-ban=dac-biet` ➡️ canonical luôn là `https://xehyundaivinh.com/xe/custin`).
+     * Cấu hình thẻ robots tối ưu cho crawler: `index: true, follow: true, max-image-preview: 'large', max-snippet: -1, max-video-preview: -1`.
+     * Cấu hình OpenGraph & Twitter Card chuẩn tỷ lệ 1200x630.
+
+2. **`schemas.ts` (Lập trình 7 cấu trúc Schema JSON-LD):**
+   * **1. Schema Xe Ô Tô (`Car` & `Product`):**
+     * Áp dụng tại `/xe/[carSlug]`.
+     * Tích hợp FOMO `priceValidUntil`: Tự động tính ngày cuối cùng của tháng hiện tại lúc 23:59:59 để kích thích khách hàng liên hệ trước đợt tăng giá.
+     * Chính sách hoàn trả `hasMerchantReturnPolicy`: 7 ngày đổi trả nếu phát hiện lỗi kỹ thuật từ nhà sản xuất.
+     * Miễn phí vận chuyển `shippingDetails`: 0 VNĐ, thời gian giao xe 0-3 ngày tại showroom hoặc tận nhà.
+     * Gói bảo hành chính hãng `warranty`: 5 năm hoặc 100.000 km theo tiêu chuẩn hãng.
+   * **2. Schema Doanh nghiệp địa phương (`AutoDealer`):**
+     * Render tại trang chủ (`/`) với tên đại lý showroom, địa chỉ đầy đủ, hotline 24/7, tọa độ vệ tinh GPS Google Maps, khoảng giá `$$$`, giờ mở cửa 07:30 - 18:00.
+   * **3. Schema Bài viết (`NewsArticle`):**
+     * Render tại `/tin-tuc/[slug]` gồm tiêu đề bài viết, ngày đăng (`datePublished`), ngày sửa đổi (`dateModified`), tác giả (`author`: Chuyên viên tư vấn), nhà xuất bản (`publisher`: Hyundai Vinh kèm logo).
+   * **4. Schema Hỏi đáp (`FAQPage`):**
+     * Tự động bóc tách từ các block Accordion FAQ trong bài viết hoặc trang tĩnh ra định dạng hỏi-đáp trên SERP Google (`mainEntity: [{ @type: 'Question', name, acceptedAnswer }]`).
+   * **5. Schema Công cụ tài chính (`SoftwareApplication`):**
+     * Render tại `/gia-lan-banh` và `/tra-gop` với `applicationCategory: "FinanceApplication"`, `operatingSystem: "All"`, `offers: { price: '0', priceCurrency: 'VND' }`.
+   * **6. Schema Video (`VideoObject`):**
+     * Tự động trích xuất thông tin video khi bài viết có chứa khối YouTube hoặc Media, sinh thumbnail, ngày tải lên và mô tả.
+   * **7. Schema Điều hướng phân cấp (`BreadcrumbList`):**
+     * Render cho tất cả các trang chi tiết xe (`Trang chủ > Dòng xe [Phân khúc] > [Tên Xe]`), bài viết tin tức và các trang tĩnh.
+
+#### 4. Tiêu chí nghiệm thu (DoD)
+- [ ] Package build thành công ra định dạng ESM/CJS và export đầy đủ types.
+- [ ] Unit test pass 100% cho `generatePageMetadata`: Kiểm tra đúng title template, lọc sạch toàn bộ query tracking khỏi canonical.
+- [ ] 7 hàm schema trả về JSON-LD hợp lệ 100% khi kiểm thử với validator của Schema.org.
+- [ ] Tích hợp thử nghiệm trên một trang mẫu và verify qua Google Rich Results Test đạt 0 cảnh báo.
+
+---
+
+### 🏠 PHASE 3: Chuẩn Hóa Ngữ Nghĩa & Tối Ưu 7 Block Trang Chủ
+> **Mã Epic**: `EPIC-PHASE-3-HOMEPAGE-SEMANTICS-OPTIMIZATION`  
+> **Trọng tâm**: Phân cấp Heading (H1-H2), liên kết nội bộ trực tiếp về từng xe (`/xe/[carSlug]`) & Tối ưu Core Web Vitals (LCP, CLS)  
+> **Trạng thái**: 📌 **BƯỚC 3**
+
+#### 1. Mục tiêu & Giá trị
+Tái cấu trúc và nâng cấp toàn diện trang chủ thành một cỗ máy SEO và chuyển đổi hoàn hảo: phân cấp ngữ nghĩa chuẩn mực cho Google Crawler, liên kết nội bộ dày đặc trỏ thẳng về từng mẫu xe và tối ưu hiệu suất tải trang đạt điểm Core Web Vitals cao nhất.
+
+#### 2. Tệp tin tác động
+* `apps/web/app/page.tsx`
+* `apps/web/components/home/hero-banner.tsx` (Khu 1)
+* `apps/web/components/home/quick-filter.tsx` (Khu 2)
+* `apps/web/components/home/featured-cars.tsx` (Khu 3)
+* `apps/web/components/home/pricing-cta.tsx` (Khu 4)
+* `apps/web/components/home/vip-showroom.tsx` (Khu 5)
+* `apps/web/components/home/social-proof-delivery.tsx` (Khu 6)
+* `apps/web/components/home/latest-promotions.tsx` (Khu 7)
+
+#### 3. Nhiệm vụ kỹ thuật chi tiết theo 7 Phân Khu
+* **Khu 1 (Hero Event Banner & Countdown):**
+  * Khai báo duy nhất **1 thẻ `<h1>`** cho toàn bộ trang chủ: Tiêu đề chứa từ khóa trọng tâm địa phương (ví dụ: *"Đại Lý Ủy Quyền Xe Hyundai Chính Hãng Tại Nghệ An & Hà Tĩnh"*).
+  * Banner sự kiện định dạng WebP/AVIF tối ưu dung lượng, đi kèm thuộc tính `priority={true}` và `fetchPriority="high"` để đạt điểm LCP < 1.5s.
+  * Bộ đếm ngược Countdown sử dụng SSR-friendly markup để tránh chớp giật layout (CLS = 0).
+* **Khu 2 (Lead Magnet Hub - Bộ lọc nhanh):**
+  * Thanh chọn ngân sách (Dưới 500tr, 500-800tr, Trên 800tr) và kiểu dáng xe (Sedan, SUV, MPV).
+  * Các nút kết quả lọc chứa thẻ `<Link href="/xe/[carSlug]">` trỏ thẳng về các mẫu xe tương ứng để bot tìm kiếm cào được liên kết thật (crawleable internal links) thay vì chỉ gắn event JavaScript onClick.
+* **Khu 3 (Dòng Xe Bán Chạy):**
+  * Gắn thẻ `<h2>` nhắm từ khóa phân khúc xe bán chạy (ví dụ: *"Bảng Giá & Các Dòng Xe Hyundai Đang Ưu Đãi"*).
+  * Thẻ Card sản phẩm chuẩn ngữ nghĩa semantic HTML (`<article>`), dẫn link nội bộ trực tiếp về `/xe/[carSlug]`.
+  * Hiển thị giá niêm yết chuẩn, mức trả trước gợi ý từ X triệu và huy hiệu ưu đãi trong tháng.
+* **Khu 4 (Banner Mồi Câu Tính Giá):**
+  * Tiêu đề `<h2>` nhắm từ khóa: *"Dự toán lăn bánh & Nhận báo giá đại lý tốt nhất"*.
+  * Nút bấm Call-To-Action dẫn thẳng vào `/gia-lan-banh` kèm query params xe gợi ý.
+* **Khu 5 (VIP Showroom / Hồ Sơ Saler Uy Tín):**
+  * Tiêu đề `<h2>`: *"Showroom Chuẩn 3S & Hồ Sơ Năng Lực Đại Lý"*.
+  * Khai báo địa chỉ chi tiết, hotline bán hàng 24/7, nhúng bản đồ Google Maps tương tác và hiển thị chứng nhận đại lý ủy quyền 3S chính hãng.
+* **Khu 6 (Bàn Giao Xe Thực Tế - Social Proof):**
+  * Tiêu đề `<h2>`: *"Hình Ảnh Bàn Giao Xe Thực Tế Cho Khách Hàng"*.
+  * Toàn bộ ảnh bàn giao xe thật phải có thuộc tính `alt` chuẩn Local SEO: *"Bàn giao xe Hyundai [Tên xe] cho khách hàng [Tên khách] tại [Địa phương - Nghệ An/Hà Tĩnh]"*.
+  * Tích hợp responsive image loading với `loading="lazy"`.
+* **Khu 7 (Tin Tức Khuyến Mại & Sự Kiện):**
+  * Tiêu đề `<h2>`: *"Tin Tức Ưu Đãi & Cẩm Nang Lăn Bánh Xe Ô Tô"*.
+  * Tự động query 3-4 bài viết ưu đãi mới nhất từ database (`isPublished: true`) để duy trì độ tươi mới (Freshness) liên tục cho trang chủ.
+
+#### 4. Tiêu chí nghiệm thu (DoD)
+- [ ] Kiểm tra DOM trang chủ: Duy nhất 1 thẻ `<h1>`, các phân khu 2-7 sử dụng thẻ `<h2>` chuẩn phân cấp.
+- [ ] 100% liên kết đến từng mẫu xe dùng thẻ `<Link href="/xe/[carSlug]">`, bot tìm kiếm cào được liên kết nội bộ tự nhiên.
+- [ ] Tất cả hình ảnh có đầy đủ `alt`, `width`, `height`, banner chính có `priority={true}`.
+- [ ] Điểm số Lighthouse / PageSpeed Insights trang chủ: Performance >= 90, SEO = 100, LCP < 2.0s, CLS = 0.
+
+---
+
+### 🗺️ PHASE 5: Tự Động Hóa Dynamic Sitemap Bất Đồng Bộ (`sitemap.ts`)
+> **Mã Epic**: `EPIC-PHASE-5-DYNAMIC-SITEMAP`  
+> **Trọng tâm**: Thu thập toàn bộ URL từ DB và Static Pages, phân cấp độ ưu tiên thông minh  
+> **Trạng thái**: 📌 **BƯỚC 4**
+
+#### 1. Mục tiêu & Giá trị
+Tự động hóa hoàn toàn file XML Sitemap phục vụ bot Google, thu thập đa luồng không tắc nghẽn toàn bộ URL xe, bài viết và các trang tĩnh mới tạo từ CMS Phase 2, phân cấp mức độ ưu tiên khoa học theo tỷ lệ chuyển đổi bán hàng.
+
+#### 2. Tệp tin tác động
+* `apps/web/app/sitemap.ts`
+* `packages/core/src/sitemap/` (hoặc `packages/utils/src/sitemap/`)
+
+#### 3. Nhiệm vụ kỹ thuật chi tiết
+1. **Truy vấn bất đồng bộ đa luồng (`Promise.allSettled`):**
+   * Fetch song song 4 luồng dữ liệu độc lập:
+     * Danh sách dòng xe đang hoạt động (`/xe/[carSlug]`).
+     * Danh sách bài viết tin tức đã xuất bản (`/tin-tuc/[slug]`).
+     * Danh sách trang tĩnh từ bảng `StaticPage` (`isPublished === true` và `noIndex === false`).
+     * Danh sách phân khúc xe cố định (`/dong-xe/sedan`, `/dong-xe/suv`, `/dong-xe/mpv`).
+   * Sử dụng `Promise.allSettled` đảm bảo nếu một truy vấn database bị timeout hoặc lỗi nhẹ, sitemap vẫn sinh thành công các URL còn lại mà không làm gãy toàn trang.
+
+2. **Quy tắc phân cấp Priority & Change Frequency thông minh:**
+   * `priority: 1.0` (`changefreq: 'daily'`): Trang chủ (`/`).
+   * `priority: 0.9` (`changefreq: 'daily'`): Toàn bộ các trang dòng xe lẻ (`/xe/accent`, `/xe/creta`, `/xe/santa-fe`, `/xe/tucson`...) — đây là các trang bán hàng trực tiếp cần được crawler ghé thăm mỗi ngày.
+   * `priority: 0.9` (`changefreq: 'daily'`): Các bài viết tin tức có slug chứa từ khóa bán hàng chuyển đổi cao: `gia-lan-banh`, `khuyen-mai`, `uu-dai`.
+   * `priority: 0.8` (`changefreq: 'weekly'`):
+     * Trang tổng hợp danh sách xe (`/xe`).
+     * Các trang phân khúc (`/dong-xe/sedan`, `/dong-xe/suv`, `/dong-xe/mpv`).
+     * Trang công cụ lăn bánh (`/gia-lan-banh`) và trả góp (`/tra-gop`).
+     * Toàn bộ các trang tĩnh lấy từ bảng `StaticPage` (`isPublished === true` và `noIndex === false`, ví dụ: `/gioi-thieu`, `/quy-trinh-mua-xe`).
+   * `priority: 0.7` (`changefreq: 'weekly'`): Các bài viết tin tức phân tích kỹ thuật, cẩm nang lái xe thông thường.
+   * **Loại trừ tuyệt đối**: Không đưa vào sitemap các URL có `noIndex: true`, các trang admin, trang cảm ơn hoặc đường dẫn chứa query parameters rác.
+
+#### 4. Tiêu chí nghiệm thu (DoD)
+- [ ] Truy cập `/sitemap.xml` trả về XML chuẩn giao thức sitemap của Google.
+- [ ] Thời gian sinh sitemap < 500ms nhờ `Promise.allSettled` và caching hợp lý.
+- [ ] Kiểm tra đầy đủ URL của các trang tĩnh vừa tạo trong Admin Phase 2 xuất hiện chuẩn xác với priority 0.8.
+- [ ] Không có bất kỳ URL trùng lặp hoặc URL 404 nào trong sitemap.
+
+---
+
+### ⚡ PHASE 6: Tích Hợp Google Indexing API v3 & Admin Bulk Tool
+> **Mã Epic**: `EPIC-PHASE-6-GOOGLE-INDEXING-API`  
+> **Trọng tâm**: Tự động thông báo Google Service Account khi xuất bản & Công cụ gửi hàng loạt URL trong Admin  
+> **Trạng thái**: 📌 **BƯỚC 5 (Kích hoạt khi chuẩn bị Go-Live / Deploy Production)**
+
+#### 1. Mục tiêu & Giá trị
+Rút ngắn thời gian thu thập và lập chỉ mục của Google bot từ vài ngày/tuần xuống chỉ còn vài phút. Tự động hóa gửi thông báo `URL_UPDATED` ngay khi bài viết hoặc trang xe được bấm xuất bản trong Admin, đi kèm công cụ hỗ trợ Submit hàng loạt danh sách URL linh hoạt.
+
+#### 2. Tệp tin tác động
+* `packages/utils/src/google/indexing.ts` (hoặc `packages/core/src/google/indexing.ts`)
+* `apps/admin/app/api/indexing/route.ts`
+* `apps/admin/app/google-indexing/page.tsx`
+* `apps/admin/components/google-indexing/bulk-submit-form.tsx`
+* `apps/admin/components/google-indexing/indexing-logs-table.tsx`
+
+#### 3. Nhiệm vụ kỹ thuật chi tiết
+1. **Cấu hình Google Service Account:**
+   * Khai báo biến môi trường:
+     * `GOOGLE_CLIENT_EMAIL`: Email của Google Service Account được cấp quyền Owner trong Google Search Console.
+     * `GOOGLE_PRIVATE_KEY`: Private Key chứng thực RSA.
+     * `GOOGLE_PROJECT_ID`: ID dự án Google Cloud Platform.
+   * Xây dựng module xác thực JWT OAuth2 kết nối trực tiếp đến endpoint `https://indexing.googleapis.com/v3/urlNotifications:publish`.
+
+2. **Hook tự động `indexOnPublish`:**
+   * Tự động kích hoạt khi có sự kiện:
+     * Tạo mới hoặc cập nhật một dòng xe sang trạng thái công khai (`/xe/[carSlug]`).
+     * Xuất bản bài viết tin tức mới (`/tin-tuc/[slug]`).
+     * Xuất bản trang tĩnh từ bảng `StaticPage` (`/[slug]`).
+   * Gửi request `type: "URL_UPDATED"` kèm URL tuyệt đối của trang.
+   * Ghi log kết quả (Status code, timestamp, message) vào bảng `audit_logs` để dễ dàng tra cứu.
+
+3. **Giao diện Quản trị `/admin/google-indexing`:**
+   * **Công cụ Bulk Submit**:
+     * Khung Textarea cho phép dán danh sách hàng chục URL cần index (mỗi URL một dòng).
+     * Nút "Gửi Indexing Lập Tức" kèm thanh tiến trình gửi tuần tự (rate-limit 5 requests/giây để tránh vượt quota Google).
+     * Nút chọn nhanh: "Gửi toàn bộ URL xe", "Gửi toàn bộ URL trang tĩnh", "Gửi Sitemap URL".
+   * **Bảng Lịch Sử & Nhật Ký Indexing (Logs Table)**:
+     * Hiển thị danh sách các URL đã gửi, thời gian gửi, trạng thái phản hồi (HTTP 200 OK / 429 Quota Exceeded / Error), và người thực hiện.
+
+#### 4. Tiêu chí nghiệm thu (DoD)
+- [ ] Gửi thử nghiệm một URL hợp lệ qua Google Indexing API nhận mã phản hồi HTTP 200 từ máy chủ Google.
+- [ ] Thao tác đổi trạng thái bài viết/trang tĩnh sang "Published" trong Admin tự động kích hoạt ping API không làm đơ giao diện (chạy nền asynchronous).
+- [ ] Giao diện `/admin/google-indexing` hoạt động trơn tru: parse danh sách URL, hiển thị toast thông báo thành công và lưu log vào hệ thống.
+
+---
+
+## 🚦 Quy Trình Vận Hành 5 Gates Cho Từng Phase (Universal Agentic Workflow v2.2)
+
+Để đảm bảo tính kỷ luật và chất lượng kỹ thuật cao nhất, mỗi Phase từ Phase 2 đến Phase 6 đều phải tuân thủ nghiêm ngặt chu trình 5 Gates:
 
 ```mermaid
 graph LR
-    P1["Phase 1: Core Data Layer & Catalog<br/>(✅ ĐÃ HOÀN THÀNH 100%)"] --> P2["Phase 2: Admin User & RBAC<br/>(Quản Trị Người Dùng & Phân Quyền)"]
-    P2 --> P3["Phase 3: Pricing & Lead Engine<br/>(Tính Lăn Bánh, Trả Góp, Lead Gate)"]
-    P3 --> P4["Phase 4: Storefront & Car Experience<br/>(Trang Chủ, /xe/[slug] Đổi Màu URL)"]
-    P4 --> P5["Phase 5: Content & Lexical Blocks<br/>(15 Blocks, TikTok Embed, TOC)"]
-    P5 --> P6["Phase 6: Technical SEO & Indexing<br/>(7 JSON-LD, Sitemap, Google API)"]
-    P6 --> P7["Phase 7: AI-Powered Automation<br/>(Tự động sinh bài SEO, FAQ, Chatbot)"]
+    G1["Gate 1: Phân Tích & Spec<br/>(BACKLOG.md & TODO.md)"] --> G2["Gate 2: Thiết Kế Kỹ Thuật<br/>(SPEC.md & State Matrix)"]
+    G2 --> G3["Gate 3: Audit Rủi Ro<br/>(Security, SEO & Zero-CLS)"]
+    G3 --> G4["Gate 4: Lập Trình & Kiểm Thử<br/>(Code, Unit Tests, check-types)"]
+    G4 --> G5["Gate 5: Review Độc Lập<br/>(Sign-off & Clean Commit)"]
 ```
 
-| Giai đoạn | Tên Phân Hệ (Epic) | Trọng Tâm Kỹ Thuật | Phạm Vi Nền Tảng | Trạng Thái / Deliverables |
-| :---: | :--- | :--- | :---: | :--- |
-| **Phase 1** | **Core Data Layer & Catalog** | Thiết kế DB PostgreSQL, 10 Core Entities, 7 Globals, Seeders & CRUD API | Backend + Admin | ✅ **ĐÃ HOÀN THÀNH (100% - Ready)**<br/>• `packages/database` (Drizzle Schemas, Migrations, Seed)<br/>• `packages/types` (Car, Auth, Settings contracts)<br/>• `apps/api` (REST APIs Auth, Catalog, Admin CRUD)<br/>• `apps/admin` (Dashboard, Login, Cars, Colors, Settings, Skeleton Zero-CLS) |
-| **Phase 2** | **Admin User & RBAC Management** | Quản trị tài khoản nhân viên showroom, phân quyền đa tầng (Admin, Manager, Editor, Sales), Audit Logs | Full-stack | ⏳ **TIẾP THEO (Next Epic)**<br/>• `packages/database/src/schema/users.ts`<br/>• `apps/api/src/routes/admin/users.ts`<br/>• `apps/admin/app/users/`, `/admin/profile` |
-| **Phase 3** | **Pricing & Lead Engine** | Thuật toán tính lăn bánh địa phương, trả góp ngân hàng, Lead Gate 2 bước | Full-stack | `packages/core/src/pricing/`, `apps/api/src/routes/quote`, Web Calculators |
-| **Phase 4** | **Storefront & Car Experience** | Phân rã 4 sub-phases: 4.1 Shell & Widgets, 4.2 Trang chủ 6 phân khu, 4.3 Catalog /xe, 4.4 Chi tiết xe /xe/[slug] đổi màu động | Frontend | `apps/web/app/`, `packages/ui` |
-| **Phase 5** | **Content & Lexical Blocks** | 15 Content Blocks, TikTok Embed không cuộn, FAQ Accordion, Sticky TOC | Full-stack | `packages/ui/blocks`, `apps/web/app/tin-tuc/`, `apps/admin` |
-| **Phase 6** | **Technical SEO & Indexing** | 7 Cấu trúc Schema JSON-LD, Dynamic Sitemap, Google Indexing API v3 | Full-stack | `packages/core/src/seo/`, `apps/web/app/sitemap.ts`, Google Indexing Hook |
-| **Phase 7** | **AI-Powered Automation** | AI sinh bài viết bảng giá xe hàng tháng, AI sinh FAQ Schema, AI Chatbot | AI Engine + Cron | `packages/ai-engine`, Background Workers |
+1. **Gate 1 - Strategic Analysis**: Khởi tạo thư mục tính năng trong `docs/features/PHASE-X-.../`, lập `BACKLOG.md` và `TODO.md` chi tiết.
+2. **Gate 2 - Technical Design**: Xác lập schema, API contract, flow trạng thái và phương án tối ưu trải nghiệm người dùng.
+3. **Gate 3 - Risk Audit**: Rà soát rủi ro xung đột route, trùng lặp SEO canonical, CLS trên thiết bị di động và phân quyền dữ liệu.
+4. **Gate 4 - Execution & Testing**: Triển khai mã nguồn chuẩn TypeScript, chạy unit tests và xác nhận không có lỗi linter/typecheck.
+5. **Gate 5 - Independent Review**: Đối chiếu nghiệm thu toàn diện theo DoD, cập nhật checklist và commit git chuẩn Conventional Commits.
 
 ---
 
-## 📋 Chi Tiết Từng Giai Đoạn Triển Khai
+## 🏁 Trình Tự Thực Thi Khuyến Nghị Cho Môi Trường Sandbox
 
-### 📦 Phase 1: Nền Tảng Dữ Liệu & Quản Trị Danh Mục Xe (Core Data Layer & Catalog Engine)
-> **Tài liệu đặc tả nguồn:** [`02-DATABASE-SCHEMA-PAYLOAD-CMS.md`](./02-DATABASE-SCHEMA-PAYLOAD-CMS.md)  
-> **Mã Epic:** `EPIC-PHASE-1-CATALOG-DATA`  
-> **Trạng thái thực thi:** ✅ **ĐÃ HOÀN THÀNH & NGHIỆM THU 100% (Delivered to Main)**  
-> **Tài liệu thực thi chi tiết:** [`docs/features/PHASE-1-CATALOG-DATA/`](./features/PHASE-1-CATALOG-DATA/)
-
-#### 1. Mục tiêu & Giá trị chuyển giao
-* Xây dựng "trái tim" dữ liệu vững chắc cho toàn bộ nền tảng CarDealer trên PostgreSQL.
-* Quản lý trọn vẹn danh mục Dòng xe (`Cars`), Phiên bản (`CarVersions`), Bảng màu ngoại thất (`Colors`), và quan hệ đa hình (`VersionColors`).
-* Xây dựng hệ thống Xác thực & Phân quyền Admin (`Admin Authentication & RBAC`): Đăng nhập an toàn, bảo vệ các trang quản trị và cấp quyền nhân viên.
-* Cung cấp REST API và giao diện Admin cơ bản để thêm, sửa, xóa và xem danh sách xe.
-
-#### 2. Nghiệp vụ chi tiết cần hoàn thành
-* **Thiết kế Schema Database:**
-  * 10 Thực thể cốt lõi: `Cars`, `CarVersions`, `Colors`, `VersionColors`, `Posts`, `Categories`, `Leads`, `Testimonials`, `Media`, `Users` (email, password_hash, role: 'admin' | 'editor').
-  * 7 Cấu hình toàn cục (Globals): `SiteSettings`, `Navigation`, `ContactSettings`, `EventBanner` (đầy đủ cài đặt form/link, vị trí, màu chữ, đếm ngược), `QuoteSettings`, `QuoteTool`, `VipSection`.
-* **Hệ thống Xác thực Admin (Authentication & Session):**
-  * Mã hóa mật khẩu bằng thuật toán an toàn (`bcrypt` / `argon2`).
-  * Cơ chế phiên làm việc bằng HTTP-Only Secure Cookie / JWT chống tấn công XSS.
-  * API Auth: `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout`.
-  * Trang đăng nhập Admin (`/admin/login`) và Middleware chặn người dùng chưa xác thực (Protected Routes).
-* **Cơ chế Dữ liệu mẫu (Database Seeding):**
-  * Seed tài khoản Quản trị viên mặc định (`admin@xehyundaivinh.com`).
-  * Seed sẵn 4 dòng xe tiêu biểu: *Hyundai Santa Fe, Hyundai Tucson, Hyundai Creta, Hyundai Grand i10* kèm thông số kỹ thuật và swatch màu thực tế.
-* **Backend REST API (`apps/api`):**
-  * `GET /api/cars`: Lấy danh sách xe kèm phiên bản và màu sắc.
-  * `GET /api/cars/:slug`: Chi tiết dòng xe theo slug tiếng Việt chuẩn.
-  * `GET /api/colors`: Danh mục bảng màu ngoại thất.
-* **Giao diện Quản trị (`apps/admin`):**
-  * Trang đăng nhập (`/admin/login`) có form xác thực và ghi nhớ phiên.
-  * Màn hình danh sách xe, form thêm mới xe và gán bảng màu ngoại thất (yêu cầu đăng nhập).
-
-#### 3. Tiêu chí nghiệm thu (DoD - Definition of Done)
-- [x] Chạy migration và seed dữ liệu PostgreSQL (kèm tài khoản Admin mặc định) thành công 100%.
-- [x] Đăng nhập Admin với email/password đúng -> cấp cookie phiên và chuyển hướng vào Dashboard; nhập sai -> báo lỗi thân thiện.
-- [x] Người dùng chưa đăng nhập truy cập `/admin` tự động bị chuyển hướng về `/admin/login` qua Middleware.
-- [x] Gọi API `GET /api/cars` và `GET /api/admin/*` trả về JSON đúng Zod Schema từ `@cardealer/types`.
-- [x] Giao diện Admin quản trị Dòng xe (`/cars`), Chi tiết xe (`/cars/[slug]`), Bảng màu (`/colors`), Cấu hình Showroom (`/settings`) hoạt động trơn tru với Optimistic UI, Quick Status Toggle và Skeleton Shimmer Loading (Zero-CLS).
-- [x] Vượt qua kiểm tra Type-Safety monorepo (`pnpm check-types`) với 8/8 packages đạt 0 lỗi TypeScript.
-
----
-
-### 👥 Phase 2: Quản Trị Người Dùng & Phân Quyền Hệ Thống (Admin User & RBAC Management)
-> **Tài liệu đặc tả nguồn:** [`02-DATABASE-SCHEMA-PAYLOAD-CMS.md` (Mục Users & Roles)](./02-DATABASE-SCHEMA-PAYLOAD-CMS.md)  
-> **Mã Epic:** `EPIC-PHASE-2-ADMIN-USER-RBAC`  
-> **Trạng thái:** ⏳ **SẴN SÀNG KHỞI ĐỘNG (Ready to Kickoff)**
-
-#### 1. Mục tiêu & Giá trị chuyển giao
-* Xây dựng phân hệ quản lý người dùng nội bộ hoàn chỉnh cho Showroom và Đại lý ô tô (`Admin Portal User Management`).
-* Cung cấp cơ chế Phân quyền dựa trên vai trò (RBAC - Role-Based Access Control) 4 cấp độ: `admin`, `manager`, `editor`, `sales`.
-* Bảo vệ an toàn tài khoản với các chính sách bảo mật: Khóa/Mở khóa tài khoản, Đổi mật khẩu định kỳ, Thu hồi phiên làm việc (Revoke session / Force logout), và Ghi nhật ký kiểm toán hành động (Security Audit Trail).
-* Trang cá nhân (`/admin/profile`) cho phép từng nhân viên cập nhật thông tin cá nhân, avatar, số điện thoại hotline tư vấn và đổi mật khẩu an toàn.
-
-#### 2. Nghiệp vụ chi tiết cần hoàn thành
-* **Mở rộng Schema & Database (`packages/database`):**
-  * Nâng cấp bảng `users`: Thêm `fullName`, `phone`, `avatarUrl`, `role` (`'admin' | 'manager' | 'editor' | 'sales'`), `status` (`'active' | 'suspended' | 'pending'`), `lastLoginAt`, `lastLoginIp`.
-  * Tạo bảng `audit_logs`: Ghi nhận `userId`, `action` (`CREATE_CAR`, `DELETE_CAR`, `CHANGE_STATUS`, `UPDATE_PRICE`, `LOGIN_FAILED`), `targetResource`, `ipAddress`, `userAgent`, `createdAt`.
-* **RBAC Middleware & Route Guards (`apps/api` & `apps/admin`):**
-  * Định nghĩa ma trận quyền hạn chi tiết (Permission Matrix):
-    * `admin`: Toàn quyền hệ thống, quản lý tài khoản, cấu hình showroom, xóa vĩnh viễn dữ liệu.
-    * `manager`: Quản lý xe, duyệt giá niêm yết, phân công Lead khách hàng, xem báo cáo KPI.
-    * `editor`: Quản lý bài viết tin tức, nội dung xe, tải lên media hình ảnh.
-    * `sales`: Tiếp nhận và xử lý danh sách Lead khách hàng được phân công, không được sửa cấu hình hệ thống hay bảng giá.
-  * Phân quyền tại tầng API qua middleware `requireRole(['admin'])` và `requirePermission(...)`.
-  * Phân quyền tại giao diện Admin: Ẩn/hiện menu điều hướng và các nút thao tác xóa/sửa dựa theo vai trò của người dùng hiện tại.
-* **REST APIs Quản Lý User (`apps/api/src/routes/admin/users.ts`):**
-  * `GET /api/admin/users`: Danh sách nhân viên với phân trang, lọc theo vai trò và tìm kiếm theo họ tên/email.
-  * `POST /api/admin/users`: Thêm mới nhân viên, tự động sinh mật khẩu tạm thời hoặc mã kích hoạt.
-  * `GET /api/admin/users/:id`: Xem chi tiết thông tin và lịch sử thao tác của nhân viên.
-  * `PUT /api/admin/users/:id`: Cập nhật thông tin, thay đổi vai trò hoặc chuyển trạng thái (Khóa / Kích hoạt).
-  * `POST /api/admin/users/:id/reset-password`: Đặt lại mật khẩu tài khoản cấp quản trị.
-  * `DELETE /api/admin/users/:id`: Xóa mềm hoặc vô hiệu hóa tài khoản (chặn tự xóa chính mình).
-  * `GET /api/admin/profile` & `PUT /api/admin/profile`: Quản lý trang hồ sơ cá nhân của người dùng đang đăng nhập.
-  * `PUT /api/admin/profile/change-password`: Đổi mật khẩu cá nhân (yêu cầu xác thực mật khẩu cũ).
-* **Giao diện Quản trị Người dùng (`apps/admin`):**
-  * Màn hình Danh sách nhân viên (`/admin/users`): Data table, filter theo vai trò (`Admin`, `Manager`, `Editor`, `Sales`), trạng thái hoạt động (`Đang hoạt động`, `Đã khóa`), nút khóa nhanh và đặt lại mật khẩu.
-  * Modal Thêm / Chỉnh sửa nhân viên: Form chuẩn `react-hook-form` + `zod` với các trường họ tên, email, chức vụ, vai trò, số điện thoại và phân công phụ trách.
-  * Màn hình Hồ sơ cá nhân (`/admin/profile`): Xem thông tin cá nhân, cập nhật thông tin liên hệ và form đổi mật khẩu an toàn.
-  * Trang Nhật ký hoạt động (`/admin/audit-logs`): Xem lịch sử thao tác của nhân viên để truy vết trách nhiệm.
-
-#### 3. Tiêu chí nghiệm thu (DoD - Definition of Done)
-- [ ] Mở rộng bảng `users`, tạo bảng `audit_logs` và chạy migration PostgreSQL thành công.
-- [ ] Tài khoản vai trò `sales` hoặc `editor` khi đăng nhập không thể truy cập vào `/admin/users` hay `/admin/settings` (bị từ chối quyền 403 Forbidden).
-- [ ] Admin có thể tạo tài khoản mới, phân vai trò, khóa hoặc mở khóa nhân viên tức thì.
-- [ ] Chặn triệt để lỗi tự xóa chính mình hoặc tự hạ quyền Admin cuối cùng trong hệ thống (Self-locking prevention).
-- [ ] Trang cá nhân cho phép nhân viên đổi mật khẩu thành công và bắt buộc đăng xuất nếu đổi mật khẩu.
-- [ ] Toàn bộ API và màn hình tuân thủ Clean Architecture, Zod validation, và Skeleton Shimmer Loading (Zero-CLS).
-
----
-
-### 💰 Phase 3: Bộ Công Cụ Tài Chính & Phễu Thu Thập Khách Hàng (Pricing & Lead Engine)
-> **Tài liệu đặc tả nguồn:** [`04-TINH-NANG-FRONTEND-VA-TRAI-NGHIEM-UI-UX.md` (Mục 5 & 6)](./04-TINH-NANG-FRONTEND-VA-TRAI-NGHIEM-UI-UX.md)  
-> **Mã Epic:** `EPIC-PHASE-3-PRICING-LEAD`
-
-#### 1. Mục tiêu & Giá trị chuyển giao
-* Tự động hóa 100% các công thức tài chính phức tạp (lăn bánh, lãi suất vay) với tốc độ phản hồi tức thì.
-* Xây dựng phễu hứng khách hàng thông minh (Lead Funnel 2 bước) chống lộ giá hời và chống spam.
-
-#### 2. Nghiệp vụ chi tiết cần hoàn thành
-* **Thuật toán Dự Toán Lăn Bánh (`calculateRollingCost`):**
-  * Biểu phí trước bạ theo tỉnh thành (Hà Nội 12%, TP. Vinh / Nghệ An / Hà Tĩnh 10%).
-  * Biển số: Vùng 1 (Hà Nội, TP.HCM 20tr) vs Vùng 2 (Nghệ An 1tr).
-  * Phí đăng kiểm (140k), bảo trì đường bộ (1.560k), bảo hiểm TNDS (480k / 873k), bảo hiểm thân vỏ 2 chiều (1.3% giá xe), phí dịch vụ đăng ký (2tr).
-* **Thuật toán Trả Góp Ngân Hàng (`calculateInstallment`):**
-  * Phương thức Dư Nợ Giảm Dần: Tính số tiền vay (10%-85%), tiền gốc cố định hàng tháng, lãi suất tháng đầu tiên và tổng thanh toán ban đầu.
-* **Phễu Chuyển Đổi SmartCalculator (Gated Lead Funnel):**
-  * Bước 1: Cho khách hàng tự do chọn xe, phiên bản, tỉnh thành.
-  * Bước 2: Khóa bảng chi tiết và kích hoạt Modal yêu cầu nhập Tên + Số điện thoại để gửi bảng dự toán qua Zalo/SMS.
-* **Xử lý Lead & Notification Backend:**
-  * `POST /api/leads`: Validate số điện thoại Việt Nam hợp lệ, chống spam double-submit bằng Idempotency.
-  * Phân loại tag tự động: `Báo Giá`, `Trả Góp`, `Giá Lăn Bánh`, `Event Lead`.
-
-#### 3. Tiêu chí nghiệm thu (DoD)
-* Unit tests của `packages/core` pass 100% các case tính tiền lăn bánh và trả góp với sai số 0 đồng.
-* Khách submit form lead nhận mã phản hồi thành công và bản ghi được lưu vào DB.
-
----
-
-### 🚗 Phase 4: Giao Diện Khách Hàng & Trải Nghiệm Xem Xe (Storefront & Dynamic Car Experience)
-> **Tài liệu đặc tả nguồn:** [`04-TINH-NANG-FRONTEND-VA-TRAI-NGHIEM-UI-UX.md`](./04-TINH-NANG-FRONTEND-VA-TRAI-NGHIEM-UI-UX.md)  
-> **Mã Epic Tổng:** `EPIC-PHASE-4-STOREFRONT-EXPERIENCE`
-
-Nhằm đảm bảo tiến độ triển khai nhanh, kiểm thử độc lập và bàn giao liên tục (CI/CD), Phase 4 được chia thành 4 Phase nhỏ chuyên biệt:
-
----
-
-#### 🚗 Phase 4.1: Khung Nền Tảng Storefront & Tiện Ích Chuyển Đổi Toàn Cục (Global Shell & Conversion Widgets)
-> **Mã Epic:** `EPIC-PHASE-4.1-STOREFRONT-SHELL-WIDGETS`
-
-* **1. Mục tiêu & Giá trị:** Thiết lập khung sườn Layout chuẩn thương hiệu Hyundai toàn trang (Desktop/Mobile), đảm bảo mọi điểm chạm đều sẵn sàng kích hoạt hành vi liên hệ tư vấn. Toàn bộ thông tin cấu hình, nội dung liên hệ và tiện ích chuyển đổi đều có thể **quản trị và chỉnh sửa 100% linh hoạt từ Admin CMS**.
-* **2. Nghiệp vụ chi tiết (Toàn bộ hỗ trợ Dynamic Editing từ Admin):**
-  * **Header/Navbar Showroom:** Logo thương hiệu, Menu điều hướng đa cấp (`Navigation`), Hotline bán hàng 24/7 và nút CTA "Nhận Báo Giá" — tất cả đều cấu hình và cập nhật trực tiếp từ Admin (`Navigation`, `ContactSettings`, `SiteSettings`).
-  * **Mobile Navigation Drawer:** Menu trượt mượt mà trên Mobile với các nút liên hệ nhanh một chạm (Gọi điện, Chat Zalo), đồng bộ tự động từ cài đặt menu và hotline trong Admin.
-  * **Thanh chốt đơn cố định đáy màn hình (`ProductStickyBar`):** Ghim cố định ở chân màn hình trên cả Mobile & Desktop, hiển thị tên xe, giá khởi điểm; các nút "GỌI NGAY" (`tel:`), "NHẬN BÁO GIÁ", hotline liên kết và trạng thái bật/tắt đều có thể tùy chỉnh từ Admin.
-  * **Widget Chuyên Viên Nổi (`FloatingSeller`):** Quản trị viên tùy biến hoàn toàn từ Admin (`ContactSettings`): Avatar nhân viên tư vấn, tên hiển thị, trạng thái "Đang trực tuyến", số Hotline kích hoạt cuộc gọi, link chat Zalo OA/cá nhân và link Messenger Facebook.
-  * **Footer Đại Lý 3S:** Toàn bộ nội dung quản lý qua Admin: Giới thiệu showroom, địa chỉ, mã nhúng bản đồ Google Maps iframe, giờ mở cửa làm việc, hotline, email, hệ thống liên kết mạng xã hội (Facebook, YouTube, TikTok, Zalo), chính sách bảo hành/bảo mật, thông tin pháp lý/GPKD, copyright và biểu tượng Bộ Công Thương.
-  * **Đồng bộ Cấu hình Toàn cục (Global Settings Sync):** Kết nối trực tiếp với các API Globals (`SiteSettings`, `Navigation`, `ContactSettings`) từ Admin Portal, cho phép thay đổi tức thì trên Storefront mà không cần can thiệp code hay deploy lại.
-* **3. Tiêu chí nghiệm thu (DoD):**
-  * Layout không bị nhảy CLS (Cumulative Layout Shift = 0) khi cuộn trang.
-  * Widget gọi điện và chat Zalo hoạt động chính xác 100% trên cả Android và iOS.
-  * 100% nội dung và cấu hình của Header, Menu, Footer, Floating Seller, Sticky Bar cập nhật thành công và phản hồi ngay lập tức trên Storefront khi chỉnh sửa từ Admin Portal.
-
----
-
-#### 🚗 Phase 4.2: Trang Chủ Phễu Chuyển Đổi 6 Phân Khu (Homepage Conversion Funnel - `/`)
-> **Mã Epic:** `EPIC-PHASE-4.2-HOMEPAGE-FUNNEL`
-
-* **1. Mục tiêu & Giá trị:** Tối ưu hóa tỷ lệ chuyển đổi khách hàng vãng lai ngay từ trang chủ bằng phễu 6 phân khu tâm lý mua sắm xe ô tô. Toàn bộ 6 phân khu đều có khả năng **cấu hình động 100% từ Admin Portal** và sở hữu **công tắc Bật/Tắt độc lập (`enabled: boolean`)** giúp linh hoạt thích ứng theo chiến dịch kinh doanh hoặc tạm ẩn khi chưa chuẩn bị xong nội dung.
-* **2. Nghiệp vụ chi tiết & Cơ chế Cấu hình Admin (Admin Dynamic Controls):**
-  * **Cơ chế Bật/Tắt Phân Khu (Zone Visibility Toggle):** Admin Portal cung cấp 6 công tắc tương ứng cho từng khu. Khi một khu bị Tắt hoặc chưa có dữ liệu (ví dụ: chưa có bài viết tin tức hoặc chưa có ảnh bàn giao), Storefront tự động ẩn khu đó mượt mà (Graceful Degradation), không gây vỡ layout hay lỗi trang.
-  * **Khu 1 - Hero Event Banner:**
-    * *Nghiệp vụ:* Trình phát video/banner khuyến mại lớn trong tháng, bộ đếm ngược ưu đãi (Countdown Timer) tạo tính cấp bách, hiển thị số suất ưu đãi còn lại theo thời gian thực.
-    * *Cấu hình Admin:* Tiêu đề lớn (Headline), Slogan chiến dịch, Media nền (Ảnh banner hoặc Link Video Youtube/MP4), Công tắc Countdown (Bật/Tắt + Datetime kết thúc đếm ngược theo múi giờ VN), Số suất ưu đãi còn lại (ví dụ: "Chỉ còn 5 suất"), Tùy chỉnh nút CTA (Text & hành động mở Modal Báo Giá hoặc gọi Hotline).
-  * **Khu 2 - Lead Magnet Hub (Bộ Lọc Nhanh):**
-    * *Nghiệp vụ:* Thanh tìm kiếm nhanh dòng xe theo mức ngân sách và kiểu dáng xe.
-    * *Cấu hình Admin:* Toggle Bật/Tắt; cấu hình các mốc ngân sách gợi ý (Dưới 500tr, 500tr - 800tr, Trên 800tr); lựa chọn các kiểu dáng xe hiển thị (Sedan, SUV, MPV, Bán tải). Dữ liệu lọc kết nối trực tiếp với Catalog `/api/cars`.
-  * **Khu 3 - VIP Showroom / Hồ sơ Năng Lực Saler:**
-    * *Nghiệp vụ:* Xây dựng niềm tin vững chắc về uy tín phục vụ.
-    * *Cấu hình Admin:* Toggle Bật/Tắt; Chế độ chuyển đổi linh hoạt:
-      * *Chế độ Showroom 3S:* Giới thiệu quy mô đại lý, xưởng dịch vụ kỹ thuật cao, phòng chờ VIP.
-      * *Chế độ Cá nhân Saler:* Hồ sơ năng lực tư vấn bán hàng + 4 Cam kết vàng (Hỗ trợ hồ sơ trả góp duyệt nhanh, Giao xe tận nhà, Bảo hành chính hãng, Thủ tục đăng ký lăn bánh 24/7) kèm thư viện 3 - 4 hình ảnh thực tế.
-  * **Khu 4 - Featured Cars Showcase (Dòng Xe Nổi Bật):**
-    * *Nghiệp vụ:* Lưới danh mục các dòng xe bán chạy nhất (Accent, Tucson, Santa Fe, Creta) kèm giá niêm yết, mức trả trước chỉ từ X triệu và huy hiệu khuyến mãi.
-    * *Cấu hình Admin:* Toggle Bật/Tắt; Trong trang Quản lý Xe (`/admin/cars`), saler/admin chỉ cần gạt cờ **`isFeatured` (Ghim xe nổi bật)** và thứ tự ưu tiên `sortOrder`. Giá niêm yết và mức trả trước tối thiểu được đồng bộ tự động từ database.
-  * **Khu 5 - Testimonials & Delivery Stories (Bàn Giao Xe Thực Tế):**
-    * *Nghiệp vụ:* Bằng chứng xã hội (Social Proof) dạng Slider/Gallery hình ảnh khách hàng nhận xe thực tế, gia tăng tỷ lệ chốt cọc.
-    * *Cấu hình Admin:* Toggle Bật/Tắt; Tab/Module quản lý album bàn giao xe: Upload ảnh trao xe thực tế, Tên khách hàng (ví dụ: "Anh Nam - TP. Vinh"), Dòng xe bàn giao ("Hyundai Tucson 2.0 ĐB"), Lời chia sẻ/cảm nhận của khách.
-  * **Khu 6 - Latest News & Special Promotions (Tin Tức & Khuyến Mãi):**
-    * *Nghiệp vụ:* Khối hiển thị 3 - 4 bài viết khuyến mãi và tin tức đại lý mới nhất.
-    * *Cấu hình Admin:* Toggle Bật/Tắt; Tự động lấy 3 - 4 bài viết mới nhất từ module Bài viết/Tin tức (hoặc cho phép ghim thủ công bài viết quan trọng). Nếu chưa có bài viết hoặc tắt khu, phân khu tự động ẩn đi.
-* **3. Tiêu chí nghiệm thu (DoD):**
-  * Tốc độ tải trang trang chủ đạt chuẩn Core Web Vitals (FCP < 1.0s, LCP < 2.0s, CLS = 0).
-  * Bộ đếm ngược Countdown hoạt động mượt mà, chuẩn múi giờ `Asia/Ho_Chi_Minh`, tự động ẩn hoặc đổi trạng thái khi hết hạn.
-  * 100% 6 phân khu phản hồi tức thì với thao tác Bật/Tắt và chỉnh sửa nội dung từ Admin Portal mà không cần deploy lại.
-  * Cơ chế Graceful Degradation: Trang chủ tự động ẩn phân khu chưa có dữ liệu hoặc bị tắt, giữ vững giao diện thẩm mỹ không bị lỗi trắng trang hay vỡ layout.
-
----
-
-#### 🚗 Phase 4.3: Trang Danh Mục Dòng Xe & Bộ Lọc Đa Chiều (Catalog & Filter Grid - `/xe`)
-> **Mã Epic:** `EPIC-PHASE-4.3-CATALOG-FILTER`
-
-* **1. Mục tiêu & Giá trị:** Giúp khách hàng dễ dàng so sánh, tìm kiếm dòng xe phù hợp với nhu cầu và khả năng tài chính.
-* **2. Nghiệp vụ chi tiết:**
-  * **Tabs Lọc Phân Khúc Xe:** Phân loại mượt mà theo `Tất cả`, `Sedan`, `SUV`, `MPV`, `Hatchback`, `Xe Điện (EV)`.
-  * **Bộ Lọc Theo Mức Giá:** Slider hoặc các mốc bấm nhanh (Dưới 500tr, 500 - 700tr, 700 - 1 tỷ, Trên 1 tỷ).
-  * **Car Card Component Thông Minh:**
-    * Ảnh đại diện xe chụp góc chuẩn showroom.
-    * Tên xe, phân khúc, số chỗ ngồi và loại nhiên liệu.
-    * Khoảng giá (`minPrice` - `maxPrice`) tính từ các phiên bản đang bán.
-    * Mức trả trước tối thiểu ("Trả trước từ X triệu").
-    * 2 nút hành động: "Xem Chi Tiết" (trỏ tới `/xe/[slug]`) và "Dự Toán Lăn Bánh" (trỏ tới `/gia-lan-banh?xe=[slug]`).
-  * **SEO Schema:** Nhúng JSON-LD Schema `ItemList` và `AggregateOffer` cho toàn bộ danh mục xe.
-* **3. Tiêu chí nghiệm thu (DoD):**
-  * Bộ lọc lọc tức thì (< 50ms) không cần tải lại trang.
-  * Khi thay đổi bộ lọc, trạng thái được lưu vào URL query params để tiện chia sẻ.
-
----
-
-#### 🚗 Phase 4.4: Trang Chi Tiết Dòng Xe Chuẩn Hóa & Đổi Màu Động (Dynamic Car Experience & Deep Linking - `/xe/[carSlug]`)
-> **Mã Epic:** `EPIC-PHASE-4.4-CAR-DETAIL-EXPERIENCE`
-
-* **1. Mục tiêu & Giá trị:** Trải nghiệm xem xe tương tác cao cấp nhất, hợp nhất tất cả phiên bản và màu sắc trên 1 URL duy nhất, tăng tối đa thời gian trên trang và chuyển đổi đơn hàng.
-* **2. Nghiệp vụ chi tiết:**
-  * **Hợp Nhất URL & Deep Linking 2 Chiều:**
-    * Định dạng URL chuẩn: `/xe/[carSlug]?phien-ban=[versionSlug]&mau=[colorSlug]`.
-    * Chia sẻ link mở đúng chính xác phiên bản và màu sơn ngoại thất đã chọn.
-    * Cập nhật URL tức thì qua `window.history.replaceState` không reload trang.
-  * **Bảng Chọn Màu Tương Tác (Interactive Color Swatches):**
-    * Hiển thị các chấm tròn màu ngoại thất thực tế (Trắng, Đỏ, Đen, Xanh Rêu, Bạc...).
-    * Click đổi màu xe: Ảnh xe góc lớn lập tức chuyển sang ảnh thực tế của màu đó với hiệu ứng fade nhẹ mượt mà.
-  * **Selector Chọn Phiên Bản:** Bấm chọn giữa các phiên bản (Tiêu chuẩn, Đặc biệt, Cao cấp) tự động cập nhật lại bảng thông số kỹ thuật, giá niêm yết và danh sách màu tương ứng của phiên bản đó.
-  * **Bảng So Sánh & Thông Số Kỹ Thuật Động:** Động cơ, công suất, hộp số, số chỗ ngồi, gói trang bị an toàn Hyundai SmartSense.
-  * **Thư Viện Ảnh (Photo Gallery & Lightbox):** Xem ảnh chi tiết ngoại thất/nội thất dạng grid kèm chế độ zoom toàn màn hình.
-  * **Tích hợp liền mạch Form Dự toán & Trả góp:** Nút "Tính Giá Lăn Bánh Xe Này" dẫn trực tiếp đến `/gia-lan-banh` với tham số xe được chọn sẵn.
-* **3. Tiêu chí nghiệm thu (DoD):**
-  * Chuyển đổi màu xe và phiên bản mượt mà, phản hồi tức thì dưới 100ms.
-  * Thẻ `canonical` luôn trỏ về URL gốc `/xe/[carSlug]` tránh lỗi trùng lặp nội dung SEO (Duplicate Content).
-
----
-
-### 📝 Phase 5: Hệ Thống 15 Content Blocks & Soạn Thảo Độc Quyền (Rich Content & Lexical)
-> **Tài liệu đặc tả nguồn:** [`03-HE-THONG-CONTENT-BLOCKS-LEXICAL.md`](./03-HE-THONG-CONTENT-BLOCKS-LEXICAL.md)  
-> **Mã Epic:** `EPIC-PHASE-5-CONTENT-BLOCKS`
-
-#### 1. Mục tiêu & Giá trị chuyển giao
-* Trao quyền tối đa cho ban biên tập nội dung tạo ra các bài đánh giá xe chuyên sâu, cẩm nang lăn bánh và landing page chiến dịch sinh động.
-
-#### 2. Nghiệp vụ chi tiết cần hoàn thành
-* **15 Khối Nội Dung (Content Blocks):**
-  * *Chuyển đổi cao cấp:*
-    * `TikTokBlock`: Trình phát video ngắn độc quyền, tự động ép tỉ lệ 9:16, khử thanh cuộn, autoplay lặp lại và tự sinh Schema `VideoObject`.
-    * `FAQBlock`: Accordion hỏi đáp thường gặp, tự động sinh Schema `FAQPage`.
-    * `AdvancedTableBlock`: Bảng thông số kỹ thuật nâng cao hỗ trợ Tìm kiếm, Sắp xếp cột và Xuất file CSV.
-  * *Truyền thông & Bán hàng:* `YoutubeBlock`, `GalleryBlock`, `PriceTableBlock`, `RelatedCarBlock`, `CallToActionBlock` (CTA), `FeatureGridBlock`, `TabHeroBlock`.
-  * *Văn bản & Ghi chú:* `TextBlock`, `CalloutBlock`, `TwoColumnBlock`, `SpacerBlock`.
-* **Mục Lục Bài Viết Thông Minh (Sticky Table of Contents):**
-  * Thuật toán tự động quét toàn bộ thẻ H2, H3 trong bài viết để dựng cây mục lục.
-  * Scrollspy: Tự động highlight mục tương ứng khi người dùng cuộn trang.
-
-#### 3. Tiêu chí nghiệm thu (DoD)
-* Bài viết render chuẩn xác toàn bộ 15 blocks mà không vỡ layout trên thiết bị di động.
-* Video TikTok và YouTube nhúng hoạt động mượt mà, không giật lag.
-
----
-
-### 🔍 Phase 6: Tự Động Hóa Technical SEO & Google Indexing API (SEO & Discovery)
-> **Tài liệu đặc tả nguồn:** [`05-TECHNICAL-SEO-VA-SCHEMA-JSONLD.md`](./05-TECHNICAL-SEO-VA-SCHEMA-JSONLD.md)  
-> **Mã Epic:** `EPIC-PHASE-6-TECHNICAL-SEO`
-
-#### 1. Mục tiêu & Giá trị chuyển giao
-* Đưa website lên top tìm kiếm Google tự nhiên với thứ hạng cao nhất trong khu vực (Local SEO Nghệ An, Hà Tĩnh).
-* Rút ngắn thời gian lập chỉ mục bài viết từ vài ngày xuống còn vài phút.
-
-#### 2. Nghiệp vụ chi tiết cần hoàn thành
-* **7 Cấu Trúc Schema JSON-LD Tự Động:**
-  1. `Product` & `ItemList`: Giá xe có hạn chót cuối tháng (`priceValidUntil`), đổi trả 7 ngày (`hasMerchantReturnPolicy`), miễn phí giao xe (`shippingDetails`), bảo hành 5 năm (`warranty`).
-  2. `AutoDealer`: Khai báo doanh nghiệp đại lý ủy quyền kèm tọa độ Google Maps.
-  3. `FAQPage`: Bóc tách tự động từ `FAQBlock`.
-  4. `VideoObject`: Bóc tách từ `TikTokBlock` và `YoutubeBlock`.
-  5. `NewsArticle`: Khai báo bài viết chuẩn SEO báo chí.
-  6. `SoftwareApplication`: Khai báo trang tính giá lăn bánh là ứng dụng tài chính miễn phí.
-  7. `BreadcrumbList`: Cấu trúc đường dẫn phân cấp điều hướng.
-* **Dynamic Sitemap (`sitemap.ts`):**
-  * Cơ chế phân cấp mức ưu tiên: Trang chủ (`1.0`), Trang xe (`0.9`), Bài viết bán hàng `gia-lan-banh`, `khuyen-mai` (`0.9`, daily), Tin tức chung (`0.7`).
-* **Tích hợp Google Indexing API v3:**
-  * Hook tự động gửi thông báo `URL_UPDATED` tới Google Service Account ngay khi bấm Publish bài viết/dòng xe.
-  * Công cụ gửi hàng loạt trong Admin Panel (`/admin/google-indexing`).
-
-#### 3. Tiêu chí nghiệm thu (DoD)
-* Kiểm tra qua công cụ Google Rich Results Test đạt 100% hợp lệ không có cảnh báo.
-* Gửi URL thử nghiệm qua Google Indexing API trả về mã thành công HTTP 200.
-
----
-
-### 🤖 Phase 7: Trí Tuệ Nhân Tạo Tự Động Hóa (AI-Powered Content & Lead Gen)
-> **Tài liệu đặc tả nguồn:** Đặc tả nghiệp vụ AI tự động hóa  
-> **Mã Epic:** `EPIC-PHASE-7-AI-AUTOMATION`
-
-#### 1. Mục tiêu & Giá trị chuyển giao
-* Tự động hóa sản xuất nội dung quy mô lớn và tư vấn khách hàng tự động 24/7.
-
-#### 2. Nghiệp vụ chi tiết cần hoàn thành
-* **Tự Động Sinh Bài Viết Giá Lăn Bánh Hàng Tháng:**
-  * AI đọc dữ liệu giá niêm yết và biểu phí lăn bánh từ Database -> Tự động sinh dự thảo bài viết chuẩn SEO theo từng địa phương dạng `status: draft`.
-* **AI Sinh Meta Tags & FAQ:** Tự động sinh `metaTitle`, `metaDescription` và bộ câu hỏi đáp FAQ từ thông số xe.
-* **AI Chatbot Tư Vấn Lăn Bánh & Thu Thập Lead:** Trả lời tự động các câu hỏi về thủ tục vay mua xe và thu thập SĐT khách hàng đẩy về CRM.
-
----
-
-## 🚀 Kế Hoạch Bắt Đầu: Khởi Động Phase 1
-
-Để bắt đầu chu trình, hệ thống sẽ kích hoạt **Universal Agentic Workflow (v2.1)** cho phân hệ đầu tiên:
-📁 Thư mục triển khai: `docs/features/PHASE-1-CATALOG-DATA/`
-* **Giai đoạn 1:** Phân tích Backlog & Lập kế hoạch hành động.
-* **Giai đoạn 2 (Bước 2.1):** Lập phương án kiến trúc Database & Backend (`SOLUTION_OPTIONS.md`).
-* **Giai đoạn 2 (Bước 2.2):** Thiết kế chi tiết ERD, State Matrix và API Spec.
-* **Giai đoạn 3:** Audit rủi ro an ninh & Test Plan.
-* **Giai đoạn 4:** Lập trình mã nguồn và chạy kiểm thử máy tự động (`exit 0`).
-* **Giai đoạn 5:** Review độc lập toàn diện trước khi bàn giao.
+Dựa trên nguyên tắc tối ưu tốc độ lặp trong môi trường `SANDBOX_GREENFIELD`:
+1. **Bước 1**: Bắt đầu triển khai ngay **PHASE 2** (Module quản trị `StaticPage` trong Admin + Dynamic route `[slug]` ở Client).
+2. **Bước 2**: Chạy **PHASE 4** (Khởi tạo package `@cardealer/utils`, đóng gói Meta & 7 Schema JSON-LD).
+3. **Bước 3**: Chạy **PHASE 3** (Chuẩn hóa ngữ nghĩa 7 khu vực Trang chủ trỏ link trực tiếp về từng xe).
+4. **Bước 4**: Chạy **PHASE 5** (Hoàn thiện Dynamic `sitemap.ts` kết nối với DB `StaticPage` vừa tạo).
+5. **Bước 5**: Chạy **PHASE 6** (Cấu hình Google Indexing API khi hoàn thành toàn bộ nội dung mẫu và chuẩn bị deploy).
