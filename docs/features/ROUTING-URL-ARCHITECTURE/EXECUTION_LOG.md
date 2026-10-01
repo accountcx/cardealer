@@ -3,8 +3,8 @@
 ## 0. CURRENT STATE
 - **Trạng thái:** ĐANG THỰC THI (PHASE 4 - LÁT CẮT US-02)
 - **Slice hiện tại:** [US-02] Dynamic Route Tĩnh `/dong-xe/[slug]`
-- **Unit kế tiếp:** [U-05] `apps/web/lib/car-segment-filter.ts` (Risk: LOW)
-- **last_green:** `5eb1ad4`
+- **Unit kế tiếp:** [U-06] `apps/web/app/dong-xe/[slug]/page.tsx` + `apps/web/app/dong-xe/[slug]/error.tsx` (Risk: HIGH)
+- **last_green:** `2d9d9e3`
 - **gate_mode:** strict
 - **verify_commands:**
   - Type-check types: `export PATH="$HOME/.nvm/versions/node/v24.21.0/bin:$PATH" && pnpm --filter @cardealer/types check-types`
@@ -37,7 +37,7 @@
 | Unit | File(s) | Risk | Coupled? (lý do) | Test IDs | Trạng thái | Commit |
 | :--- | :--- | :---: | :---: | :--- | :---: | :---: |
 | **U-04** | `apps/web/config/segments.ts` | LOW | Không | TS-01, TS-07, TS-08 (Whitelist Registry & SEO Metadata) | DONE | `5eb1ad4` |
-| **U-05** | `apps/web/lib/car-segment-filter.ts` | LOW | Không | TS-13 (Pure In-Memory Filter Logic) | PENDING | - |
+| **U-05** | `apps/web/lib/car-segment-filter.ts` | LOW | Không | TS-13 (Pure In-Memory Filter Logic) | DONE | `2d9d9e3` |
 | **U-06** | `apps/web/app/dong-xe/[slug]/page.tsx` + `apps/web/app/dong-xe/[slug]/error.tsx` | HIGH | Có (Server Component + Local Error Boundary) | TS-04..06, TS-07..12 | PENDING | - |
 
 ---
@@ -95,3 +95,17 @@
 - **Scope guard:** ✅ diff ⊆ Roadmap (chỉ tạo `apps/web/config/segments.ts`); ✅ không chạm protected_paths; +83 dòng (< 300 dòng).
 - **Sửa lỗi:** Không có lỗi phát sinh.
 - **Commit:** `5eb1ad4`
+
+### [2026-10-01] Unit U-05: apps/web/lib/car-segment-filter.ts
+- **Thay đổi chính:** Khởi tạo pure function `filterCarsBySegment` lọc danh sách xe an toàn in-memory; kiểm tra dual property (`car.segment` và `car.kieuDang`) với cơ chế Set lookup O(1); bảo toàn tính bất biến (immutability) của mảng gốc.
+- **Red check:** N/A (Tạo mới thư viện lọc chuyên biệt).
+- **Verify:**
+  | Lệnh | Exit | Tóm tắt |
+  | :--- | :---: | :--- |
+  | `pnpm --filter @cardealer/web check-types` | 0 | 0 errors |
+  | `pnpm --filter @cardealer/types check-types` | 0 | 0 errors |
+  | `pnpm --filter @cardealer/database check-types` | 0 | 0 errors |
+  | `pnpm --filter @cardealer/core test` | 0 | 14 passed (127 tests passed), 0 failed |
+- **Scope guard:** ✅ diff ⊆ Roadmap (chỉ tạo `apps/web/lib/car-segment-filter.ts`); ✅ không chạm protected_paths; +42 dòng (< 300 dòng).
+- **Sửa lỗi:** Fix TS2352 strict type narrowing cho thuộc tính `kieuDang` qua in-operator.
+- **Commit:** `2d9d9e3`
