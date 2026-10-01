@@ -140,7 +140,7 @@ export function PageSeoSidebar({
           <Input
             value={canonicalUrl}
             onChange={(e) => setCanonicalUrl(e.target.value)}
-            placeholder="https://cardealer.vn/gioi-thieu"
+            placeholder="https://example.com/gioi-thieu"
             className="bg-slate-800 border-white/10 text-white text-sm"
           />
         </div>

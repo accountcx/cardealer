@@ -4,6 +4,8 @@ import React from 'react';
 import { Globe, Search, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Card, Badge } from '@cardealer/ui';
 
+import { clientEnv } from '@cardealer/env';
+
 interface SerpPreviewProps {
   title?: string;
   metaTitle?: string;
@@ -19,7 +21,7 @@ export function SerpPreview({
   metaTitle = '',
   slug = '',
   metaDescription = '',
-  siteUrl = 'https://cardealer.vn',
+  siteUrl = clientEnv.NEXT_PUBLIC_SITE_URL || '',
 }: SerpPreviewProps) {
   const displayTitle = metaTitle.trim() || title.trim() || 'Tiêu đề trang tĩnh';
   const displaySlug = slug.trim() ? `/${slug.trim()}` : '/duong-dan-trang';

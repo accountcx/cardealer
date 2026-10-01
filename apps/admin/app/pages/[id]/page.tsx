@@ -115,17 +115,12 @@ export default function PageEditorPage() {
               <label className="text-sm font-semibold text-white">
                 Đường Dẫn Truy Cập (Slug) <span className="text-red-400">*</span>
               </label>
-              <div className="flex items-center">
-                <span className="px-3 py-2 bg-slate-800/80 border border-r-0 border-white/10 rounded-l-lg text-xs font-mono text-slate-400">
-                  https://cardealer.vn/
-                </span>
-                <Input
-                  value={editor.slug}
-                  onChange={(e) => editor.handleSlugChange(e.target.value)}
-                  placeholder="gioi-thieu"
-                  className="rounded-l-none bg-slate-800 border-white/10 text-blue-400 font-mono text-sm"
-                />
-              </div>
+              <Input
+                value={editor.slug}
+                onChange={(e) => editor.handleSlugChange(e.target.value)}
+                placeholder="gioi-thieu"
+                className="bg-slate-800 border-white/10 text-blue-400 font-mono text-sm"
+              />
               <p className="text-xs text-slate-400">
                 Slug duy nhất định tuyến toàn hệ thống. Không được trùng với các từ khóa hệ thống.
               </p>
