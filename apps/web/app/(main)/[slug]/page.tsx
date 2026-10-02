@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: StaticPageCatchAllProps): Pro
 
   const brandName = settings.site?.businessName || 'Hyundai Vinh';
 
-  if (!page || !page.isPublished) {
+  if (!page || page.isPublished === false) {
     return {
       title: `Không tìm thấy trang | ${brandName}`,
       robots: { index: false, follow: false },
@@ -72,7 +72,7 @@ export default async function StaticPageCatchAll({ params }: StaticPageCatchAllP
   ]);
 
   // WHY: Fail-Closed Protection (R14). Nếu trang chưa xuất bản hoặc không tồn tại, trả về 404 ngay lập tức.
-  if (!page || !page.isPublished) {
+  if (!page || page.isPublished === false) {
     notFound();
   }
 

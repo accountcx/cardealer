@@ -18,7 +18,7 @@ export const pagesService = {
       });
       return response || null;
     } catch (err: unknown) {
-      // 404 hoặc lỗi mạng trả về null để trigger Next.js notFound()
+      console.error('[DEBUG pagesService] Lỗi khi truy vấn trang tĩnh theo slug:', slug, err);
       return null;
     }
   },
