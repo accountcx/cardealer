@@ -8,12 +8,13 @@ import {
   ContactSettingsSchema,
   FloatingSellerSettingsSchema,
   StickyBarSettingsSchema,
+  SlideInBannerSettingsSchema,
   FooterSettingsSchema,
   HomepageSettingsSchema,
 } from '@cardealer/types';
 
 // 🧠 Mental Model: Public Catalog Engine (Tối ưu hóa phản hồi < 10ms).
-// Tuyệt đối KHÔNG sử dụng fallback ngầm / mock data. 
+// Tuyệt đối KHÔNG sử dụng fallback ngầm / mock data.
 // Luôn truy vấn trực tiếp từ PostgreSQL thông qua Drizzle ORM và trả về mã lỗi HTTP chuẩn mực khi có sự cố.
 // CHỈ hiển thị những dòng xe đã được xuất bản (status = 'published').
 
@@ -234,7 +235,7 @@ export async function handleCatalogRoutes(
   }
 
   // 3.5. GET /api/settings (Bulk Settings Ingestion)
-  // 🧠 Mental Model: Endpoint nạp gộp toàn bộ 5 Domain Keys trong 1 HTTP request duy nhất có Cache Headers.
+  // 🧠 Mental Model: Endpoint nạp gộp toàn bộ 5+ Domain Keys trong 1 HTTP request duy nhất có Cache Headers.
   // Giúp Storefront RootLayout nạp HTML trọn vẹn, không bị waterfall và triệt tiêu CLS = 0.
   if (url.pathname === '/api/settings' && req.method === 'GET') {
     try {
@@ -261,6 +262,7 @@ export async function handleCatalogRoutes(
         contact: contactMerged,
         floatingSeller: settingsMap.get('floating_seller_settings') || {},
         stickyBar: settingsMap.get('sticky_bar_settings') || {},
+        slideInBanner: settingsMap.get('slide_in_banner_settings') || {},
         footer: settingsMap.get('footer_settings') || {},
       };
 
@@ -322,6 +324,10 @@ export async function handleCatalogRoutes(
         }
         if (key === 'sticky_bar_settings') {
           sendJson(200, { success: true, data: StickyBarSettingsSchema.parse({}) });
+          return true;
+        }
+        if (key === 'slide_in_banner_settings') {
+          sendJson(200, { success: true, data: SlideInBannerSettingsSchema.parse({}) });
           return true;
         }
         if (key === 'footer_settings') {

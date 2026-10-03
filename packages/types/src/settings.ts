@@ -157,7 +157,23 @@ export const StickyBarSettingsSchema = z.object({
 });
 export type StickyBarSettings = z.infer<typeof StickyBarSettingsSchema>;
 
-// 6. Footer Settings Schema (Cấu hình liên kết, nội dung động chân trang)
+// 6. Slide-In Banner & Voucher Popup Settings Schema (Banner trượt góc & Popup Voucher thông minh)
+export const SlideInBannerSettingsSchema = z.object({
+  enabled: z.boolean().default(true),
+  badgeText: z.string().default('Ưu Đãi Tuần Lễ Vàng'),
+  title: z.string().default('Voucher Phụ Kiện 15.000.000đ'),
+  description: z.string().default(
+    'Nhận ngay bảng giá lăn bánh ưu đãi độc quyền và gói bảo hiểm vật chất chính hãng khi đăng ký tư vấn hôm nay.'
+  ),
+  buttonText: z.string().default('Nhận Báo Giá & Voucher'),
+  mobileBadgeLabel: z.string().default('Voucher 15Tr'),
+  desktopBadgeLabel: z.string().default('Voucher Ưu Đãi 15 Triệu'),
+  triggerDelaySeconds: z.number().int().min(1).max(60).default(6),
+  triggerScrollPercent: z.number().int().min(0).max(100).default(25),
+});
+export type SlideInBannerSettings = z.infer<typeof SlideInBannerSettingsSchema>;
+
+// 7. Footer Settings Schema (Cấu hình liên kết, nội dung động chân trang)
 export const FooterLinkItemSchema = z.object({
   id: z.string().default(''),
   label: z.string().trim().min(1, 'Nhãn liên kết không được để trống'),
@@ -193,7 +209,7 @@ export const FooterSettingsSchema = z.object({
 });
 export type FooterSettings = z.infer<typeof FooterSettingsSchema>;
 
-// 7. Bulk Settings Schema (Aggregator nạp gộp toàn bộ cấu hình Storefront)
+// 8. Bulk Settings Schema (Aggregator nạp gộp toàn bộ cấu hình Storefront)
 // 🧠 Mental Model: Cung cấp toàn bộ các nhóm cấu hình trong 1 payload duy nhất giúp Storefront RootLayout
 // chỉ cần gọi 1 HTTP request, triệt tiêu độ trễ mạng và loại bỏ hoàn toàn hiện tượng nhảy layout (CLS = 0).
 export const BulkSettingsSchema = z.object({
@@ -202,15 +218,16 @@ export const BulkSettingsSchema = z.object({
   contact: ContactSettingsSchema.default(() => ContactSettingsSchema.parse({})),
   floatingSeller: FloatingSellerSettingsSchema.default(() => FloatingSellerSettingsSchema.parse({})),
   stickyBar: StickyBarSettingsSchema.default(() => StickyBarSettingsSchema.parse({})),
+  slideInBanner: SlideInBannerSettingsSchema.default(() => SlideInBannerSettingsSchema.parse({})),
   footer: FooterSettingsSchema.default(() => FooterSettingsSchema.parse({})),
 });
 export type BulkSettings = z.infer<typeof BulkSettingsSchema>;
 
-// 8. Homepage Funnel 6 Zones Schemas (Phase 4.2)
+// 9. Homepage Funnel 6 Zones Schemas (Phase 4.2)
 // 🧠 Mental Model: Mỗi phân khu đều có công tắc enabled độc lập. Khi enabled = false hoặc dữ liệu rỗng,
 // Storefront áp dụng cơ chế Graceful Degradation tự động ẩn phân khu, không gây lỗi runtime hay vỡ layout.
 
-// 8.1. Khu 1: Hero Event Banner
+// 9.1. Khu 1: Hero Event Banner
 export const HeroBannerSchema = z.object({
   enabled: z.boolean().default(true),
   headline: z.string().default('Đại Tiệc Ưu Đãi Ô Tô Hyundai Vinh'),
@@ -248,7 +265,7 @@ export const HeroBannerSchema = z.object({
 });
 export type HeroBannerConfig = z.infer<typeof HeroBannerSchema>;
 
-// 8.2. Khu 2: Lead Magnet Hub (Bộ Lọc Nhanh)
+// 9.2. Khu 2: Lead Magnet Hub (Bộ Lọc Nhanh)
 export const PriceRangeItemSchema = z.object({
   id: z.string(),
   label: z.string(),
@@ -280,7 +297,7 @@ export const LeadFilterSchema = z.object({
 });
 export type LeadFilterConfig = z.infer<typeof LeadFilterSchema>;
 
-// 8.3. Khu 3: VIP Showroom / Hồ Sơ Năng Lực Saler
+// 9.3. Khu 3: VIP Showroom / Hồ Sơ Năng Lực Saler
 export const CommitmentItemSchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -313,7 +330,7 @@ export const SalerShowroomSchema = z.object({
 });
 export type SalerShowroomConfig = z.infer<typeof SalerShowroomSchema>;
 
-// 8.4. Khu 4: Featured Cars Showcase
+// 9.4. Khu 4: Featured Cars Showcase
 export const FeaturedCarsZoneSchema = z.object({
   enabled: z.boolean().default(true),
   headline: z.string().default('Các Dòng Xe Hyundai Bán Chạy Nhất'),
@@ -324,7 +341,7 @@ export const FeaturedCarsZoneSchema = z.object({
 });
 export type FeaturedCarsZoneConfig = z.infer<typeof FeaturedCarsZoneSchema>;
 
-// 8.5. Khu 5: Delivery Stories (Khách Hàng Nhận Xe - Social Proof)
+// 9.5. Khu 5: Delivery Stories (Khách Hàng Nhận Xe - Social Proof)
 export const DeliveryStoryItemSchema = z.object({
   id: z.string(),
   customerName: z.string(),
@@ -372,7 +389,7 @@ export const DeliveryStoriesZoneSchema = z.object({
 });
 export type DeliveryStoriesZoneConfig = z.infer<typeof DeliveryStoriesZoneSchema>;
 
-// 8.6. Khu 6: Latest News & Special Promotions
+// 9.6. Khu 6: Latest News & Special Promotions
 export const LatestPromotionsZoneSchema = z.object({
   enabled: z.boolean().default(true),
   headline: z.string().default('Tin Tức Khuyến Mại & Sự Kiện'),
@@ -382,7 +399,7 @@ export const LatestPromotionsZoneSchema = z.object({
 });
 export type LatestPromotionsZoneConfig = z.infer<typeof LatestPromotionsZoneSchema>;
 
-// 8.7. Phân Khu Lead Magnet Banner (Dự Toán Lăn Bánh Tức Thì)
+// 9.7. Phân Khu Lead Magnet Banner (Dự Toán Lăn Bánh Tức Thì)
 export const RollingEstimateCalloutSchema = z.object({
   enabled: z.boolean().default(true),
   badgeText: z.string().default('Minh Bạch Giá — Không Chi Phí Ẩn'),
@@ -401,7 +418,7 @@ export const RollingEstimateCalloutSchema = z.object({
 });
 export type RollingEstimateCalloutConfig = z.infer<typeof RollingEstimateCalloutSchema>;
 
-// 8.8. Homepage Settings Tổng Hợp
+// 9.8. Homepage Settings Tổng Hợp
 export const HomepageSettingsSchema = z.object({
   heroBanner: HeroBannerSchema.default(() => HeroBannerSchema.parse({})),
   leadFilter: LeadFilterSchema.default(() => LeadFilterSchema.parse({})),
@@ -415,7 +432,7 @@ export type HomepageSettings = z.infer<typeof HomepageSettingsSchema>;
 
 export const DEFAULT_HOMEPAGE_SETTINGS: HomepageSettings = HomepageSettingsSchema.parse({});
 
-// 9. Event Banner & Quote Settings (Duy trì tính tương thích ngược)
+// 10. Event Banner & Quote Settings (Duy trì tính tương thích ngược)
 export const EventBannerSchema = z.object({
   enableBanner: z.boolean().default(true),
   mediaType: z.enum(['image', 'video']).default('image'),

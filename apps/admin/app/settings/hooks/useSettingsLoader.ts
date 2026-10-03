@@ -6,6 +6,7 @@ import type {
   NavigationSettings,
   FloatingSellerSettings,
   StickyBarSettings,
+  SlideInBannerSettings,
   FooterSettings,
   ContactSettings,
   HomepageSettings,
@@ -14,6 +15,7 @@ import {
   NavigationSettingsSchema,
   FloatingSellerSettingsSchema,
   StickyBarSettingsSchema,
+  SlideInBannerSettingsSchema,
   FooterSettingsSchema,
   ContactSettingsSchema,
   HomepageSettingsSchema,
@@ -21,7 +23,7 @@ import {
 import { settingsService } from '../../../services/settings.service';
 import type { SettingsFormData } from '../types';
 
-// WHY: Custom Hook nạp toàn bộ dữ liệu cấu hình 6 domain settings song song (0-waterfall).
+// WHY: Custom Hook nạp toàn bộ dữ liệu cấu hình 7 domain settings song song (0-waterfall).
 // Tách từ SettingsPage để tuân thủ nguyên tắc unit_size_limit (< 300 dòng).
 export function useSettingsLoader(
   form: UseFormReturn<SettingsFormData>,
@@ -35,6 +37,7 @@ export function useSettingsLoader(
   const [navData, setNavData] = useState<NavigationSettings>(NavigationSettingsSchema.parse({}));
   const [sellerData, setSellerData] = useState<FloatingSellerSettings>(FloatingSellerSettingsSchema.parse({}));
   const [stickyData, setStickyData] = useState<StickyBarSettings>(StickyBarSettingsSchema.parse({}));
+  const [slideInData, setSlideInData] = useState<SlideInBannerSettings>(SlideInBannerSettingsSchema.parse({}));
   const [footerData, setFooterData] = useState<FooterSettings>(FooterSettingsSchema.parse({}));
   const [homepageData, setHomepageData] = useState<HomepageSettings>(HomepageSettingsSchema.parse({}));
 
@@ -50,13 +53,14 @@ export function useSettingsLoader(
         setLoading(true);
         setError(null);
 
-        const [showroomRes, contactRes, navRes, sellerRes, stickyRes, footerRes, homepageRes] =
+        const [showroomRes, contactRes, navRes, sellerRes, stickyRes, slideInRes, footerRes, homepageRes] =
           await Promise.allSettled([
             settingsService.getSettingByKey<Record<string, unknown>>('showroom_settings'),
             settingsService.getSettingByKey<ContactSettings>('contact_settings'),
             settingsService.getSettingByKey<NavigationSettings>('navigation_settings'),
             settingsService.getSettingByKey<FloatingSellerSettings>('floating_seller_settings'),
             settingsService.getSettingByKey<StickyBarSettings>('sticky_bar_settings'),
+            settingsService.getSettingByKey<SlideInBannerSettings>('slide_in_banner_settings'),
             settingsService.getSettingByKey<FooterSettings>('footer_settings'),
             settingsService.getSettingByKey<HomepageSettings>('homepage_settings'),
           ]);
@@ -96,6 +100,9 @@ export function useSettingsLoader(
         if (stickyRes.status === 'fulfilled' && stickyRes.value) {
           setStickyData(StickyBarSettingsSchema.parse(stickyRes.value));
         }
+        if (slideInRes.status === 'fulfilled' && slideInRes.value) {
+          setSlideInData(SlideInBannerSettingsSchema.parse(slideInRes.value));
+        }
         if (footerRes.status === 'fulfilled' && footerRes.value) {
           setFooterData(FooterSettingsSchema.parse(footerRes.value));
         }
@@ -121,6 +128,7 @@ export function useSettingsLoader(
     navData,
     sellerData,
     stickyData,
+    slideInData,
     footerData,
     homepageData,
   };

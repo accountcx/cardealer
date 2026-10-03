@@ -15,6 +15,7 @@ import { SettingsTabNav, type SettingsTabId } from './components/SettingsTabNav'
 import { NavigationSection } from './components/NavigationSection';
 import { FloatingSellerSection } from './components/FloatingSellerSection';
 import { StickyBarSection } from './components/StickyBarSection';
+import { SlideInBannerSection } from './components/SlideInBannerSection';
 import { FooterSection } from './components/FooterSection';
 import { HomepageFunnelSection } from './components/HomepageFunnelSection';
 import { settingsService } from '../../services/settings.service';
@@ -24,7 +25,7 @@ import { useSettingsLoader } from './hooks/useSettingsLoader';
 import { settingsSchema, type SettingsFormData } from './types';
 
 // 🧠 Mental Model: Trung tâm Quản trị Cấu hình Hệ thống & Storefront Shell.
-// Phân chia thành 6 Tab chuyên biệt (Showroom, Trang chủ, Navigation, Chuyên viên nổi, Sticky Bar, Footer).
+// Phân chia thành 7 Tab chuyên biệt (Showroom, Trang chủ, Navigation, Chuyên viên nổi, Sticky Bar, Popup Voucher, Footer).
 // Tuân thủ triệt để unit_size_limit (< 300 dòng) qua custom hook useSettingsLoader.
 export default function SettingsPage() {
   const { can, loading: authLoading } = useAuth();
@@ -63,6 +64,7 @@ export default function SettingsPage() {
     navData,
     sellerData,
     stickyData,
+    slideInData,
     footerData,
     homepageData,
   } = useSettingsLoader(form, can('system:read'), authLoading);
@@ -221,6 +223,7 @@ export default function SettingsPage() {
       {activeTab === 'navigation' && <NavigationSection initialData={navData} />}
       {activeTab === 'floatingSeller' && <FloatingSellerSection initialData={sellerData} />}
       {activeTab === 'stickyBar' && <StickyBarSection initialData={stickyData} />}
+      {activeTab === 'slideInBanner' && <SlideInBannerSection initialData={slideInData} />}
       {activeTab === 'footer' && <FooterSection initialData={footerData} />}
     </div>
   );

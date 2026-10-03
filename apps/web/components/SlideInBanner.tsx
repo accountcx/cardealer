@@ -3,7 +3,7 @@
 // 1. Mobile (< 768px):
 //    - KHÔNG BAO GIỜ tự động bung to đè lấp nội dung (triệt tiêu 100% Google Interstitial Penalty & tránh che bảng giá/thông số).
 //    - Hiển thị Floating Gift Badge mini tại góc dưới bên Trái (bottom-20 left-4), nằm an toàn trên thanh Bottom Bar.
-//    - Chỉ khi khách hàng chủ động chạm vào hộp quà, mới kích hoạt Bottom Sheet / Modal nhận voucher 15 triệu.
+//    - Chỉ khi khách hàng chủ động chạm vào hộp quà, mới kích hoạt Bottom Sheet / Modal nhận voucher.
 //    - Góc dưới bên Phải (bottom-4 / bottom-20 right-4) hoàn toàn được giải phóng cho cụm Tư vấn 24/7 (Hotline / Zalo) thuận ngón tay cái.
 // 2. Desktop (>= 768px):
 //    - Góc dưới bên Trái: Để trống, giữ không gian thoáng đãng cho bài viết.
@@ -11,17 +11,20 @@
 //        + Voucher Card nằm ở tầng trên (bottom-32 right-6 lg:right-8 z-40).
 //        + Widget Tư vấn 24/7 cố định ở tầng dưới (bottom-6 right-6 lg:right-8 z-50).
 //    - Khi bấm đóng (X): Thu nhỏ thành Floating Badge ngay tại tầng trên, bấm vào mở lại bất kỳ lúc nào.
-// 3. Inbound Conversion 1-Chạm: Tích hợp leadsService, xử lý lead an toàn.
-// 4. 100% Named Export.
+// 3. Graceful Degradation: Nếu config.enabled = false -> return null.
+// 4. Inbound Conversion 1-Chạm: Tích hợp leadsService, xử lý lead an toàn.
+// 5. 100% Named Export.
 
 'use client';
 
 import * as React from 'react';
 import { X, Sparkles, CheckCircle2, Phone, Gift, Loader2 } from 'lucide-react';
 import { Button } from '@cardealer/ui';
+import type { SlideInBannerSettings } from '@cardealer/types';
 import { leadsService } from '../services/leads.service';
 
 export interface SlideInBannerProps {
+  config?: SlideInBannerSettings;
   carName?: string;
   postId?: string;
   utmSource?: string;
@@ -31,6 +34,7 @@ export interface SlideInBannerProps {
 }
 
 export function SlideInBanner({
+  config,
   carName = 'Hyundai',
   postId,
   utmSource = 'slide_in_exit_intent',
@@ -38,7 +42,7 @@ export function SlideInBanner({
   hotline = '0981.234.567',
   phoneToCall,
 }: SlideInBannerProps) {
-  // Trạng thái kích hoạt (sau 6s, cuộn 25% hoặc Exit-intent)
+  // Trạng thái kích hoạt (sau triggerDelaySeconds, cuộn triggerScrollPercent% hoặc Exit-intent)
   const [isTriggered, setIsTriggered] = React.useState<boolean>(false);
   // Trạng thái mở thẻ trên Desktop
   const [isDesktopOpen, setIsDesktopOpen] = React.useState<boolean>(false);
@@ -53,9 +57,21 @@ export function SlideInBanner({
 
   const cleanPhone = (phoneToCall || hotline).replace(/\D/g, '') || '0981234567';
 
-  // 1. Kích hoạt thông minh: Timer 6s, Scroll depth 25%, Exit-Intent
+  const badgeText = config?.badgeText || 'Ưu Đãi Tuần Lễ Vàng';
+  const title = config?.title || 'Voucher Phụ Kiện 15.000.000đ';
+  const description =
+    config?.description ||
+    `Nhận ngay bảng giá lăn bánh ưu đãi độc quyền và gói bảo hiểm vật chất chính hãng khi đăng ký tư vấn xe ${carName} hôm nay.`;
+  const buttonText = config?.buttonText || 'Nhận Báo Giá & Voucher';
+  const mobileBadgeLabel = config?.mobileBadgeLabel || 'Voucher 15Tr';
+  const desktopBadgeLabel = config?.desktopBadgeLabel || 'Voucher Ưu Đãi 15 Triệu';
+  const delayMs = (config?.triggerDelaySeconds ?? 6) * 1000;
+  const scrollThreshold = config?.triggerScrollPercent ?? 25;
+
+  // 1. Kích hoạt thông minh: Timer, Scroll depth, Exit-Intent
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (config && config.enabled === false) return;
 
     const triggerActivation = () => {
       if (hasInteracted) return;
@@ -75,22 +91,22 @@ export function SlideInBanner({
       }
     };
 
-    // B. Scroll Depth (Cuộn qua 25% chiều dài bài viết)
+    // B. Scroll Depth (Cuộn qua % chiều dài bài viết)
     const handleScroll = () => {
       if (hasInteracted) return;
       const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
       if (scrollHeight <= 0) return;
       const scrollPercentage = (window.scrollY / scrollHeight) * 100;
 
-      if (scrollPercentage >= 25) {
+      if (scrollPercentage >= scrollThreshold) {
         triggerActivation();
       }
     };
 
-    // C. Timer sau 6 giây
+    // C. Timer hẹn giờ
     const timer = setTimeout(() => {
       triggerActivation();
-    }, 6000);
+    }, delayMs);
 
     document.addEventListener('mouseleave', handleMouseLeave);
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -100,7 +116,7 @@ export function SlideInBanner({
       window.removeEventListener('scroll', handleScroll);
       clearTimeout(timer);
     };
-  }, [hasInteracted]);
+  }, [hasInteracted, config, delayMs, scrollThreshold]);
 
   // Khóa cuộn trang khi Bottom Sheet trên Mobile đang mở
   React.useEffect(() => {
@@ -143,12 +159,11 @@ export function SlideInBanner({
     }
   };
 
-  // 2. Xử lý đóng banner trên Desktop -> Thu nhỏ thành Desktop Floating Badge
   const handleDismissDesktop = () => {
     setIsDesktopOpen(false);
   };
 
-  // 3. Xử lý gửi Lead 1-chạm
+  // Xử lý gửi Lead 1-chạm
   const handleSubmitLead = async (e: React.FormEvent) => {
     e.preventDefault();
     const formattedPhone = phone.trim().replace(/\s+/g, '');
@@ -166,15 +181,14 @@ export function SlideInBanner({
     try {
       await leadsService.createLead({
         phone: formattedPhone,
-        fullName: 'Khách nhận Voucher Ưu Đãi 15 Triệu',
+        fullName: `Khách nhận ${title}`,
         carModel: carName,
         leadType: 'Báo Giá',
-        notes: `Khách đăng ký nhận gói phụ kiện 15 triệu & ưu đãi lăn bánh xe ${carName} từ Slide-in Banner (Bài viết: ${postId || 'N/A'}, UTM: ${utmSource})`,
+        notes: `Khách đăng ký nhận ${title} & ưu đãi lăn bánh xe ${carName} từ Slide-in Banner (Bài viết: ${postId || 'N/A'}, UTM: ${utmSource})`,
       });
 
       setStatus('success');
 
-      // Tự động đóng sau 3.5 giây khi gửi thành công
       setTimeout(() => {
         setIsMobileModalOpen(false);
         setIsDesktopOpen(false);
@@ -185,6 +199,7 @@ export function SlideInBanner({
     }
   };
 
+  if (config && config.enabled === false) return null;
   if (!isTriggered) return null;
 
   return (
@@ -198,7 +213,7 @@ export function SlideInBanner({
         <button
           type="button"
           onClick={() => setIsMobileModalOpen(true)}
-          aria-label="Nhận Voucher Ưu Đãi 15 Triệu"
+          aria-label={title}
           className="group relative flex items-center gap-2 px-3 py-2.5 bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-white rounded-full shadow-2xl shadow-red-600/40 hover:scale-105 active:scale-95 transition-all border-2 border-white/80 animate-bounce motion-reduce:animate-none"
         >
           <div className="relative">
@@ -209,7 +224,7 @@ export function SlideInBanner({
             </span>
           </div>
           <span className="text-xs font-black tracking-tight text-white drop-shadow-xs">
-            Voucher 15Tr
+            {mobileBadgeLabel}
           </span>
         </button>
       </div>
@@ -217,24 +232,20 @@ export function SlideInBanner({
       {/* 📋 1.B. Mobile Bottom Sheet / Modal (Chỉ xuất hiện khi người dùng CHỦ ĐỘNG click vào hộp quà) */}
       {isMobileModalOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex items-end justify-center">
-          {/* Backdrop tối làm mờ nền */}
           <div
             className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
             onClick={() => setIsMobileModalOpen(false)}
             aria-hidden="true"
           />
 
-          {/* Bottom Sheet Card */}
           <aside
             role="dialog"
             aria-modal="true"
-            aria-label="Ưu đãi đặt cọc xe Hyundai"
+            aria-label={title}
             className="relative z-10 w-full max-w-lg bg-white rounded-t-3xl shadow-2xl p-5 border-t border-slate-200 animate-in slide-in-from-bottom duration-300 max-h-[90vh] overflow-y-auto"
           >
-            {/* Thanh kéo trang trí */}
             <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-3" />
 
-            {/* Nút Đóng X */}
             <button
               type="button"
               onClick={() => setIsMobileModalOpen(false)}
@@ -244,33 +255,30 @@ export function SlideInBanner({
               <X className="w-5 h-5" />
             </button>
 
-            {/* Header Banner */}
             <div className="flex items-center gap-3 mb-3 pr-8">
               <div className="w-11 h-11 rounded-2xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center shrink-0">
                 <Gift className="w-6 h-6 text-blue-700" />
               </div>
               <div>
                 <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-red-100 text-red-700 mb-0.5">
-                  Ưu Đãi Tuần Lễ Vàng
+                  {badgeText}
                 </span>
                 <h3 className="font-extrabold text-base text-slate-900 leading-tight">
-                  Voucher Phụ Kiện 15.000.000đ
+                  {title}
                 </h3>
               </div>
             </div>
 
             <p className="text-xs text-slate-600 mb-4 leading-relaxed">
-              Nhận ngay bảng giá lăn bánh ưu đãi độc quyền và gói bảo hiểm vật chất chính hãng khi đăng ký tư vấn xe{' '}
-              <strong className="text-slate-900">{carName}</strong> hôm nay.
+              {description}
             </p>
 
-            {/* Form nhận ưu đãi / Trạng thái thành công */}
             {status === 'success' ? (
               <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-3 animate-in fade-in">
                 <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
                 <div>
                   <div className="font-bold text-sm">Đã tiếp nhận yêu cầu thành công!</div>
-                  <div className="text-xs text-emerald-700 mt-0.5">Chuyên viên Hyundai Vinh sẽ gửi bảng tính chi tiết qua Zalo trong 5 phút.</div>
+                  <div className="text-xs text-emerald-700 mt-0.5">Chuyên viên tư vấn sẽ gửi bảng tính chi tiết qua Zalo trong 5 phút.</div>
                 </div>
               </div>
             ) : (
@@ -308,7 +316,7 @@ export function SlideInBanner({
                     ) : (
                       <>
                         <Sparkles className="w-4 h-4 text-amber-300" />
-                        <span>Nhận Báo Giá & Voucher</span>
+                        <span>{buttonText}</span>
                       </>
                     )}
                   </Button>
@@ -333,7 +341,6 @@ export function SlideInBanner({
 
       {/* ========================================================================= */}
       {/* 💻 PHÂN KHU 2: DESKTOP (>= 768px)                                         */}
-      {/* Phân tầng dọc: Nằm ở tầng trên (bottom-32 right-6), Widget Tư vấn ở tầng dưới */}
       {/* ========================================================================= */}
 
       {/* 🎁 2.A. Khi Desktop Card đóng: Hiển thị Floating Badge tại tầng trên */}
@@ -341,11 +348,11 @@ export function SlideInBanner({
         <button
           type="button"
           onClick={handleOpenDesktop}
-          aria-label="Xem ưu đãi voucher phụ kiện 15 triệu"
+          aria-label={title}
           className="fixed bottom-[104px] right-6 lg:right-8 z-40 hidden md:flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-white font-bold text-xs shadow-xl shadow-red-600/30 hover:scale-105 active:scale-95 transition-all animate-bounce motion-reduce:animate-none border border-white/20"
         >
           <Gift className="w-4 h-4 text-amber-200" />
-          <span>Voucher Ưu Đãi 15 Triệu</span>
+          <span>{desktopBadgeLabel}</span>
         </button>
       )}
 
@@ -353,10 +360,9 @@ export function SlideInBanner({
       {isDesktopOpen && (
         <aside
           role="dialog"
-          aria-label="Ưu đãi đặt cọc xe Hyundai"
+          aria-label={title}
           className={`fixed bottom-[104px] right-6 lg:right-8 z-40 hidden md:block max-w-sm w-full rounded-2xl bg-white border border-blue-200/90 shadow-[0_16px_48px_rgba(0,44,108,0.2)] p-5 text-slate-800 transition-all duration-300 animate-in slide-in-from-bottom-6 fade-in motion-reduce:transition-none ${className}`}
         >
-          {/* Nút Đóng / Thu Nhỏ */}
           <Button
             type="button"
             variant="ghost"
@@ -368,27 +374,24 @@ export function SlideInBanner({
             <X className="w-4 h-4" />
           </Button>
 
-          {/* Header Banner */}
           <div className="flex items-center gap-2.5 mb-2.5 pr-8">
             <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center shrink-0">
               <Gift className="w-5 h-5 text-blue-700 animate-bounce motion-reduce:animate-none" />
             </div>
             <div>
               <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-red-100 text-red-700 mb-0.5">
-                Ưu Đãi Tuần Lễ Vàng
+                {badgeText}
               </span>
               <h4 className="font-extrabold text-sm text-slate-900 leading-tight">
-                Voucher Phụ Kiện 15.000.000đ
+                {title}
               </h4>
             </div>
           </div>
 
           <p className="text-xs text-slate-600 mb-3.5 leading-relaxed">
-            Nhận bảng giá lăn bánh ưu đãi và gói bảo hiểm vật chất chính hãng khi đặt cọc trực tuyến xe{' '}
-            <strong className="text-slate-900">{carName}</strong> hôm nay.
+            {description}
           </p>
 
-          {/* Form / Trạng thái gửi thành công */}
           {status === 'success' ? (
             <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2.5 animate-in fade-in">
               <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
@@ -431,7 +434,7 @@ export function SlideInBanner({
                   ) : (
                     <>
                       <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                      <span>Nhận Báo Giá Ngay</span>
+                      <span>{buttonText}</span>
                     </>
                   )}
                 </Button>

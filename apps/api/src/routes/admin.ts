@@ -7,6 +7,7 @@ import {
   ContactSettingsSchema,
   FloatingSellerSettingsSchema,
   StickyBarSettingsSchema,
+  SlideInBannerSettingsSchema,
   FooterSettingsSchema,
   HomepageSettingsSchema,
 } from '@cardealer/types';
@@ -75,29 +76,29 @@ export async function handleAdminRoutes(
           seatRange,
           traTruocTu: c.traTruocTu,
           promotionSummary: c.promotionSummary,
-        minPrice: c.versions.length > 0 ? Math.min(...c.versions.map((v) => Number(v.giaKhuyenMai || v.giaNiemYet))) : 0,
-        maxPrice: c.versions.length > 0 ? Math.max(...c.versions.map((v) => Number(v.giaNiemYet))) : 0,
-        versionCount: c.versions.length,
-        status: c.status,
-        isFeatured: c.isFeatured,
-        sortOrder: c.sortOrder,
-        versions: (c.versions || []).map((v) => ({
-          id: v.id,
-          tenPhienBan: v.tenPhienBan,
-          slug: v.slug,
-          giaNiemYet: Number(v.giaNiemYet),
-          giaKhuyenMai: v.giaKhuyenMai ? Number(v.giaKhuyenMai) : null,
-          seatCount: v.seatCount,
-          dongCo: v.dongCo,
-          hopSo: v.hopSo,
-          danDong: v.danDong,
-          anhDaiDienUrl: v.anhDaiDienUrl,
-          sortOrder: v.sortOrder,
-        })),
-        createdAt: c.createdAt,
-        updatedAt: c.updatedAt,
-      };
-    });
+          minPrice: c.versions.length > 0 ? Math.min(...c.versions.map((v) => Number(v.giaKhuyenMai || v.giaNiemYet))) : 0,
+          maxPrice: c.versions.length > 0 ? Math.max(...c.versions.map((v) => Number(v.giaNiemYet))) : 0,
+          versionCount: c.versions.length,
+          status: c.status,
+          isFeatured: c.isFeatured,
+          sortOrder: c.sortOrder,
+          versions: (c.versions || []).map((v) => ({
+            id: v.id,
+            tenPhienBan: v.tenPhienBan,
+            slug: v.slug,
+            giaNiemYet: Number(v.giaNiemYet),
+            giaKhuyenMai: v.giaKhuyenMai ? Number(v.giaKhuyenMai) : null,
+            seatCount: v.seatCount,
+            dongCo: v.dongCo,
+            hopSo: v.hopSo,
+            danDong: v.danDong,
+            anhDaiDienUrl: v.anhDaiDienUrl,
+            sortOrder: v.sortOrder,
+          })),
+          createdAt: c.createdAt,
+          updatedAt: c.updatedAt,
+        };
+      });
 
       sendJson(200, {
         success: true,
@@ -533,7 +534,9 @@ export async function handleAdminRoutes(
           if (key === 'contact_settings') return sendJson(200, { success: true, data: ContactSettingsSchema.parse({}) }), true;
           if (key === 'floating_seller_settings') return sendJson(200, { success: true, data: FloatingSellerSettingsSchema.parse({}) }), true;
           if (key === 'sticky_bar_settings') return sendJson(200, { success: true, data: StickyBarSettingsSchema.parse({}) }), true;
-          
+          if (key === 'slide_in_banner_settings') return sendJson(200, { success: true, data: SlideInBannerSettingsSchema.parse({}) }), true;
+          if (key === 'footer_settings') return sendJson(200, { success: true, data: FooterSettingsSchema.parse({}) }), true;
+
           sendJson(404, { success: false, error: { code: 'SETTING_NOT_FOUND', message: `Không tìm thấy key "${key}"` } });
           return true;
         }
@@ -597,6 +600,7 @@ export async function handleAdminRoutes(
       else if (key === 'contact_settings') validatedData = ContactSettingsSchema.parse(body);
       else if (key === 'floating_seller_settings') validatedData = FloatingSellerSettingsSchema.parse(body);
       else if (key === 'sticky_bar_settings') validatedData = StickyBarSettingsSchema.parse(body);
+      else if (key === 'slide_in_banner_settings') validatedData = SlideInBannerSettingsSchema.parse(body);
       else if (key === 'footer_settings') validatedData = FooterSettingsSchema.parse(body);
       else if (key === 'homepage_settings') validatedData = HomepageSettingsSchema.parse(body);
     } catch (validationErr: unknown) {

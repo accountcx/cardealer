@@ -1,9 +1,16 @@
 'use client';
 
-import { Building2, Compass, UserCheck, Pin, LayoutTemplate, Sparkles } from 'lucide-react';
+import { Building2, Compass, UserCheck, Pin, LayoutTemplate, Sparkles, Gift } from 'lucide-react';
 import { Button } from '@cardealer/ui';
 
-export type SettingsTabId = 'showroom' | 'homepage' | 'navigation' | 'floatingSeller' | 'stickyBar' | 'footer';
+export type SettingsTabId =
+  | 'showroom'
+  | 'homepage'
+  | 'navigation'
+  | 'floatingSeller'
+  | 'stickyBar'
+  | 'slideInBanner'
+  | 'footer';
 
 export interface TabItem {
   id: SettingsTabId;
@@ -44,6 +51,12 @@ export const SETTINGS_TABS: TabItem[] = [
     icon: Pin,
   },
   {
+    id: 'slideInBanner',
+    label: 'Popup Voucher & Trượt',
+    description: 'Banner trượt góc, popup voucher ưu đãi, thời gian trễ và % cuộn',
+    icon: Gift,
+  },
+  {
     id: 'footer',
     label: 'Chân Trang (Footer)',
     description: 'Danh mục dòng xe, dịch vụ, bản đồ Google Maps và huy hiệu',
@@ -56,7 +69,7 @@ export interface SettingsTabNavProps {
   onTabChange: (tab: SettingsTabId) => void;
 }
 
-// 🧠 Mental Model: Thanh điều hướng 4 phân khu cấu hình trong trang Admin Settings.
+// 🧠 Mental Model: Thanh điều hướng 7 phân khu cấu hình trong trang Admin Settings.
 // Sử dụng các icon từ lucide-react và tab pills hiện đại với focus rings chuẩn WCAG.
 export const SettingsTabNav = ({ activeTab, onTabChange }: SettingsTabNavProps) => {
   return (

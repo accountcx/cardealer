@@ -1087,6 +1087,7 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
         utmSource={`post_${post.slug}`}
         hotline={rawHotline}
         phoneToCall={cleanHotline}
+        config={settings.slideInBanner}
       />
     </article>
   );
