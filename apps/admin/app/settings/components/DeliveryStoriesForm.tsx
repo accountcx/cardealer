@@ -1,18 +1,22 @@
 'use client';
 
-import React from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, Trash2, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { Button, Input, Label } from '@cardealer/ui';
-import type { DeliveryStoriesZoneConfig, DeliveryStoryItem } from '@cardealer/types';
+import type { DeliveryStoriesZoneConfig, DeliveryStoryItem, MediaItem } from '@cardealer/types';
+import { MediaPickerModal } from '../../components/MediaPickerModal';
 
 export interface DeliveryStoriesFormProps {
   data: DeliveryStoriesZoneConfig;
   onChange: (updated: DeliveryStoriesZoneConfig) => void;
 }
 
-// 🧠 Mental Model: Form quản lý album ảnh bàn giao xe thực tế (Phân Khu 5 - Social Proof).
-// Hỗ trợ saler thêm/xóa/sửa các khoảnh khắc trao chìa khóa xe cho khách hàng nhằm tạo dựng uy tín chuyển đổi cao.
+// 🧠 Mental Model: Form quản lý album ảnh bàn giao xe thực tế (Phân Khu 6 - Social Proof).
+// Hỗ trợ chọn ảnh từ Media Library (đơn lẻ hoặc hàng loạt) giúp saler dễ dàng tải lên khoảnh khắc trao chìa khóa xe.
 export const DeliveryStoriesForm: React.FC<DeliveryStoriesFormProps> = ({ data, onChange }) => {
+  const [pickingIndex, setPickingIndex] = useState<number | null>(null);
+  const [isBatchPickerOpen, setIsBatchPickerOpen] = useState(false);
+
   const handleAddStory = () => {
     const newStory: DeliveryStoryItem = {
       id: `story-${Date.now()}`,
@@ -33,8 +37,35 @@ export const DeliveryStoriesForm: React.FC<DeliveryStoriesFormProps> = ({ data, 
 
   const handleUpdateStory = (index: number, field: keyof DeliveryStoryItem, val: string) => {
     const updated = [...data.stories];
-    updated[index] = { ...updated[index], [field]: val };
+    const current = updated[index];
+    if (!current) return;
+    updated[index] = { ...current, [field]: val };
     onChange({ ...data, stories: updated });
+  };
+
+  const handleBatchSelect = (selected: MediaItem[]) => {
+    if (!selected || selected.length === 0) return;
+    const newStories: DeliveryStoryItem[] = selected.map((item, idx) => ({
+      id: `story-${Date.now()}-${idx}`,
+      customerName: item.altText || item.filename?.replace(/\.[^/.]+$/, '') || 'Khách hàng trao xe',
+      location: 'TP. Vinh, Nghệ An',
+      carModel: 'Hyundai Creta / Tucson',
+      imageUrl: item.url,
+      quote: 'Chúc mừng quý khách đã tin tưởng đồng hành cùng Hyundai Vinh!',
+      deliveryDate: 'Tháng 09/2026',
+    }));
+    onChange({ ...data, stories: [...data.stories, ...newStories] });
+    setIsBatchPickerOpen(false);
+  };
+
+  const handleSingleSelect = (selected: MediaItem[]) => {
+    if (pickingIndex !== null && selected[0]?.url) {
+      handleUpdateStory(pickingIndex, 'imageUrl', selected[0].url);
+      if (selected[0].altText) {
+        handleUpdateStory(pickingIndex, 'customerName', selected[0].altText);
+      }
+    }
+    setPickingIndex(null);
   };
 
   return (
@@ -69,31 +100,51 @@ export const DeliveryStoriesForm: React.FC<DeliveryStoriesFormProps> = ({ data, 
 
       {/* Danh sách ảnh & câu chuyện bàn giao */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h4 className="text-sm font-semibold text-white">Danh Sách Khách Hàng Nhận Xe ({data.stories.length})</h4>
-            <p className="text-xs text-slate-400">Nếu để trống, phân khu này sẽ tự động ẩn trên trang chủ.</p>
+            <h4 className="text-sm font-semibold text-white">
+              Danh Sách Khách Hàng Nhận Xe ({data.stories.length})
+            </h4>
+            <p className="text-xs text-slate-400">
+              Nếu để trống, phân khu này sẽ tự động ẩn trên trang chủ theo cơ chế Graceful Degradation.
+            </p>
           </div>
-          <Button
-            type="button"
-            onClick={handleAddStory}
-            className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs h-9 px-3"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Thêm Ảnh Bàn Giao</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsBatchPickerOpen(true)}
+              className="flex items-center gap-1.5 bg-slate-900 border-slate-700 hover:bg-slate-800 text-sky-400 text-xs h-9 px-3"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Chọn từ Thư Viện</span>
+            </Button>
+            <Button
+              type="button"
+              onClick={handleAddStory}
+              className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs h-9 px-3"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Thêm Thủ Công</span>
+            </Button>
+          </div>
         </div>
 
         {data.stories.length === 0 ? (
           <div className="p-8 text-center rounded-xl bg-slate-950/40 border border-dashed border-slate-800 text-slate-500 text-xs">
-            Chưa có hình ảnh bàn giao nào. Phân khu này sẽ tự động ẩn trên Storefront theo cơ chế Graceful Degradation.
+            Chưa có hình ảnh bàn giao nào. Phân khu này sẽ tự động ẩn trên Storefront.
           </div>
         ) : (
           <div className="space-y-3">
             {data.stories.map((story, idx) => (
               <div key={story.id || idx} className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#0072CE]">Khách Hàng #{idx + 1}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-[#0072CE]">Khách Hàng #{idx + 1}</span>
+                    {story.customerName && (
+                      <span className="text-xs text-slate-400 font-medium">({story.customerName})</span>
+                    )}
+                  </div>
                   <Button
                     type="button"
                     variant="ghost"
@@ -130,31 +181,74 @@ export const DeliveryStoriesForm: React.FC<DeliveryStoriesFormProps> = ({ data, 
 
                   <div>
                     <Label className="block text-[11px] text-slate-400 mb-1">Đường Dẫn Ảnh Trao Xe</Label>
-                    <Input
-                      type="text"
-                      value={story.imageUrl}
-                      onChange={(e) => handleUpdateStory(idx, 'imageUrl', e.target.value)}
-                      placeholder="/images/delivery/delivery-1.webp"
-                      className="w-full h-9 text-xs bg-slate-900 border-slate-800 text-white focus-visible:ring-[#0072CE]"
-                    />
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        type="text"
+                        value={story.imageUrl}
+                        onChange={(e) => handleUpdateStory(idx, 'imageUrl', e.target.value)}
+                        placeholder="/images/delivery/delivery-1.webp"
+                        className="w-full h-9 text-xs bg-slate-900 border-slate-800 text-white focus-visible:ring-[#0072CE]"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPickingIndex(idx)}
+                        className="h-9 px-2.5 bg-slate-900 border-slate-700 text-slate-200 hover:text-white shrink-0 flex items-center gap-1 text-xs"
+                      >
+                        <ImageIcon className="w-3.5 h-3.5 text-[#0072CE]" />
+                        <span>Chọn ảnh</span>
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <Label className="block text-[11px] text-slate-400 mb-1">Lời Nhận Xét / Cảm Nhận Của Khách Hàng</Label>
-                  <Input
-                    type="text"
-                    value={story.quote}
-                    onChange={(e) => handleUpdateStory(idx, 'quote', e.target.value)}
-                    placeholder="Em Tuấn tư vấn rất nhiệt tình, giao xe đúng ngày..."
-                    className="w-full h-9 text-xs bg-slate-900 border-slate-800 text-white focus-visible:ring-[#0072CE]"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <Label className="block text-[11px] text-slate-400 mb-1">Địa Danh / Khu Vực</Label>
+                    <Input
+                      type="text"
+                      value={story.location || 'TP. Vinh, Nghệ An'}
+                      onChange={(e) => handleUpdateStory(idx, 'location', e.target.value)}
+                      placeholder="TP. Vinh, Nghệ An"
+                      className="w-full h-9 text-xs bg-slate-900 border-slate-800 text-white focus-visible:ring-[#0072CE]"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <Label className="block text-[11px] text-slate-400 mb-1">Lời Nhận Xét / Cảm Nhận Của Khách Hàng</Label>
+                    <Input
+                      type="text"
+                      value={story.quote}
+                      onChange={(e) => handleUpdateStory(idx, 'quote', e.target.value)}
+                      placeholder="Em Tuấn tư vấn rất nhiệt tình, giao xe đúng ngày..."
+                      className="w-full h-9 text-xs bg-slate-900 border-slate-800 text-white focus-visible:ring-[#0072CE]"
+                    />
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Media Picker Modal đơn lẻ */}
+      <MediaPickerModal
+        isOpen={pickingIndex !== null}
+        onClose={() => setPickingIndex(null)}
+        onSelect={handleSingleSelect}
+        mode="single"
+        title="Chọn Ảnh Bàn Giao Xe"
+      />
+
+      {/* Media Picker Modal hàng loạt */}
+      <MediaPickerModal
+        isOpen={isBatchPickerOpen}
+        onClose={() => setIsBatchPickerOpen(false)}
+        onSelect={handleBatchSelect}
+        mode="multiple"
+        title="Chọn Hàng Loạt Ảnh Bàn Giao Từ Thư Viện"
+      />
     </div>
   );
 };

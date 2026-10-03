@@ -1,25 +1,44 @@
 'use client';
 
-import React from 'react';
-import type { SalerShowroomConfig, CommitmentItem } from '@cardealer/types';
-import { Input, Select, Textarea } from '@cardealer/ui';
+import React, { useState } from 'react';
+import { Image as ImageIcon } from 'lucide-react';
+import type { SalerShowroomConfig, CommitmentItem, MediaItem } from '@cardealer/types';
+import { Input, Select, Textarea, Button } from '@cardealer/ui';
+import { MediaPickerModal } from '../../components/MediaPickerModal';
 
 export interface SalerShowroomFormProps {
   data: SalerShowroomConfig;
   onChange: (updated: SalerShowroomConfig) => void;
 }
 
-// 🧠 Mental Model: Form cấu hình Phân Khu 3 - VIP Showroom / Hồ Sơ Năng Lực Saler.
-// Sử dụng chuẩn hóa 100% các component Primitives từ @cardealer/ui (Input, Select, Textarea).
+type MediaTarget = 'avatar' | 'showroom' | null;
+
+// 🧠 Mental Model: Form cấu hình Phân Khu 5 - VIP Showroom / Hồ Sơ Năng Lực Saler.
+// Sử dụng chuẩn hóa 100% các component Primitives từ @cardealer/ui kèm tích hợp MediaPickerModal.
 export const SalerShowroomForm: React.FC<SalerShowroomFormProps> = ({ data, onChange }) => {
+  const [mediaTarget, setMediaTarget] = useState<MediaTarget>(null);
+
   const updateField = <K extends keyof SalerShowroomConfig>(field: K, value: SalerShowroomConfig[K]) => {
     onChange({ ...data, [field]: value });
   };
 
   const updateCommitment = (index: number, field: keyof CommitmentItem, val: string) => {
     const updated = [...data.commitments];
-    updated[index] = { ...updated[index], [field]: val };
+    const current = updated[index];
+    if (!current) return;
+    updated[index] = { ...current, [field]: val };
     updateField('commitments', updated);
+  };
+
+  const handleMediaSelect = (selected: MediaItem[]) => {
+    if (selected[0]?.url) {
+      if (mediaTarget === 'avatar') {
+        updateField('avatarUrl', selected[0].url);
+      } else if (mediaTarget === 'showroom') {
+        updateField('galleryImages', [selected[0].url]);
+      }
+    }
+    setMediaTarget(null);
   };
 
   return (
@@ -68,12 +87,28 @@ export const SalerShowroomForm: React.FC<SalerShowroomFormProps> = ({ data, onCh
               value={data.salerTitle}
               onChange={(e) => updateField('salerTitle', e.target.value)}
             />
-            <Input
-              label="Đường Dẫn Ảnh Đại Diện (Avatar)"
-              value={data.avatarUrl}
-              onChange={(e) => updateField('avatarUrl', e.target.value)}
-              placeholder="/images/saler-avatar.webp"
-            />
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                Ảnh Đại Diện (Avatar)
+              </label>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={data.avatarUrl}
+                  onChange={(e) => updateField('avatarUrl', e.target.value)}
+                  placeholder="/images/saler-avatar.webp"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setMediaTarget('avatar')}
+                  className="h-11 px-3 bg-slate-900 border-slate-700 text-slate-200 hover:text-white shrink-0 flex items-center gap-1.5 text-xs"
+                >
+                  <ImageIcon className="w-4 h-4 text-[#0072CE]" />
+                  <span>Chọn ảnh</span>
+                </Button>
+              </div>
+            </div>
           </div>
 
           <Textarea
@@ -104,12 +139,28 @@ export const SalerShowroomForm: React.FC<SalerShowroomFormProps> = ({ data, onCh
               value={data.showroomBadge || 'Đại Lý Chuẩn 3S Toàn Cầu GDSI'}
               onChange={(e) => updateField('showroomBadge', e.target.value)}
             />
-            <Input
-              label="Ảnh Cơ Sở Vật Chất / Showroom"
-              value={data.galleryImages?.[0] || '/images/banners/hero-event.webp'}
-              onChange={(e) => updateField('galleryImages', [e.target.value])}
-              placeholder="/images/banners/hero-event.webp"
-            />
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                Ảnh Cơ Sở Vật Chất / Showroom
+              </label>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={data.galleryImages?.[0] || '/images/banners/hero-event.webp'}
+                  onChange={(e) => updateField('galleryImages', [e.target.value])}
+                  placeholder="/images/banners/hero-event.webp"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setMediaTarget('showroom')}
+                  className="h-11 px-3 bg-slate-900 border-slate-700 text-slate-200 hover:text-white shrink-0 flex items-center gap-1.5 text-xs"
+                >
+                  <ImageIcon className="w-4 h-4 text-[#0072CE]" />
+                  <span>Chọn ảnh</span>
+                </Button>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -156,6 +207,14 @@ export const SalerShowroomForm: React.FC<SalerShowroomFormProps> = ({ data, onCh
           ))}
         </div>
       </div>
+
+      <MediaPickerModal
+        isOpen={mediaTarget !== null}
+        onClose={() => setMediaTarget(null)}
+        onSelect={handleMediaSelect}
+        mode="single"
+        title={mediaTarget === 'avatar' ? 'Chọn Ảnh Đại Diện Chuyên Viên' : 'Chọn Ảnh Showroom'}
+      />
     </div>
   );
 };

@@ -1,8 +1,10 @@
 'use client';
 
-import React from 'react';
-import type { HeroBannerConfig } from '@cardealer/types';
-import { Input, Select, Switch } from '@cardealer/ui';
+import React, { useState } from 'react';
+import { Image as ImageIcon } from 'lucide-react';
+import type { HeroBannerConfig, MediaItem } from '@cardealer/types';
+import { Input, Select, Switch, Button } from '@cardealer/ui';
+import { MediaPickerModal } from '../../components/MediaPickerModal';
 
 export interface HeroBannerFormProps {
   data: HeroBannerConfig;
@@ -10,15 +12,24 @@ export interface HeroBannerFormProps {
 }
 
 // 🧠 Mental Model: Form cấu hình Phân Khu 1 - Hero Event Banner & Countdown Timer.
-// Chuẩn hóa 100% bằng Design System Primitives từ @cardealer/ui (Input, Select, Switch).
+// Chuẩn hóa 100% bằng Design System Primitives từ @cardealer/ui kèm tích hợp MediaPickerModal.
 export const HeroBannerForm: React.FC<HeroBannerFormProps> = ({ data, onChange }) => {
+  const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
+
   const updateField = <K extends keyof HeroBannerConfig>(field: K, value: HeroBannerConfig[K]) => {
     onChange({ ...data, [field]: value });
   };
 
+  const handleMediaSelect = (selected: MediaItem[]) => {
+    if (selected[0]?.url) {
+      updateField('mediaUrl', selected[0].url);
+    }
+    setIsMediaPickerOpen(false);
+  };
+
   return (
     <div className="space-y-6 pt-4 border-t border-slate-800/80">
-      {/* Tiêu đề & Slogan */}
+      {/* Tiêu Đề & Slogan */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Input
           label="Tiêu Đề Lớn (Headline)"
@@ -48,12 +59,28 @@ export const HeroBannerForm: React.FC<HeroBannerFormProps> = ({ data, onChange }
         />
 
         <div className="md:col-span-2">
-          <Input
-            label="Đường Dẫn Media (URL Ảnh hoặc Video)"
-            value={data.mediaUrl}
-            onChange={(e) => updateField('mediaUrl', e.target.value)}
-            placeholder="/images/hero-banner.webp hoặc https://..."
-          />
+          <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+            Đường Dẫn Media (URL Ảnh hoặc Video)
+          </label>
+          <div className="flex items-center gap-2">
+            <Input
+              value={data.mediaUrl}
+              onChange={(e) => updateField('mediaUrl', e.target.value)}
+              placeholder="/images/hero-banner.webp hoặc https://..."
+              className="flex-1"
+            />
+            {data.mediaType === 'image' && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsMediaPickerOpen(true)}
+                className="h-11 px-3 bg-slate-900 border-slate-700 text-slate-200 hover:text-white shrink-0 flex items-center gap-1.5 text-xs"
+              >
+                <ImageIcon className="w-4 h-4 text-[#0072CE]" />
+                <span>Chọn ảnh</span>
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -183,6 +210,14 @@ export const HeroBannerForm: React.FC<HeroBannerFormProps> = ({ data, onChange }
           </div>
         </div>
       </div>
+
+      <MediaPickerModal
+        isOpen={isMediaPickerOpen}
+        onClose={() => setIsMediaPickerOpen(false)}
+        onSelect={handleMediaSelect}
+        mode="single"
+        title="Chọn Hình Ảnh Hero Banner"
+      />
     </div>
   );
 };
