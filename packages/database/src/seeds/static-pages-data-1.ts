@@ -14,14 +14,14 @@ export interface SeedPageItem {
   };
 }
 
-// 1. Chính sách bảo mật (Privacy Policy)
+// 1. Chính sách bảo mật (Privacy Policy) - Persona Chuyên viên tư vấn bán hàng
 export const privacyPolicyPage: SeedPageItem = {
   title: 'Chính Sách Bảo Mật Thông Tin',
   slug: 'chinh-sach-bao-mat',
   templateType: 'DEFAULT',
   schemaType: 'WebPage',
-  metaTitle: 'Chính Sách Bảo Mật Thông Tin Khách Hàng | Hyundai Vinh',
-  metaDescription: 'Cam kết bảo mật tuyệt đối thông tin khách hàng, số điện thoại và hồ sơ vay vốn khi đăng ký tư vấn mua xe tại Hyundai Vinh.',
+  metaTitle: 'Chính Sách Bảo Mật Thông Tin Khách Hàng | Chuyên Viên Tư Vấn Hyundai Vinh',
+  metaDescription: 'Cam kết bảo mật thông tin cá nhân của khách hàng khi đăng ký tư vấn giá xe, lái thử và hỗ trợ hồ sơ vay trả góp cùng chuyên viên Hyundai Vinh.',
   isPublished: true,
   content: {
     type: 'doc',
@@ -29,90 +29,73 @@ export const privacyPolicyPage: SeedPageItem = {
       {
         type: 'heading',
         attrs: { level: 2 },
-        content: [{ type: 'text', text: '1. Mục Đích và Phạm Vi Thu Thập Thông Tin' }],
+        content: [{ type: 'text', text: '1. Mục Đích Thu Thập Thông Tin' }],
       },
       {
         type: 'paragraph',
         content: [
           {
             type: 'text',
-            text: 'Khi quý khách hàng truy cập website, đăng ký nhận báo giá lăn bánh, yêu cầu lái thử hoặc tư vấn mua xe trả góp, chúng tôi thu thập các thông tin cần thiết gồm: Họ và tên, Số điện thoại liên hệ, Địa chỉ Email, và Tỉnh/Thành phố sinh sống.',
-          },
-        ],
-      },
-      {
-        type: 'calloutBlock',
-        attrs: {
-          type: 'info',
-          title: 'Mục Đích Sử Dụng Thông Tin Minh Bạch',
-          content: 'Thông tin thu thập chỉ phục vụ mục đích: (1) Cung cấp bảng giá lăn bánh và ưu đãi mới nhất; (2) Hỗ trợ lái thử xe tận nơi; (3) Hướng dẫn thủ tục ngân hàng theo đúng nguyện vọng của quý khách.',
-        },
-      },
-      {
-        type: 'heading',
-        attrs: { level: 2 },
-        content: [{ type: 'text', text: '2. Cam Kết Bảo Mật Thông Tin Cá Nhân' }],
-      },
-      {
-        type: 'paragraph',
-        content: [
-          {
-            type: 'text',
-            text: 'Chúng tôi cam kết tuyệt đối không bán, chuyển nhượng, trao đổi hay chia sẻ dữ liệu cá nhân của khách hàng cho bất kỳ bên thứ ba nào vì mục đích thương mại hoặc quảng cáo ngoài hệ thống.',
-          },
-        ],
-      },
-      {
-        type: 'paragraph',
-        content: [
-          {
-            type: 'text',
-            text: 'Dữ liệu hồ sơ tài chính chỉ được cung cấp cho các đối tác Ngân hàng liên kết uy tín (Vietcombank, BIDV, Techcombank, VPBank...) khi có sự chấp thuận và ủy quyền trực tiếp từ quý khách để tiến hành thẩm định hạn mức vay mua xe.',
+            text: 'Khi quý khách để lại thông tin (Họ tên, Số điện thoại, Email, Dòng xe quan tâm) trên website cá nhân của tôi, dữ liệu này chỉ được sử dụng duy nhất cho các mục đích: (1) Liên hệ tư vấn chi tiết về xe; (2) Gửi bảng báo giá lăn bánh và ưu đãi mới nhất; (3) Hẹn lịch lái thử xe theo yêu cầu.',
           },
         ],
       },
       {
         type: 'heading',
         attrs: { level: 2 },
-        content: [{ type: 'text', text: '3. Quyền Lợi Của Khách Hàng Đối Với Dữ Liệu' }],
-      },
-      {
-        type: 'paragraph',
-        content: [
-          {
-            type: 'text',
-            text: 'Khách hàng có toàn quyền yêu cầu kiểm tra, cập nhật, điều chỉnh hoặc hủy bỏ thông tin cá nhân đã lưu trữ trên hệ thống bất cứ lúc nào bằng cách liên hệ trực tiếp với chuyên viên tư vấn hoặc qua Hotline chính thức.',
-          },
-        ],
+        content: [{ type: 'text', text: '2. Cam Kết Bảo Mật Tuyệt Đối' }],
       },
       {
         type: 'calloutBlock',
         attrs: {
           type: 'success',
-          title: 'Tiêu Chuẩn Mã Hóa & An Toàn Dữ Liệu',
-          content: 'Mọi dữ liệu truyền tải qua website đều được bảo vệ bằng giao thức mã hóa SSL 256-bit chuẩn quốc tế, ngăn ngừa tối đa rủi ro rò rỉ hoặc can thiệp trái phép.',
+          title: 'Cam Kết Không Chia Sẻ Dữ Liệu Cho Bên Thứ Ba',
+          content: 'Tôi cam kết tuyệt đối KHÔNG bán, trao đổi hay chia sẻ thông tin cá nhân của quý khách cho bất kỳ bên thứ ba nào vì mục đích thương mại hoặc làm phiền.',
         },
+      },
+      {
+        type: 'paragraph',
+        content: [
+          {
+            type: 'text',
+            text: 'Trong trường hợp quý khách có nhu cầu mua xe trả góp, thông tin hồ sơ tài chính chỉ được gửi đến cán bộ tín dụng của Ngân hàng liên kết khi có sự đồng ý và ủy quyền trực tiếp từ quý khách để thẩm định gói vay.',
+          },
+        ],
+      },
+      {
+        type: 'heading',
+        attrs: { level: 2 },
+        content: [{ type: 'text', text: '3. Quyền Lợi Của Khách Hàng' }],
+      },
+      {
+        type: 'paragraph',
+        content: [
+          {
+            type: 'text',
+            text: 'Quý khách có toàn quyền yêu cầu tôi chỉnh sửa, cập nhật hoặc xóa bỏ hoàn toàn thông tin cá nhân và số điện thoại khỏi danh sách chăm sóc bất cứ lúc nào qua Hotline hoặc Zalo cá nhân.',
+          },
+        ],
       },
       {
         type: 'ctaButtonBlock',
         attrs: {
-          buttonText: 'Liên Hệ Hỗ Trợ Bảo Mật Dữ Liệu',
+          buttonText: 'Liên Hệ Trực Tiếp Chuyên Viên',
           actionType: 'hotline',
-          subtext: 'Bộ phận Chăm sóc khách hàng tiếp nhận phản hồi 24/7',
+          subtext: 'Hỗ trợ tư vấn tận tâm, trung thực và bảo mật 100%',
         },
       },
     ],
   },
 };
 
-// 2. Liên hệ (Contact Us)
+// 2. Liên hệ (Contact Us) - Kết nối Saler & Showroom
 export const contactUsPage: SeedPageItem = {
-  title: 'Liên Hệ Đại Lý Hyundai Vinh',
+  title: 'Liên Hệ Tư Vấn & Showroom',
   slug: 'lien-he',
   templateType: 'CONTACT',
   schemaType: 'ContactPage',
-  metaTitle: 'Liên Hệ Showroom & Chuyên Viên Tư Vấn Hyundai Vinh',
-  metaDescription: 'Thông tin liên hệ chính thức Showroom Hyundai Vinh: Hotline kinh doanh, vị trí bản đồ Google Maps, form đăng ký lái thử và tư vấn bảng giá.',
+  metaTitle: 'Liên Hệ Chuyên Viên Tư Vấn & Showroom Hyundai Vinh',
+  metaDescription: 'Kết nối trực tiếp chuyên viên tư vấn bán hàng Hyundai Vinh: Hotline, Zalo, địa chỉ showroom, bản đồ dẫn đường và form đăng ký lái thử tận nơi.',
   isPublished: true,
   content: {
     type: 'doc',
@@ -120,14 +103,14 @@ export const contactUsPage: SeedPageItem = {
       {
         type: 'heading',
         attrs: { level: 2 },
-        content: [{ type: 'text', text: 'Kênh Tiếp Nhận Thông Tin & Hỗ Trợ Khách Hàng' }],
+        content: [{ type: 'text', text: 'Kênh Tư Vấn Trực Tiếp Cùng Chuyên Viên' }],
       },
       {
         type: 'paragraph',
         content: [
           {
             type: 'text',
-            text: 'Đại lý Hyundai Vinh hân hạnh phục vụ quý khách hàng tại Nghệ An, Hà Tĩnh và khu vực Bắc Trung Bộ với đầy đủ các dịch vụ 3S tiêu chuẩn toàn cầu: Bán hàng (Sales), Dịch vụ hậu mãi (Service) và Phụ tùng chính hãng (Spare parts).',
+            text: 'Quý khách đang quan tâm đến các dòng xe Hyundai hoặc cần dự toán chi phí lăn bánh, thủ tục mua xe trả góp? Hãy liên hệ trực tiếp với tôi qua Hotline/Zalo hoặc để lại thông tin tại biểu mẫu bên dưới. Tôi luôn sẵn sàng hỗ trợ 24/7.',
           },
         ],
       },
@@ -135,21 +118,21 @@ export const contactUsPage: SeedPageItem = {
         type: 'calloutBlock',
         attrs: {
           type: 'note',
-          title: 'Hỗ Trợ Lái Thử & Tư Vấn Tận Nhà',
-          content: 'Quý khách bận rộn không thể ghé showroom? Hãy đặt lịch hẹn, đội ngũ chuyên viên sẽ mang mẫu xe bạn yêu thích đến tận nhà hoặc cơ quan để trải nghiệm hoàn toàn miễn phí.',
+          title: 'Hỗ Trợ Lái Thử Tận Nhà Miễn Phí',
+          content: 'Nếu quý khách bận rộn không thể đến showroom, tôi sẽ trực tiếp mang xe lái thử đến tận nhà hoặc cơ quan tại Nghệ An & Hà Tĩnh để quý khách trải nghiệm thực tế hoàn toàn miễn phí.',
         },
       },
       {
         type: 'heading',
         attrs: { level: 2 },
-        content: [{ type: 'text', text: 'Thời Gian Làm Việc Tại Showroom' }],
+        content: [{ type: 'text', text: 'Thông Tin Showroom Giao Dịch Chính Thức' }],
       },
       {
         type: 'paragraph',
         content: [
           {
             type: 'text',
-            text: '• Khu vực Trưng bày & Bán hàng: 08:00 - 18:00 (Từ Thứ Hai đến Chủ Nhật hàng tuần).\n• Xưởng Dịch vụ & Bảo dưỡng: 07:30 - 17:00 (Từ Thứ Hai đến Thứ Bảy).',
+            text: 'Mọi thủ tục xem xe trực tiếp trong showroom, ký kết hợp đồng mua bán và nhận bàn giao xe đều được thực hiện tại Showroom chính thức của Hyundai Vinh để đảm bảo đầy đủ quyền lợi pháp lý cho quý khách.',
           },
         ],
       },
@@ -157,14 +140,14 @@ export const contactUsPage: SeedPageItem = {
   },
 };
 
-// 3. Giới thiệu (About Us)
+// 3. Giới thiệu (About Us) - Hồ sơ cá nhân Chuyên viên tư vấn kinh doanh
 export const aboutUsPage: SeedPageItem = {
-  title: 'Giới Thiệu Về Chúng Tôi',
+  title: 'Giới Thiệu Chuyên Viên Tư Vấn',
   slug: 'gioi-thieu',
   templateType: 'PROFILE_SHOWROOM',
   schemaType: 'AboutPage',
-  metaTitle: 'Giới Thiệu Showroom Hyundai Vinh & Đội Ngũ Tư Vấn Chuyên Nghiệp',
-  metaDescription: 'Tìm hiểu về Hyundai Vinh - Đại lý ủy quyền chính thức của TC Motor tại Nghệ An, bề dày kinh nghiệm, cam kết giá tốt và đồng hành trọn đời xe.',
+  metaTitle: 'Giới Thiệu Chuyên Viên Tư Vấn Bán Hàng | Đại Lý Hyundai Vinh',
+  metaDescription: 'Hồ sơ chuyên viên tư vấn kinh doanh tại Hyundai Vinh: Bề dày kinh nghiệm, cam kết giá tốt nhất, tư vấn tận tâm, trung thực và hỗ trợ trọn đời sử dụng xe.',
   isPublished: true,
   content: {
     type: 'doc',
@@ -172,14 +155,14 @@ export const aboutUsPage: SeedPageItem = {
       {
         type: 'heading',
         attrs: { level: 2 },
-        content: [{ type: 'text', text: 'Về Đại Lý Hyundai Vinh' }],
+        content: [{ type: 'text', text: 'Xin Chào Quý Khách Hàng!' }],
       },
       {
         type: 'paragraph',
         content: [
           {
             type: 'text',
-            text: 'Showroom Hyundai Vinh tự hào là một trong những đại lý ủy quyền 3S chính thức của Tập đoàn TC Motor tại khu vực miền Trung. Với cơ sở hạ tầng hiện đại, trang thiết bị chẩn đoán tiên tiến cùng đội ngũ chuyên viên tư vấn được đào tạo bài bản theo tiêu chuẩn quốc tế của Hyundai Motor Company.',
+            text: 'Tôi là Chuyên viên tư vấn kinh doanh chính thức tại Đại lý Hyundai Vinh (TC Motor). Với nhiều năm gắn bó trong ngành ô tô và kinh nghiệm tư vấn, bàn giao hàng trăm chiếc xe cho khách hàng tại Nghệ An, Hà Tĩnh và khu vực lân cận, tôi luôn coi sự hài lòng và an tâm của quý khách là ưu tiên hàng đầu.',
           },
         ],
       },
@@ -187,46 +170,45 @@ export const aboutUsPage: SeedPageItem = {
         type: 'calloutBlock',
         attrs: {
           type: 'success',
-          title: 'Cam Kết Vàng Từ Đội Ngũ Tư Vấn',
-          content: '1. Cam kết mức giá lăn bánh và chương trình khuyến mãi cạnh tranh nhất thị trường.\n2. Tư vấn giải pháp tài chính trung thực, minh bạch, tối ưu chi phí cho khách hàng.\n3. Hỗ trợ trọn gói thủ tục đăng ký, đăng kiểm, giao xe tận nhà theo yêu cầu.',
+          title: '4 Cam Kết Vàng Dành Cho Khách Hàng',
+          content: '1. Giá xe luôn tốt nhất: Báo giá lăn bánh minh bạch, cập nhật tối đa các chương trình khuyến mãi & quà tặng phụ kiện chính hãng.\n2. Tư vấn trung thực: Lựa chọn phiên bản xe phù hợp nhất với nhu cầu sử dụng và ngân sách thực tế của quý khách.\n3. Hỗ trợ vay ngân hàng nhanh gọn: Đồng hành xử lý hồ sơ trả góp từ A-Z, tỷ lệ duyệt cao, lãi suất ưu đãi.\n4. Đồng hành trọn đời xe: Hỗ trợ kỹ thuật, nhắc lịch bảo dưỡng, cứu hộ và bảo hiểm 24/7 trong suốt quá trình sử dụng.',
         },
       },
       {
         type: 'heading',
         attrs: { level: 2 },
-        content: [{ type: 'text', text: 'Giá Trị Cốt Lõi & Đồng Hành Trọn Đời' }],
+        content: [{ type: 'text', text: 'Hình Ảnh Bàn Giao Xe Thực Tế' }],
       },
       {
         type: 'paragraph',
         content: [
           {
             type: 'text',
-            text: 'Chúng tôi không chỉ trao gửi chiếc xe, mà còn là người bạn đồng hành tin cậy trong suốt vòng đời sử dụng của quý khách. Mọi vấn đề kỹ thuật, lịch nhắc bảo dưỡng định kỳ và hỗ trợ xử lý sự cố bảo hiểm 24/7 đều được thực hiện tận tâm, chu đáo.',
+            text: 'Niềm vui và sự tin tưởng của quý khách hàng trong những buổi lễ bàn giao xe chính là động lực lớn nhất để tôi không ngừng nỗ lực nâng cao chất lượng phục vụ chuyên nghiệp mỗi ngày.',
           },
         ],
       },
       {
         type: 'prosConsBlock',
         attrs: {
-          title: 'Đặc Quyền Khi Mua Xe Tại Hyundai Vinh',
+          title: 'Lý Do Quý Khách Nên Đồng Hành Cùng Tôi',
           pros: [
-            'Xe có sẵn, đủ màu, giao ngay tận nơi',
-            'Bảo hành chính hãng 5 năm hoặc 100.000 km',
-            'Hỗ trợ vay trả góp 85% với lãi suất ưu đãi cố định',
-            'Đội ngũ kỹ thuật viên đạt chứng chỉ quốc tế',
+            'Tư vấn tận tâm, giải đáp mọi thắc mắc 24/7 kể cả ngoài giờ hành chính',
+            'Hỗ trợ lái thử xe tận nơi tại Nghệ An và Hà Tĩnh miễn phí',
+            'Đại diện khách hàng làm việc để có chính sách giá và quà tặng tốt nhất',
+            'Hỗ trợ trọn gói thủ tục đăng ký biển số, đăng kiểm và giao xe tận nhà',
           ],
           cons: [
-            'Số lượng xe giao ngay trong các đợt khuyến mãi lớn có thể hết sớm',
-            'Xưởng dịch vụ đông vào các ngày cuối tuần, nên đặt hẹn trước',
+            'Các đợt xe khuyến mãi số lượng có hạn, quý khách nên liên hệ sớm để giữ màu và số khung ưng ý',
           ],
         },
       },
       {
         type: 'ctaButtonBlock',
         attrs: {
-          buttonText: 'Gặp Gỡ Chuyên Viên Tư Vấn',
+          buttonText: 'Liên Hệ Nhận Báo Giá Tốt Nhất',
           actionType: 'hotline',
-          subtext: 'Nhận báo giá độc quyền và ưu đãi phụ kiện cao cấp trong tháng',
+          subtext: 'Gọi trực tiếp hoặc nhắn tin Zalo để nhận ưu đãi đặc biệt hôm nay',
         },
       },
     ],
