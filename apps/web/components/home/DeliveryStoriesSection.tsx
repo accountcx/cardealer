@@ -255,12 +255,6 @@ export const DeliveryStoriesSection: React.FC<DeliveryStoriesSectionProps> = ({ 
                   )}
                 </div>
               </div>
-
-              <div className="px-6 pb-5 pt-3 text-[12px] font-semibold text-[#0072CE] flex items-center justify-end border-t border-slate-100 mt-2 group-hover:translate-x-0.5 transition-transform">
-                <span className="inline-flex items-center gap-1">
-                  Xem ảnh chi tiết &rarr;
-                </span>
-              </div>
             </div>
           ))}
         </div>
