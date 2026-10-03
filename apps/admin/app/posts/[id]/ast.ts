@@ -151,7 +151,9 @@ export function deserializeTiptapDoc(doc: TiptapDoc): EditorBlock[] {
   if (!doc || !Array.isArray(doc.content)) return [];
   return doc.content.map((node, idx): EditorBlock => {
     const id = String(idx + 1);
-    const text = node.content && node.content[0] ? (node.content[0].text || '') : '';
+    const text = Array.isArray(node.content)
+      ? node.content.map((c: any) => c.text || '').join('')
+      : (node.content && (node.content as any)[0] ? ((node.content as any)[0].text || '') : '');
 
     if (node.type === 'heading') {
       return {
@@ -201,7 +203,7 @@ export function deserializeTiptapDoc(doc: TiptapDoc): EditorBlock[] {
       return {
         id,
         type: 'ctaButton',
-        ctaButtonText: ((node.attrs?.title as string) || 'Gọi Hotline Nhận Báo Giá Ưu Đãi').replace(/^📞\s*/, ''),
+        ctaButtonText: ((node.attrs?.title as string) || 'Gọi Hotline Nhận Báo Giá Ưu Đãi').replace(/^\ud83d\udcde\s*/, ''),
         ctaActionType: 'hotline',
         ctaCustomUrl: '',
         ctaSubtext: (node.attrs?.description as string) || 'Tư vấn tận tâm - Nhận báo giá lăn bánh kèm ưu đãi tiền mặt tốt nhất',
@@ -269,7 +271,7 @@ export function deserializeTiptapDoc(doc: TiptapDoc): EditorBlock[] {
       return {
         id,
         type: 'ctaButton',
-        ctaButtonText: ((node.attrs?.buttonText as string) || 'Gọi Hotline Tư Vấn Ngay').replace(/^📞\s*/, ''),
+        ctaButtonText: ((node.attrs?.buttonText as string) || 'Gọi Hotline Tư Vấn Ngay').replace(/^\ud83d\udcde\s*/, ''),
         ctaActionType: (node.attrs?.actionType as any) || 'hotline',
         ctaCustomUrl: (node.attrs?.customUrl as string) || '',
         ctaPhone: (node.attrs?.phoneNumber as string) || '',
