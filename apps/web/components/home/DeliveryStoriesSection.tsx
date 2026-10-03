@@ -114,34 +114,29 @@ export const DeliveryStoriesSection: React.FC<DeliveryStoriesSectionProps> = ({ 
 
           {/* Controls */}
           {totalSlides > 1 && (
-            <div className="flex items-center gap-3 self-start md:self-end">
-              <div className="text-xs font-semibold text-slate-500 hidden sm:inline-block">
-                <span className="font-bold text-[#0072CE]">{activeIndex + 1}</span> / {totalSlides} khách hàng
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={handlePrev}
-                  className="w-10 h-10 rounded-full border-slate-300 bg-white hover:bg-slate-100 text-slate-700 shadow-xs hover:shadow transition-all active:scale-95"
-                  title="Xem ảnh bàn giao trước"
-                  aria-label="Ảnh trước"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={handleNext}
-                  className="w-10 h-10 rounded-full border-slate-300 bg-white hover:bg-slate-100 text-slate-700 shadow-xs hover:shadow transition-all active:scale-95"
-                  title="Xem ảnh bàn giao tiếp theo"
-                  aria-label="Ảnh tiếp theo"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </Button>
-              </div>
+            <div className="flex items-center gap-2 self-start md:self-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={handlePrev}
+                className="w-10 h-10 rounded-full border-slate-300 bg-white hover:bg-slate-100 text-slate-700 shadow-xs hover:shadow transition-all active:scale-95"
+                title="Xem ảnh bàn giao trước"
+                aria-label="Ảnh trước"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={handleNext}
+                className="w-10 h-10 rounded-full border-slate-300 bg-white hover:bg-slate-100 text-slate-700 shadow-xs hover:shadow transition-all active:scale-95"
+                title="Xem ảnh bàn giao tiếp theo"
+                aria-label="Ảnh tiếp theo"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </Button>
             </div>
           )}
         </div>
@@ -194,9 +189,8 @@ export const DeliveryStoriesSection: React.FC<DeliveryStoriesSectionProps> = ({ 
                 </div>
               </div>
 
-              <div className="px-6 pb-5 pt-1 text-[11px] text-slate-400 font-medium flex items-center justify-between border-t border-slate-100 mt-2">
-                <span>Bàn giao: {story.deliveryDate || 'Tháng 09/2026'}</span>
-                <span className="text-[#0072CE] text-xs font-semibold group-hover:underline inline-flex items-center gap-1">
+              <div className="px-6 pb-5 pt-3 text-[12px] font-semibold text-[#0072CE] flex items-center justify-end border-t border-slate-100 mt-2 group-hover:translate-x-0.5 transition-transform">
+                <span className="inline-flex items-center gap-1">
                   Xem ảnh chi tiết &rarr;
                 </span>
               </div>
@@ -245,7 +239,7 @@ export const DeliveryStoriesSection: React.FC<DeliveryStoriesSectionProps> = ({ 
                 </h4>
                 <p className="text-xs text-slate-400 flex items-center gap-1.5">
                   <MapPin className="w-3.5 h-3.5 text-sky-400" />
-                  <span>{lightboxStory.location}</span> • <span>Bàn giao: {lightboxStory.deliveryDate}</span>
+                  <span>{lightboxStory.location}</span>
                 </p>
               </div>
 
