@@ -10,7 +10,7 @@ import {
   FormMessage,
 } from '@cardealer/ui';
 import { useFormContext } from 'react-hook-form';
-import type { SettingsFormData } from '../page';
+import type { SettingsFormData } from '../types';
 
 // 🧠 Mental Model: Quản lý thông tin định danh thương hiệu, địa chỉ showroom và tích hợp Google Maps.
 // Tiêu thụ FormField từ @cardealer/ui kết nối với useFormContext.

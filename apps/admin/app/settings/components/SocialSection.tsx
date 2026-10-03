@@ -1,5 +1,5 @@
 import React from 'react';
-import { Share2 } from 'lucide-react';
+import { Share2, Globe, Video } from 'lucide-react';
 import {
   Card,
   Input,
@@ -10,9 +10,9 @@ import {
   FormMessage,
 } from '@cardealer/ui';
 import { useFormContext } from 'react-hook-form';
-import type { SettingsFormData } from '../page';
+import type { SettingsFormData } from '../types';
 
-// 🧠 Mental Model: Quản lý liên kết mạng xã hội chính thức của đại lý (Facebook Fanpage, YouTube Channel).
+// 🧠 Mental Model: Quản trị các kênh mạng xã hội chính thức (Facebook Fanpage, Kênh TikTok, Kênh YouTube).
 // Tiêu thụ FormField từ @cardealer/ui kết nối với useFormContext.
 export const SocialSection: React.FC = () => {
   const { control } = useFormContext<SettingsFormData>();
@@ -22,7 +22,7 @@ export const SocialSection: React.FC = () => {
       <div className="flex items-center gap-2.5 mb-5">
         <Share2 size={20} className="text-sky-400" />
         <h2 className="text-base font-bold text-slate-100">
-          Kênh Mạng Xã Hội & Truyền Thông
+          Mạng Xã Hội & Kênh Truyền Thông Chính Thức
         </h2>
       </div>
 
@@ -34,7 +34,12 @@ export const SocialSection: React.FC = () => {
             <FormItem>
               <FormLabel>Fanpage Facebook</FormLabel>
               <FormControl>
-                <Input {...field} type="url" placeholder="https://facebook.com/..." />
+                <Input
+                  {...field}
+                  type="url"
+                  placeholder="https://facebook.com/hyundaivinh..."
+                  leftIcon={<Share2 size={16} />}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -48,7 +53,12 @@ export const SocialSection: React.FC = () => {
             <FormItem>
               <FormLabel>Kênh TikTok</FormLabel>
               <FormControl>
-                <Input {...field} type="url" placeholder="https://tiktok.com/@..." />
+                <Input
+                  {...field}
+                  type="url"
+                  placeholder="https://tiktok.com/@hyundaivinh..."
+                  leftIcon={<Globe size={16} />}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -62,7 +72,12 @@ export const SocialSection: React.FC = () => {
             <FormItem>
               <FormLabel>Kênh YouTube</FormLabel>
               <FormControl>
-                <Input {...field} type="url" placeholder="https://youtube.com/@..." />
+                <Input
+                  {...field}
+                  type="url"
+                  placeholder="https://youtube.com/@hyundaivinh..."
+                  leftIcon={<Video size={16} />}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

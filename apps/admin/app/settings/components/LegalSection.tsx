@@ -1,5 +1,5 @@
 import React from 'react';
-import { Scale, FileText, Award, ShieldCheck } from 'lucide-react';
+import { ShieldAlert, FileText, CheckCircle2 } from 'lucide-react';
 import {
   Card,
   Input,
@@ -10,25 +10,20 @@ import {
   FormMessage,
 } from '@cardealer/ui';
 import { useFormContext } from 'react-hook-form';
-import type { SettingsFormData } from '../page';
+import type { SettingsFormData } from '../types';
 
-// 🧠 Mental Model: Quản trị Thông tin Pháp lý, Giấy phép ĐKKD và Bản quyền Chân trang (Legal & Copyright).
-// Các trường này là TÙY CHỌN (không bắt buộc và không ép fallback), phù hợp cho cả saler cá nhân lẫn showroom doanh nghiệp.
+// 🧠 Mental Model: Quản trị thông tin pháp lý doanh nghiệp, GPKD, bản quyền Footer và logo chứng nhận Bộ Công Thương.
+// Tiêu thụ FormField từ @cardealer/ui kết nối với useFormContext.
 export const LegalSection: React.FC = () => {
   const { control } = useFormContext<SettingsFormData>();
 
   return (
-    <Card variant="glass" className="p-6 bg-slate-900/90 border-slate-800">
+    <Card variant="glass" className="p-6">
       <div className="flex items-center gap-2.5 mb-5">
-        <Scale size={20} className="text-[#0072CE]" />
-        <div>
-          <h2 className="text-base font-bold text-slate-100">
-            Thông Tin Pháp Lý &amp; Bản Quyền Chân Trang (Tùy Chọn)
-          </h2>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Cấu hình tùy chọn dành cho đại lý / doanh nghiệp. Nếu bạn là chuyên viên tư vấn (saler cá nhân), bạn có thể để trống hoàn toàn các trường này.
-          </p>
-        </div>
+        <ShieldAlert size={20} className="text-sky-400" />
+        <h2 className="text-base font-bold text-slate-100">
+          Thông Tin Pháp Lý & Đăng Ký Bộ Công Thương
+        </h2>
       </div>
 
       <div className="space-y-4">
@@ -38,15 +33,12 @@ export const LegalSection: React.FC = () => {
             name="legalBusinessName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-slate-300 font-semibold text-xs sm:text-sm">
-                  Tên Pháp Nhân Doanh Nghiệp (Tùy chọn)
-                </FormLabel>
+                <FormLabel>Tên Doanh Nghiệp Pháp Nhân</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
-                    leftIcon={<FileText size={16} className="text-slate-400" />}
-                    placeholder="Để trống nếu là saler cá nhân..."
-                    className="bg-slate-950/90 border-slate-700/80 text-white placeholder:text-slate-500 focus:border-[#0072CE]"
+                    placeholder="Ví dụ: Công ty Cổ phần Ô tô Hyundai Vinh"
+                    leftIcon={<FileText size={16} />}
                   />
                 </FormControl>
                 <FormMessage />
@@ -59,15 +51,12 @@ export const LegalSection: React.FC = () => {
             name="legalBusinessLicense"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-slate-300 font-semibold text-xs sm:text-sm">
-                  Số Giấy Phép ĐKKD / Mã Số Thuế (Tùy chọn)
-                </FormLabel>
+                <FormLabel>Giấy Phép Kinh Doanh / Mã Số Thuế</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
-                    leftIcon={<ShieldCheck size={16} className="text-slate-400" />}
-                    placeholder="Để trống nếu là saler cá nhân..."
-                    className="bg-slate-950/90 border-slate-700/80 text-white placeholder:text-slate-500 focus:border-[#0072CE]"
+                    placeholder="Ví dụ: GPKD số 2901234567 do Sở KH&ĐT Nghệ An cấp"
+                    leftIcon={<FileText size={16} />}
                   />
                 </FormControl>
                 <FormMessage />
@@ -82,14 +71,12 @@ export const LegalSection: React.FC = () => {
             name="legalCopyrightText"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-slate-300 font-semibold text-xs sm:text-sm">
-                  Dòng Chữ Bản Quyền Footer (Copyright - Tùy chọn)
-                </FormLabel>
+                <FormLabel>Dòng Bản Quyền Chân Trang (Copyright)</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
-                    placeholder="VD: © 2026 Tuấn Hyundai (hoặc để trống)..."
-                    className="bg-slate-950/90 border-slate-700/80 text-white placeholder:text-slate-500 focus:border-[#0072CE]"
+                    placeholder="Ví dụ: © 2026 Xe Hyundai Vinh. All rights reserved."
+                    leftIcon={<FileText size={16} />}
                   />
                 </FormControl>
                 <FormMessage />
@@ -102,16 +89,13 @@ export const LegalSection: React.FC = () => {
             name="legalBctCertificateUrl"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-slate-300 font-semibold text-xs sm:text-sm">
-                  Đường Dẫn Chứng Nhận Bộ Công Thương (Tùy chọn)
-                </FormLabel>
+                <FormLabel>Link Chứng Nhận Bộ Công Thương (Nếu có)</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
                     type="url"
-                    leftIcon={<Award size={16} className="text-slate-400" />}
-                    placeholder="Để trống nếu không có..."
-                    className="bg-slate-950/90 border-slate-700/80 text-white placeholder:text-slate-500 focus:border-[#0072CE]"
+                    placeholder="http://online.gov.vn/Home/WebDetails/..."
+                    leftIcon={<CheckCircle2 size={16} />}
                   />
                 </FormControl>
                 <FormMessage />
