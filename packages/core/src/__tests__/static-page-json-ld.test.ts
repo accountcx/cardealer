@@ -185,4 +185,36 @@ describe('Dynamic Static Page Schema.org & Tiptap AST Extraction', () => {
     expect(sanitized).toContain('\\u003c/script>');
     expect(sanitized).toContain('\\u003cscript>');
   });
+
+  it('8. should extract VideoObject schema dynamically when youtube/tiktok blocks exist in content', () => {
+    const pageWithVideo: StaticPage = {
+      ...basePage,
+      schemaType: 'WebPage',
+      content: {
+        type: 'doc',
+        content: [
+          {
+            type: 'youtubeBlock',
+            attrs: {
+              videoId: 'dQw4w9WgXcQ',
+              videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+              caption: 'Video giới thiệu showroom',
+            },
+          },
+        ],
+      },
+    };
+
+    const schema = generateStaticPageJsonLd(pageWithVideo, {
+      siteUrl: 'https://xehyundaivinh.com',
+      dealer: mockDealer,
+    });
+
+    expect(schema['@type']).toBe('WebPage');
+    expect(Array.isArray(schema.video)).toBe(true);
+    const videos = schema.video as Array<{ '@type': string; name: string; embedUrl: string }>;
+    expect(videos[0]?.['@type']).toBe('VideoObject');
+    expect(videos[0]?.name).toBe('Video giới thiệu showroom');
+    expect(videos[0]?.embedUrl).toContain('dQw4w9WgXcQ');
+  });
 });

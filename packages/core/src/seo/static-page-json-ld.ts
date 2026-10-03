@@ -1,7 +1,12 @@
 import type { StaticPage } from '@cardealer/types';
-import { extractFaqsFromTiptap } from '../tiptap/extractor';
+import { extractFaqsFromTiptap, extractVideosFromTiptap } from '../tiptap/extractor';
 import { extractStepsFromTiptap } from '../tiptap/steps-extractor';
-import { generateAutoDealerSchema, sanitizeCanonicalBaseUrl, type AutoDealerInfo } from './json-ld';
+import {
+  generateAutoDealerSchema,
+  generateVideoSchema,
+  sanitizeCanonicalBaseUrl,
+  type AutoDealerInfo,
+} from './json-ld';
 
 export interface StaticPageJsonLdOptions {
   siteUrl?: string;
@@ -16,8 +21,8 @@ export function sanitizeJsonLd(data: unknown): string {
 
 // WHY: Bộ phân giải dữ liệu có cấu trúc Schema.org động thực thụ cho Trang Tĩnh (@cardealer/core).
 // Khắc phục triệt để các rủi ro Google SEO:
-// 1. Zero-Hardcode: Tuyệt đối không sinh dữ liệu giả lập bịa đặt.
-// 2. Dynamic AST Extraction: Bóc tách FAQs từ faqBlock và Steps từ timelineStep/Headings.
+// 1. Zero-Hardcode & Zero-Fallback: Tuyệt đối không sinh dữ liệu giả lập bịa đặt.
+// 2. Dynamic AST Extraction: Bóc tách FAQs từ faqBlock, Steps từ timelineStep/Headings, Videos từ youtube/tiktok.
 // 3. Fail-Safe Schema Fallback: Nếu bài viết không chứa FAQs hoặc Steps, tự động fallback về WebPage
 //    để tránh Google Search Console phạt lỗi thiếu thuộc tính bắt buộc (Missing required field).
 // 4. Centralized Dealer Info: Nạp thực thể AutoDealer từ System Settings thay vì hardcode chuỗi chết.
@@ -97,6 +102,12 @@ export function generateStaticPageJsonLd(
     default:
       schemaData['@type'] = 'WebPage';
       break;
+  }
+
+  // Tự động bóc tách và nhúng VideoObject nếu trang có khối video YouTube hoặc TikTok
+  const videos = extractVideosFromTiptap(page.content);
+  if (videos.length > 0) {
+    schemaData.video = generateVideoSchema(videos, cleanSiteUrl, page.updatedAt);
   }
 
   return schemaData;

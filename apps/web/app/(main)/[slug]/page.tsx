@@ -88,22 +88,22 @@ export default async function StaticPageCatchAll({ params }: StaticPageCatchAllP
     },
   };
 
-  // Render Template tương ứng với templateType
+  // Render Template tương ứng với templateType, truyền đầy đủ dữ liệu động và cài đặt đại lý
   const renderTemplate = () => {
     switch (page.templateType) {
       case 'PROFILE_SHOWROOM':
-        return <ProfileShowroomTemplate page={page} />;
+        return <ProfileShowroomTemplate page={page} dealerInfo={dealerInfo} settings={settings} />;
       case 'TIMELINE':
-        return <TimelineTemplate page={page} />;
+        return <TimelineTemplate page={page} dealerInfo={dealerInfo} settings={settings} />;
       case 'FINANCE':
-        return <FinanceTemplate page={page} />;
+        return <FinanceTemplate page={page} dealerInfo={dealerInfo} settings={settings} />;
       case 'CONTACT':
-        return <ContactTemplate page={page} dealerInfo={dealerInfo} />;
+        return <ContactTemplate page={page} dealerInfo={dealerInfo} settings={settings} />;
       case 'FAQ':
-        return <FaqTemplate page={page} dealerInfo={dealerInfo} />;
+        return <FaqTemplate page={page} dealerInfo={dealerInfo} settings={settings} />;
       case 'DEFAULT':
       default:
-        return <DefaultTemplate page={page} />;
+        return <DefaultTemplate page={page} dealerInfo={dealerInfo} settings={settings} />;
     }
   };
 

@@ -16,7 +16,7 @@
 | **U-02** | `US-02` | • `packages/types/src/permission.ts`<br/>• `apps/api/src/routes/admin/pages.ts`<br/>• `apps/api/src/routes/admin.ts`<br/>• `apps/api/src/routes/pages.ts`<br/>• `apps/api/src/server.ts` | Xây dựng bộ REST API: Admin CRUD có RBAC, Zod validation, kiểm tra `RESERVED_SLUGS` & Public Query theo slug (`isPublished = true`). Verify 136 tests & typecheck exit code 0. | ✅ VERIFIED |
 | **U-03** | `US-03` | • `apps/admin/app/pages/`<br/>• `apps/admin/components/pages/`<br/>• `apps/admin/app/components/AdminShell.tsx`<br/>• `apps/admin/services/pages.service.ts` | CMS Admin UI: Trang danh sách `/pages`, Form soạn thảo 2 cột (Tiptap AST + Sidebar Google SERP Preview thời gian thực), Menu Admin Navigation. | ✅ VERIFIED |
 | **U-04** | `US-04` | • `apps/web/app/(main)/[slug]/page.tsx`<br/>• `apps/web/components/pages/templates/*`<br/>• `apps/web/components/pages/StaticPageJsonLd.tsx`<br/>• `apps/web/services/pages.service.ts` | Web Storefront: Dynamic Resolver catch-all route `[slug]` với SSR metadata injection & 6 Templates (`DEFAULT`, `PROFILE_SHOWROOM`, `TIMELINE`, `FINANCE`, `CONTACT`, `FAQ`). | ✅ VERIFIED |
-| **U-05** | `Verification` | • `packages/database`, `apps/api`, `apps/admin`, `apps/web` | Kiểm thử toàn diện 14 kịch bản từ `TEST_PLAN.md`, chạy `check-types` và `pnpm test` đạt exit code 0. | ⏸️ QUEUED |
+| **U-05** | `US-05` | • `apps/web/components/pages/PageBlocksRenderer.tsx`<br/>• `apps/web/components/pages/templates/*`<br/>• `apps/web/app/(main)/[slug]/page.tsx`<br/>• `packages/core/src/seo/static-page-json-ld.ts`<br/>• `packages/core/src/__tests__/static-page-json-ld.test.ts` | Loại bỏ 100% hardcoded fallbacks trong toàn bộ 6 templates. Xây dựng Universal Content Blocks Renderer hiển thị đầy đủ 14 khối từ CMS Admin, tích hợp VideoObject Schema. Verify 145 unit tests & typecheck exit code 0. | ✅ VERIFIED |
 
 ---
 
@@ -141,4 +141,30 @@
   * `vitest run`: **17/17 test files passed (144/144 tests passed - Exit Code 0)**.
 * **Trạng thái:** ✅ **HOÀN THÀNH & NGHIỆM THU (VERIFIED)**.
 
-
+### 📍 Unit U-05: Remove Hardcoded Fallbacks & Implement Universal Content Blocks Renderer (US-05)
+* **Thời gian hoàn thành:** 2026-10-03
+* **Tệp tin tác động:**
+  * `apps/web/components/pages/PageBlocksRenderer.tsx` (Tạo mới: Universal Content Blocks Renderer hiển thị 100% 14 khối Tiptap AST từ CMS, 240 dòng)
+  * `apps/web/components/pages/templates/DefaultTemplate.tsx` (Refactor: loại bỏ giới hạn 3 blocks, kết nối PageBlocksRenderer, thêm Empty State chuẩn)
+  * `apps/web/components/pages/templates/FaqTemplate.tsx` (Refactor: loại bỏ hoàn toàn DEFAULT_FALLBACK_FAQS, trích xuất FAQs động từ CMS, render song song các blocks khác, thêm Empty State)
+  * `apps/web/components/pages/templates/TimelineTemplate.tsx` (Refactor: loại bỏ 5 steps hardcode, trích xuất steps động qua extractStepsFromTiptap, render các blocks khác, thêm Empty State)
+  * `apps/web/components/pages/templates/ProfileShowroomTemplate.tsx` (Refactor: loại bỏ fake stats/commitments, lấy thông tin đại lý NAP từ dealerInfo, render nội dung CMS qua PageBlocksRenderer)
+  * `apps/web/components/pages/templates/FinanceTemplate.tsx` (Refactor: loại bỏ fake pillars/checklist, render nội dung tài chính từ CMS qua PageBlocksRenderer, hotline từ dealerInfo)
+  * `apps/web/components/pages/templates/ContactTemplate.tsx` (Refactor: loại bỏ fake email/hours, kết nối email từ admin settings, render thêm page blocks)
+  * `apps/web/app/(main)/[slug]/page.tsx` (Refactor: truyền đầy đủ dealerInfo và settings cho toàn bộ 6 templates)
+  * `packages/core/src/seo/static-page-json-ld.ts` (Nâng cấp: tự động bóc tách VideoObject từ Tiptap AST khi có YouTube/TikTok)
+  * `packages/core/src/__tests__/static-page-json-ld.test.ts` (Bổ sung: test case #8 kiểm tra trích xuất VideoObject động)
+* **Tuân thủ quy tắc Kỹ thuật (`fullstack-dev-executor.xml`):**
+  * `zero_hardcode_zero_fallback`: Loại bỏ 100% dữ liệu mock/fake/fallback giả lập, hiển thị Empty State khi rỗng.
+  * `shared_primitives_first`: Tái sử dụng CalloutBlock, FAQBlock, GalleryBlock, PriceTableBlock, RelatedCarBlock, InlineQuickForm, YoutubeBlock, TikTokBlock từ `@cardealer/ui`.
+  * `unit_size_limit`: 100% tệp tin đều < 250 dòng (dưới ngưỡng 300 dòng).
+  * `mental_model_comments`: Đầy đủ `// WHY:` cho PageBlocksRenderer và 6 Templates.
+  * `100_percent_named_export`: Không sử dụng export default cho component nội bộ.
+* **Bằng chứng nghiệm thu máy (Machine Verification):**
+  * `pnpm --filter @cardealer/web exec tsc --noEmit`: **Exit Code 0** (Zero errors).
+  * `pnpm --filter @cardealer/admin exec tsc --noEmit`: **Exit Code 0**.
+  * `pnpm --filter @cardealer/core exec tsc --noEmit`: **Exit Code 0**.
+  * `pnpm --filter @cardealer/api exec tsc --noEmit`: **Exit Code 0**.
+  * `pnpm --filter @cardealer/ui exec tsc --noEmit`: **Exit Code 0**.
+  * `vitest run`: **17/17 test files passed (145/145 tests passed - Exit Code 0)**.
+* **Trạng thái:** ✅ **HOÀN THÀNH & NGHIỆM THU (VERIFIED)**.
