@@ -1,14 +1,55 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { CalloutBlock } from '@cardealer/ui';
 
 export interface EditorialBlockProps {
   node: {
     type: string;
     attrs?: Record<string, unknown>;
-    content?: Array<{ type: string; text?: string }>;
+    content?: Array<{
+      type: string;
+      text?: string;
+      marks?: Array<{ type: string; attrs?: Record<string, unknown> }>;
+    }>;
   };
+}
+
+// WHY: Render nội dung rich text dạng chuỗi (text, marks: link, bold, italic).
+function renderInlineContent(content?: EditorialBlockProps['node']['content']) {
+  if (!content || !Array.isArray(content)) return null;
+
+  return content.map((child, idx) => {
+    if (!child.text) return null;
+    let nodeElement: React.ReactNode = child.text;
+
+    if (Array.isArray(child.marks) && child.marks.length > 0) {
+      for (const mark of child.marks) {
+        if (mark.type === 'bold') {
+          nodeElement = <strong>{nodeElement}</strong>;
+        } else if (mark.type === 'italic') {
+          nodeElement = <em>{nodeElement}</em>;
+        } else if (mark.type === 'link') {
+          const href = (mark.attrs?.href as string) || '#';
+          const target = (mark.attrs?.target as string) || undefined;
+          const rel = target === '_blank' ? 'noopener noreferrer' : undefined;
+          nodeElement = (
+            <Link
+              href={href}
+              target={target}
+              rel={rel}
+              className="text-blue-600 hover:text-blue-700 underline font-medium transition-colors"
+            >
+              {nodeElement}
+            </Link>
+          );
+        }
+      }
+    }
+
+    return <React.Fragment key={idx}>{nodeElement}</React.Fragment>;
+  });
 }
 
 // WHY: Render các khối văn bản biên tập báo chí & so sánh (Editorial Blocks).
@@ -18,30 +59,30 @@ export function EditorialBlock({ node }: EditorialBlockProps) {
   // 1. Heading (H2, H3)
   if (node.type === 'heading') {
     const level = (node.attrs?.level as number) || 2;
-    const text = node.content?.map((c) => c.text).join('') || '';
-    if (!text) return null;
+    const hasText = node.content?.some((c) => c.text && c.text.trim().length > 0);
+    if (!hasText) return null;
 
     if (level === 2) {
       return (
         <h2 className="text-2xl font-bold text-slate-900 mt-8 mb-4 border-l-4 border-blue-600 pl-3.5 scroll-mt-20">
-          {text}
+          {renderInlineContent(node.content)}
         </h2>
       );
     }
     return (
       <h3 className="text-xl font-bold text-slate-900 mt-6 mb-3 scroll-mt-20">
-        {text}
+        {renderInlineContent(node.content)}
       </h3>
     );
   }
 
   // 2. Paragraph
   if (node.type === 'paragraph') {
-    const text = node.content?.map((c) => c.text).join('') || '';
-    if (!text.trim()) return null;
+    const hasText = node.content?.some((c) => c.text && c.text.trim().length > 0);
+    if (!hasText) return null;
     return (
       <p className="text-slate-700 leading-relaxed text-base my-3">
-        {text}
+        {renderInlineContent(node.content)}
       </p>
     );
   }

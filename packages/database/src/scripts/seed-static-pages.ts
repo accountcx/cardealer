@@ -1,7 +1,8 @@
 import { eq } from 'drizzle-orm';
 import { db, schema, queryClient } from '../client';
 import { privacyPolicyPage, contactUsPage, aboutUsPage } from '../seeds/static-pages-data-1';
-import { installmentGuidePage, warrantyPolicyPage, termsOfServicePage } from '../seeds/static-pages-data-2';
+import { installmentGuidePage, warrantyPolicyPage } from '../seeds/static-pages-data-2';
+import { termsOfServicePage } from '../seeds/static-pages-data-3';
 
 export const CORE_STATIC_PAGES = [
   privacyPolicyPage,

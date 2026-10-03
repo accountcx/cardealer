@@ -104,7 +104,7 @@ export const warrantyPolicyPage: SeedPageItem = {
   templateType: 'DEFAULT',
   schemaType: 'WebPage',
   metaTitle: 'Chính Sách Bảo Hành & Bảo Dưỡng Xe Hyundai Chính Hãng Toàn Quốc',
-  metaDescription: 'Chính sách bảo hành xe Hyundai 5 năm hoặc 100.000km từ TC Motor. Lịch bảo dưỡng định kỳ và quyền lợi dịch vụ tại các đại lý ủy quyền trên toàn quốc.',
+  metaDescription: 'Chính sách bảo hành xe Hyundai 5 năm hoặc 100.000km từ TC Motor. Lịch bảo dưỡng định kỳ, các trường hợp loại trừ và quyền lợi dịch vụ tại đại lý ủy quyền.',
   isPublished: true,
   content: {
     type: 'doc',
@@ -119,7 +119,16 @@ export const warrantyPolicyPage: SeedPageItem = {
         content: [
           {
             type: 'text',
-            text: 'Tất cả các dòng xe du lịch Hyundai do TC Motor phân phối và tôi tư vấn đến tay quý khách đều áp dụng chính sách bảo hành chính hãng tiêu chuẩn: 5 năm hoặc 100.000 km (tùy điều kiện nào đến trước).',
+            text: 'Tất cả ',
+          },
+          {
+            type: 'text',
+            text: 'các dòng xe du lịch Hyundai',
+            marks: [{ type: 'link', attrs: { href: '/xe' } }],
+          },
+          {
+            type: 'text',
+            text: ' do TC Motor phân phối chính hãng và tôi tư vấn đến tay quý khách đều được áp dụng chế độ bảo hành tiêu chuẩn: 5 năm hoặc 100.000 km (tùy điều kiện nào đến trước).',
           },
         ],
       },
@@ -128,7 +137,7 @@ export const warrantyPolicyPage: SeedPageItem = {
         attrs: {
           type: 'success',
           title: 'Phạm Vi Áp Dụng Trên Toàn Quốc',
-          content: 'Chính sách bảo hành chính hãng có giá trị tại tất cả các Đại lý ủy quyền của Hyundai trên toàn quốc. Dù quý khách ở Nghệ An, Hà Tĩnh hay di chuyển bất cứ tỉnh thành nào, quyền lợi bảo hành đều được đảm bảo 100%.',
+          content: 'Chính sách bảo hành chính hãng có giá trị tại tất cả các Đại lý ủy quyền 3S của Hyundai trên toàn quốc. Dù quý khách ở Nghệ An, Hà Tĩnh hay di chuyển công tác tại bất kỳ tỉnh thành nào, quyền lợi bảo hành đều được đảm bảo 100%.',
         },
       },
       {
@@ -141,7 +150,7 @@ export const warrantyPolicyPage: SeedPageItem = {
         content: [
           {
             type: 'text',
-            text: 'Để xe luôn vận hành an toàn và duy trì trọn vẹn quyền lợi bảo hành, quý khách cần thực hiện bảo dưỡng định kỳ theo khuyến cáo của nhà sản xuất:',
+            text: 'Để xe luôn vận hành an toàn và duy trì trọn vẹn hiệu lực bảo hành, quý khách cần thực hiện bảo dưỡng định kỳ theo khuyến nghị từ nhà sản xuất:',
           },
         ],
       },
@@ -149,109 +158,94 @@ export const warrantyPolicyPage: SeedPageItem = {
         type: 'calloutBlock',
         attrs: {
           type: 'info',
-          title: 'Lịch Bảo Dưỡng Định Kỳ Khuyến Nghị',
-          content: '• Mốc 1.000 km đầu tiên: Kiểm tra tổng thể xe miễn phí sau thời gian chạy rà.\n• Mốc 5.000 km / 15.000 km / 25.000 km: Bảo dưỡng cấp nhỏ, thay dầu động cơ, kiểm tra hệ thống phanh.\n• Mốc 10.000 km / 20.000 km: Bảo dưỡng cấp trung bình, thay lọc dầu, vệ sinh điều hòa, đảo lốp.\n• Mốc 40.000 km / 80.000 km: Bảo dưỡng cấp lớn, thay thế các loại dầu hộp số, nước làm mát và kiểm tra toàn diện.',
+          title: 'Lịch Bảo Dưỡng Định Kỳ Tiêu Chuẩn',
+          content: '• Mốc 1.000 km đầu tiên: Kiểm tra tổng thể xe miễn phí sau thời gian chạy rà ban đầu.\n• Mốc 5.000 km / 15.000 km / 25.000 km: Bảo dưỡng cấp nhỏ, thay dầu động cơ, kiểm tra lọc gió và hệ thống phanh.\n• Mốc 10.000 km / 20.000 km: Bảo dưỡng cấp trung bình, thay lọc dầu, vệ sinh điều hòa, đảo lốp xe.\n• Mốc 40.000 km / 80.000 km: Bảo dưỡng cấp lớn, thay thế các loại dầu hộp số, nước làm mát, dầu phanh và kiểm tra toàn diện.',
         },
       },
       {
         type: 'heading',
         attrs: { level: 2 },
-        content: [{ type: 'text', text: '3. Sự Đồng Hành Của Chuyên Viên' }],
+        content: [{ type: 'text', text: '3. Thông Tin Loại Trừ: Các Trường Hợp Không Được Bảo Hành' }],
       },
       {
         type: 'paragraph',
         content: [
           {
             type: 'text',
-            text: 'Trong suốt quá trình sử dụng xe, tôi sẽ trực tiếp hỗ trợ quý khách: Nhắc lịch bảo dưỡng định kỳ, đặt hẹn trước với xưởng dịch vụ Hyundai Vinh để không phải chờ đợi, và hỗ trợ hướng dẫn quy trình bảo hiểm khi có sự cố.',
+            text: 'Nhằm đảm bảo tính minh bạch về mặt pháp lý và tránh các tranh chấp không đáng có, chính sách bảo hành chính hãng sẽ không áp dụng chi trả cho các trường hợp sau:',
+          },
+        ],
+      },
+      {
+        type: 'faqBlock',
+        attrs: {
+          questions: [
+            {
+              question: 'Trường hợp nào xe bị từ chối bảo hành do ngoại lực và sử dụng sai mục đích?',
+              answer: 'Hãng từ chối bảo hành đối với: (1) Hư hỏng do tai nạn giao thông, va chạm, ngập nước (thủy kích), hỏa hoạn hoặc thiên tai; (2) Sử dụng xe sai mục đích thiết kế (đua xe, chở quá tải trọng, vượt địa hình khắc nghiệt); (3) Sử dụng nhiên liệu, dầu động cơ hoặc dung dịch làm mát không đúng tiêu chuẩn khuyến cáo của Hyundai.',
+            },
+            {
+              question: 'Tự ý độ chế, can thiệp thiết bị điện hoặc phần mềm có bị mất bảo hành không?',
+              answer: 'Có. Việc tự ý can thiệp thay đổi kết cấu cơ khí, độ chế hệ thống điện không chính hãng, nâng cấp chip phần mềm ECM hoặc lắp đặt các phụ kiện không rõ nguồn gốc gây chập cháy hay quá tải sẽ làm mất quyền lợi bảo hành đối với các cụm chi tiết liên quan.',
+            },
+            {
+              question: 'Các chi tiết hao mòn tự nhiên có được bảo hành miễn phí không?',
+              answer: 'Các bộ phận hao mòn tự nhiên theo thời gian sử dụng như: lưỡi gạt mưa, má phanh, đĩa côn, lốp xe, bóng đèn halogen, cầu chì, và các loại dung dịch tiêu hao sẽ không thuộc phạm vi bảo hành miễn phí (trừ trường hợp phát hiện lỗi vật liệu chế tạo từ nhà máy).',
+            },
+            {
+              question: 'Có được bảo hành nếu sửa chữa tại garage bên ngoài không thuộc ủy quyền?',
+              answer: 'Nếu xe gặp sự cố bắt nguồn trực tiếp từ việc sửa chữa, thay thế phụ tùng giả mạo tại các cơ sở garage không được Hyundai ủy quyền, hãng sẽ từ chối bảo hành cho hạng mục hư hỏng phát sinh đó.',
+            },
+          ],
+        },
+      },
+      {
+        type: 'heading',
+        attrs: { level: 2 },
+        content: [{ type: 'text', text: '4. Sự Đồng Hành & Liên Kết Tiện Ích Cho Khách Hàng' }],
+      },
+      {
+        type: 'paragraph',
+        content: [
+          {
+            type: 'text',
+            text: 'Trong suốt vòng đời sử dụng xe, tôi luôn sẵn sàng hỗ trợ quý khách: Nhắc lịch bảo dưỡng định kỳ, hỗ trợ đặt hẹn ưu tiên tại xưởng dịch vụ ủy quyền và hướng dẫn quy trình thủ tục bảo hiểm khi có sự cố. Quý khách cũng có thể xem thêm ',
+          },
+          {
+            type: 'text',
+            text: 'dự toán giá lăn bánh chi tiết',
+            marks: [{ type: 'link', attrs: { href: '/gia-lan-banh' } }],
+          },
+          {
+            type: 'text',
+            text: ' hoặc tham khảo ',
+          },
+          {
+            type: 'text',
+            text: 'hướng dẫn thủ tục mua xe trả góp',
+            marks: [{ type: 'link', attrs: { href: '/thu-tuc-mua-xe-tra-gop' } }],
+          },
+          {
+            type: 'text',
+            text: '. Nếu có bất kỳ thắc mắc nào, hãy ',
+          },
+          {
+            type: 'text',
+            text: 'liên hệ trực tiếp với tôi',
+            marks: [{ type: 'link', attrs: { href: '/lien-he' } }],
+          },
+          {
+            type: 'text',
+            text: ' để được tư vấn chu đáo nhất.',
           },
         ],
       },
       {
         type: 'ctaButtonBlock',
         attrs: {
-          buttonText: 'Hỗ Trợ Đặt Hẹn Bảo Dưỡng',
+          buttonText: 'Hỗ Trợ Đặt Hẹn Bảo Dưỡng Nhanh',
           actionType: 'hotline',
           subtext: 'Chuyên viên hỗ trợ kết nối trực tiếp xưởng dịch vụ ủy quyền',
-        },
-      },
-    ],
-  },
-};
-
-// 6. Điều khoản sử dụng (Terms of Service) - Tuyên bố pháp lý & Saler Disclaimer
-export const termsOfServicePage: SeedPageItem = {
-  title: 'Điều Khoản Sử Dụng',
-  slug: 'dieu-khoan-su-dung',
-  templateType: 'DEFAULT',
-  schemaType: 'WebPage',
-  metaTitle: 'Điều Khoản Sử Dụng Website & Tuyên Bố Pháp Lý | Chuyên Viên Hyundai',
-  metaDescription: 'Điều khoản sử dụng website, bản quyền nội dung và tuyên bố miễn trừ trách nhiệm của chuyên viên tư vấn bán hàng đại lý Hyundai Vinh.',
-  isPublished: true,
-  content: {
-    type: 'doc',
-    content: [
-      {
-        type: 'heading',
-        attrs: { level: 2 },
-        content: [{ type: 'text', text: '1. Mục Đích Hoạt Động Của Website' }],
-      },
-      {
-        type: 'paragraph',
-        content: [
-          {
-            type: 'text',
-            text: 'Website này là kênh thông tin cá nhân do Chuyên viên tư vấn kinh doanh tại Đại lý Hyundai Vinh xây dựng và quản lý, nhằm mục đích cung cấp thông tin sản phẩm, chia sẻ kinh nghiệm sử dụng xe và hỗ trợ báo giá tư vấn cho khách hàng quan tâm đến các dòng xe Hyundai.',
-          },
-        ],
-      },
-      {
-        type: 'heading',
-        attrs: { level: 2 },
-        content: [{ type: 'text', text: '2. Tuyên Bố Miễn Trừ Trách Nhiệm' }],
-      },
-      {
-        type: 'calloutBlock',
-        attrs: {
-          type: 'warning',
-          title: 'Tính Chất Tham Khảo Của Bảng Giá & Khuyến Mãi',
-          content: 'Bảng giá niêm yết, dự toán chi phí lăn bánh, thông số kỹ thuật và các chương trình khuyến mãi trên website chỉ mang tính chất tham khảo tại thời điểm biên soạn và có thể thay đổi bởi Hyundai Thành Công hoặc Đại lý mà không cần báo trước.',
-        },
-      },
-      {
-        type: 'heading',
-        attrs: { level: 2 },
-        content: [{ type: 'text', text: '3. Xác Nhận Giá Trị Thực Tế & Ký Kết Hợp Đồng' }],
-      },
-      {
-        type: 'paragraph',
-        content: [
-          {
-            type: 'text',
-            text: 'Tôi là chuyên viên tư vấn đại diện giới thiệu và hỗ trợ bán hàng. Mọi giao dịch đặt cọc, thanh toán và ký kết hợp đồng mua bán xe chỉ có giá trị pháp lý khi khách hàng thực hiện trực tiếp tại Showroom Hyundai Vinh và có hợp đồng đóng dấu mộc đỏ pháp nhân của Công ty.',
-          },
-        ],
-      },
-      {
-        type: 'heading',
-        attrs: { level: 2 },
-        content: [{ type: 'text', text: '4. Bản Quyền Nội Dung & Hình Ảnh' }],
-      },
-      {
-        type: 'paragraph',
-        content: [
-          {
-            type: 'text',
-            text: 'Các bài viết phân tích, hình ảnh chụp thực tế bàn giao xe và video do tôi tự sản xuất thuộc bản quyền của website này. Logo và thương hiệu Hyundai thuộc bản quyền của Hyundai Motor Company và TC Motor.',
-          },
-        ],
-      },
-      {
-        type: 'ctaButtonBlock',
-        attrs: {
-          buttonText: 'Liên Hệ Trực Tiếp Để Có Báo Giá Chuẩn Xác',
-          actionType: 'hotline',
-          subtext: 'Hẹn lịch tư vấn và xem xe trực tiếp tại showroom Hyundai Vinh',
         },
       },
     ],
