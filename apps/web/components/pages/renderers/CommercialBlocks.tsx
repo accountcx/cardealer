@@ -81,7 +81,7 @@ export function CommercialBlock({ node, cleanHotline }: CommercialBlockProps) {
         >
           {buttonText}
         </a>
-        {subtext && <p className="mt-2 text-xs text-slate-500">{subtext}</p>}
+        {subtext && <p className="mt-2 text-xs text-slate-500 whitespace-pre-line">{subtext}</p>}
       </div>
     );
   }

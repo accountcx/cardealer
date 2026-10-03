@@ -199,7 +199,7 @@ export function InlineQuickForm({
           <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
             {headline}
           </h3>
-          <p className="mt-1.5 text-xs sm:text-sm text-slate-300 leading-relaxed max-w-md mx-auto">
+          <p className="mt-1.5 text-xs sm:text-sm text-slate-300 leading-relaxed max-w-md mx-auto whitespace-pre-line">
             {subheadline}
           </p>
         </div>

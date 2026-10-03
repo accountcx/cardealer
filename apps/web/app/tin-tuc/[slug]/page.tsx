@@ -205,7 +205,7 @@ function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): string {
           return `<li>${innerHtml}</li>`;
         }
         if (node.type === 'blockquote') {
-          return `<blockquote class="border-l-4 border-slate-300 pl-4 italic my-4 text-slate-600">${innerHtml}</blockquote>`;
+          return `<blockquote class="border-l-4 border-slate-300 pl-4 italic my-4 text-slate-600 whitespace-pre-line">${innerHtml}</blockquote>`;
         }
         if (node.type === 'image' || node.type === 'imageBlock' || node.type === 'singleImage') {
           const src = node.attrs?.src || node.attrs?.url || '';
@@ -338,14 +338,14 @@ function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): string {
           }
 
           // Loại bỏ icon call theo yêu cầu người dùng, làm sạch nếu text có gắn kèm emoji 📞
-          const cleanButtonText = buttonText.replace(/^📞\s*/, '');
+          const cleanButtonText = buttonText.replace(/^\📞\s*/, '');
 
           return `
             <div class="my-8 mx-auto max-w-lg text-center not-prose p-5 rounded-2xl bg-slate-50 border border-slate-200/80 shadow-xs">
               <a href="${href}" ${targetAttr} ${onClickAttr} class="inline-flex items-center justify-center gap-2.5 w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-sm sm:text-base shadow-lg transition-all transform hover:scale-[1.02] active:scale-95 ${btnColor}">
                 <span>${cleanButtonText}</span>
               </a>
-              ${subtext ? `<p class="mt-2 text-xs text-slate-500 font-medium">${subtext}</p>` : ''}
+              ${subtext ? `<p class="mt-2 text-xs text-slate-500 font-medium whitespace-pre-line">${subtext}</p>` : ''}
             </div>`;
         }
         if (node.type === 'prosCons' || node.type === 'prosConsBlock') {
@@ -359,7 +359,7 @@ function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): string {
               (p) => `
             <li class="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700">
               <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs shrink-0 font-bold mt-0.5">✓</span>
-              <span class="leading-relaxed font-medium">${p}</span>
+              <span class="leading-relaxed font-medium whitespace-pre-line">${p}</span>
             </li>`
             )
             .join('');
@@ -370,7 +370,7 @@ function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): string {
               (c) => `
             <li class="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700">
               <span class="w-5 h-5 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center text-xs shrink-0 font-bold mt-0.5">✕</span>
-              <span class="leading-relaxed font-medium">${c}</span>
+              <span class="leading-relaxed font-medium whitespace-pre-line">${c}</span>
             </li>`
             )
             .join('');
@@ -411,7 +411,7 @@ function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): string {
                 <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs shrink-0 font-bold">${i + 1}</span>
                 ${q.question || 'Câu hỏi'}
               </div>
-              <p class="text-slate-600 text-sm pl-8 leading-relaxed">${q.answer || 'Nội dung câu trả lời đang được cập nhật...'}</p>
+              <p class="text-slate-600 text-sm pl-8 leading-relaxed whitespace-pre-line">${q.answer || 'Nội dung câu trả lời đang được cập nhật...'}</p>
             </div>`
             )
             .join('');
@@ -580,7 +580,7 @@ function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): string {
                   ⚡ Ưu Đãi Độc Quyền Showroom
                 </span>
                 <h3 class="text-2xl font-bold">${headline}</h3>
-                <p class="text-sm text-blue-100 leading-relaxed">${subheadline}</p>
+                <p class="text-sm text-blue-100 leading-relaxed whitespace-pre-line">${subheadline}</p>
                 <form class="mt-6 flex flex-col sm:flex-row gap-3 justify-center items-center max-w-md mx-auto" onsubmit="event.preventDefault(); alert('Cảm ơn bạn! Chuyên viên Hyundai Vinh sẽ liên hệ qua Zalo/SĐT trong 5 phút.');">
                   <input type="tel" placeholder="Nhập số điện thoại Zalo..." required class="w-full sm:flex-1 px-4 py-3 rounded-xl bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder:text-slate-400 font-medium" />
                   <button type="submit" class="w-full sm:w-auto px-6 py-3 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-sm rounded-xl shadow-lg transition-all shrink-0">
@@ -593,7 +593,7 @@ function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): string {
         }
         if (node.type === 'gatedContent') {
           // Legacy gatedContent → hiển thị dưới dạng nút CTA đơn giản (lấy Hotline từ Admin)
-          const ctaTitle = (node.attrs?.title || 'Nhận Báo Giá Lăn Bánh Ưu Đãi').replace(/^📞\s*/, '');
+          const ctaTitle = (node.attrs?.title || 'Nhận Báo Giá Lăn Bánh Ưu Đãi').replace(/^\📞\s*/, '');
           return `
             <div class="my-8 mx-auto max-w-lg text-center not-prose p-5 rounded-2xl bg-slate-50 border border-slate-200/80 shadow-xs">
               <a href="tel:${defaultHotline}" class="inline-flex items-center justify-center gap-2.5 w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-sm sm:text-base shadow-lg transition-all transform hover:scale-[1.02] active:scale-95 bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-red-500/25">
@@ -940,7 +940,7 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
 
             {/* Sapo Tóm Tắt Mở Đầu */}
             {post.tomTat && (
-              <div className="p-4 sm:p-5 rounded-xl bg-blue-50/70 border-l-4 border-blue-600 text-slate-800 text-base sm:text-lg font-medium leading-relaxed mb-8">
+              <div className="p-4 sm:p-5 rounded-xl bg-blue-50/70 border-l-4 border-blue-600 text-slate-800 text-base sm:text-lg font-medium leading-relaxed mb-8 whitespace-pre-line">
                 {post.tomTat}
               </div>
             )}

@@ -53,7 +53,7 @@ function renderInlineContent(content?: EditorialBlockProps['node']['content']) {
 }
 
 // WHY: Render các khối văn bản biên tập báo chí & so sánh (Editorial Blocks).
-// Tách từ PageBlocksRenderer để tuân thủ nguyên tắc unit_size_limit (< 300 dòng).
+// Tách từ PageBlocksRenderer nhằm tuân thủ nguyên tắc unit_size_limit (< 300 dòng).
 // 100% Named Export, không dùng export default.
 export function EditorialBlock({ node }: EditorialBlockProps) {
   // 1. Heading (H2, H3)
@@ -116,21 +116,21 @@ export function EditorialBlock({ node }: EditorialBlockProps) {
             <ul className="space-y-2 text-xs text-slate-700">
               {pros.map((p, i) => (
                 <li key={i} className="flex items-start gap-2">
-                  <span className="text-emerald-600 font-bold">✓</span>
-                  <span>{p}</span>
+                  <span className="text-emerald-600 font-bold shrink-0 mt-0.5">✓</span>
+                  <span className="leading-relaxed whitespace-pre-line">{p}</span>
                 </li>
               ))}
             </ul>
           </div>
           <div className="p-5 rounded-2xl bg-rose-50/60 border border-rose-200">
             <h4 className="text-xs font-bold text-rose-800 uppercase tracking-wider mb-3">
-              ✗ Nhược Điểm ({cons.length})
+              ✕ Nhược Điểm ({cons.length})
             </h4>
             <ul className="space-y-2 text-xs text-slate-700">
               {cons.map((c, i) => (
                 <li key={i} className="flex items-start gap-2">
-                  <span className="text-rose-600 font-bold">✗</span>
-                  <span>{c}</span>
+                  <span className="text-rose-600 font-bold shrink-0 mt-0.5">✕</span>
+                  <span className="leading-relaxed whitespace-pre-line">{c}</span>
                 </li>
               ))}
             </ul>

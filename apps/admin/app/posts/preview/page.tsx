@@ -14,14 +14,10 @@
 // 4. E-E-A-T & Inbound Attribution: Hiển thị tác giả chuyên gia (author box), chuyên mục, thời gian đọc, ngày đăng.
 // 5. 100% Named Export song hành cùng Default Export cho Next.js App Router page.
 
-import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
-  Eye,
-  Edit,
-  Copy,
-  Check,
   ChevronLeft,
   Smartphone,
   Tablet,
@@ -32,11 +28,11 @@ import {
   BookOpen,
   User,
   Calendar,
-  Share2,
   Lock,
   Tag,
-  Sparkles,
-  ExternalLink,
+  Copy,
+  Check,
+  Edit,
 } from 'lucide-react';
 import {
   Button,
@@ -390,7 +386,7 @@ function PreviewContent() {
 
             {/* Sapo / Meta Description Lead Paragraph */}
             {post.tomTat && (
-              <p className="text-base sm:text-lg font-medium text-slate-300 leading-relaxed italic bg-white/[0.02] p-4 rounded-xl border-l-4 border-cyan-500">
+              <p className="text-base sm:text-lg font-medium text-slate-300 leading-relaxed italic bg-white/[0.02] p-4 rounded-xl border-l-4 border-cyan-500 whitespace-pre-line">
                 {post.tomTat}
               </p>
             )}
@@ -539,7 +535,7 @@ function PreviewContent() {
                       >
                         <span>{buttonText}</span>
                       </a>
-                      {subtext && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 font-medium">{subtext}</p>}
+                      {subtext && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-pre-line">{subtext}</p>}
                     </div>
                   );
                 }
