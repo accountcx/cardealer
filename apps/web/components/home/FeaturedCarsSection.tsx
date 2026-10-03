@@ -33,7 +33,7 @@ const ShowcaseCardSkeleton: React.FC = () => (
 
 // 🧠 Mental Model: Phân khu 4 - Featured Cars Showcase (Dòng Xe Bán Chạy).
 // 1. Kết nối với HomeFilterContext: Tự động cập nhật danh sách xe tức thì khi chọn chip ở Phân Khu 2.
-// 2. Hiệu ứng skeleton loading mượt mà khi lọc thay vì phải tải lại trang.
+// 2. Tuân thủ giới hạn config.maxDisplay khi ở chế độ xem mặc định (không lọc).
 // 3. Graceful Degradation: Tự động ẩn nếu bị tắt trong admin portal.
 export const FeaturedCarsSection: React.FC<FeaturedCarsSectionProps> = ({ config, cars }) => {
   const filterContext = useHomeFilter();
@@ -44,9 +44,15 @@ export const FeaturedCarsSection: React.FC<FeaturedCarsSectionProps> = ({ config
 
   const isFiltering = filterContext ? filterContext.isFiltering : false;
   const isFiltered = filterContext ? filterContext.isFiltered : false;
-  const displayCars = filterContext
+  const maxDisplay = config.maxDisplay ?? 6;
+
+  const rawDisplayCars = filterContext
     ? (filterContext.displayCars as Car[])
-    : (cars || []).slice(0, config.maxDisplay || 6);
+    : (cars || []);
+
+  const displayCars = isFiltered
+    ? rawDisplayCars
+    : rawDisplayCars.slice(0, maxDisplay);
 
   // Không hiển thị nếu ban đầu không có xe nào và không có bộ lọc
   if (!isFiltered && (!cars || cars.length === 0)) {

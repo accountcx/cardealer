@@ -70,6 +70,8 @@ export default async function HomePage() {
 
   const hotline = settings.contact.hotlineKinhDoanh || settings.site.phone || '0981.234.567';
   const zalo = settings.contact.zaloNumber || hotline;
+  const maxFeaturedDisplay = homepage.featuredCars?.maxDisplay ?? 6;
+  const limitedFeaturedCars = (featuredCars || []).slice(0, maxFeaturedDisplay);
 
   return (
     <div className="w-full bg-white text-slate-900 selection:bg-[#0072CE] selection:text-white min-h-screen">
@@ -82,7 +84,7 @@ export default async function HomePage() {
       <React.Suspense fallback={null}>
         <HomeFilterProvider
           allCars={allCars}
-          defaultFeaturedCars={featuredCars}
+          defaultFeaturedCars={limitedFeaturedCars}
           priceRanges={homepage.leadFilter.priceRanges}
           bodyStyles={homepage.leadFilter.bodyStyles}
         >
@@ -95,7 +97,7 @@ export default async function HomePage() {
           {/* Vị trí 3: Danh Sách Xe Bán Chạy (Hiển thị ngay dưới Filter để khách lọc xong thấy xe ngay) */}
           <FeaturedCarsSection
             config={homepage.featuredCars}
-            cars={featuredCars}
+            cars={limitedFeaturedCars}
           />
 
           {/* Vị trí 4: BANNER MỒI CÂU DẪN VỀ TRANG TÍNH GIÁ (Lead Magnet Banner) */}
