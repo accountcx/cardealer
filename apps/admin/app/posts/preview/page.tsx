@@ -450,7 +450,7 @@ function PreviewContent() {
                   const text = renderNodeText(node);
                   if (!text.trim()) return null;
                   return (
-                    <p key={idx} className="text-slate-300 text-base leading-relaxed my-4">
+                    <p key={idx} className="text-slate-300 text-base leading-relaxed my-4 whitespace-pre-line">
                       {text}
                     </p>
                   );

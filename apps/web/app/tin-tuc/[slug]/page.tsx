@@ -135,7 +135,7 @@ function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): string {
         const innerHtml = node.content && Array.isArray(node.content) ? renderNodes(node.content) : '';
 
         if (node.type === 'paragraph') {
-          return `<p class="my-4 text-slate-700 leading-relaxed">${innerHtml || '<br/>'}</p>`;
+          return `<p class="my-4 text-slate-700 leading-relaxed whitespace-pre-line">${innerHtml || '<br/>'}</p>`;
         }
         if (node.type === 'heading') {
           const level = node.attrs?.level || 2;

@@ -81,7 +81,7 @@ export function EditorialBlock({ node }: EditorialBlockProps) {
     const hasText = node.content?.some((c) => c.text && c.text.trim().length > 0);
     if (!hasText) return null;
     return (
-      <p className="text-slate-700 leading-relaxed text-base my-3">
+      <p className="text-slate-700 leading-relaxed text-base my-3 whitespace-pre-line">
         {renderInlineContent(node.content)}
       </p>
     );
