@@ -37,6 +37,7 @@ export default function SettingsPage() {
     defaultValues: {
       showroomName: '',
       sellerName: '',
+      sellerAvatar: '',
       diaChi: '',
       googleMapsUrl: '',
       hotlineKinhDoanh: '',
@@ -74,6 +75,7 @@ export default function SettingsPage() {
         ...baseContact,
         showroomName: data.showroomName,
         sellerName: data.sellerName || baseContact.sellerName || '',
+        sellerAvatar: data.sellerAvatar || baseContact.sellerAvatar || '',
         diaChi: data.diaChi,
         googleMapsUrl: data.googleMapsUrl,
         hotlineKinhDoanh: data.hotlineKinhDoanh,

@@ -71,6 +71,7 @@ export function useSettingsLoader(
         form.reset({
           showroomName: (showroomData.showroomName as string) || parsedContact?.showroomName || '',
           sellerName: (showroomData.sellerName as string) || parsedContact?.sellerName || '',
+          sellerAvatar: (showroomData.sellerAvatar as string) || parsedContact?.sellerAvatar || '',
           diaChi: (showroomData.diaChi as string) || parsedContact?.diaChi || '',
           googleMapsUrl: (showroomData.googleMapsUrl as string) || parsedContact?.googleMapsUrl || '',
           hotlineKinhDoanh: (showroomData.hotlineKinhDoanh as string) || parsedContact?.hotlineKinhDoanh || '',

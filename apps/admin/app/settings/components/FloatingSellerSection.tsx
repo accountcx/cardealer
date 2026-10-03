@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Save, Check, UserCheck, ShieldCheck, PhoneCall, MessageCircle, Eye } from 'lucide-react';
+import { Save, Check, UserCheck, ShieldCheck, PhoneCall, MessageCircle, Eye, Image as ImageIcon } from 'lucide-react';
 import { Button, Card, Input, Switch, Textarea } from '@cardealer/ui';
 import type { FloatingSellerSettings } from '@cardealer/types';
 import { settingsService } from '../../../services/settings.service';
+import { MediaPickerModal } from '../../components/MediaPickerModal';
 
 export interface FloatingSellerSectionProps {
   initialData: FloatingSellerSettings;
@@ -18,6 +19,7 @@ export const FloatingSellerSection = ({ initialData }: FloatingSellerSectionProp
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
 
   const handleChange = (field: keyof FloatingSellerSettings, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -112,12 +114,28 @@ export const FloatingSellerSection = ({ initialData }: FloatingSellerSectionProp
                 placeholder="https://zalo.me/0981234567"
               />
 
-              <Input
-                label="Đường Dẫn Ảnh Avatar (WebP/JPG)"
-                value={formData.sellerAvatar}
-                onChange={(e) => handleChange('sellerAvatar', e.target.value)}
-                placeholder="/images/avatars/sale-tuan.webp"
-              />
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Ảnh Đại Diện Avatar (WebP/JPG)
+                </label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={formData.sellerAvatar}
+                    onChange={(e) => handleChange('sellerAvatar', e.target.value)}
+                    placeholder="/images/avatars/sale-tuan.webp"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setIsMediaPickerOpen(true)}
+                    className="shrink-0 flex items-center gap-1.5 text-xs h-10 px-3 border-white/10 hover:border-sky-500/40 cursor-pointer"
+                  >
+                    <ImageIcon size={14} className="text-sky-400" />
+                    <span>Chọn Ảnh</span>
+                  </Button>
+                </div>
+              </div>
             </div>
 
             <Input
@@ -149,8 +167,12 @@ export const FloatingSellerSection = ({ initialData }: FloatingSellerSectionProp
               {/* Preview Card */}
               <div className="w-full bg-slate-950 rounded-2xl shadow-2xl border border-slate-800 p-4 space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="relative w-11 h-11 rounded-full bg-slate-800 overflow-hidden border-2 border-[#0072CE] flex items-center justify-center font-bold text-xs text-slate-300">
-                    AVATAR
+                  <div className="relative w-11 h-11 rounded-full bg-slate-800 overflow-hidden border-2 border-[#0072CE] flex items-center justify-center font-bold text-xs text-slate-300 shrink-0">
+                    {formData.sellerAvatar ? (
+                      <img src={formData.sellerAvatar} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      'AVATAR'
+                    )}
                   </div>
                   <div>
                     <div className="font-bold text-white text-sm flex items-center gap-1">
@@ -187,6 +209,19 @@ export const FloatingSellerSection = ({ initialData }: FloatingSellerSectionProp
           </div>
         </div>
       </div>
+
+      {/* Media Picker Modal */}
+      <MediaPickerModal
+        isOpen={isMediaPickerOpen}
+        onClose={() => setIsMediaPickerOpen(false)}
+        mode="single"
+        title="Chọn Ảnh Avatar Chuyên Viên"
+        onSelect={(items) => {
+          if (items.length > 0) {
+            handleChange('sellerAvatar', items[0].url);
+          }
+        }}
+      />
     </form>
   );
 };

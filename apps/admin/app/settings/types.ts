@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const settingsSchema = z.object({
   showroomName: z.string().trim().min(1, 'Vui lòng nhập tên showroom'),
   sellerName: z.string().optional(),
+  sellerAvatar: z.string().optional(),
   diaChi: z.string().trim().min(1, 'Vui lòng nhập địa chỉ showroom'),
   googleMapsUrl: z.string(),
   hotlineKinhDoanh: z.string().trim().min(1, 'Vui lòng nhập hotline bán hàng'),
