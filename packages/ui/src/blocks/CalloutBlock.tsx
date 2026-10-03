@@ -7,6 +7,7 @@ import { cn } from '../lib/utils';
 // 2. Zero Ad-hoc Styling: Phối hợp hài hòa cùng Design Tokens hệ thống (Dark mode Slate, Brand colors).
 // 3. WCAG AAA & A11y: Đạt độ tương phản màu chuẩn (>= 4.5:1), gán ARIA role (alert/note), kèm motion-reduce:transition-none.
 // 4. Robust Fallback: Xử lý an toàn khi content/children rỗng.
+// 5. Line Breaks Support: Áp dụng `whitespace-pre-line` để tự động xuống dòng chính xác theo cấu hình Admin.
 
 export type CalloutType = 'info' | 'warning' | 'success' | 'note';
 
@@ -161,7 +162,7 @@ export function CalloutBlock({
           </h4>
         )}
         {bodyContent && (
-          <div className={cn('text-sm leading-relaxed', currentVariant.contentColor)}>
+          <div className={cn('text-sm leading-relaxed whitespace-pre-line', currentVariant.contentColor)}>
             {bodyContent}
           </div>
         )}

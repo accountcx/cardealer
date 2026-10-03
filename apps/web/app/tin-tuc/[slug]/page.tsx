@@ -190,7 +190,7 @@ function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): string {
                 <div class="mt-0.5 shrink-0">${iconSvg}</div>
                 <div class="flex-1 space-y-1.5">
                   ${titleHtml}
-                  ${content ? `<div class="text-sm leading-relaxed ${contentColor}">${content}</div>` : ''}
+                  ${content ? `<div class="text-sm leading-relaxed whitespace-pre-line ${contentColor}">${content}</div>` : ''}
                 </div>
               </div>
             </aside>`;
