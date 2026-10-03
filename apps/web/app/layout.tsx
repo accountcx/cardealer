@@ -59,7 +59,7 @@ export default async function RootLayout({
         <AutoDealerJsonLd contact={settings.contact} site={settings.site} />
 
         {/* Sales Consultant Person JSON-LD Schema */}
-        <SalerJsonLd contact={settings.contact} site={settings.site} />
+        <SalerJsonLd contact={settings.contact} site={settings.site} floatingSeller={settings.floatingSeller} />
       </body>
     </html>
   );

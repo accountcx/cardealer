@@ -1,39 +1,43 @@
-import type { ContactSettings, SiteSettings } from '@cardealer/types';
+import type { ContactSettings, SiteSettings, FloatingSellerSettings } from '@cardealer/types';
 import { getSiteUrl } from '@cardealer/env';
 
 export interface SalerJsonLdProps {
   contact: ContactSettings;
   site: SiteSettings;
+  floatingSeller?: FloatingSellerSettings;
 }
 
-export const SalerJsonLd = ({ contact, site }: SalerJsonLdProps) => {
+// 🧠 Mental Model: Schema.org Person Generator đồng bộ 100% từ cấu hình Admin Portal.
+// Ưu tiên đọc tên và thông tin từ contact.sellerName và floatingSeller.sellerName thực tế trong DB.
+export const SalerJsonLd = ({ contact, site, floatingSeller }: SalerJsonLdProps) => {
   const siteUrl = site.siteUrl || getSiteUrl();
-  const fullAvatarUrl = (site.defaultImage || '/images/avatar.jpg').startsWith('http')
-    ? site.defaultImage
-    : `${siteUrl}${site.defaultImage || '/images/avatar.jpg'}`;
+  const sellerName = contact.sellerName || floatingSeller?.sellerName || contact.salerName || 'Chuyên Viên Tư Vấn Hyundai';
+  const rawAvatar = contact.sellerAvatar || floatingSeller?.sellerAvatar || site.defaultImage || '/images/avatar.jpg';
+  const fullAvatarUrl = rawAvatar.startsWith('http') ? rawAvatar : `${siteUrl}${rawAvatar}`;
+  const sellerPhone = contact.sellerPhone || floatingSeller?.sellerPhone || contact.hotlineKinhDoanh || site.phone;
 
   const schemaData = {
     '@context': 'https://schema.org',
     '@type': 'Person',
     '@id': `${siteUrl}/#saler`,
-    name: contact.salerName || contact.sellerName || 'Nguyễn Văn A', // Tên thật của bạn
+    name: sellerName,
     jobTitle: 'Chuyên viên Tư vấn Xe Hyundai',
     image: fullAvatarUrl,
     url: siteUrl,
-    telephone: contact.hotlineKinhDoanh,
-    email: contact.email,
+    telephone: sellerPhone,
+    email: contact.sellerEmail || contact.email || undefined,
     worksFor: {
       '@type': 'AutoDealer',
-      name: contact.showroomName || 'Hyundai Vinh',
+      name: contact.showroomName || site.businessName || 'Hyundai Vinh',
       address: {
         '@type': 'PostalAddress',
-        streetAddress: contact.diaChi,
-        addressLocality: 'TP. Vinh',
-        addressRegion: 'Nghệ An',
+        streetAddress: contact.diaChi || site.address,
+        addressLocality: contact.tinhThanh || 'TP. Vinh',
+        addressRegion: contact.tinhThanh || 'Nghệ An',
         addressCountry: 'VN',
       },
     },
-    // Khu vực bạn nhận tư vấn và giao xe tận nơi
+    // Khu vực nhận tư vấn và giao xe tận nơi
     areaServed: [
       {
         '@type': 'AdministrativeArea',
@@ -44,9 +48,12 @@ export const SalerJsonLd = ({ contact, site }: SalerJsonLdProps) => {
         name: 'Hà Tĩnh',
       },
     ],
-    // Mạng xã hội cá nhân để chứng minh danh tính thực thể
+    // Mạng xã hội cá nhân để chứng minh danh tính thực thể E-E-A-T
     sameAs: [
       site.facebookPersonalUrl,
+      contact.socialMedia?.facebookUrl,
+      floatingSeller?.sellerZalo,
+      contact.sellerZalo,
       site.zaloUrl,
       site.tiktokUrl,
     ].filter(Boolean),
