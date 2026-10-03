@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   Camera,
   MapPin,
@@ -19,56 +19,123 @@ export interface DeliveryStoriesSectionProps {
 
 // 🧠 Mental Model: Phân khu 6 - Testimonials & Delivery Stories (Khoảnh Khắc Bàn Giao Xe Thực Tế).
 // 1. Áp dụng Graceful Degradation: Nếu config.enabled = false HOẶC danh sách stories rỗng ➡️ return null.
-// 2. Carousel / Slider tương tác: Touch Snap Scroll, Prev/Next buttons, Dots Pagination, Auto-slide & Lightbox.
-// 3. Tuân thủ 100% fullstack-dev-executor.xml & unit size limit (< 300 dòng).
+// 2. Slider Vô Cực (Infinite Loop Carousel): Buffer 5 chu kỳ lặp liền mạch, tự động reset offset ở trạng thái nghỉ mà không giật khung hình.
+// 3. Tương tác cao cấp: Touch Snap, Auto-play 5s (pause khi hover/touch), Lightbox phóng to ảnh chất lượng cao.
+// 4. Tuân thủ 100% fullstack-dev-executor.xml & unit size limit (< 300 dòng).
 export const DeliveryStoriesSection: React.FC<DeliveryStoriesSectionProps> = ({ config }) => {
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeRealIndex, setActiveRealIndex] = useState(0);
   const [lightboxStory, setLightboxStory] = useState<DeliveryStoryItem | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const normalizeTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const stories = config?.stories || [];
-  const totalSlides = stories.length;
+  const totalOriginal = stories.length;
 
-  const handleScroll = useCallback(() => {
-    if (!scrollRef.current) return;
-    const container = scrollRef.current;
-    const itemWidth = container.firstElementChild
-      ? (container.firstElementChild as HTMLElement).offsetWidth + 24
-      : 1;
-    const index = Math.round(container.scrollLeft / itemWidth);
-    setActiveIndex(Math.max(0, Math.min(index, totalSlides - 1)));
-  }, [totalSlides]);
-
-  const scrollToSlide = useCallback((index: number) => {
-    if (!scrollRef.current) return;
-    const container = scrollRef.current;
-    const targetItem = container.children[index] as HTMLElement | undefined;
-    if (targetItem) {
-      container.scrollTo({
-        left: targetItem.offsetLeft - container.offsetLeft,
-        behavior: 'smooth',
-      });
-      setActiveIndex(index);
+  // Lặp 5 bộ stories để tạo buffer vô cực mượt mà cho cả hướng Prev và Next
+  const repeatCount = totalOriginal > 1 ? 5 : 1;
+  const extendedStories = useMemo(() => {
+    if (totalOriginal <= 1) return stories;
+    const list: DeliveryStoryItem[] = [];
+    for (let r = 0; r < repeatCount; r++) {
+      list.push(...stories);
     }
+    return list;
+  }, [stories, totalOriginal, repeatCount]);
+
+  const getItemWidth = useCallback(() => {
+    if (!scrollRef.current) return 0;
+    const firstChild = scrollRef.current.firstElementChild as HTMLElement | null;
+    return firstChild ? firstChild.offsetWidth + 24 : 0; // 24px = gap-6
   }, []);
 
+  // Khởi tạo vị trí chính giữa (Set 2) khi mount
+  useEffect(() => {
+    if (totalOriginal <= 1 || !scrollRef.current) return;
+    const itemWidth = getItemWidth();
+    if (itemWidth > 0) {
+      scrollRef.current.scrollLeft = totalOriginal * 2 * itemWidth;
+    }
+  }, [totalOriginal, getItemWidth]);
+
+  // Chuẩn hóa vị trí vô cực khi ngừng cuộn (debounce 150ms) để không ngắt animation lướt
+  const handleScroll = useCallback(() => {
+    if (!scrollRef.current || totalOriginal <= 1) return;
+    const container = scrollRef.current;
+    const itemWidth = getItemWidth();
+    if (itemWidth <= 0) return;
+
+    const currentVirtualIndex = Math.round(container.scrollLeft / itemWidth);
+    const realIndex = ((currentVirtualIndex % totalOriginal) + totalOriginal) % totalOriginal;
+    setActiveRealIndex(realIndex);
+
+    if (normalizeTimerRef.current) {
+      clearTimeout(normalizeTimerRef.current);
+    }
+
+    normalizeTimerRef.current = setTimeout(() => {
+      if (!scrollRef.current) return;
+      const singleSetWidth = totalOriginal * itemWidth;
+      const currentScroll = scrollRef.current.scrollLeft;
+      const minBound = singleSetWidth * 1.2;
+      const maxBound = singleSetWidth * 3.8;
+
+      if (currentScroll < minBound || currentScroll > maxBound) {
+        const offsetInSet = currentScroll % singleSetWidth;
+        // Đưa về Set 2 một cách tức thì và vô hình với mắt người
+        scrollRef.current.scrollLeft = 2 * singleSetWidth + offsetInSet;
+      }
+    }, 150);
+  }, [totalOriginal, getItemWidth]);
+
   const handlePrev = useCallback(() => {
-    const prevIndex = activeIndex > 0 ? activeIndex - 1 : totalSlides - 1;
-    scrollToSlide(prevIndex);
-  }, [activeIndex, totalSlides, scrollToSlide]);
+    if (!scrollRef.current || totalOriginal <= 1) return;
+    const itemWidth = getItemWidth();
+    if (itemWidth > 0) {
+      scrollRef.current.scrollBy({ left: -itemWidth, behavior: 'smooth' });
+    }
+  }, [totalOriginal, getItemWidth]);
 
   const handleNext = useCallback(() => {
-    const nextIndex = activeIndex < totalSlides - 1 ? activeIndex + 1 : 0;
-    scrollToSlide(nextIndex);
-  }, [activeIndex, totalSlides, scrollToSlide]);
+    if (!scrollRef.current || totalOriginal <= 1) return;
+    const itemWidth = getItemWidth();
+    if (itemWidth > 0) {
+      scrollRef.current.scrollBy({ left: itemWidth, behavior: 'smooth' });
+    }
+  }, [totalOriginal, getItemWidth]);
 
+  const scrollToRealIndex = useCallback(
+    (targetRealIndex: number) => {
+      if (!scrollRef.current || totalOriginal <= 1) return;
+      const itemWidth = getItemWidth();
+      if (itemWidth <= 0) return;
+
+      const currentVirtualIndex = Math.round(scrollRef.current.scrollLeft / itemWidth);
+      const currentReal = ((currentVirtualIndex % totalOriginal) + totalOriginal) % totalOriginal;
+      let diff = targetRealIndex - currentReal;
+
+      // Chọn hướng đi ngắn nhất
+      if (diff > totalOriginal / 2) diff -= totalOriginal;
+      if (diff < -totalOriginal / 2) diff += totalOriginal;
+
+      const targetVirtualIndex = currentVirtualIndex + diff;
+      scrollRef.current.scrollTo({
+        left: targetVirtualIndex * itemWidth,
+        behavior: 'smooth',
+      });
+      setActiveRealIndex(targetRealIndex);
+    },
+    [totalOriginal, getItemWidth]
+  );
+
+  // Auto-play vô cực 5s
   useEffect(() => {
-    if (totalSlides <= 1 || isPaused || lightboxStory !== null) return;
+    if (totalOriginal <= 1 || isPaused || lightboxStory !== null) return;
     const timer = setInterval(() => handleNext(), 5000);
     return () => clearInterval(timer);
-  }, [totalSlides, isPaused, lightboxStory, handleNext]);
+  }, [totalOriginal, isPaused, lightboxStory, handleNext]);
 
+  // Xử lý đóng Lightbox với phím Escape
   useEffect(() => {
     if (lightboxStory) {
       document.body.style.overflow = 'hidden';
@@ -83,7 +150,7 @@ export const DeliveryStoriesSection: React.FC<DeliveryStoriesSectionProps> = ({ 
     }
   }, [lightboxStory]);
 
-  if (!config || !config.enabled || totalSlides === 0) {
+  if (!config || !config.enabled || totalOriginal === 0) {
     return null;
   }
 
@@ -112,8 +179,8 @@ export const DeliveryStoriesSection: React.FC<DeliveryStoriesSectionProps> = ({ 
             </p>
           </div>
 
-          {/* Controls */}
-          {totalSlides > 1 && (
+          {/* Controls Next / Prev */}
+          {totalOriginal > 1 && (
             <div className="flex items-center gap-2 self-start md:self-end">
               <Button
                 type="button"
@@ -141,16 +208,16 @@ export const DeliveryStoriesSection: React.FC<DeliveryStoriesSectionProps> = ({ 
           )}
         </div>
 
-        {/* Stories Carousel Track */}
+        {/* Infinite Stories Track */}
         <div
           ref={scrollRef}
           onScroll={handleScroll}
           className="flex gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-4 pt-1 px-0.5"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {stories.map((story, idx) => (
+          {extendedStories.map((story, virtualIdx) => (
             <div
-              key={story.id || idx}
+              key={`${story.id || 'story'}-${virtualIdx}`}
               className="w-[88vw] sm:w-[380px] md:w-[400px] shrink-0 snap-center rounded-3xl bg-white border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-xl hover:border-sky-300 transition-all duration-300 flex flex-col justify-between group cursor-pointer"
               onClick={() => setLightboxStory(story)}
             >
@@ -199,15 +266,15 @@ export const DeliveryStoriesSection: React.FC<DeliveryStoriesSectionProps> = ({ 
         </div>
 
         {/* Dots Pagination */}
-        {totalSlides > 1 && (
+        {totalOriginal > 1 && (
           <div className="flex items-center justify-center gap-2 mt-6">
             {stories.map((_, idx) => (
               <button
                 key={idx}
                 type="button"
-                onClick={() => scrollToSlide(idx)}
+                onClick={() => scrollToRealIndex(idx)}
                 className={`h-2 rounded-full transition-all duration-300 ${
-                  activeIndex === idx ? 'w-8 bg-[#0072CE]' : 'w-2 bg-slate-300 hover:bg-slate-400'
+                  activeRealIndex === idx ? 'w-8 bg-[#0072CE]' : 'w-2 bg-slate-300 hover:bg-slate-400'
                 }`}
                 title={`Chuyển đến ảnh số ${idx + 1}`}
                 aria-label={`Slide ${idx + 1}`}
