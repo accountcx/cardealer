@@ -21,6 +21,7 @@
     "db:update-avatars": "pnpm --filter @cardealer/database exec tsx src/scripts/update-car-avatars.ts",
     "db:seed-colors": "pnpm --filter @cardealer/database exec tsx src/scripts/seed-version-colors.ts",
     "db:seed-media": "pnpm --filter @cardealer/database exec tsx src/scripts/seed-media.ts",
+    "db:seed-static-pages": "pnpm --filter @cardealer/database exec tsx src/scripts/seed-static-pages.ts",
     "verify:phase-1": "pnpm --filter @cardealer/database exec tsx src/scripts/verify-phase-1.ts",
     "verify:phase-2": "pnpm --filter @cardealer/database exec tsx ../../scripts/verify-phase-2-rbac.ts",
     "verify:phase-3": "pnpm --filter @cardealer/database exec tsx ../../scripts/verify-phase-3-pricing-lead.ts",
