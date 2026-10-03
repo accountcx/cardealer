@@ -60,9 +60,14 @@ export const DeliveryStoriesForm: React.FC<DeliveryStoriesFormProps> = ({ data, 
 
   const handleSingleSelect = (selected: MediaItem[]) => {
     if (pickingIndex !== null && selected[0]?.url) {
-      handleUpdateStory(pickingIndex, 'imageUrl', selected[0].url);
-      if (selected[0].altText) {
-        handleUpdateStory(pickingIndex, 'customerName', selected[0].altText);
+      const updated = [...data.stories];
+      const current = updated[pickingIndex];
+      if (current) {
+        updated[pickingIndex] = {
+          ...current,
+          imageUrl: selected[0].url,
+        };
+        onChange({ ...data, stories: updated });
       }
     }
     setPickingIndex(null);
@@ -182,6 +187,18 @@ export const DeliveryStoriesForm: React.FC<DeliveryStoriesFormProps> = ({ data, 
                   <div>
                     <Label className="block text-[11px] text-slate-400 mb-1">Đường Dẫn Ảnh Trao Xe</Label>
                     <div className="flex items-center gap-1.5">
+                      {story.imageUrl && (
+                        <div className="w-9 h-9 rounded-lg overflow-hidden border border-slate-700 bg-slate-900 shrink-0 relative flex items-center justify-center">
+                          <img
+                            src={story.imageUrl}
+                            alt={story.customerName || 'Ảnh trao xe'}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      )}
                       <Input
                         type="text"
                         value={story.imageUrl}
@@ -194,7 +211,7 @@ export const DeliveryStoriesForm: React.FC<DeliveryStoriesFormProps> = ({ data, 
                         variant="outline"
                         size="sm"
                         onClick={() => setPickingIndex(idx)}
-                        className="h-9 px-2.5 bg-slate-900 border-slate-700 text-slate-200 hover:text-white shrink-0 flex items-center gap-1 text-xs"
+                        className="h-9 px-2.5 bg-slate-900 border-slate-700 text-slate-200 hover:text-white shrink-0 flex items-center gap-1 text-xs cursor-pointer"
                       >
                         <ImageIcon className="w-3.5 h-3.5 text-[#0072CE]" />
                         <span>Chọn ảnh</span>
@@ -239,6 +256,11 @@ export const DeliveryStoriesForm: React.FC<DeliveryStoriesFormProps> = ({ data, 
         onSelect={handleSingleSelect}
         mode="single"
         title="Chọn Ảnh Bàn Giao Xe"
+        initialSelectedUrls={
+          pickingIndex !== null && data.stories[pickingIndex]?.imageUrl
+            ? [data.stories[pickingIndex].imageUrl]
+            : []
+        }
       />
 
       {/* Media Picker Modal hàng loạt */}
