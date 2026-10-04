@@ -21,25 +21,38 @@ export function normalizeZaloUrl(zaloOrPhone: string | undefined | null): string
 
 // 1. Site Settings Schema
 export const SiteSettingsSchema = z.object({
+  // Global SEO Meta Defaults
   siteTitle: z.string().default('Xe Hyundai Vinh - Bảng Giá & Ưu Đãi Lăn Bánh'),
   titleSuffix: z.string().default('| Xe Hyundai Vinh'),
   defaultDescription: z.string().default('Website phân phối xe Hyundai chính hãng tại Nghệ An, Hà Tĩnh. Giá tốt nhất, hỗ trợ trả góp 85%, giao xe tận nhà.'),
   defaultImage: z.string().default('/images/og-image.jpg'),
   favicon: z.string().default('/favicon.ico'),
-  gaId: z.string().optional(),
-  gtmId: z.string().optional(),
+  siteUrl: z.string().optional().default(''),
+
+  // Tracking & Analytics IDs
+  gtmId: z.string().optional().default(''),
+  gaId: z.string().optional().default(''),
+  clarityId: z.string().optional().default(''),
+  fbPixelId: z.string().optional().default(''),
+  tiktokPixelId: z.string().optional().default(''),
+  zaloPixelId: z.string().optional().default(''),
+
+  // Custom Injectable Scripts
+  customHeaderScripts: z.string().optional().default(''),
+  customBodyScripts: z.string().optional().default(''),
+
+  // Business Identity & Local SEO
   businessName: z.string().default('Xe Hyundai Vinh'),
   address: z.string().default('Km 3+500 Đại lộ Lê Nin, TP. Vinh, Nghệ An'),
   phone: z.string().default('0981.234.567'),
   mapLatitude: z.number().default(18.6796),
   mapLongitude: z.number().default(105.6813),
-  siteUrl: z.string().optional(),
-  googleMapEmbedUrl: z.string().optional(),
-  facebookUrl: z.string().optional(),
-  facebookPersonalUrl: z.string().optional(),
-  youtubeUrl: z.string().optional(),
-  zaloUrl: z.string().optional(),
-  tiktokUrl: z.string().optional(),
+  googleMapEmbedUrl: z.string().optional().default(''),
+  facebookUrl: z.string().optional().default(''),
+  facebookPersonalUrl: z.string().optional().default(''),
+  youtubeUrl: z.string().optional().default(''),
+  zaloUrl: z.string().optional().default(''),
+  tiktokUrl: z.string().optional().default(''),
 });
 export type SiteSettings = z.infer<typeof SiteSettingsSchema>;
 

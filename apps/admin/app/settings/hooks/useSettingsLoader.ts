@@ -11,6 +11,7 @@ import type {
   FooterSettings,
   ContactSettings,
   HomepageSettings,
+  SiteSettings,
 } from '@cardealer/types';
 import {
   NavigationSettingsSchema,
@@ -21,11 +22,12 @@ import {
   FooterSettingsSchema,
   ContactSettingsSchema,
   HomepageSettingsSchema,
+  SiteSettingsSchema,
 } from '@cardealer/types';
 import { settingsService } from '../../../services/settings.service';
 import type { SettingsFormData } from '../types';
 
-// WHY: Custom Hook nạp toàn bộ dữ liệu cấu hình 7 domain settings song song (0-waterfall).
+// WHY: Custom Hook nạp toàn bộ dữ liệu cấu hình 9 domain settings song song (0-waterfall).
 // Tách từ SettingsPage để tuân thủ nguyên tắc unit_size_limit (< 300 dòng).
 export function useSettingsLoader(
   form: UseFormReturn<SettingsFormData>,
@@ -35,6 +37,7 @@ export function useSettingsLoader(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [siteData, setSiteData] = useState<SiteSettings>(SiteSettingsSchema.parse({}));
   const [contactData, setContactData] = useState<ContactSettings>(ContactSettingsSchema.parse({}));
   const [navData, setNavData] = useState<NavigationSettings>(NavigationSettingsSchema.parse({}));
   const [sellerData, setSellerData] = useState<FloatingSellerSettings>(FloatingSellerSettingsSchema.parse({}));
@@ -56,18 +59,33 @@ export function useSettingsLoader(
         setLoading(true);
         setError(null);
 
-        const [showroomRes, contactRes, navRes, sellerRes, stickyRes, slideInRes, authorRes, footerRes, homepageRes] =
-          await Promise.allSettled([
-            settingsService.getSettingByKey<Record<string, unknown>>('showroom_settings'),
-            settingsService.getSettingByKey<ContactSettings>('contact_settings'),
-            settingsService.getSettingByKey<NavigationSettings>('navigation_settings'),
-            settingsService.getSettingByKey<FloatingSellerSettings>('floating_seller_settings'),
-            settingsService.getSettingByKey<StickyBarSettings>('sticky_bar_settings'),
-            settingsService.getSettingByKey<SlideInBannerSettings>('slide_in_banner_settings'),
-            settingsService.getSettingByKey<AuthorSettings>('author_settings'),
-            settingsService.getSettingByKey<FooterSettings>('footer_settings'),
-            settingsService.getSettingByKey<HomepageSettings>('homepage_settings'),
-          ]);
+        const [
+          siteRes,
+          showroomRes,
+          contactRes,
+          navRes,
+          sellerRes,
+          stickyRes,
+          slideInRes,
+          authorRes,
+          footerRes,
+          homepageRes,
+        ] = await Promise.allSettled([
+          settingsService.getSettingByKey<SiteSettings>('site_settings'),
+          settingsService.getSettingByKey<Record<string, unknown>>('showroom_settings'),
+          settingsService.getSettingByKey<ContactSettings>('contact_settings'),
+          settingsService.getSettingByKey<NavigationSettings>('navigation_settings'),
+          settingsService.getSettingByKey<FloatingSellerSettings>('floating_seller_settings'),
+          settingsService.getSettingByKey<StickyBarSettings>('sticky_bar_settings'),
+          settingsService.getSettingByKey<SlideInBannerSettings>('slide_in_banner_settings'),
+          settingsService.getSettingByKey<AuthorSettings>('author_settings'),
+          settingsService.getSettingByKey<FooterSettings>('footer_settings'),
+          settingsService.getSettingByKey<HomepageSettings>('homepage_settings'),
+        ]);
+
+        if (siteRes.status === 'fulfilled' && siteRes.value) {
+          setSiteData(SiteSettingsSchema.parse(siteRes.value));
+        }
 
         const showroomData = showroomRes.status === 'fulfilled' ? showroomRes.value || {} : {};
         const parsedContact =
@@ -130,6 +148,8 @@ export function useSettingsLoader(
   return {
     loading,
     error,
+    siteData,
+    setSiteData,
     contactData,
     setContactData,
     navData,

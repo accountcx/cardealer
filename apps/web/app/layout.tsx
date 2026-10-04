@@ -62,7 +62,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 // 🧠 Mental Model: Server Component (RootLayout) nạp toàn bộ cấu hình hệ thống bằng 1 request duy nhất (BulkSettings).
-// Render ra HTML hoàn chỉnh có sẵn Header, Footer và các meta thẻ SEO (CLS = 0).
+// Render ra HTML hoàn chỉnh có sẵn Header, Footer, Analytics, Pixels và các meta thẻ SEO (CLS = 0).
 export default async function RootLayout({
   children,
 }: {
@@ -74,7 +74,7 @@ export default async function RootLayout({
   return (
     <html lang="vi-VN" className="overflow-x-clip scroll-smooth">
       <head>
-        {/* Google Tag Manager / GA4 Injection nếu có cấu hình */}
+        {/* 1. Google Tag Manager */}
         {site.gtmId && (
           <Script id="google-tag-manager" strategy="afterInteractive">
             {`
@@ -86,6 +86,8 @@ export default async function RootLayout({
             `}
           </Script>
         )}
+
+        {/* 2. Google Analytics 4 (khi không dùng GTM) */}
         {site.gaId && !site.gtmId && (
           <>
             <Script
@@ -101,6 +103,69 @@ export default async function RootLayout({
               `}
             </Script>
           </>
+        )}
+
+        {/* 3. Microsoft Clarity */}
+        {site.clarityId && (
+          <Script id="microsoft-clarity" strategy="afterInteractive">
+            {`
+              (function(c,l,a,r,i,t,y){
+                c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+              })(window, document, "clarity", "script", "${site.clarityId}");
+            `}
+          </Script>
+        )}
+
+        {/* 4. Facebook Pixel */}
+        {site.fbPixelId && (
+          <Script id="facebook-pixel" strategy="afterInteractive">
+            {`
+              !function(f,b,e,v,n,t,s)
+              {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+              n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+              if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+              n.queue=[];t=b.createElement(e);t.async=!0;
+              t.src=v;s=b.getElementsByTagName(e)[0];
+              s.parentNode.insertBefore(t,s)}(window, document,'script',
+              'https://connect.facebook.net/en_US/fbevents.js');
+              fbq('init', '${site.fbPixelId}');
+              fbq('track', 'PageView');
+            `}
+          </Script>
+        )}
+
+        {/* 5. TikTok Pixel */}
+        {site.tiktokPixelId && (
+          <Script id="tiktok-pixel" strategy="afterInteractive">
+            {`
+              !function (w, d, t) {
+                w.TiktokAnalyticsObject=t;var tt=w[t]=w[t]||[];tt.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"],tt.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<tt.methods.length;i++)tt.setAndDefer(tt,tt.methods[i]);tt.instance=function(t){for(var e=tt._i[t]||[],n=0;n<tt.methods.length;n++)tt.setAndDefer(e,tt.methods[n]);return e},tt.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";tt._i=tt._i||{},tt._i[e]=[],tt._i[e]._u=i,tt._t=tt._t||{},tt._t[e]=+new Date,tt._o=tt._o||{},tt._o[e]=n||{};var o=document.createElement("script");o.type="text/javascript",o.async=!0,o.src=i+"?sdkid="+e+"&lib="+t;var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};
+                tt.load('${site.tiktokPixelId}');
+                tt.page();
+              }(window, document, 'ttq');
+            `}
+          </Script>
+        )}
+
+        {/* 6. Zalo Pixel */}
+        {site.zaloPixelId && (
+          <Script id="zalo-pixel" strategy="afterInteractive">
+            {`
+              (function(w,d,s,l,i){w[l]=w[l]||[];var f=d.getElementsByTagName(s)[0],
+              j=d.createElement(s);j.async=true;j.src='https://sp.zalo.me/plugins/sdk.js?id='+i;
+              f.parentNode.insertBefore(j,f);})(window,document,'script','zaloSdk','${site.zaloPixelId}');
+            `}
+          </Script>
+        )}
+
+        {/* 7. Custom Head Scripts / Meta Tags (Google Search Console, Domain Verifications) */}
+        {site.customHeaderScripts && (
+          <div
+            id="custom-header-scripts"
+            dangerouslySetInnerHTML={{ __html: site.customHeaderScripts }}
+          />
         )}
       </head>
       <body
@@ -118,6 +183,19 @@ export default async function RootLayout({
           </noscript>
         )}
 
+        {/* Facebook Pixel noscript fallback */}
+        {site.fbPixelId && (
+          <noscript>
+            <img
+              height="1"
+              width="1"
+              style={{ display: 'none' }}
+              src={`https://www.facebook.com/tr?id=${site.fbPixelId}&ev=PageView&noscript=1`}
+              alt=""
+            />
+          </noscript>
+        )}
+
         <ViewportCoordinator settings={settings}>
           {children}
         </ViewportCoordinator>
@@ -129,6 +207,14 @@ export default async function RootLayout({
 
         {/* Sales Consultant Person JSON-LD Schema */}
         <SalerJsonLd contact={settings.contact} site={settings.site} floatingSeller={settings.floatingSeller} />
+
+        {/* 8. Custom Body / Footer Scripts (LiveChat, Messenger / Zalo Chat widgets) */}
+        {site.customBodyScripts && (
+          <div
+            id="custom-body-scripts"
+            dangerouslySetInnerHTML={{ __html: site.customBodyScripts }}
+          />
+        )}
       </body>
     </html>
   );

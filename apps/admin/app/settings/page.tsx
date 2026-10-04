@@ -19,6 +19,7 @@ import { SlideInBannerSection } from './components/SlideInBannerSection';
 import { AuthorSettingsSection } from './components/AuthorSettingsSection';
 import { FooterSection } from './components/FooterSection';
 import { HomepageFunnelSection } from './components/HomepageFunnelSection';
+import { SeoTrackingSection } from './components/SeoTrackingSection';
 import { settingsService } from '../../services/settings.service';
 import { useAuth } from '../../contexts/AuthContext';
 import { AccessDenied } from '../components/AccessDenied';
@@ -26,7 +27,7 @@ import { useSettingsLoader } from './hooks/useSettingsLoader';
 import { settingsSchema, type SettingsFormData } from './types';
 
 // 🧠 Mental Model: Trung tâm Quản trị Cấu hình Hệ thống & Storefront Shell.
-// Phân chia thành 7 Tab chuyên biệt (Showroom, Trang chủ, Navigation, Chuyên viên nổi, Sticky Bar, Popup Voucher, Footer).
+// Phân chia thành các Tab chuyên biệt (Showroom, SEO & Tracking, Trang chủ, Navigation, Chuyên viên nổi, Sticky Bar, Popup Voucher, Tác giả, Footer).
 // Tuân thủ triệt để unit_size_limit (< 300 dòng) qua custom hook useSettingsLoader.
 export default function SettingsPage() {
   const { can, loading: authLoading } = useAuth();
@@ -60,6 +61,7 @@ export default function SettingsPage() {
   const {
     loading,
     error,
+    siteData,
     contactData,
     setContactData,
     navData,
@@ -221,6 +223,7 @@ export default function SettingsPage() {
         </Form>
       )}
 
+      {activeTab === 'seoTracking' && <SeoTrackingSection initialData={siteData} />}
       {activeTab === 'homepage' && <HomepageFunnelSection initialData={homepageData} />}
       {activeTab === 'navigation' && <NavigationSection initialData={navData} />}
       {activeTab === 'floatingSeller' && <FloatingSellerSection initialData={sellerData} />}

@@ -1,10 +1,21 @@
 'use client';
 
-import { Building2, Compass, UserCheck, Pin, LayoutTemplate, Sparkles, Gift, Award } from 'lucide-react';
+import {
+  Building2,
+  Compass,
+  UserCheck,
+  Pin,
+  LayoutTemplate,
+  Sparkles,
+  Gift,
+  Award,
+  Activity,
+} from 'lucide-react';
 import { Button } from '@cardealer/ui';
 
 export type SettingsTabId =
   | 'showroom'
+  | 'seoTracking'
   | 'homepage'
   | 'navigation'
   | 'floatingSeller'
@@ -26,6 +37,12 @@ export const SETTINGS_TABS: TabItem[] = [
     label: 'Showroom & Liên Hệ',
     description: 'Tên đại lý, hotline 24/7, địa chỉ, bản đồ và pháp lý',
     icon: Building2,
+  },
+  {
+    id: 'seoTracking',
+    label: 'SEO & Tracking',
+    description: 'Google Tag Manager, GA4, FB Pixel, Clarity, mã nhúng Header/Body và SEO mặc định',
+    icon: Activity,
   },
   {
     id: 'homepage',
@@ -76,7 +93,7 @@ export interface SettingsTabNavProps {
   onTabChange: (tab: SettingsTabId) => void;
 }
 
-// 🧠 Mental Model: Thanh điều hướng 7 phân khu cấu hình trong trang Admin Settings.
+// 🧠 Mental Model: Thanh điều hướng 9 phân khu cấu hình trong trang Admin Settings.
 // Sử dụng các icon từ lucide-react và tab pills hiện đại với focus rings chuẩn WCAG.
 export const SettingsTabNav = ({ activeTab, onTabChange }: SettingsTabNavProps) => {
   return (
@@ -88,14 +105,16 @@ export const SettingsTabNav = ({ activeTab, onTabChange }: SettingsTabNavProps) 
           <Button
             key={tab.id}
             type="button"
-            variant="ghost"
+            variant={isActive ? 'primary' : 'ghost'}
+            size="sm"
             onClick={() => onTabChange(tab.id)}
-            className={`h-auto flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ease-in-out motion-reduce:transition-none focus-visible:ring-2 focus-visible:ring-[#0072CE] focus-visible:outline-none ${isActive
-                ? 'bg-[#0072CE] text-white shadow-md shadow-[#0072CE]/30 border border-[#0072CE]/50 hover:bg-[#005BA4] hover:text-white'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
-              }`}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+              isActive
+                ? 'bg-sky-500 text-white shadow-md shadow-sky-500/25 border border-sky-400/40'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+            }`}
           >
-            <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+            <Icon size={16} className={isActive ? 'text-white' : 'text-slate-400'} />
             <span>{tab.label}</span>
           </Button>
         );
