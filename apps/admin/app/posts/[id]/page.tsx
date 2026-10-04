@@ -264,6 +264,7 @@ export default function PostEditorPage() {
         currentTitle={editor.tieuDe}
         currentKeyword={editor.focusKeyword}
         currentBlocksText={currentContentSummary}
+        availableCars={editor.availableCars}
         onInsertFullArticle={(article) => editor.applyFullArticle(article)}
         onInsertOutline={(items) => editor.insertOutlineBlocks(items)}
         onInsertFaqs={(faqs) => editor.insertFaqBlock(faqs)}

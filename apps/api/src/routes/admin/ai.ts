@@ -13,13 +13,9 @@ import {
 } from '@cardealer/types';
 
 // 🧠 Mental Model: Router API Trợ Lý AI Viết Bài & Tối Ưu SEO (@cardealer/api)
-// Chiến lược "Cyborg Content Engine": Kết hợp dữ liệu kỹ thuật chuẩn xác, văn phong tư vấn thực tế tại đại lý và tối ưu SEO On-Page hàng đầu.
-// Hỗ trợ:
-// 1. Viết toàn bộ bài viết hoàn chỉnh từ A-Z (Full Article + Blocks + SEO Meta + FAQs + Pros/Cons + CTA)
-// 2. Tạo dàn ý chuẩn phân cấp H2/H3
-// 3. Viết tiếp / mở rộng đoạn văn chuyên sâu
-// 4. Tối ưu 1-Click SEO (Meta Title, Meta Description, từ khóa LSI)
-// 5. Tự động sinh khối FAQ chuẩn Schema FAQPage cho Local SEO & YMYL
+// Chiến lược "Cyborg Content Engine": Tự động ra quyết định điều phối 14 Content Block tinh hoa:
+// (paragraph, heading, singleImage, imageGallery, specTable, priceTable, relatedCar, prosCons, callout, leadForm, faq, ctaButton, youtube, tiktok)
+// Dựa trên dữ liệu xe thực tế từ kho đại lý (availableCars), bám sát thị trường địa phương và tối ưu SEO On-Page.
 export async function handleAdminAiRoutes(
   req: IncomingMessage,
   res: ServerResponse,
@@ -66,7 +62,7 @@ export async function handleAdminAiRoutes(
       return true;
     }
 
-    const { action, prompt, context, keyword, carModel, location, maxTokens } = parseResult.data;
+    const { action, prompt, context, keyword, carModel, location, availableCars, maxTokens } = parseResult.data;
 
     // Nạp API Key và Model từ database site_settings
     const siteSettingsRow = await db.query.systemSettings.findFirst({
@@ -93,15 +89,39 @@ export async function handleAdminAiRoutes(
     const targetCar = carModel || 'Xe ô tô Hyundai';
     const targetKeyword = keyword || prompt;
 
-    const systemPrompt = `Bạn là Giám đốc Sáng tạo Nội dung kiêm Chuyên gia Technical SEO hàng đầu trong ngành ô tô tại Việt Nam, đặc biệt là hệ thống đại lý Hyundai ủy quyền chính hãng (như Hyundai Vinh, Hyundai Nghệ An).
+    const availableCarsListText =
+      availableCars && availableCars.length > 0
+        ? `\nDANH SÁCH XE CÓ SẴN TẠI ĐẠI LÝ (Hãy ưu tiên chọn đúng dòng xe từ danh sách này khi chèn khối relatedCar hoặc priceTable):\n${availableCars
+            .map(
+              (c) =>
+                `- Tên xe: "${c.tenXe}" | Slug: "${c.slug}" | Giá niêm yết từ: ${
+                  c.giaNiemYetTu ? c.giaNiemYetTu.toLocaleString('vi-VN') + ' VNĐ' : 'Liên hệ'
+                } | Ảnh đại diện: "${c.anhDaiDienUrl || ''}" | Số chỗ: ${c.soChoNgoi || 5} chỗ | Nhiên liệu: ${
+                  c.loaiNhienLieu || 'Xăng'
+                }`
+            )
+            .join('\n')}\n`
+        : '';
+
+    const systemPrompt = `Bạn là Giám đốc Sáng tạo Nội dung kiêm Chuyên gia Technical SEO & Conversion Rate Optimization (CRO) hàng đầu trong ngành ô tô tại Việt Nam, am hiểu sâu sắc hệ thống đại lý ô tô Hyundai ủy quyền chính hãng.
 
 Nguyên tắc cốt lõi của bạn tuân thủ triệt để chiến lược "Cyborg Content (Người lai Máy)" & Google E-E-A-T (Kinh nghiệm, Chuyên môn, Thẩm quyền, Tin cậy) trong ngành YMYL:
-1. Độ chính xác kỹ thuật: Thông số kích thước (DxRxC, chiều dài cơ sở, khoảng sáng gầm), động cơ (Smartstream, MPI, T-GDi, dung tích xi lanh, mã lực, mô-men xoắn), hộp số (IVT, ly hợp kép DCT, số tự động), gói an toàn chủ động (Hyundai SmartSense: FCA, LKA, BCA, SCC...).
-2. Bám sát thị trường địa phương (${targetLocation}): Dự toán giá bán niêm yết, chi phí lăn bánh (thuế trước bạ, phí cấp biển, đăng kiểm), các cung đường thực tế (đô thị, ngập nước mùa mưa, cao tốc Bắc Nam, đường đồi núi), tư vấn thủ tục trả góp ngân hàng địa phương và bấm biển số.
-3. Cấu trúc chuẩn SEO On-Page:
-   - Phân cấp thẻ Heading (H2, H3) mạch lạc, giải quyết triệt để Search Intent của người mua xe.
-   - Lồng ghép từ khóa chính và từ khóa ngữ nghĩa LSI tự nhiên, tránh hoàn toàn lỗi nhồi nhét từ khóa (Keyword Stuffing).
-   - Đoạn văn cô đọng (2-4 câu/đoạn), sử dụng gạch đầu dòng và nhấn mạnh bằng chữ in đậm các thông số cốt lõi.
+1. Độ chính xác kỹ thuật: Thông số kích thước (DxRxC, chiều dài cơ sở, khoảng sáng gầm), động cơ (Smartstream, MPI, T-GDi, dung tích xi lanh, mã lực, mô-men xoắn), hộp số (IVT, ly hợp kép DCT, số tự động), gói an toàn chủ động (Hyundai SmartSense: FCA, LKA, BCA, SCC, BVM...).
+2. Bám sát thị trường địa phương (${targetLocation}): Dự toán giá bán niêm yết, chi phí lăn bánh (thuế trước bạ, phí cấp biển, đăng kiểm), các cung đường thực tế (đô thị, ngập nước mùa mưa, cao tốc Bắc Nam, đèo dốc), tư vấn thủ tục trả góp ngân hàng địa phương và bấm biển số.
+3. QUYẾT ĐỊNH & PHÂN BỔ 14 CONTENT BLOCK TINH HOA:
+   AI tự động quyết định cấu trúc và phân bổ thông minh các khối Content Block tinh hoa vào bài viết để trải nghiệm đọc sinh động, giữ chân khách hàng (Time on site cao) và thúc đẩy tỷ lệ chuyển đổi Lead:
+   - "paragraph": Đoạn văn phân tích chuyên sâu, cô đọng (2-4 câu/đoạn).
+   - "heading": Thẻ tiêu đề H2, H3 chuẩn SEO phân cấp rõ ràng.
+   - "singleImage": Vị trí chèn ảnh trực quan (ngoại thất đầu xe, khoang lái nội thất, hàng ghế sau/cốp) kèm imageUrl (nếu có từ danh sách xe) hoặc để trống, BẮT BUỘC có "imageAlt" chuẩn SEO giàu ngữ nghĩa và "caption" chú thích rõ ràng.
+   - "specTable": Bảng so sánh thông số kỹ thuật chi tiết giữa các phiên bản gồm: title, specVersions (mảng tên các bản), specRows (mảng { specName, values: string[] }).
+   - "priceTable": Bảng dự toán giá xe niêm yết và lăn bánh tạm tính gồm: title, carSlug, prices: [{ version, listedPrice, discount, rollingPrice }].
+   - "relatedCar": Khối gợi ý dòng xe liên quan cùng phân khúc hoặc cùng tầm giá. Hãy CHỌN ĐÚNG xe từ DANH SÁCH XE CÓ SẴN CỦA ĐẠI LÝ nếu có (gồm: carName, carSlug, carPrice, carImage, seatCount, fuelType).
+   - "prosCons": Đánh giá khách quan 3-4 Ưu điểm nổi bật và 1-2 Điểm cần lưu ý thực tế (gồm: title, pros: string[], cons: string[]).
+   - "callout": Hộp thông tin nổi bật / lời khuyên thủ tục vay trả góp, bảo hành hoặc ưu đãi đại lý (gồm: calloutType: 'info'|'warning'|'success'|'note', title, content).
+   - "youtube": Video đánh giá thực tế / trải nghiệm lái thử (gồm: videoId: "dQw4w9WgXcQ" hoặc ID thực tế, title, caption).
+   - "leadForm": Khối Form đăng ký nhận báo giá lăn bánh & lái thử tận nhà (gồm: formHeadline, formSubheadline, formButtonText, carName).
+   - "faq": 3-5 câu hỏi thường gặp thực tế giải đáp cặn kẽ cho khách mua xe, chuẩn Schema FAQPage (gồm: title, faqs: [{ question, answer }]).
+   - "ctaButton": Nút bấm kêu gọi hành động nổi bật Hotline/Zalo/Báo giá (gồm: ctaButtonText, ctaActionType: 'hotline'|'zalo'|'quoteForm', ctaSubtext, ctaVariant: 'red'|'blue'|'emerald').
 4. Ngôn từ & Văn phong: Văn phong của chuyên viên tư vấn bán hàng tận tâm, trung thực, truyền cảm hứng và thôi thúc người đọc liên hệ lái thử / nhận báo giá.
 5. TUYỆT ĐỐI CẤM văn phong AI rập khuôn: Cấm dùng các cụm từ sáo rỗng như "Trong bối cảnh hiện nay", "Nhìn chung", "Không thể phủ nhận", "Tóm lại là", "Có thể nói rằng", "Đáng chú ý là", "Hãy cùng chúng tôi tìm hiểu", "Hy vọng bài viết này sẽ đem lại". Hãy viết trực diện, mở đầu ấn tượng, thông tin đắt giá.
 6. Khi có yêu cầu JSON, BẮT BUỘC trả về đúng định dạng JSON hợp lệ, không thừa ký tự ngoài.`;
@@ -114,37 +134,43 @@ Nguyên tắc cốt lõi của bạn tuân thủ triệt để chiến lược "
       case 'generate_full_article':
         responseFormat = { type: 'json_object' };
         defaultTokenLimit = 4000;
-        userPrompt = `Hãy viết một BÀI VIẾT HOÀN CHỈNH TỪ A-Z CHUẨN SEO CHUYÊN SÂU về chủ đề: "${prompt}".
+        userPrompt = `Hãy viết một BÀI VIẾT HOÀN CHỈNH TỪ A-Z CHUẨN SEO & CHUYÊN SÂU về chủ đề: "${prompt}".
 
 Thông tin trọng tâm:
 - Dòng xe: ${targetCar}
 - Khu vực / Tỉnh thành: ${targetLocation}
 - Từ khóa chính (Focus Keyword): ${targetKeyword}
 ${context ? `- Ngữ cảnh bổ sung / Ghi chú của biên tập viên:\n${context}\n` : ''}
+${availableCarsListText}
 
-YÊU CẦU BÀI VIẾT HOÀN CHỈNH BAO GỒM:
+YÊU CẦU BÀI VIẾT HOÀN CHỈNH TỰ ĐỘNG PHỐI HỢP CÁC CONTENT BLOCK TINH HOA:
 1. Title: Tiêu đề bài viết cuốn hút, chứa từ khóa chính + năm (2026) + địa danh (${targetLocation}).
 2. Summary: Tóm tắt 2-3 câu ngắn gọn, kích thích người xem đọc tiếp.
 3. SEO Meta:
-   - metaTitle (≤ 60 ký tự, chuẩn Google Search)
-   - metaDescription (120-155 ký tự, có lời kêu gọi hành động)
+   - metaTitle (≤ 60 ký tự, chứa từ khóa chính ở đầu, chuẩn Google Search)
+   - metaDescription (120-155 ký tự, có từ khóa + lời kêu gọi hành động CTA)
    - suggestedKeywords: 5-8 từ khóa LSI liên quan chặt chẽ đến giá lăn bánh, trả góp, thông số, so sánh.
-4. Content Blocks (Cấu trúc bài viết gồm chuỗi các khối nội dung):
-   - Mở bài (paragraph): Đặt vấn đề, vị thế của xe trong phân khúc, các nâng cấp đáng giá nhất.
-   - Thẻ H2: Bảng giá niêm yết & Dự toán giá lăn bánh mới nhất tại ${targetLocation}.
-   - Đoạn văn (paragraph): Phân tích giá bán từng phiên bản, ưu đãi tiền mặt và quà tặng phụ kiện chính hãng của đại lý.
+4. Content Blocks: Hãy TỰ ĐỘNG PHÂN BỔ các khối nội dung tinh hoa theo thứ tự logic, chuyên nghiệp:
+   - Mở bài (paragraph): Đặt vấn đề, vị thế của xe trong phân khúc, lý do mẫu xe này đang thu hút sự quan tâm lớn.
+   - Thẻ H2: Giá xe ${targetCar} niêm yết & Dự toán lăn bánh tại ${targetLocation}.
+   - Khối Price Table (priceTable) hoặc Đoạn văn phân tích giá chi tiết từng phiên bản, ưu đãi tiền mặt và quà tặng phụ kiện chính hãng.
    - Thẻ H2: Đánh giá Ngoại thất - Ngôn ngữ thiết kế đột phá & Kích thước vượt trội.
-   - Đoạn văn (paragraph): Chi tiết đầu xe, cụm đèn LED, mâm xe, khoảng sáng gầm thích ứng đường xá địa phương.
+   - Đoạn văn (paragraph) & Khối Hình ảnh (singleImage) mô tả chi tiết đầu xe, cụm đèn LED, mâm xe, khoảng sáng gầm thích ứng đường xá địa phương.
    - Thẻ H2: Không gian Nội thất & Tiện nghi công nghệ cao cấp.
-   - Đoạn văn (paragraph): Bố cục khoang lái, màn hình giải trí kép, điều hòa, độ ngả hàng ghế sau và thể tích cốp.
-   - Thẻ H2: Động cơ Smartstream, Cảm giác lái & Khả năng tiết kiệm nhiên liệu.
-   - Đoạn văn (paragraph): Trải nghiệm chân ga, độ êm ái khung gầm, mức tiêu thụ xăng thực tế (lít/100km).
+   - Đoạn văn (paragraph) & Khối Hình ảnh (singleImage) mô tả khoang lái, màn hình giải trí kép, điều hòa, độ ngả hàng ghế sau và thể tích cốp.
+   - Thẻ H2: Bảng thông số kỹ thuật chi tiết các phiên bản.
+   - Khối Bảng so sánh thông số (specTable): Bảng so sánh đầy đủ kích thước DxRxC, động cơ, công suất, mô-men xoắn, hộp số, Hyundai SmartSense giữa các bản.
+   - Thẻ H2: Động cơ Smartstream, Cảm giác lái & Mức tiêu hao nhiên liệu thực tế.
+   - Đoạn văn (paragraph) đánh giá chân ga, độ êm ái khung gầm, mức tiêu thụ nhiên liệu (lít/100km) đường phố và đường trường.
    - Thẻ H2: Trang bị An toàn thông minh vượt trội (Hyundai SmartSense).
-   - Đoạn văn (paragraph): Các tính năng an toàn chủ động bảo vệ gia đình.
-   - Khối Callout (calloutType: "info"): Hướng dẫn thủ tục mua xe trả góp (trả trước từ 15-20%, lãi suất ưu đãi, duyệt hồ sơ nhanh tại ${targetLocation}).
-   - Khối Pros & Cons (prosCons): 3-4 ưu điểm nổi bật nhất và 1-2 điểm cần lưu ý khách quan.
+   - Đoạn văn (paragraph) phân tích các tính năng an toàn chủ động bảo vệ gia đình.
+   - Khối Video YouTube (youtube): Chèn video trải nghiệm lái thử / đánh giá thực tế (videoId mẫu hoặc YouTube ID liên quan, title, caption).
+   - Khối Callout (callout): Hướng dẫn thủ tục mua xe trả góp (trả trước từ 15-20%, lãi suất ưu đãi, duyệt hồ sơ nhanh tại ${targetLocation}).
+   - Khối Gợi ý dòng xe liên quan (relatedCar): Chọn 1 dòng xe tương đồng trong danh sách xe đại lý để gợi ý thêm sự lựa chọn cho khách.
+   - Khối Pros & Cons (prosCons): 3-4 ưu điểm vượt trội và 1-2 điểm lưu ý thực tế.
+   - Khối Lead Form (leadForm): Form đăng ký nhận báo giá lăn bánh tận tay và lái thử tại nhà.
    - Khối FAQ (faq): 3-5 câu hỏi giải đáp thực tế (hồ sơ trả góp, thủ tục bấm biển tại ${targetLocation}, bảo hành 5 năm).
-   - Khối CTA (ctaButton): Kêu gọi đăng ký lái thử tận nhà hoặc liên hệ hotline nhận giá lăn bánh tốt nhất hôm nay.
+   - Khối CTA (ctaButton): Nút kêu gọi hành động liên hệ hotline nhận giá lăn bánh tốt nhất.
 
 TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON:
 {
@@ -152,25 +178,55 @@ TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON:
   "summary": "Đoạn tóm tắt mở đầu 2-3 câu",
   "focusKeyword": "${targetKeyword}",
   "metaTitle": "Tiêu đề SEO ngắn gọn dưới 60 ký tự",
-  "metaDescription": "Mô tả SEO chuẩn 120-155 ký tự",
+  "metaDescription": "Mô tả SEO chuẩn 120-155 ký tự có CTA",
   "suggestedKeywords": ["từ khóa lsi 1", "từ khóa lsi 2", "từ khóa lsi 3", "từ khóa lsi 4", "từ khóa lsi 5"],
   "blocks": [
     { "type": "paragraph", "content": "Nội dung mở bài..." },
-    { "type": "heading", "level": 2, "content": "1. Giá xe... niêm yết và lăn bánh tại..." },
-    { "type": "paragraph", "content": "Nội dung chi tiết giá bán..." },
-    { "type": "heading", "level": 2, "content": "2. Đánh giá ngoại thất..." },
-    { "type": "paragraph", "content": "Nội dung ngoại thất..." },
-    { "type": "heading", "level": 2, "content": "3. Thiết kế nội thất & Tiện nghi..." },
-    { "type": "paragraph", "content": "Nội dung nội thất..." },
-    { "type": "heading", "level": 2, "content": "4. Khả năng vận hành & Động cơ..." },
-    { "type": "paragraph", "content": "Nội dung động cơ vận hành..." },
-    { "type": "heading", "level": 2, "content": "5. Công nghệ an toàn tiên tiến..." },
+    { "type": "heading", "level": 2, "content": "1. Giá xe... niêm yết và lăn bánh tại ${targetLocation}" },
+    { "type": "paragraph", "content": "Phân tích giá bán..." },
+    { "type": "heading", "level": 2, "content": "2. Đánh giá Ngoại thất: Hiện đại và bề thế" },
+    { "type": "singleImage", "imageUrl": "", "imageAlt": "Hình ảnh ngoại thất xe...", "caption": "Chi tiết thiết kế ngoại thất xe..." },
+    { "type": "paragraph", "content": "Chi tiết ngoại thất..." },
+    { "type": "heading", "level": 2, "content": "3. Không gian Nội thất & Tiện nghi hàng đầu" },
+    { "type": "singleImage", "imageUrl": "", "imageAlt": "Hình ảnh khoang lái nội thất xe...", "caption": "Khoang lái hiện đại với màn hình kép..." },
+    { "type": "paragraph", "content": "Chi tiết nội thất..." },
+    { "type": "heading", "level": 2, "content": "4. Bảng thông số kỹ thuật chi tiết" },
+    {
+      "type": "specTable",
+      "title": "Bảng so sánh thông số kỹ thuật chi tiết",
+      "specVersions": ["Bản Tiêu Chuẩn", "Bản Đặc Biệt", "Bản Cao Cấp"],
+      "specRows": [
+        { "specName": "Kích thước DxRxC (mm)", "values": ["4.535 x 1.765 x 1.485", "4.535 x 1.765 x 1.485", "4.535 x 1.765 x 1.485"] },
+        { "specName": "Động cơ", "values": ["Smartstream G1.5", "Smartstream G1.5", "Smartstream G1.5"] },
+        { "specName": "Công suất cực đại", "values": ["115 PS", "115 PS", "115 PS"] },
+        { "specName": "Hộp số", "values": ["6MT", "IVT", "IVT"] },
+        { "specName": "Hyundai SmartSense", "values": ["Không", "Cơ bản", "Đầy đủ"] }
+      ]
+    },
+    { "type": "heading", "level": 2, "content": "5. Khả năng vận hành & Cảm giác lái thực tế" },
+    { "type": "paragraph", "content": "Nội dung vận hành..." },
+    { "type": "heading", "level": 2, "content": "6. Trang bị An toàn thông minh" },
     { "type": "paragraph", "content": "Nội dung an toàn..." },
+    {
+      "type": "youtube",
+      "videoId": "dQw4w9WgXcQ",
+      "title": "Video đánh giá thực tế và trải nghiệm lái xe",
+      "caption": "Trải nghiệm chi tiết cảm giác lái và tiện nghi trên đường thực tế"
+    },
     {
       "type": "callout",
       "calloutType": "info",
       "title": "Chính sách hỗ trợ mua xe trả góp tại ${targetLocation}",
-      "content": "Nội dung tư vấn vay vốn, hồ sơ, lãi suất..."
+      "content": "Hỗ trợ vay đến 85% giá trị xe, duyệt hồ sơ trong 24h, liên kết tất cả ngân hàng uy tín..."
+    },
+    {
+      "type": "relatedCar",
+      "carName": "Tên dòng xe cùng hãng",
+      "carSlug": "slug-dong-xe",
+      "carPrice": 500000000,
+      "carImage": "",
+      "seatCount": 5,
+      "fuelType": "Xăng"
     },
     {
       "type": "prosCons",
@@ -179,19 +235,27 @@ TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON:
       "cons": ["Điểm lưu ý 1", "Điểm lưu ý 2"]
     },
     {
+      "type": "leadForm",
+      "formHeadline": "Đăng Ký Nhận Báo Giá Lăn Bánh & Lái Thử Tận Nhà",
+      "formSubheadline": "Nhận ngay bảng dự toán chi phí lăn bánh chính xác và quà tặng phụ kiện độc quyền trong 5 phút.",
+      "formButtonText": "Nhận Báo Giá & Ưu Đãi Ngay",
+      "carName": "${targetCar}"
+    },
+    {
       "type": "faq",
       "title": "Câu Hỏi Thường Gặp (FAQ)",
       "faqs": [
-        { "question": "Câu hỏi 1?", "answer": "Câu trả lời 1..." },
-        { "question": "Câu hỏi 2?", "answer": "Câu trả lời 2..." },
-        { "question": "Câu hỏi 3?", "answer": "Câu trả lời 3..." }
+        { "question": "Giá lăn bánh tại ${targetLocation} gồm những chi phí gì?", "answer": "Bao gồm giá bán sau ưu đãi, thuế trước bạ, phí đăng ký biển số, phí đăng kiểm, bảo hiểm..." },
+        { "question": "Hồ sơ vay mua xe trả góp cần chuẩn bị những gì?", "answer": "Khách hàng cá nhân chỉ cần CCCD gắn chip, giấy xác nhận tình trạng hôn nhân và chứng minh thu nhập cơ bản..." },
+        { "question": "Chính sách bảo hành chính hãng là bao lâu?", "answer": "Xe được áp dụng chính sách bảo hành 5 năm hoặc 100.000 km tùy điều kiện nào đến trước tại đại lý ủy quyền toàn quốc..." }
       ]
     },
     {
       "type": "ctaButton",
-      "ctaButtonText": "Nhận Báo Giá Lăn Bánh & Lái Thử",
+      "ctaButtonText": "Gọi Hotline Nhận Giá Lăn Bánh & Lái Thử Ngay",
       "ctaActionType": "hotline",
-      "ctaSubtext": "Hỗ trợ 24/7 - Giao xe tận nhà tại ${targetLocation}"
+      "ctaSubtext": "Tư vấn 24/7 - Hỗ trợ đăng ký lái thử tận nhà tại ${targetLocation}",
+      "ctaVariant": "red"
     }
   ]
 }`;
@@ -204,17 +268,19 @@ TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON:
 Dòng xe: ${targetCar}
 Địa phương / Tỉnh thành: ${targetLocation}
 Từ khóa chính: ${targetKeyword}
-
+${availableCarsListText}
 ${context ? `Nội dung ngữ cảnh hiện có:\n${context}\n` : ''}
+
+Yêu cầu gợi ý từng mục bài viết kèm theo suggestedBlockType (heading, paragraph, specTable, priceTable, relatedCar, singleImage, youtube, callout, prosCons, leadForm, faq, ctaButton) để người viết dễ dàng chèn khối nội dung.
 
 Yêu cầu trả về JSON có cấu trúc:
 {
   "outline": [
-    { "level": 2, "title": "Tiêu đề H2", "description": "Tóm tắt ngắn những ý đắt giá cần triển khai trong mục này", "points": ["Luận điểm 1", "Luận điểm 2"] },
-    { "level": 3, "title": "Tiêu đề H3", "description": "Chi tiết nhỏ hơn nếu có", "points": ["Chi tiết 1"] }
+    { "level": 2, "title": "Tiêu đề H2", "description": "Tóm tắt ngắn những ý đắt giá cần triển khai trong mục này", "points": ["Luận điểm 1", "Luận điểm 2"], "suggestedBlockType": "priceTable" },
+    { "level": 3, "title": "Tiêu đề H3", "description": "Chi tiết nhỏ hơn nếu có", "points": ["Chi tiết 1"], "suggestedBlockType": "singleImage" }
   ]
 }
-Số lượng mục: 6-9 mục chuẩn cấu trúc E-E-A-T (Giá bán lăn bánh, Ngoại thất, Nội thất, Vận hành, An toàn SmartSense, So sánh / Trải nghiệm thực tế, FAQ và Lời kết CTA).`;
+Số lượng mục: 6-10 mục chuẩn cấu trúc E-E-A-T (Giá bán lăn bánh, Ngoại thất, Nội thất, Bảng thông số kỹ thuật, Vận hành & Động cơ, An toàn SmartSense, So sánh xe liên quan, Ưu nhược điểm, FAQ và Lời kết CTA).`;
         break;
 
       case 'continue_writing':
@@ -315,7 +381,7 @@ Yêu cầu trả về JSON:
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}` as string,
       },
       body: JSON.stringify(buildPayload(true)),
     });
@@ -328,7 +394,7 @@ Yêu cầu trả về JSON:
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${apiKey}`,
+            Authorization: `Bearer ${apiKey}` as string,
           },
           body: JSON.stringify(buildPayload(false)),
         });

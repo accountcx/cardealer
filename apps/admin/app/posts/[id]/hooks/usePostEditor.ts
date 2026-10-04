@@ -292,6 +292,100 @@ export function usePostEditor() {
             ctaButtonText: b.ctaButtonText || 'Nhận Báo Giá Lăn Bánh & Lái Thử',
             ctaActionType: b.ctaActionType || 'hotline',
             ctaSubtext: b.ctaSubtext || 'Hỗ trợ 24/7 - Giao xe tận nơi',
+            ctaVariant: b.ctaVariant || 'red',
+            ctaPhone: b.ctaPhone || '',
+            ctaCustomUrl: b.ctaCustomUrl || '',
+          };
+        }
+        if (b.type === 'singleImage') {
+          let fallbackImage = b.imageUrl || '';
+          if (!fallbackImage && availableCars.length > 0) {
+            const matched = availableCars.find((c) => c.anhDaiDienUrl);
+            if (matched?.anhDaiDienUrl) fallbackImage = matched.anhDaiDienUrl;
+          }
+          return {
+            id,
+            type: 'singleImage',
+            imageUrl: fallbackImage,
+            imageAlt: b.imageAlt || b.caption || 'Hình ảnh chi tiết xe ô tô Hyundai',
+            caption: b.caption || '',
+          };
+        }
+        if (b.type === 'imageGallery') {
+          return {
+            id,
+            type: 'imageGallery',
+            title: b.title || 'Bộ Sưu Tập Hình Ảnh Chi Tiết',
+            galleryStyle: 'slider',
+            galleryImages: b.galleryImages || [],
+          };
+        }
+        if (b.type === 'specTable') {
+          return {
+            id,
+            type: 'specTable',
+            title: b.title || 'Bảng So Sánh Thông Số Kỹ Thuật Chi Tiết',
+            specVersions:
+              b.specVersions && b.specVersions.length > 0
+                ? b.specVersions
+                : ['Bản Tiêu Chuẩn', 'Bản Đặc Biệt', 'Bản Cao Cấp'],
+            specRows: b.specRows && b.specRows.length > 0 ? b.specRows : [],
+          };
+        }
+        if (b.type === 'priceTable') {
+          return {
+            id,
+            type: 'priceTable',
+            title: b.title || 'Bảng Giá Niêm Yết & Dự Toán Lăn Bánh',
+            carSlug: b.carSlug || '',
+            prices: b.prices || [],
+          };
+        }
+        if (b.type === 'relatedCar') {
+          const matchedCar = availableCars.find(
+            (c) =>
+              (b.carSlug && c.slug === b.carSlug) ||
+              (b.carName && c.tenXe.toLowerCase().includes(b.carName.toLowerCase()))
+          );
+          return {
+            id,
+            type: 'relatedCar',
+            carName: matchedCar?.tenXe || b.carName || 'Hyundai Accent 2026',
+            carSlug: matchedCar?.slug || b.carSlug || 'hyundai-accent',
+            carPrice: matchedCar?.minPrice || b.carPrice || 439000000,
+            carImage: matchedCar?.anhDaiDienUrl || b.carImage || '/images/cars/accent.webp',
+            seatCount: (matchedCar?.seatRange ? parseInt(matchedCar.seatRange) : 5) || b.seatCount || 5,
+            fuelType: matchedCar?.fuelType || b.fuelType || 'Xăng 1.5L',
+          };
+        }
+        if (b.type === 'leadForm') {
+          return {
+            id,
+            type: 'leadForm',
+            carName: b.carName || '',
+            formHeadline: b.formHeadline || 'Đăng Ký Nhận Báo Giá Lăn Bánh & Lái Thử Tận Nhà',
+            formSubheadline:
+              b.formSubheadline || 'Chuyên viên tư vấn sẽ liên hệ gửi dự toán chi phí chi tiết trong 5 phút.',
+            formButtonText: b.formButtonText || 'Gửi Yêu Cầu Nhận Báo Giá',
+          };
+        }
+        if (b.type === 'youtube') {
+          return {
+            id,
+            type: 'youtube',
+            videoId: b.videoId || 'dQw4w9WgXcQ',
+            videoUrl: b.videoUrl || (b.videoId ? `https://www.youtube.com/watch?v=${b.videoId}` : ''),
+            title: b.title || 'Video Đánh Giá Thực Tế & Trải Nghiệm Lái Thử',
+            caption: b.caption || '',
+          };
+        }
+        if (b.type === 'tiktok') {
+          return {
+            id,
+            type: 'tiktok',
+            videoUrl: b.videoUrl || '',
+            videoId: b.videoId || '',
+            title: b.title || 'Video Trải Nghiệm Ngắn',
           };
         }
         return {
@@ -452,7 +546,6 @@ export function usePostEditor() {
         status: targetStatus,
         isFeatured,
         featuredOrder,
-        focusKeyword: focusKeyword.trim() || undefined,
         metaTitle: metaTitle.trim() || undefined,
         metaDescription: metaDescription.trim() || undefined,
         canonicalUrl: canonicalUrl.trim() || undefined,
@@ -460,22 +553,21 @@ export function usePostEditor() {
       };
 
       if (isNew) {
-        const created = await postService.createPost(payload);
+        const res = await postService.createPost(payload);
         setToast({ type: 'success', message: 'Tạo bài viết mới thành công!' });
-        router.push(`/posts/${created.data.id}`);
+        if (res.data?.id) {
+          router.replace(`/posts/${res.data.id}`);
+        }
       } else {
         await postService.updatePost(postId, payload);
         setStatus(targetStatus);
-        setToast({
-          type: 'success',
-          message: targetStatus === 'published' ? 'Đã xuất bản bài viết thành công!' : 'Đã lưu bản nháp thành công!',
-        });
+        setOriginalSlug(slug.trim());
+        setToast({ type: 'success', message: 'Đã lưu thay đổi bài viết thành công!' });
       }
-    } catch (err) {
-      setToast({
-        type: 'error',
-        message: err instanceof Error ? err.message : 'Có lỗi xảy ra khi lưu bài viết',
-      });
+    } catch (err: unknown) {
+      console.error('Lỗi khi lưu bài viết:', err);
+      const msg = err instanceof Error ? err.message : 'Không thể lưu bài viết';
+      setToast({ type: 'error', message: msg });
     } finally {
       setSaving(false);
     }
@@ -484,23 +576,21 @@ export function usePostEditor() {
   return {
     isNew,
     postId,
+    categories,
+    availableCars,
     loading,
     saving,
     pageError,
     toast,
     setToast,
-
-    // Categories & Cars
-    categories,
-    availableCars,
-
-    // Form fields
+    // Fields
     tieuDe,
     setTieuDe,
     handleTitleChange,
     slug,
     setSlug,
     originalSlug,
+    setOriginalSlug,
     categoryId,
     setCategoryId,
     anhDaiDienUrl,
@@ -525,25 +615,25 @@ export function usePostEditor() {
     setCanonicalUrl,
     noIndex,
     setNoIndex,
-
-    // Content Blocks
+    // Blocks
     blocks,
     setBlocks,
     addBlock,
     updateBlock,
     removeBlock,
     moveBlock,
-
-    // AI Helper States & Methods
-    isAiModalOpen,
-    setIsAiModalOpen,
+    // Helpers
+    seoResult,
+    handleSave,
+    handlePreview,
     insertOutlineBlocks,
     insertFaqBlock,
     appendParagraphBlock,
     applyAiSeo,
     applyFullArticle,
-
-    // Media & SEO
+    // UI states
+    isAiModalOpen,
+    setIsAiModalOpen,
     mediaPickerTarget,
     setMediaPickerTarget,
     uploadingSingleImageBlockId,
@@ -552,10 +642,5 @@ export function usePostEditor() {
     handleUploadGalleryImages,
     handleUploadGalleryImageAt,
     handleUploadSingleImage,
-    seoResult,
-
-    // Actions
-    handlePreview,
-    handleSave,
   };
 }

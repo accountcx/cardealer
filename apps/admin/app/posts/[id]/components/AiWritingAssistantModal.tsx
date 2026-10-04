@@ -9,18 +9,22 @@ import {
   HelpCircle,
   Check,
   Copy,
-  AlertCircle,
-  Key,
   Layers,
-  ArrowRight,
   ListPlus,
   RefreshCw,
   Zap,
-  BookOpen,
   CheckCircle2,
+  Image as ImageIcon,
+  Table,
+  Car,
+  CheckSquare,
+  MessageSquare,
+  MousePointerClick,
+  Video,
 } from 'lucide-react';
 import { Modal, Button, Card, Input } from '@cardealer/ui';
 import { aiService } from '../../../../services/ai.service';
+import type { CarSummary } from '../../../../services/catalog.service';
 import type {
   AiAction,
   OutlineItem,
@@ -35,6 +39,7 @@ export interface AiWritingAssistantModalProps {
   currentTitle: string;
   currentKeyword: string;
   currentBlocksText: string;
+  availableCars?: CarSummary[];
   onInsertFullArticle?: (article: FullArticleResult) => void;
   onInsertOutline: (outline: OutlineItem[]) => void;
   onInsertFaqs: (faqs: FaqItem[]) => void;
@@ -46,8 +51,8 @@ type AiTab = 'full' | 'outline' | 'continue' | 'seo' | 'faq';
 
 // 🧠 Mental Model: Trợ Lý AI Viết Bài & Tối Ưu SEO Toàn Diện (Cyborg Content Engine).
 // Tận dụng sức mạnh ChatGPT / OpenAI Model để hỗ trợ biên tập viên:
-// 1. Viết toàn bộ bài viết hoàn chỉnh từ A-Z chuẩn E-E-A-T + SEO + FAQ + CTA (Full Article)
-// 2. Tạo dàn ý chuẩn H2/H3 cho bài đánh giá/bảng giá xe
+// 1. Viết toàn bộ bài viết hoàn chỉnh từ A-Z chuẩn E-E-A-T + SEO + Phối hợp 14 Content Block Tinh Hoa (Full Article)
+// 2. Tạo dàn ý chuẩn H2/H3 có gợi ý Content Block phù hợp
 // 3. Viết tiếp đoạn văn thông số kỹ thuật & trải nghiệm
 // 4. Tối ưu SEO On-page: sinh Meta Title, Meta Description, từ khóa LSI
 // 5. Sinh khối FAQ chuẩn Schema FAQPage cho Local SEO & YMYL
@@ -57,6 +62,7 @@ export function AiWritingAssistantModal({
   currentTitle,
   currentKeyword,
   currentBlocksText,
+  availableCars = [],
   onInsertFullArticle,
   onInsertOutline,
   onInsertFaqs,
@@ -92,7 +98,7 @@ export function AiWritingAssistantModal({
       if (currentKeyword && !keyword) {
         setKeyword(currentKeyword);
       }
-      // Heuristic car model extraction from title
+      // Heuristic car model extraction from title or availableCars
       const lower = (currentTitle || '').toLowerCase();
       if (lower.includes('accent')) setCarModel('Hyundai Accent');
       else if (lower.includes('creta')) setCarModel('Hyundai Creta');
@@ -120,6 +126,18 @@ export function AiWritingAssistantModal({
         keyword: keyword || currentKeyword || undefined,
         carModel: carModel || undefined,
         location: location || undefined,
+        availableCars:
+          availableCars && availableCars.length > 0
+            ? availableCars.map((c) => ({
+                id: c.id,
+                tenXe: c.tenXe,
+                slug: c.slug,
+                minPrice: c.minPrice,
+                anhDaiDienUrl: c.anhDaiDienUrl,
+                seatRange: c.seatRange,
+                fuelType: c.fuelType,
+              }))
+            : undefined,
       });
 
       if (data?.fullArticle) {
@@ -144,6 +162,35 @@ export function AiWritingAssistantModal({
     }
   };
 
+  const getBlockIcon = (type: string) => {
+    switch (type) {
+      case 'heading':
+        return <ListTree className="w-3.5 h-3.5 text-cyan-400 shrink-0" />;
+      case 'singleImage':
+      case 'imageGallery':
+        return <ImageIcon className="w-3.5 h-3.5 text-blue-400 shrink-0" />;
+      case 'specTable':
+      case 'priceTable':
+        return <Table className="w-3.5 h-3.5 text-amber-400 shrink-0" />;
+      case 'relatedCar':
+        return <Car className="w-3.5 h-3.5 text-emerald-400 shrink-0" />;
+      case 'prosCons':
+        return <CheckSquare className="w-3.5 h-3.5 text-indigo-400 shrink-0" />;
+      case 'callout':
+        return <Layers className="w-3.5 h-3.5 text-purple-400 shrink-0" />;
+      case 'youtube':
+      case 'tiktok':
+        return <Video className="w-3.5 h-3.5 text-rose-400 shrink-0" />;
+      case 'faq':
+        return <MessageSquare className="w-3.5 h-3.5 text-teal-400 shrink-0" />;
+      case 'ctaButton':
+      case 'leadForm':
+        return <MousePointerClick className="w-3.5 h-3.5 text-pink-400 shrink-0" />;
+      default:
+        return <FileText className="w-3.5 h-3.5 text-slate-400 shrink-0" />;
+    }
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} className="max-w-4xl max-h-[92vh] overflow-y-auto">
       <div className="space-y-5">
@@ -158,7 +205,7 @@ export function AiWritingAssistantModal({
                 Trợ Lý AI Viết Bài & Tối Ưu SEO (Cyborg Content Engine)
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                Tạo bài viết hoàn chỉnh A-Z, cấu trúc chuẩn E-E-A-T, bám sát thị trường địa phương & tối ưu SEO
+                Tự động điều phối 14 Content Block tinh hoa (Hình ảnh, Video, Bảng thông số, Xe liên quan, Form báo giá, FAQ...)
               </p>
             </div>
           </div>
@@ -259,7 +306,33 @@ export function AiWritingAssistantModal({
               />
             </div>
           </div>
+
+          {availableCars && availableCars.length > 0 && (
+            <div className="pt-1 flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] text-slate-400 font-medium mr-1">Xe có sẵn trong kho đại lý:</span>
+              {availableCars.slice(0, 6).map((c) => (
+                <button
+                  key={c.id || c.slug}
+                  type="button"
+                  onClick={() => setCarModel(c.tenXe)}
+                  className={`text-[11px] px-2 py-0.5 rounded border transition-all ${
+                    carModel.toLowerCase().includes(c.tenXe.toLowerCase())
+                      ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 font-semibold'
+                      : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200 hover:border-slate-700'
+                  }`}
+                >
+                  {c.tenXe}
+                </button>
+              ))}
+            </div>
+          )}
         </Card>
+
+        {errorMsg && (
+          <div className="p-3 rounded-xl bg-red-950/40 border border-red-500/40 text-xs text-red-300">
+            {errorMsg}
+          </div>
+        )}
 
         {/* Tab 1: Viết Toàn Bộ Bài Viết (Full Article) */}
         {activeTab === 'full' && (
@@ -278,7 +351,7 @@ export function AiWritingAssistantModal({
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
               <p className="text-xs text-slate-400">
-                AI sẽ tự động tạo trọn bộ: Tiêu đề, Tóm tắt, Thẻ H2/H3, Nội dung đánh giá, Bảng giá lăn bánh, Callout trả góp, Pros & Cons, Khối FAQ và Nút CTA.
+                AI sẽ tự động lựa chọn & điều phối 14 khối Content Block (Bảng giá, Thông số kỹ thuật, Ảnh, Video, Xe liên quan, Form báo giá, FAQ, CTA...).
               </p>
               <Button
                 variant="accent"
@@ -350,17 +423,31 @@ export function AiWritingAssistantModal({
                     <span className="text-slate-400 font-medium block mb-1.5">
                       Cấu trúc các khối nội dung sinh ra ({fullArticleResult.blocks?.length || 0} khối):
                     </span>
-                    <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+                    <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
                       {fullArticleResult.blocks?.map((block, idx) => (
                         <div
                           key={idx}
-                          className="p-2 bg-slate-900/60 rounded border border-slate-800/80 text-[11px] flex items-start gap-2"
+                          className="p-2 bg-slate-900/60 rounded border border-slate-800/80 text-[11px] flex items-center gap-2"
                         >
-                          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-cyan-400 font-mono text-[10px] shrink-0 uppercase">
+                          {getBlockIcon(block.type)}
+                          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 font-mono text-[10px] shrink-0 uppercase">
                             {block.type === 'heading' ? `H${block.level || 2}` : block.type}
                           </span>
-                          <span className="text-slate-300 line-clamp-1">
-                            {block.content || block.title || (block.faqs ? `${block.faqs.length} câu hỏi FAQ` : '') || (block.pros ? `${block.pros.length} ưu điểm` : '') || block.ctaButtonText}
+                          <span className="text-slate-300 truncate flex-1">
+                            {block.type === 'heading' && block.content}
+                            {block.type === 'paragraph' && block.content}
+                            {block.type === 'singleImage' && `Ảnh: ${block.imageAlt || block.caption || 'Hình ảnh minh họa'}`}
+                            {block.type === 'imageGallery' && `Bộ sưu tập: ${block.title || 'Thư viện ảnh'}`}
+                            {block.type === 'specTable' && `Bảng thông số: ${block.title || 'So sánh thông số'}`}
+                            {block.type === 'priceTable' && `Bảng giá: ${block.title || 'Dự toán lăn bánh'}`}
+                            {block.type === 'relatedCar' && `Gợi ý xe: ${block.carName || block.carSlug || 'Xe liên quan'}`}
+                            {block.type === 'youtube' && `Video: ${block.title || 'Video YouTube'}`}
+                            {block.type === 'tiktok' && `TikTok: ${block.title || 'Video TikTok'}`}
+                            {block.type === 'prosCons' && `Ưu/Nhược điểm: ${block.title || `${block.pros?.length || 0} ưu điểm, ${block.cons?.length || 0} lưu ý`}`}
+                            {block.type === 'callout' && `Ghi chú (${block.calloutType || 'info'}): ${block.title || block.content}`}
+                            {block.type === 'leadForm' && `Form Báo Giá: ${block.formHeadline || 'Đăng ký tư vấn'}`}
+                            {block.type === 'faq' && `Hỏi đáp FAQ: ${block.title || `${block.faqs?.length || 0} câu hỏi`}`}
+                            {block.type === 'ctaButton' && `CTA: ${block.ctaButtonText || 'Kêu gọi hành động'}`}
                           </span>
                         </div>
                       ))}
@@ -389,7 +476,7 @@ export function AiWritingAssistantModal({
 
             <div className="flex justify-between items-center">
               <p className="text-xs text-slate-400">
-                AI sẽ phân chia các thẻ H2, H3 chuẩn SEO và các luận điểm quan trọng.
+                AI sẽ phân chia các thẻ H2, H3 chuẩn SEO và các luận điểm quan trọng kèm khối nội dung gợi ý.
               </p>
               <Button
                 variant="accent"
@@ -430,10 +517,19 @@ export function AiWritingAssistantModal({
                           : 'bg-slate-900/60 border-slate-800 text-slate-300 pl-6'
                       }`}
                     >
-                      <span className="text-cyan-400 mr-2 font-mono text-[10px]">
-                        H{item.level}
-                      </span>
-                      {item.title}
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-cyan-400 mr-2 font-mono text-[10px]">
+                            H{item.level}
+                          </span>
+                          {item.title}
+                        </div>
+                        {item.suggestedBlockType && (
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-cyan-300 font-mono border border-slate-700">
+                            {item.suggestedBlockType}
+                          </span>
+                        )}
+                      </div>
                       {item.description && (
                         <p className="text-[11px] text-slate-400 font-normal mt-1 ml-6">
                           ↳ {item.description}
@@ -584,12 +680,12 @@ export function AiWritingAssistantModal({
 
                   {seoResult.suggestedKeywords && seoResult.suggestedKeywords.length > 0 && (
                     <div>
-                      <span className="text-slate-400 font-medium block mb-1.5">Từ khóa liên quan (LSI Keywords):</span>
+                      <span className="text-slate-400 font-medium block mb-1.5">Từ khóa ngữ nghĩa LSI đề xuất:</span>
                       <div className="flex flex-wrap gap-1.5">
-                        {seoResult.suggestedKeywords.map((kw, i) => (
+                        {seoResult.suggestedKeywords.map((kw, idx) => (
                           <span
-                            key={i}
-                            className="px-2.5 py-1 bg-cyan-950/60 border border-cyan-500/30 text-cyan-300 rounded-md text-[11px]"
+                            key={idx}
+                            className="px-2.5 py-1 bg-slate-900 rounded-md text-cyan-300 font-mono text-[11px] border border-cyan-500/20"
                           >
                             #{kw}
                           </span>
@@ -603,24 +699,24 @@ export function AiWritingAssistantModal({
           </div>
         )}
 
-        {/* Tab 5: FAQ Schema */}
+        {/* Tab 5: Sinh Khối FAQ Chuẩn Schema */}
         {activeTab === 'faq' && (
           <div className="space-y-4">
             <div>
               <label className="text-xs font-medium text-slate-200 mb-1.5 block">
-                Chủ đề cần tạo bộ câu hỏi thường gặp (FAQ)
+                Chủ đề cần sinh câu hỏi thường gặp
               </label>
               <Input
                 value={prompt || currentTitle}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="VD: Mua trả góp xe Accent tại Nghệ An, thủ tục bấm biển..."
+                placeholder="VD: Thủ tục mua xe Hyundai Creta trả góp tại Nghệ An"
                 className="h-10 text-sm bg-slate-950/80 border-slate-700"
               />
             </div>
 
             <div className="flex justify-between items-center">
               <p className="text-xs text-slate-400">
-                Tự động sinh 3-5 câu hỏi thường gặp kết nối với Schema FAQPage giúp tăng hiển thị Google Rich Results.
+                Tạo 3-5 câu hỏi đáp YMYL thực tế (bấm biển, thủ tục vay vốn, bảo dưỡng xe).
               </p>
               <Button
                 variant="accent"
@@ -629,7 +725,7 @@ export function AiWritingAssistantModal({
                 className="flex items-center gap-2 h-9 px-4 text-xs font-semibold"
               >
                 {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                {loading ? 'Đang tạo FAQ...' : 'Sinh Khối FAQ Tự Động'}
+                {loading ? 'Đang tạo FAQ...' : 'Sinh Khối FAQ Chuẩn SEO'}
               </Button>
             </div>
 
@@ -637,7 +733,7 @@ export function AiWritingAssistantModal({
               <Card className="p-4 bg-slate-950/60 border-cyan-500/30 rounded-xl space-y-3">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
                   <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
-                    <Check className="w-4 h-4" /> Bộ câu hỏi FAQ ({faqResult.length} câu)
+                    <Check className="w-4 h-4" /> Danh sách câu hỏi FAQ ({faqResult.length} câu)
                   </span>
                   <Button
                     variant="accent"
@@ -648,14 +744,14 @@ export function AiWritingAssistantModal({
                     }}
                     className="h-8 px-3 text-xs flex items-center gap-1.5"
                   >
-                    <ListPlus className="w-3.5 h-3.5" /> Chèn Khối FAQ vào bài viết
+                    <ListPlus className="w-3.5 h-3.5" /> Chèn khối FAQ vào bài viết
                   </Button>
                 </div>
                 <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
                   {faqResult.map((faq, idx) => (
-                    <div key={idx} className="p-3 bg-slate-900 border border-slate-800 rounded-lg text-xs space-y-1">
-                      <p className="font-semibold text-cyan-300">Q: {faq.question}</p>
-                      <p className="text-slate-300 leading-relaxed">A: {faq.answer}</p>
+                    <div key={idx} className="p-2.5 bg-slate-900 rounded-lg border border-slate-800 text-xs space-y-1">
+                      <p className="font-bold text-cyan-300">Q: {faq.question}</p>
+                      <p className="text-slate-300 leading-relaxed text-[11px]">A: {faq.answer}</p>
                     </div>
                   ))}
                 </div>
@@ -663,34 +759,6 @@ export function AiWritingAssistantModal({
             )}
           </div>
         )}
-
-        {/* Error Alert */}
-        {errorMsg && (
-          <div className="p-3.5 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-start gap-2.5 text-xs text-rose-300">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
-            <div>
-              <p className="font-semibold">Không thể hoàn thành yêu cầu AI</p>
-              <p className="text-rose-400/90 mt-0.5">{errorMsg}</p>
-              {errorMsg.includes('API Key') && (
-                <a
-                  href="/settings"
-                  target="_blank"
-                  className="inline-flex items-center gap-1 text-cyan-400 underline hover:text-cyan-300 mt-1.5 font-medium"
-                >
-                  <Key className="w-3 h-3" /> Đi tới trang Cài Đặt Hệ Thống để nhập OpenAI API Key
-                </a>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Footer Advice */}
-        <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-500">
-          <span>Khuyên dùng: Kết hợp 70% nội dung sườn AI + 30% kinh nghiệm thực tế tại địa phương.</span>
-          <Button variant="ghost" size="sm" onClick={onClose} className="h-7 text-xs text-slate-400">
-            Đóng
-          </Button>
-        </div>
       </div>
     </Modal>
   );

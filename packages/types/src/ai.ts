@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 // 🧠 Mental Model: Type Definitions & Zod Schemas cho AI Writing Assistant (ChatGPT / OpenAI Integration).
-// Phục vụ viết Toàn bộ Bài viết (Full Article A-Z), Dàn ý SEO, Viết tiếp nội dung, Tối ưu hóa SEO/Meta, và Tự động sinh Khối FAQ chuẩn Schema.
+// Hỗ trợ tự động phân bổ thông minh 14 Content Blocks tinh hoa (Images, SpecTable, RelatedCar, ProsCons, FAQ, Callout, CTA, Video...).
 export const AiActionSchema = z.enum([
   'generate_full_article',
   'generate_outline',
@@ -12,6 +12,21 @@ export const AiActionSchema = z.enum([
 ]);
 export type AiAction = z.infer<typeof AiActionSchema>;
 
+export const AiCarSummarySchema = z.object({
+  id: z.string().optional(),
+  tenXe: z.string(),
+  slug: z.string(),
+  minPrice: z.number().optional(),
+  maxPrice: z.number().optional(),
+  giaNiemYetTu: z.number().optional(),
+  anhDaiDienUrl: z.string().optional().nullable(),
+  soChoNgoi: z.number().optional().nullable(),
+  seatRange: z.string().optional().nullable(),
+  loaiNhienLieu: z.string().optional().nullable(),
+  fuelType: z.string().optional().nullable(),
+});
+export type AiCarSummary = z.infer<typeof AiCarSummarySchema>;
+
 export const AiGenerateRequestSchema = z.object({
   action: AiActionSchema,
   prompt: z.string().trim().min(1, 'Vui lòng nhập chủ đề hoặc nội dung yêu cầu'),
@@ -19,6 +34,7 @@ export const AiGenerateRequestSchema = z.object({
   keyword: z.string().optional(),
   carModel: z.string().optional(),
   location: z.string().optional(),
+  availableCars: z.array(AiCarSummarySchema).optional(),
   maxTokens: z.number().int().positive().optional(),
 });
 export type AiGenerateRequest = z.infer<typeof AiGenerateRequestSchema>;
@@ -28,6 +44,7 @@ export interface OutlineItem {
   title: string;
   points?: string[];
   description?: string;
+  suggestedBlockType?: string;
 }
 
 export interface FaqItem {
@@ -44,8 +61,24 @@ export interface SeoOptimizationResult {
   suggestedTags?: string[];
 }
 
+export type FullArticleBlockType =
+  | 'heading'
+  | 'paragraph'
+  | 'singleImage'
+  | 'imageGallery'
+  | 'specTable'
+  | 'priceTable'
+  | 'relatedCar'
+  | 'prosCons'
+  | 'callout'
+  | 'leadForm'
+  | 'faq'
+  | 'ctaButton'
+  | 'youtube'
+  | 'tiktok';
+
 export interface FullArticleBlock {
-  type: 'heading' | 'paragraph' | 'callout' | 'faq' | 'prosCons' | 'ctaButton';
+  type: FullArticleBlockType | string;
   level?: number;
   content?: string;
   title?: string;
@@ -56,7 +89,31 @@ export interface FullArticleBlock {
   ctaButtonText?: string;
   ctaActionType?: 'hotline' | 'zalo' | 'quoteForm' | 'customLink';
   ctaPhone?: string;
+  ctaCustomUrl?: string;
   ctaSubtext?: string;
+  ctaVariant?: 'red' | 'blue' | 'emerald';
+  // Images
+  imageUrl?: string;
+  imageAlt?: string;
+  caption?: string;
+  galleryImages?: Array<{ url: string; alt?: string; caption?: string }>;
+  // Tables
+  specVersions?: string[];
+  specRows?: Array<{ specName: string; values: string[] }>;
+  prices?: Array<{ version: string; listedPrice: number; discount: number; rollingPrice: number }>;
+  // Cars & Forms
+  carName?: string;
+  carSlug?: string;
+  carPrice?: number;
+  carImage?: string;
+  seatCount?: number;
+  fuelType?: string;
+  formHeadline?: string;
+  formSubheadline?: string;
+  formButtonText?: string;
+  // Video
+  videoId?: string;
+  videoUrl?: string;
 }
 
 export interface FullArticleResult {
