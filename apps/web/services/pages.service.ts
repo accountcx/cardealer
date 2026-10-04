@@ -8,6 +8,24 @@ export const pagesService = {
    * Lấy chi tiết trang tĩnh theo slug ngoài Storefront.
    * Backend đảm bảo cơ chế Fail-Closed (chỉ trả về khi isPublished = true).
    */
+  /**
+   * Lấy danh sách toàn bộ trang tĩnh đã xuất bản phục vụ Sitemap XML.
+   */
+  async getPublishedPages(): Promise<StaticPage[]> {
+    try {
+      const response = await apiClient.get<StaticPage[]>('/api/public/pages', undefined, {
+        next: {
+          tags: ['static-pages'],
+          revalidate: 60,
+        },
+      });
+      return Array.isArray(response) ? response : [];
+    } catch (err: unknown) {
+      console.warn('[pagesService] Lỗi khi truy vấn danh sách trang tĩnh:', err);
+      return [];
+    }
+  },
+
   async getPageBySlug(slug: string): Promise<StaticPage | null> {
     try {
       const response = await apiClient.get<StaticPage>(`/api/public/pages/${slug}`, undefined, {
