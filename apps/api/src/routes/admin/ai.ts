@@ -14,7 +14,8 @@ import {
 // 🧠 Mental Model: Router API Trợ Lý AI Viết Bài (@cardealer/api)
 // Hỗ trợ Admin sinh dàn ý, viết tiếp nội dung, tối ưu SEO On-Page và tự động tạo khối FAQ.
 // API Key và Model được nạp động từ database `site_settings` (hoặc fallback biến môi trường OPENAI_API_KEY).
-// Sử dụng native fetch gọi OpenAI API (chat completions) chuẩn JSON Schema, không phụ thuộc thư viện nặng.
+// Tương thích các Model mới nhất: GPT-4o, GPT-4o Mini, GPT-4.5 Preview, o3-mini, o1-mini, o1.
+// Tự động phân nhánh tham số tối ưu (temperature, max_completion_tokens, developer role) phù hợp từng model.
 
 export async function handleAdminAiRoutes(
   req: IncomingMessage,
@@ -170,23 +171,35 @@ Yêu cầu trả về JSON:
         return true;
     }
 
-    // 3. Gửi request tới OpenAI API endpoint
+    // 3. Phân nhánh tham số tương thích với từng loại Model (Reasoning o-series vs Chat Completion)
+    const isReasoningModel = model.startsWith('o1') || model.startsWith('o3');
+    const systemRole = isReasoningModel ? 'developer' : 'system';
+
+    const requestBody: Record<string, unknown> = {
+      model: model || 'gpt-4o-mini',
+      messages: [
+        { role: systemRole, content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      ...(responseFormat ? { response_format: responseFormat } : {}),
+    };
+
+    if (isReasoningModel) {
+      // O-series dùng max_completion_tokens và không nhận tham số temperature tùy chỉnh
+      requestBody.max_completion_tokens = maxTokens || 2000;
+    } else {
+      requestBody.temperature = 0.7;
+      requestBody.max_tokens = maxTokens || 1500;
+    }
+
+    // Gửi request tới OpenAI API endpoint
     const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        model: model || 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-        temperature: 0.7,
-        max_tokens: maxTokens || 1500,
-        ...(responseFormat ? { response_format: responseFormat } : {}),
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!openaiRes.ok) {

@@ -158,15 +158,25 @@ export const SeoTrackingSection: React.FC<SeoTrackingSectionProps> = ({ initialD
             <select
               value={formData.openaiModel || 'gpt-4o-mini'}
               onChange={(e) => handleChange('openaiModel', e.target.value)}
-              className="w-full h-10 rounded-xl bg-slate-950/80 border border-slate-700 px-3 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              className="w-full h-10 rounded-xl bg-slate-950/80 border border-slate-700 px-3 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 font-medium"
             >
-              <option value="gpt-4o-mini">GPT-4o Mini (Khuyên dùng: Siêu nhanh, Tiết kiệm chi phí)</option>
-              <option value="gpt-4o">GPT-4o (Thông minh & Sáng tạo cao cấp)</option>
-              <option value="gpt-4-turbo">GPT-4 Turbo</option>
-              <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+              <optgroup label="⚡ Dòng GPT-4o Thế Hệ Mới (Khuyên dùng cho Content & SEO)">
+                <option value="gpt-4o-mini">GPT-4o Mini (Khuyên dùng: Siêu nhanh, Tiết kiệm, Chuẩn SEO)</option>
+                <option value="gpt-4o">GPT-4o (Flagship: Sáng tạo cao cấp, Văn phong mượt mà)</option>
+                <option value="gpt-4.5-preview">GPT-4.5 Preview (Mô hình tri thức sâu thế hệ mới nhất)</option>
+              </optgroup>
+              <optgroup label="🧠 Dòng Tư Duy & Lập Luận Sâu (Reasoning - o-series)">
+                <option value="o3-mini">o3-mini (Mới nhất: Lập luận toán & thông số kỹ thuật xe sâu sắc)</option>
+                <option value="o1-mini">o1-mini (Lập luận tư duy nhanh, so sánh cấu hình)</option>
+                <option value="o1">o1 (Mô hình tư duy chuyên sâu cao cấp nhất)</option>
+              </optgroup>
+              <optgroup label="📦 Dòng Tiền Nhiệm (Legacy)">
+                <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+              </optgroup>
             </select>
             <p className="text-[11px] text-slate-400 mt-1">
-              Khuyên dùng GPT-4o Mini cho bài viết đánh giá xe và dàn ý SEO.
+              Tương thích đầy đủ tài liệu API mới nhất của OpenAI. Khuyên dùng <span className="text-cyan-400 font-medium">GPT-4o Mini</span> hoặc <span className="text-cyan-400 font-medium">o3-mini</span>.
             </p>
           </div>
         </div>
@@ -175,41 +185,37 @@ export const SeoTrackingSection: React.FC<SeoTrackingSectionProps> = ({ initialD
       {/* 3. Nhóm 2: Mã Theo Dõi (Tracking & Pixels) */}
       <Card variant="glass" className="p-6 space-y-5">
         <div className="flex items-center gap-2 pb-3 border-b border-slate-700/40">
-          <Activity className="w-4 h-4 text-sky-400" />
+          <Activity className="w-4 h-4 text-emerald-400" />
           <h3 className="text-sm font-bold text-white uppercase tracking-wider">
             2. Mã Theo Dõi & Đo Lường (Tracking & Pixels)
           </h3>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Google Tag Manager ID
+              Google Tag Manager (GTM ID)
             </label>
             <Input
               value={formData.gtmId || ''}
               onChange={(e) => handleChange('gtmId', e.target.value)}
-              placeholder="VD: GTM-MZ6HJKZR"
-              className="bg-slate-800/80 border-slate-700 text-white"
+              placeholder="GTM-MZ6HJKZR"
+              className="bg-slate-950/80 border-slate-700 text-white font-mono text-xs"
             />
-            <p className="text-[11px] text-slate-400 mt-1">
-              Quản lý toàn bộ tag tiếp thị tập trung qua GTM Container
-            </p>
+            <p className="text-[11px] text-slate-400 mt-1">Định dạng: GTM-XXXXXXX</p>
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Google Analytics 4 ID (GA4)
+              Google Analytics 4 (GA4 Measurement ID)
             </label>
             <Input
               value={formData.gaId || ''}
               onChange={(e) => handleChange('gaId', e.target.value)}
-              placeholder="VD: G-XXXXXXXXXX"
-              className="bg-slate-800/80 border-slate-700 text-white"
+              placeholder="G-XXXXXXXXXX"
+              className="bg-slate-950/80 border-slate-700 text-white font-mono text-xs"
             />
-            <p className="text-[11px] text-slate-400 mt-1">
-              Dùng khi không chạy qua GTM container
-            </p>
+            <p className="text-[11px] text-slate-400 mt-1">Định dạng: G-XXXXXXXXXX</p>
           </div>
 
           <div>
@@ -219,14 +225,14 @@ export const SeoTrackingSection: React.FC<SeoTrackingSectionProps> = ({ initialD
             <Input
               value={formData.clarityId || ''}
               onChange={(e) => handleChange('clarityId', e.target.value)}
-              placeholder="VD: q7z8x9abcd"
-              className="bg-slate-800/80 border-slate-700 text-white"
+              placeholder="vídụ: abcdef1234"
+              className="bg-slate-950/80 border-slate-700 text-white font-mono text-xs"
             />
-            <p className="text-[11px] text-slate-400 mt-1">
-              Quay video màn hình & bản đồ nhiệt (Heatmap) hành vi khách hàng
-            </p>
+            <p className="text-[11px] text-slate-400 mt-1">Quay video màn hình & Heatmap</p>
           </div>
+        </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">
               Facebook Pixel ID (Meta Pixel)
@@ -235,11 +241,9 @@ export const SeoTrackingSection: React.FC<SeoTrackingSectionProps> = ({ initialD
               value={formData.fbPixelId || ''}
               onChange={(e) => handleChange('fbPixelId', e.target.value)}
               placeholder="VD: 123456789012345"
-              className="bg-slate-800/80 border-slate-700 text-white"
+              className="bg-slate-950/80 border-slate-700 text-white font-mono text-xs"
             />
-            <p className="text-[11px] text-slate-400 mt-1">
-              Theo dõi chuyển đổi và tạo tệp đối tượng chạy Facebook Ads Retargeting
-            </p>
+            <p className="text-[11px] text-slate-400 mt-1">Dùng cho chạy quảng cáo Facebook Ads</p>
           </div>
 
           <div>
@@ -249,27 +253,23 @@ export const SeoTrackingSection: React.FC<SeoTrackingSectionProps> = ({ initialD
             <Input
               value={formData.tiktokPixelId || ''}
               onChange={(e) => handleChange('tiktokPixelId', e.target.value)}
-              placeholder="VD: CXXXXXXXXXXXXXX"
-              className="bg-slate-800/80 border-slate-700 text-white"
+              placeholder="VD: CXXXXXXXXXXXXXXX"
+              className="bg-slate-950/80 border-slate-700 text-white font-mono text-xs"
             />
-            <p className="text-[11px] text-slate-400 mt-1">
-              Đo lường chuyển đổi cho các chiến dịch TikTok Ads
-            </p>
+            <p className="text-[11px] text-slate-400 mt-1">Dùng cho chạy quảng cáo TikTok Ads</p>
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Zalo Pixel / SDK ID
+              Zalo Official Account / Pixel ID
             </label>
             <Input
               value={formData.zaloPixelId || ''}
               onChange={(e) => handleChange('zaloPixelId', e.target.value)}
-              placeholder="VD: 1234567890"
-              className="bg-slate-800/80 border-slate-700 text-white"
+              placeholder="VD: zalo_pixel_id"
+              className="bg-slate-950/80 border-slate-700 text-white font-mono text-xs"
             />
-            <p className="text-[11px] text-slate-400 mt-1">
-              Theo dõi sự kiện chuyển đổi Zalo Ads
-            </p>
+            <p className="text-[11px] text-slate-400 mt-1">Dùng cho Zalo Ads & OA tracking</p>
           </div>
         </div>
       </Card>
@@ -277,158 +277,176 @@ export const SeoTrackingSection: React.FC<SeoTrackingSectionProps> = ({ initialD
       {/* 4. Nhóm 3: Mã Nhúng Tùy Chỉnh (Custom Scripts) */}
       <Card variant="glass" className="p-6 space-y-5">
         <div className="flex items-center gap-2 pb-3 border-b border-slate-700/40">
-          <Code className="w-4 h-4 text-emerald-400" />
+          <Code className="w-4 h-4 text-amber-400" />
           <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-            3. Mã Nhúng Tùy Chỉnh (Custom Scripts & Meta Tags)
+            3. Mã Nhúng Tùy Chỉnh (Custom Scripts Header & Body)
           </h3>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
-              <span>Mã Nhúng Đầu Trang (&lt;head&gt;)</span>
-              <span className="text-[11px] text-slate-400 font-normal">
-                Dán các thẻ &lt;meta&gt; xác minh Search Console, Facebook Domain Verification,...
-              </span>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              Mã nhúng Header (chèn vào thẻ &lt;head&gt;)
             </label>
             <textarea
-              rows={4}
               value={formData.customHeaderScripts || ''}
               onChange={(e) => handleChange('customHeaderScripts', e.target.value)}
-              placeholder="<meta name='google-site-verification' content='...' />&#10;<meta name='facebook-domain-verification' content='...' />"
-              className="w-full rounded-xl bg-slate-900/80 border border-slate-700 px-3.5 py-2.5 text-xs text-emerald-300 font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="<!-- Dán thẻ <meta google-site-verification...>, Facebook Domain Verification, Livechat scripts... -->"
+              rows={4}
+              className="w-full rounded-xl bg-slate-950/80 border border-slate-700 p-3 text-xs text-slate-200 font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
+            <p className="text-[11px] text-slate-400 mt-1">
+              Dán các thẻ meta xác minh Google Search Console, Pinterest, Bing hoặc script tải trước (Preload).
+            </p>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
-              <span>Mã Nhúng Cuối Thân Trang (&lt;body&gt;)</span>
-              <span className="text-[11px] text-slate-400 font-normal">
-                Dán mã LiveChat, bong bóng chat Messenger, Zalo Chat hoặc popup của bên thứ 3
-              </span>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              Mã nhúng Body / Footer (chèn vào cuối thẻ &lt;body&gt;)
             </label>
             <textarea
-              rows={4}
               value={formData.customBodyScripts || ''}
               onChange={(e) => handleChange('customBodyScripts', e.target.value)}
-              placeholder="<!-- Zalo / LiveChat / Custom Script -->&#10;<script>...</script>"
-              className="w-full rounded-xl bg-slate-900/80 border border-slate-700 px-3.5 py-2.5 text-xs text-amber-300 font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="<!-- Dán mã nhúng bong bóng chat Zalo Widget, Facebook Messenger, Call Button 3rd party... -->"
+              rows={4}
+              className="w-full rounded-xl bg-slate-950/80 border border-slate-700 p-3 text-xs text-slate-200 font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
+            <p className="text-[11px] text-slate-400 mt-1">
+              Dán các mã nhúng widget chat Zalo, Messenger, popup khuyến mãi của đối tác thứ ba.
+            </p>
           </div>
         </div>
       </Card>
 
-      {/* 5. Nhóm 4: SEO Mặc Định Toàn Trang (Global SEO Meta) */}
+      {/* 5. Nhóm 4: Cấu Hình SEO Mặc Định Toàn Site (Global SEO Fallback) */}
       <Card variant="glass" className="p-6 space-y-5">
         <div className="flex items-center gap-2 pb-3 border-b border-slate-700/40">
-          <Globe className="w-4 h-4 text-purple-400" />
+          <Globe className="w-4 h-4 text-cyan-400" />
           <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-            4. Cấu Hình SEO Mặc Định Toàn Trang (Global Meta Defaults)
+            4. Cấu Hình SEO & OpenGraph Mặc Định (Global Fallback)
           </h3>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Tiêu Đề Trang Web Mặc Định (Default Meta Title)
+              Tiêu đề Trang Chủ (Site Title)
             </label>
             <Input
               value={formData.siteTitle || ''}
               onChange={(e) => handleChange('siteTitle', e.target.value)}
-              placeholder="Xe Hyundai Vinh - Bảng Giá & Ưu Đãi Lăn Bánh"
-              className="bg-slate-800/80 border-slate-700 text-white"
+              placeholder="Xe Hyundai Vinh - Đại Lý Ủy Quyền Chính Hãng"
+              className="bg-slate-950/80 border-slate-700 text-white text-xs"
             />
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Hậu Tố Tiêu Đề (Title Suffix)
+              Hậu tố Tiêu đề (Title Suffix)
             </label>
             <Input
               value={formData.titleSuffix || ''}
               onChange={(e) => handleChange('titleSuffix', e.target.value)}
               placeholder="| Xe Hyundai Vinh"
-              className="bg-slate-800/80 border-slate-700 text-white"
+              className="bg-slate-950/80 border-slate-700 text-white text-xs"
             />
+            <p className="text-[11px] text-slate-400 mt-1">Được tự động gắn vào sau tiêu đề các trang con</p>
           </div>
         </div>
 
         <div>
           <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-            Mô Tả Trang Web Mặc Định (Default Meta Description)
+            Mô tả SEO Mặc định (Default Meta Description)
           </label>
           <textarea
-            rows={3}
             value={formData.defaultDescription || ''}
             onChange={(e) => handleChange('defaultDescription', e.target.value)}
             placeholder="Website phân phối xe Hyundai chính hãng tại Nghệ An, Hà Tĩnh..."
-            className="w-full rounded-xl bg-slate-900/80 border border-slate-700 px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            rows={3}
+            className="w-full rounded-xl bg-slate-950/80 border border-slate-700 p-3 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
+          <p className="text-[11px] text-slate-400 mt-1">
+            Độ dài lý tưởng: 120-155 ký tự. Hiện tại: <span className="font-mono text-cyan-400">{(formData.defaultDescription || '').length}</span> ký tự.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Ảnh Chia Sẻ Mặc Định (Default OG Image - 1200x630px)
+              Ảnh Chia Sẻ Mạng Xã Hội Mặc Định (OG Image URL)
             </label>
             <div className="flex gap-2">
               <Input
                 value={formData.defaultImage || ''}
                 onChange={(e) => handleChange('defaultImage', e.target.value)}
-                placeholder="/images/og-image.jpg hoặc link CDN"
-                className="bg-slate-800/80 border-slate-700 text-white flex-1"
+                placeholder="/images/og-image.jpg"
+                className="bg-slate-950/80 border-slate-700 text-white text-xs"
               />
               <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => setActiveMediaTarget('defaultImage')}
-                className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 rounded-xl flex items-center gap-1.5 text-xs shrink-0"
+                className="shrink-0 flex items-center gap-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200"
               >
                 <FolderOpen className="w-3.5 h-3.5" />
-                <span>Chọn ảnh</span>
+                Chọn ảnh
               </Button>
             </div>
+            <p className="text-[11px] text-slate-400 mt-1">Kích thước chuẩn: 1200x630px (Dưới 1MB)</p>
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-              Biểu Tượng Trang Web (Favicon .ico / .png)
+              Favicon Icon URL
             </label>
             <div className="flex gap-2">
               <Input
                 value={formData.favicon || ''}
                 onChange={(e) => handleChange('favicon', e.target.value)}
-                placeholder="/favicon.ico hoặc link CDN"
-                className="bg-slate-800/80 border-slate-700 text-white flex-1"
+                placeholder="/favicon.ico"
+                className="bg-slate-950/80 border-slate-700 text-white text-xs"
               />
               <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => setActiveMediaTarget('favicon')}
-                className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 rounded-xl flex items-center gap-1.5 text-xs shrink-0"
+                className="shrink-0 flex items-center gap-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200"
               >
                 <FolderOpen className="w-3.5 h-3.5" />
-                <span>Chọn icon</span>
+                Chọn icon
               </Button>
             </div>
+            <p className="text-[11px] text-slate-400 mt-1">Định dạng: .ico, .png (Kích thước 32x32px hoặc 48x48px)</p>
           </div>
         </div>
       </Card>
 
-      {/* 6. Media Picker Modal */}
-      {activeMediaTarget && (
-        <MediaPickerModal
-          isOpen={true}
-          onClose={() => setActiveMediaTarget(null)}
-          onSelect={(selected) => {
-            if (selected.length > 0 && activeMediaTarget) {
-              handleChange(activeMediaTarget, selected[0].url);
-            }
-            setActiveMediaTarget(null);
-          }}
-          mode="single"
-          title={activeMediaTarget === 'defaultImage' ? 'Chọn Ảnh Đại Diện Chia Sẻ (OG Image)' : 'Chọn Biểu Tượng Favicon'}
-          initialSelectedUrls={formData[activeMediaTarget] ? [formData[activeMediaTarget] as string] : []}
-        />
-      )}
+      {/* Modal Chọn Ảnh Từ Thư Viện Dùng Chung */}
+      <MediaPickerModal
+        isOpen={!!activeMediaTarget}
+        onClose={() => setActiveMediaTarget(null)}
+        mode="single"
+        title={activeMediaTarget === 'favicon' ? 'Chọn Icon Favicon' : 'Chọn Ảnh Chia Sẻ Mạng Xã Hội (OG Image)'}
+        initialSelectedUrls={
+          activeMediaTarget === 'favicon' && formData.favicon
+            ? [formData.favicon]
+            : activeMediaTarget === 'defaultImage' && formData.defaultImage
+            ? [formData.defaultImage]
+            : []
+        }
+        onSelect={(selected) => {
+          if (!activeMediaTarget || selected.length === 0) return;
+          const url = selected[0].url;
+          if (activeMediaTarget === 'favicon') {
+            handleChange('favicon', url);
+          } else if (activeMediaTarget === 'defaultImage') {
+            handleChange('defaultImage', url);
+          }
+          setActiveMediaTarget(null);
+        }}
+      />
     </form>
   );
 };
