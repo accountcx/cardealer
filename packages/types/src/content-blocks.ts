@@ -181,22 +181,23 @@ export const PostTocItemSchema = z.object({
 export type PostTocItem = z.infer<typeof PostTocItemSchema>;
 
 export const CreatePostInputSchema = z.object({
-  tieuDe: z.string().min(20, 'Tiêu đề bài viết phải có ít nhất 20 ký tự').max(255),
-  slug: z.string().min(3).max(255),
-  categoryId: z.string().uuid('Chuyên mục bắt buộc'),
+  tieuDe: z.string().trim().min(3, 'Tiêu đề bài viết phải có ít nhất 3 ký tự').max(255),
+  slug: z.string().trim().min(2, 'Đường dẫn slug phải có ít nhất 2 ký tự').max(255),
+  categoryId: z.string().uuid('Chuyên mục không hợp lệ').optional().nullable().or(z.literal('')),
   authorId: z.string().uuid().optional().nullable(),
-  anhDaiDienUrl: z.string().url('Ảnh đại diện bắt buộc'),
-  anhDaiDienAlt: z.string().min(5, 'Thẻ Alt ảnh đại diện bắt buộc cho SEO'),
-  tomTat: z.string().max(500).optional().nullable(),
+  anhDaiDienUrl: z.string().optional().nullable().or(z.literal('')),
+  anhDaiDienAlt: z.string().optional().nullable().or(z.literal('')),
+  tomTat: z.string().max(1000).optional().nullable(),
   noiDung: z.record(z.string(), z.unknown()), // Tiptap JSON AST Tree
   status: z.enum(['draft', 'published', 'scheduled', 'archived']).default('draft'),
-  scheduledAt: z.string().datetime().optional().nullable(),
-  expiredPromoDate: z.string().datetime().optional().nullable(),
+  scheduledAt: z.string().datetime().optional().nullable().or(z.literal('')),
+  expiredPromoDate: z.string().datetime().optional().nullable().or(z.literal('')),
   isFeatured: z.boolean().default(false),
   featuredOrder: z.number().int().min(0).max(3).default(0),
+  focusKeyword: z.string().max(255).optional().nullable(),
   metaTitle: z.string().max(255).optional().nullable(),
   metaDescription: z.string().max(500).optional().nullable(),
-  canonicalUrl: z.string().url().optional().nullable(),
+  canonicalUrl: z.string().optional().nullable().or(z.literal('')),
   noIndex: z.boolean().default(false),
 });
 export type CreatePostInput = z.infer<typeof CreatePostInputSchema>;

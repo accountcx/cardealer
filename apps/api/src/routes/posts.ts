@@ -678,11 +678,12 @@ export async function handlePostRoutes(
       const parsed = CreatePostInputSchema.safeParse(rawBody);
 
       if (!parsed.success) {
+        const firstErrMsg = parsed.error.issues[0]?.message || 'Dữ liệu bài viết không hợp lệ';
         sendJson(400, {
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'Dữ liệu bài viết không hợp lệ',
+            message: firstErrMsg,
             details: parsed.error.format(),
           },
         });
@@ -708,6 +709,28 @@ export async function handlePostRoutes(
         }
       }
 
+      // Fallback category nếu chưa chọn
+      let resolvedCategoryId = postData.categoryId?.trim() || null;
+      if (!resolvedCategoryId) {
+        const firstCat = await db.query.categories.findFirst();
+        if (firstCat) {
+          resolvedCategoryId = firstCat.id;
+        } else {
+          const [defaultCat] = await db
+            .insert(schema.categories)
+            .values({
+              tenChuyenMuc: 'Tin tức chung',
+              slug: 'tin-tuc-chung',
+              moTa: 'Chuyên mục tin tức ô tô tổng hợp',
+            })
+            .returning();
+          resolvedCategoryId = defaultCat.id;
+        }
+      }
+
+      const resolvedAnhDaiDienUrl = postData.anhDaiDienUrl?.trim() || '/images/car-placeholder.webp';
+      const resolvedAnhDaiDienAlt = postData.anhDaiDienAlt?.trim() || postData.tieuDe || 'Hình ảnh bài viết';
+
       // Tự động tính readingTime & wordCount từ Tiptap AST
       const { readingTime, wordCount } = calculateReadingTimeAndWordCount(postData.noiDung);
 
@@ -721,10 +744,10 @@ export async function handlePostRoutes(
         .values({
           tieuDe: postData.tieuDe,
           slug: postData.slug,
-          categoryId: postData.categoryId,
+          categoryId: resolvedCategoryId,
           authorId,
-          anhDaiDienUrl: postData.anhDaiDienUrl,
-          anhDaiDienAlt: postData.anhDaiDienAlt,
+          anhDaiDienUrl: resolvedAnhDaiDienUrl,
+          anhDaiDienAlt: resolvedAnhDaiDienAlt,
           tomTat: postData.tomTat || null,
           noiDung: postData.noiDung,
           status: postData.status,
@@ -750,9 +773,10 @@ export async function handlePostRoutes(
       return true;
     } catch (err: unknown) {
       console.error('[Admin Create Post] Lỗi tạo bài viết:', err);
+      const errMsg = err instanceof Error ? err.message : 'Lỗi tạo bài viết (trùng slug hoặc thiếu dữ liệu)';
       sendJson(500, {
         success: false,
-        error: { code: 'DB_ERROR', message: 'Lỗi tạo bài viết (trùng slug hoặc thiếu dữ liệu)' },
+        error: { code: 'DB_ERROR', message: errMsg },
       });
       return true;
     }
@@ -833,11 +857,12 @@ export async function handlePostRoutes(
       const parsed = UpdatePostInputSchema.safeParse(rawBody);
 
       if (!parsed.success) {
+        const firstErrMsg = parsed.error.issues[0]?.message || 'Dữ liệu cập nhật bài viết không hợp lệ';
         sendJson(400, {
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'Dữ liệu cập nhật bài viết không hợp lệ',
+            message: firstErrMsg,
             details: parsed.error.format(),
           },
         });
@@ -906,15 +931,15 @@ export async function handlePostRoutes(
       const [updatedPost] = await db
         .update(schema.posts)
         .set({
-          ...(updateData.tieuDe ? { tieuDe: updateData.tieuDe } : {}),
-          ...(updateData.slug ? { slug: updateData.slug } : {}),
+          ...(updateData.tieuDe !== undefined ? { tieuDe: updateData.tieuDe } : {}),
+          ...(updateData.slug !== undefined ? { slug: updateData.slug } : {}),
           ...(updateData.categoryId ? { categoryId: updateData.categoryId } : {}),
           ...(updateData.authorId !== undefined ? { authorId: updateData.authorId } : {}),
           ...(updateData.anhDaiDienUrl ? { anhDaiDienUrl: updateData.anhDaiDienUrl } : {}),
           ...(updateData.anhDaiDienAlt ? { anhDaiDienAlt: updateData.anhDaiDienAlt } : {}),
           ...(updateData.tomTat !== undefined ? { tomTat: updateData.tomTat } : {}),
-          ...(updateData.noiDung ? { noiDung: updateData.noiDung } : {}),
-          ...(updateData.status ? { status: updateData.status } : {}),
+          ...(updateData.noiDung !== undefined ? { noiDung: updateData.noiDung } : {}),
+          ...(updateData.status !== undefined ? { status: updateData.status } : {}),
           ...(updateData.scheduledAt !== undefined
             ? { scheduledAt: updateData.scheduledAt ? new Date(updateData.scheduledAt) : null }
             : {}),
@@ -942,7 +967,8 @@ export async function handlePostRoutes(
       return true;
     } catch (err: unknown) {
       console.error('[Admin Update Post] Lỗi cập nhật bài viết:', err);
-      sendJson(500, { success: false, error: { code: 'DB_ERROR', message: 'Lỗi cập nhật bài viết' } });
+      const errMsg = err instanceof Error ? err.message : 'Lỗi cập nhật bài viết';
+      sendJson(500, { success: false, error: { code: 'DB_ERROR', message: errMsg } });
       return true;
     }
   }
