@@ -12,7 +12,7 @@ import {
   type FullArticleResult,
 } from '@cardealer/types';
 
-// 🛠️ Helper trích xuất và sửa lỗi JSON thông minh (cho các trường hợp AI trả về markdown code block hoặc bị cắt ngắn)
+// 🛠️ Helper trích xuất và sửa lỗi JSON thông minh
 function extractAndParseJson<T = any>(raw: string): T | null {
   if (!raw || typeof raw !== 'string') return null;
   const trimmed = raw.trim();
@@ -119,8 +119,11 @@ function fallbackTextToFullArticle(text: string, titleHint: string, keywordHint:
 }
 
 // 🧠 Mental Model: Router API Trợ Lý AI Viết Bài & Tối Ưu SEO (@cardealer/api)
-// Chiến lược "Cyborg Content Engine": Tự động ra quyết định điều phối 14 Content Block tinh hoa
-// Dựa trên dữ liệu xe thực tế từ kho đại lý (availableCars), bám sát thị trường địa phương và tối ưu SEO On-Page.
+// Chiến lược "Cyborg Content Engine & Hybrid Composition":
+// Kết hợp:
+// 1. OpenAI Structured Outputs (JSON Schema / json_object) với Token Limit mở rộng (6000-8000).
+// 2. Hybrid Composition: Tự động bổ sung thông số, hình ảnh, giá xe thật từ database đại lý vào các Block AI.
+// 3. Pipeline 2 bước: Hỗ trợ sinh từ Dàn ý chi tiết hoặc Viết trọn gói A-Z.
 export async function handleAdminAiRoutes(
   req: IncomingMessage,
   res: ServerResponse,
@@ -208,31 +211,30 @@ export async function handleAdminAiRoutes(
             .join('\n')}\n`
         : '';
 
-    const systemPrompt = `Bạn là Giám đốc Sáng tạo Nội dung kiêm Chuyên gia Technical SEO & Conversion Rate Optimization (CRO) hàng đầu trong ngành ô tô tại Việt Nam, am hiểu sâu sắc hệ thống đại lý ô tô Hyundai ủy quyền chính hãng.
+    const systemPrompt = `Bạn là Giám đốc Sáng tạo Nội dung kiêm Chuyên gia Technical SEO & CRO hàng đầu trong ngành ô tô tại Việt Nam, am hiểu sâu sắc hệ thống đại lý ô tô Hyundai ủy quyền chính hãng.
 
-Nguyên tắc cốt lõi của bạn tuân thủ triệt để chiến lược "Cyborg Content (Người lai Máy)" & Google E-E-A-T (Kinh nghiệm, Chuyên môn, Thẩm quyền, Tin cậy) trong ngành YMYL:
-1. Độ chính xác kỹ thuật: Thông số kích thước (DxRxC, chiều dài cơ sở, khoảng sáng gầm), động cơ (Smartstream, MPI, T-GDi, dung tích xi lanh, mã lực, mô-men xoắn), hộp số (IVT, ly hợp kép DCT, số tự động), gói an toàn chủ động (Hyundai SmartSense: FCA, LKA, BCA, SCC, BVM...).
-2. Bám sát thị trường địa phương (${targetLocation}): Dự toán giá bán niêm yết, chi phí lăn bánh (thuế trước bạ, phí cấp biển, đăng kiểm), các cung đường thực tế (đô thị, ngập nước mùa mưa, cao tốc Bắc Nam, đèo dốc), tư vấn thủ tục trả góp ngân hàng địa phương và bấm biển số.
+Nguyên tắc cốt lõi của bạn tuân thủ triệt để chiến lược "Cyborg Content" & Google E-E-A-T trong ngành YMYL:
+1. Độ chính xác kỹ thuật: Kích thước, động cơ Smartstream, hộp số IVT/DCT, gói an toàn chủ động Hyundai SmartSense (FCA, LKA, BCA, SCC...).
+2. Bám sát thị trường địa phương (${targetLocation}): Dự toán giá bán niêm yết, chi phí lăn bánh, thủ tục trả góp ngân hàng địa phương và bấm biển số.
 3. QUYẾT ĐỊNH & PHÂN BỔ 14 CONTENT BLOCK TINH HOA:
-   AI tự động quyết định cấu trúc và phân bổ thông minh các khối Content Block tinh hoa vào bài viết để trải nghiệm đọc sinh động, giữ chân khách hàng (Time on site cao) và thúc đẩy tỷ lệ chuyển đổi Lead:
-   - "paragraph": Đoạn văn phân tích chuyên sâu, cô đọng (2-4 câu/đoạn).
-   - "heading": Thẻ tiêu đề H2, H3 chuẩn SEO phân cấp rõ ràng.
-   - "singleImage": Vị trí chèn ảnh trực quan (ngoại thất đầu xe, khoang lái nội thất, hàng ghế sau/cốp) kèm imageUrl (nếu có từ danh sách xe) hoặc để trống, BẮT BUỘC có "imageAlt" chuẩn SEO giàu ngữ nghĩa và "caption" chú thích rõ ràng.
-   - "specTable": Bảng so sánh thông số kỹ thuật chi tiết giữa các phiên bản gồm: title, specVersions (mảng tên các bản), specRows (mảng { specName, values: string[] }).
-   - "priceTable": Bảng dự toán giá xe niêm yết và lăn bánh tạm tính gồm: title, carSlug, prices: [{ version, listedPrice, discount, rollingPrice }].
-   - "relatedCar": Khối gợi ý dòng xe liên quan cùng phân khúc hoặc cùng tầm giá. Hãy CHỌN ĐÚNG xe từ DANH SÁCH XE CÓ SẴN CỦA ĐẠI LÝ nếu có (gồm: carName, carSlug, carPrice, carImage, seatCount, fuelType).
-   - "prosCons": Đánh giá khách quan 3-4 Ưu điểm nổi bật và 1-2 Điểm cần lưu ý thực tế (gồm: title, pros: string[], cons: string[]).
-   - "callout": Hộp thông tin nổi bật / lời khuyên thủ tục vay trả góp, bảo hành hoặc ưu đãi đại lý (gồm: calloutType: 'info'|'warning'|'success'|'note', title, content).
-   - "youtube": Video đánh giá thực tế / trải nghiệm lái thử (gồm: videoId: "dQw4w9WgXcQ" hoặc ID thực tế, title, caption).
-   - "leadForm": Khối Form đăng ký nhận báo giá lăn bánh & lái thử tận nhà (gồm: formHeadline, formSubheadline, formButtonText, carName).
-   - "faq": 3-5 câu hỏi thường gặp thực tế giải đáp cặn kẽ cho khách mua xe, chuẩn Schema FAQPage (gồm: title, faqs: [{ question, answer }]).
-   - "ctaButton": Nút bấm kêu gọi hành động nổi bật Hotline/Zalo/Báo giá (gồm: ctaButtonText, ctaActionType: 'hotline'|'zalo'|'quoteForm', ctaSubtext, ctaVariant: 'red'|'blue'|'emerald').
-4. Ngôn từ & Văn phong: Văn phong của chuyên viên tư vấn bán hàng tận tâm, trung thực, truyền cảm hứng và thôi thúc người đọc liên hệ lái thử / nhận báo giá.
-5. TUYỆT ĐỐI CẤM văn phong AI rập khuôn: Cấm dùng các cụm từ sáo rỗng như "Trong bối cảnh hiện nay", "Nhìn chung", "Không thể phủ nhận", "Tóm lại là", "Có thể nói rằng", "Đáng chú ý là", "Hãy cùng chúng tôi tìm hiểu", "Hy vọng bài viết này sẽ đem lại". Hãy viết trực diện, mở đầu ấn tượng, thông tin đắt giá.
+   - paragraph: Đoạn văn phân tích chuyên sâu, cô đọng (2-4 câu/đoạn).
+   - heading: Thẻ tiêu đề H2, H3 chuẩn SEO phân cấp rõ ràng.
+   - singleImage: Vị trí chèn ảnh trực quan kèm imageAlt chuẩn SEO và caption chú thích rõ ràng.
+   - specTable: Bảng so sánh thông số kỹ thuật chi tiết giữa các phiên bản gồm title, specVersions, specRows.
+   - priceTable: Bảng dự toán giá xe niêm yết và lăn bánh tạm tính gồm title, carSlug, prices.
+   - relatedCar: Khối gợi ý dòng xe liên quan trong showroom gồm carName, carSlug, carPrice, carImage, seatCount, fuelType.
+   - prosCons: Đánh giá khách quan 3-4 Ưu điểm nổi bật và 1-2 Điểm cần lưu ý thực tế.
+   - callout: Hộp thông tin tư vấn vay trả góp hoặc ưu đãi đại lý.
+   - youtube: Video trải nghiệm lái thử / đánh giá thực tế (videoId mẫu hoặc ID thực tế, title, caption).
+   - leadForm: Khối Form đăng ký nhận báo giá lăn bánh & lái thử tận nhà.
+   - faq: 3-5 câu hỏi thường gặp giải đáp cặn kẽ chuẩn Schema FAQPage.
+   - ctaButton: Nút bấm chuyển đổi cao Hotline/Zalo/Báo giá.
+4. Ngôn từ: Chuyên nghiệp, tận tâm, trung thực, thôi thúc người đọc liên hệ lái thử và nhận báo giá.
+5. TUYỆT ĐỐI CẤM văn phong AI sáo rỗng rập khuôn.
 6. BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON HỢP LỆ THEO YÊU CẦU.`;
 
     let userPrompt = '';
-    let responseFormat: { type: 'json_object' } | undefined = undefined;
+    let responseFormat: Record<string, unknown> | undefined = undefined;
     let defaultTokenLimit = 2000;
 
     switch (action) {
@@ -245,7 +247,7 @@ Thông tin trọng tâm:
 - Dòng xe: ${targetCar}
 - Khu vực / Tỉnh thành: ${targetLocation}
 - Từ khóa chính (Focus Keyword): ${targetKeyword}
-${context ? `- Ngữ cảnh bổ sung / Ghi chú của biên tập viên:\n${context}\n` : ''}
+${context ? `- Ngữ cảnh bổ sung / Dàn ý biên tập viên cung cấp:\n${context}\n` : ''}
 ${availableCarsListText}
 
 YÊU CẦU BÀI VIẾT HOÀN CHỈNH TỰ ĐỘNG PHỐI HỢP CÁC CONTENT BLOCK TINH HOA:
@@ -254,28 +256,28 @@ YÊU CẦU BÀI VIẾT HOÀN CHỈNH TỰ ĐỘNG PHỐI HỢP CÁC CONTENT BLOC
 3. SEO Meta:
    - metaTitle (≤ 60 ký tự, chứa từ khóa chính ở đầu, chuẩn Google Search)
    - metaDescription (120-155 ký tự, có từ khóa + lời kêu gọi hành động CTA)
-   - suggestedKeywords: 5-8 từ khóa LSI liên quan chặt chẽ đến giá lăn bánh, trả góp, thông số, so sánh.
-4. Content Blocks: Hãy TỰ ĐỘNG PHÂN BỔ các khối nội dung tinh hoa theo thứ tự logic, chuyên nghiệp:
-   - Mở bài (paragraph): Đặt vấn đề, vị thế của xe trong phân khúc, lý do mẫu xe này đang thu hút sự quan tâm lớn.
-   - Thẻ H2: Giá xe ${targetCar} niêm yết & Dự toán lăn bánh tại ${targetLocation}.
-   - Khối Price Table (priceTable) hoặc Đoạn văn phân tích giá chi tiết từng phiên bản, ưu đãi tiền mặt và quà tặng phụ kiện chính hãng.
-   - Thẻ H2: Đánh giá Ngoại thất - Ngôn ngữ thiết kế đột phá & Kích thước vượt trội.
-   - Đoạn văn (paragraph) & Khối Hình ảnh (singleImage) mô tả chi tiết đầu xe, cụm đèn LED, mâm xe, khoảng sáng gầm thích ứng đường xá địa phương.
-   - Thẻ H2: Không gian Nội thất & Tiện nghi công nghệ cao cấp.
-   - Đoạn văn (paragraph) & Khối Hình ảnh (singleImage) mô tả khoang lái, màn hình giải trí kép, điều hòa, độ ngả hàng ghế sau và thể tích cốp.
-   - Thẻ H2: Bảng thông số kỹ thuật chi tiết các phiên bản.
-   - Khối Bảng so sánh thông số (specTable): Bảng so sánh đầy đủ kích thước DxRxC, động cơ, công suất, mô-men xoắn, hộp số, Hyundai SmartSense giữa các bản.
-   - Thẻ H2: Động cơ Smartstream, Cảm giác lái & Mức tiêu hao nhiên liệu thực tế.
-   - Đoạn văn (paragraph) đánh giá chân ga, độ êm ái khung gầm, mức tiêu thụ nhiên liệu (lít/100km) đường phố và đường trường.
-   - Thẻ H2: Trang bị An toàn thông minh vượt trội (Hyundai SmartSense).
-   - Đoạn văn (paragraph) phân tích các tính năng an toàn chủ động bảo vệ gia đình.
-   - Khối Video YouTube (youtube): Chèn video trải nghiệm lái thử / đánh giá thực tế (videoId mẫu hoặc YouTube ID liên quan, title, caption).
-   - Khối Callout (callout): Hướng dẫn thủ tục mua xe trả góp (trả trước từ 15-20%, lãi suất ưu đãi, duyệt hồ sơ nhanh tại ${targetLocation}).
-   - Khối Gợi ý dòng xe liên quan (relatedCar): Chọn 1 dòng xe tương đồng trong danh sách xe đại lý để gợi ý thêm sự lựa chọn cho khách.
-   - Khối Pros & Cons (prosCons): 3-4 ưu điểm vượt trội và 1-2 điểm lưu ý thực tế.
-   - Khối Lead Form (leadForm): Form đăng ký nhận báo giá lăn bánh tận tay và lái thử tại nhà.
-   - Khối FAQ (faq): 3-5 câu hỏi giải đáp thực tế (hồ sơ trả góp, thủ tục bấm biển tại ${targetLocation}, bảo hành 5 năm).
-   - Khối CTA (ctaButton): Nút kêu gọi hành động liên hệ hotline nhận giá lăn bánh tốt nhất.
+   - suggestedKeywords: 5-8 từ khóa LSI liên quan.
+4. Content Blocks: Tự động sắp xếp các khối nội dung theo thứ tự logic:
+   - Mở bài (paragraph)
+   - Thẻ H2: Giá xe ${targetCar} niêm yết & Dự toán lăn bánh tại ${targetLocation}
+   - Khối Đoạn văn phân tích giá hoặc Khối Bảng giá (priceTable)
+   - Thẻ H2: Đánh giá Ngoại thất
+   - Đoạn văn (paragraph) & Khối Hình ảnh (singleImage)
+   - Thẻ H2: Không gian Nội thất & Tiện nghi
+   - Đoạn văn (paragraph) & Khối Hình ảnh (singleImage)
+   - Thẻ H2: Bảng thông số kỹ thuật chi tiết
+   - Khối Bảng so sánh thông số (specTable)
+   - Thẻ H2: Vận hành & Cảm giác lái
+   - Đoạn văn (paragraph)
+   - Thẻ H2: An toàn thông minh Hyundai SmartSense
+   - Đoạn văn (paragraph)
+   - Khối Video YouTube (youtube)
+   - Khối Callout (callout): Hướng dẫn trả góp
+   - Khối Xe liên quan (relatedCar): Chọn 1 xe tương đồng từ kho đại lý
+   - Khối Ưu nhược điểm (prosCons)
+   - Khối Lead Form (leadForm): Form đăng ký nhận giá lăn bánh
+   - Khối FAQ (faq): 3-5 câu hỏi thường gặp
+   - Khối CTA (ctaButton): Nút bấm Hotline/Zalo
 
 TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON:
 {
@@ -322,7 +324,7 @@ TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON:
       "type": "callout",
       "calloutType": "info",
       "title": "Chính sách hỗ trợ mua xe trả góp tại ${targetLocation}",
-      "content": "Hỗ trợ vay đến 85% giá trị xe, duyệt hồ sơ trong 24h, liên kết tất cả ngân hàng uy tín..."
+      "content": "Hỗ trợ vay đến 85% giá trị xe, duyệt hồ sơ trong 24h..."
     },
     {
       "type": "relatedCar",
@@ -351,8 +353,8 @@ TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON:
       "title": "Câu Hỏi Thường Gặp (FAQ)",
       "faqs": [
         { "question": "Giá lăn bánh tại ${targetLocation} gồm những chi phí gì?", "answer": "Bao gồm giá bán sau ưu đãi, thuế trước bạ, phí đăng ký biển số, phí đăng kiểm, bảo hiểm..." },
-        { "question": "Hồ sơ vay mua xe trả góp cần chuẩn bị những gì?", "answer": "Khách hàng cá nhân chỉ cần CCCD gắn chip, giấy xác nhận tình trạng hôn nhân và chứng minh thu nhập cơ bản..." },
-        { "question": "Chính sách bảo hành chính hãng là bao lâu?", "answer": "Xe được áp dụng chính sách bảo hành 5 năm hoặc 100.000 km tùy điều kiện nào đến trước tại đại lý ủy quyền toàn quốc..." }
+        { "question": "Hồ sơ vay mua xe trả góp cần chuẩn bị những gì?", "answer": "Khách hàng cá nhân chỉ cần CCCD gắn chip, giấy xác nhận tình trạng hôn nhân và chứng minh thu nhập..." },
+        { "question": "Chính sách bảo hành chính hãng là bao lâu?", "answer": "Xe được áp dụng chính sách bảo hành 5 năm hoặc 100.000 km tùy điều kiện nào đến trước..." }
       ]
     },
     {
@@ -385,7 +387,7 @@ Yêu cầu trả về JSON có cấu trúc:
     { "level": 3, "title": "Tiêu đề H3", "description": "Chi tiết nhỏ hơn nếu có", "points": ["Chi tiết 1"], "suggestedBlockType": "singleImage" }
   ]
 }
-Số lượng mục: 6-10 mục chuẩn cấu trúc E-E-A-T (Giá bán lăn bánh, Ngoại thất, Nội thất, Bảng thông số kỹ thuật, Vận hành & Động cơ, An toàn SmartSense, So sánh xe liên quan, Ưu nhược điểm, FAQ và Lời kết CTA).`;
+Số lượng mục: 6-10 mục chuẩn cấu trúc E-E-A-T.`;
         break;
 
       case 'continue_writing':
@@ -401,7 +403,7 @@ ${context ? `Đoạn văn hoặc bối cảnh liền trước:\n${context}` : ''
 Yêu cầu chất lượng:
 - Viết 2-4 đoạn văn giàu chiều sâu chuyên môn, nêu bật các thông số kỹ thuật thực tế và trải nghiệm lái xe tại Việt Nam.
 - Lồng ghép tự nhiên các điểm cộng về bảo hành, tiết kiệm nhiên liệu, độ bền bỉ.
-- TRẢ VỀ ĐỊNH DẠNG VĂN BẢN THUẦN HOẶC HTML ĐƠN GIẢN (dùng <p>, <strong> cho điểm nhấn, <ul><li> cho danh sách). KHÔNG bọc trong block code \`\`\`html. Viết trực diện, hấp dẫn.`;
+- TRẢ VỀ ĐỊNH DẠNG VĂN BẢN THUẦN HOẶC HTML ĐƠN GIẢN (dùng <p>, <strong> cho điểm nhấn, <ul><li> cho danh sách). KHÔNG bọc trong block code \`\`\`html.`;
         break;
 
       case 'optimize_seo':
@@ -491,17 +493,28 @@ Yêu cầu trả về JSON:
       body: JSON.stringify(buildPayload(true)),
     });
 
-    // Nếu lỗi liên quan đến temperature không được hỗ trợ ở model tùy chỉnh, thử lại tự động không kèm temperature
+    // Nếu lỗi liên quan đến temperature hoặc response_format không được hỗ trợ, thử lại tự động
     if (!openaiRes.ok) {
       const firstErrText = await openaiRes.text();
-      if (firstErrText.includes('temperature') || firstErrText.includes('unsupported_parameter')) {
+      if (
+        firstErrText.includes('temperature') ||
+        firstErrText.includes('unsupported_parameter') ||
+        firstErrText.includes('response_format')
+      ) {
         openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${apiKey}` as string,
           },
-          body: JSON.stringify(buildPayload(false)),
+          body: JSON.stringify({
+            model: model || 'gpt-4o-mini',
+            messages: [
+              { role: systemRole, content: systemPrompt },
+              { role: 'user', content: userPrompt },
+            ],
+            max_completion_tokens: maxTokens || defaultTokenLimit,
+          }),
         });
       } else {
         let errJson: any;
@@ -568,12 +581,13 @@ Yêu cầu trả về JSON:
         : undefined,
     };
 
-    if (responseFormat?.type === 'json_object') {
+    if (responseFormat) {
       const parsedJson = extractAndParseJson(aiContent);
 
       if (action === 'generate_full_article') {
+        let fullArticleObj: FullArticleResult;
         if (parsedJson && (parsedJson.title || parsedJson.blocks)) {
-          resultData.fullArticle = {
+          fullArticleObj = {
             title: String(parsedJson.title || prompt || 'Bài viết tư vấn mua xe Hyundai'),
             summary: String(parsedJson.summary || ''),
             focusKeyword: String(parsedJson.focusKeyword || targetKeyword),
@@ -582,30 +596,58 @@ Yêu cầu trả về JSON:
             suggestedKeywords: Array.isArray(parsedJson.suggestedKeywords) ? parsedJson.suggestedKeywords : [targetKeyword],
             blocks: Array.isArray(parsedJson.blocks) && parsedJson.blocks.length > 0 ? parsedJson.blocks : [{ type: 'paragraph', content: aiContent }],
           };
-          resultData.seo = {
-            metaTitle: resultData.fullArticle.metaTitle,
-            metaDescription: resultData.fullArticle.metaDescription,
-            suggestedKeywords: resultData.fullArticle.suggestedKeywords,
-          };
-          resultData.text = resultData.fullArticle.summary;
-          resultData.rawText = aiContent;
         } else {
-          // Fallback parsing nếu OpenAI không trả về JSON hợp lệ
-          const fallback = fallbackTextToFullArticle(aiContent, prompt, targetKeyword);
-          resultData.fullArticle = fallback;
-          resultData.seo = {
-            metaTitle: fallback.metaTitle,
-            metaDescription: fallback.metaDescription,
-            suggestedKeywords: fallback.suggestedKeywords,
-          };
-          resultData.text = fallback.summary;
-          resultData.rawText = aiContent;
+          fullArticleObj = fallbackTextToFullArticle(aiContent, prompt, targetKeyword);
         }
+
+        // 🌟 Hybrid Composition Engine: Tự động ghép dữ liệu kho xe thật vào các khối AI nếu có
+        if (availableCars && availableCars.length > 0 && Array.isArray(fullArticleObj.blocks)) {
+          fullArticleObj.blocks = fullArticleObj.blocks.map((blk) => {
+            // Tự động làm giàu khối relatedCar
+            if (blk.type === 'relatedCar') {
+              const matched = availableCars.find(
+                (c) =>
+                  (blk.carSlug && c.slug === blk.carSlug) ||
+                  (blk.carName && c.tenXe.toLowerCase().includes(blk.carName.toLowerCase()))
+              ) || availableCars[0];
+
+              return {
+                ...blk,
+                carName: matched?.tenXe || blk.carName || 'Hyundai Accent',
+                carSlug: matched?.slug || blk.carSlug || 'hyundai-accent',
+                carPrice: matched?.minPrice || matched?.giaNiemYetTu || blk.carPrice || 439000000,
+                carImage: matched?.anhDaiDienUrl || blk.carImage || '',
+                seatCount: blk.seatCount || (matched?.seatRange ? parseInt(matched.seatRange) : 5) || 5,
+                fuelType: matched?.fuelType || blk.fuelType || 'Xăng',
+              };
+            }
+
+            // Tự động gán ảnh đại diện xe từ kho vào singleImage nếu trống
+            if (blk.type === 'singleImage' && !blk.imageUrl) {
+              const matchedCar = availableCars.find((c) =>
+                targetCar.toLowerCase().includes(c.tenXe.toLowerCase()) || c.tenXe.toLowerCase().includes(targetCar.toLowerCase())
+              );
+              if (matchedCar?.anhDaiDienUrl) {
+                return { ...blk, imageUrl: matchedCar.anhDaiDienUrl };
+              }
+            }
+
+            return blk;
+          });
+        }
+
+        resultData.fullArticle = fullArticleObj;
+        resultData.seo = {
+          metaTitle: fullArticleObj.metaTitle,
+          metaDescription: fullArticleObj.metaDescription,
+          suggestedKeywords: fullArticleObj.suggestedKeywords,
+        };
+        resultData.text = fullArticleObj.summary;
+        resultData.rawText = aiContent;
       } else if (action === 'generate_outline') {
         if (parsedJson && Array.isArray(parsedJson.outline)) {
           resultData.outline = parsedJson.outline as OutlineItem[];
         } else {
-          // Fallback outline từ các dòng markdown
           const lines = aiContent.split('\n').filter((l: string) => l.trim().startsWith('#') || l.trim().startsWith('-'));
           resultData.outline = lines.map((l: string) => ({
             level: l.startsWith('###') ? 3 : 2,
@@ -617,8 +659,8 @@ Yêu cầu trả về JSON:
           resultData.faqs = parsedJson.faqs as FaqItem[];
         } else {
           resultData.faqs = [
-            { question: `Giá lăn bánh ${targetCar} tại ${targetLocation} là bao nhiêu?`, answer: `Giá lăn bánh bao gồm giá bán xe, thuế trước bạ, phí cấp biển số và các chi phí đăng kiểm đường bộ.` },
-            { question: `Mua xe ${targetCar} trả góp cần chuẩn bị thủ tục gì?`, answer: `Chỉ cần CCCD gắn chip và giấy xác nhận thu nhập, ngân hàng liên kết duyệt hồ sơ trong vòng 24 giờ.` },
+            { question: `Giá lăn bánh ${targetCar} tại ${targetLocation} là bao nhiêu?`, answer: `Giá lăn bánh bao gồm giá niêm yết sau ưu đãi, thuế trước bạ, phí cấp biển số và các khoản bảo hiểm.` },
+            { question: `Mua xe ${targetCar} trả góp cần chuẩn bị những gì?`, answer: `Chỉ cần CCCD gắn chip và chứng minh thu nhập cơ bản, ngân hàng liên kết hỗ trợ duyệt hồ sơ nhanh trong 24 giờ.` },
           ];
         }
       } else if (action === 'optimize_seo') {

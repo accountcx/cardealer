@@ -51,9 +51,9 @@ export interface AiWritingAssistantModalProps {
 type AiTab = 'full' | 'outline' | 'continue' | 'seo' | 'faq';
 
 // 🧠 Mental Model: Trợ Lý AI Viết Bài & Tối Ưu SEO Toàn Diện (Cyborg Content Engine).
-// Tận dụng sức mạnh ChatGPT / OpenAI Model để hỗ trợ biên tập viên:
-// 1. Viết toàn bộ bài viết hoàn chỉnh từ A-Z chuẩn E-E-A-T + SEO + Phối hợp 14 Content Block Tinh Hoa (Full Article)
-// 2. Tạo dàn ý chuẩn H2/H3 có gợi ý Content Block phù hợp
+// Hỗ trợ:
+// 1. Viết toàn bộ bài viết từ A-Z với 14 Content Block tinh hoa & Hybrid Showroom Inventory
+// 2. Pipeline 2-Bước: Tạo Dàn Ý -> 1-Click Viết toàn bộ bài viết chi tiết theo dàn ý
 // 3. Viết tiếp đoạn văn thông số kỹ thuật & trải nghiệm
 // 4. Tối ưu SEO On-page: sinh Meta Title, Meta Description, từ khóa LSI
 // 5. Sinh khối FAQ chuẩn Schema FAQPage cho Local SEO & YMYL
@@ -114,7 +114,7 @@ export function AiWritingAssistantModal({
     }
   }, [isOpen, currentTitle, currentKeyword]);
 
-  const handleRunAi = async (action: AiAction) => {
+  const handleRunAi = async (action: AiAction, overrideContext?: string) => {
     setLoading(true);
     setErrorMsg(null);
     setCopied(false);
@@ -123,7 +123,7 @@ export function AiWritingAssistantModal({
       const data = await aiService.generate({
         action,
         prompt: prompt || currentTitle || 'Bài viết tư vấn mua xe ô tô Hyundai chính hãng',
-        context: currentBlocksText || undefined,
+        context: overrideContext || currentBlocksText || undefined,
         keyword: keyword || currentKeyword || undefined,
         carModel: carModel || undefined,
         location: location || undefined,
@@ -174,6 +174,15 @@ export function AiWritingAssistantModal({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePipeline2Step = () => {
+    if (!outlineResult || outlineResult.length === 0) return;
+    const outlineContext = outlineResult
+      .map((item) => `[H${item.level}] ${item.title}: ${item.description || ''} ${item.points ? item.points.join(', ') : ''}`)
+      .join('\n');
+    setActiveTab('full');
+    handleRunAi('generate_full_article', `Hãy bám sát dàn ý chi tiết sau đây để viết bài viết hoàn chỉnh:\n${outlineContext}`);
   };
 
   const getBlockIcon = (type: string) => {
@@ -249,7 +258,7 @@ export function AiWritingAssistantModal({
             }`}
           >
             <ListTree className="w-3.5 h-3.5" />
-            2. Tạo Dàn Ý
+            2. Tạo Dàn Ý (Pipeline 2-Bước)
           </button>
           <button
             type="button"
@@ -365,7 +374,7 @@ export function AiWritingAssistantModal({
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
               <p className="text-xs text-slate-400">
-                AI sẽ tự động lựa chọn & điều phối 14 khối Content Block (Bảng giá, Thông số kỹ thuật, Ảnh, Video, Xe liên quan, Form báo giá, FAQ, CTA...).
+                AI tự động điều phối 14 Content Block tinh hoa & tự động ghép nối kho xe thật (Giá niêm yết, Ảnh, Bảng thông số...).
               </p>
               <Button
                 variant="accent"
@@ -503,7 +512,7 @@ export function AiWritingAssistantModal({
           </div>
         )}
 
-        {/* Tab 2: Tạo Dàn Ý */}
+        {/* Tab 2: Tạo Dàn Ý & Pipeline 2-Bước */}
         {activeTab === 'outline' && (
           <div className="space-y-4">
             <div>
@@ -533,23 +542,42 @@ export function AiWritingAssistantModal({
               </Button>
             </div>
 
+            {loading && (
+              <Card className="p-5 bg-slate-950/80 border-cyan-500/30 rounded-xl space-y-2 text-center animate-pulse">
+                <div className="flex items-center justify-center gap-2 text-cyan-400 text-xs font-bold">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Đang lập dàn ý bài viết chuẩn E-E-A-T...
+                </div>
+              </Card>
+            )}
+
             {outlineResult && (
               <Card className="p-4 bg-slate-950/60 border-cyan-500/30 rounded-xl space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-800 pb-2.5 gap-2">
                   <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
                     <Check className="w-4 h-4" /> Dàn ý đề xuất ({outlineResult.length} mục)
                   </span>
-                  <Button
-                    variant="accent"
-                    size="sm"
-                    onClick={() => {
-                      onInsertOutline(outlineResult);
-                      onClose();
-                    }}
-                    className="h-8 px-3 text-xs flex items-center gap-1.5"
-                  >
-                    <ListPlus className="w-3.5 h-3.5" /> Chèn thẳng vào bài viết
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        onInsertOutline(outlineResult);
+                        onClose();
+                      }}
+                      className="h-8 px-3 text-xs flex items-center gap-1.5 border border-slate-700"
+                    >
+                      <ListPlus className="w-3.5 h-3.5" /> Chèn dàn ý vào bài
+                    </Button>
+                    <Button
+                      variant="accent"
+                      size="sm"
+                      onClick={handlePipeline2Step}
+                      className="h-8 px-3.5 text-xs font-bold flex items-center gap-1.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/20"
+                    >
+                      <Zap className="w-3.5 h-3.5 text-yellow-300" /> Viết chi tiết theo Dàn ý này (2-Step Pipeline)
+                    </Button>
+                  </div>
                 </div>
                 <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                   {outlineResult.map((item, idx) => (
