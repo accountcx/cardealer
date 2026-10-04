@@ -59,9 +59,19 @@ export function EeatAuthorBox({
 
   const fallback = authorSettings || DEFAULT_AUTHOR_SETTINGS;
 
+  const isTechnicalRole = (r?: string | null) => {
+    if (!r) return true;
+    const lower = r.trim().toLowerCase();
+    return ['admin', 'manager', 'saler', 'sales', 'user', 'editor', 'superadmin'].includes(lower);
+  };
+
+  const resolvedRole = !isTechnicalRole(author?.role)
+    ? author!.role!
+    : fallback.role;
+
   const currentAuthor: AuthorInfo = {
     fullName: author?.fullName || fallback.fullName,
-    role: author?.role || fallback.role,
+    role: resolvedRole,
     avatarUrl: author?.avatarUrl || fallback.avatarUrl || null,
     phone: author?.phone || fallback.phone,
     zaloPhone: author?.zaloPhone || fallback.zaloPhone,

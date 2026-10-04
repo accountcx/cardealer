@@ -794,10 +794,20 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
     ? (authorAvatar.startsWith('http') ? authorAvatar : `https://xehyundaivinh.com${authorAvatar}`)
     : undefined;
 
+  const isTechnicalRole = (r?: string | null) => {
+    if (!r) return true;
+    const lower = r.trim().toLowerCase();
+    return ['admin', 'manager', 'saler', 'sales', 'user', 'editor', 'superadmin'].includes(lower);
+  };
+
+  const resolvedJobTitle = !isTechnicalRole(post.author?.role)
+    ? post.author!.role!
+    : (settings.author?.role || 'Chuyên gia tư vấn xe ô tô Hyundai');
+
   const masterSchema = generatePostMasterJsonLd(postForJsonLd, 'https://xehyundaivinh.com', {
     defaultAuthor: {
       name: post.author?.fullName || settings.author.fullName,
-      jobTitle: post.author?.role || settings.author.role,
+      jobTitle: resolvedJobTitle,
       avatarUrl: authorAvatarFull,
       phone: post.author?.phone || settings.author.phone || rawHotline,
     },
@@ -882,18 +892,15 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
 
           {/* E-E-A-T Metadata Bar */}
           <div className="flex flex-wrap items-center justify-between gap-4 py-4 border-y border-slate-100 text-xs sm:text-sm text-slate-500">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center font-bold text-blue-800 text-sm overflow-hidden flex-shrink-0">
-                {post.author?.fullName ? post.author.fullName.charAt(0).toUpperCase() : <User className="w-5 h-5 text-blue-700" />}
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center font-bold text-blue-800 text-sm overflow-hidden flex-shrink-0">
+                {post.author?.fullName ? post.author.fullName.charAt(0).toUpperCase() : <User className="w-4 h-4 text-blue-700" />}
               </div>
-              <div>
-                <div className="font-semibold text-slate-900 flex items-center gap-1.5">
-                  <span>{post.author?.fullName || 'Ban Biên Tập Hyundai Vinh'}</span>
-                  <span title="Tác giả được xác minh bởi Hyundai Vinh" className="inline-flex">
-                    <CheckCircle2 className="w-4 h-4 text-blue-600" />
-                  </span>
-                </div>
-                <div className="text-xs text-slate-500">{post.author?.role || 'Chuyên gia tư vấn xe'}</div>
+              <div className="font-semibold text-slate-900 flex items-center gap-1.5 text-sm">
+                <span>{post.author?.fullName || settings.author?.fullName || 'Ban Biên Tập Hyundai Vinh'}</span>
+                <span title="Tác giả được xác minh bởi Hyundai Vinh" className="inline-flex">
+                  <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                </span>
               </div>
             </div>
 
