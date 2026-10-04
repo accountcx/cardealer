@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Sparkles, AlertCircle, X, Check } from 'lucide-react';
+import { Sparkles, AlertCircle, X, Check, Bot } from 'lucide-react';
 import { Button, Card, Skeleton } from '@cardealer/ui';
 
 import { useAuth } from '../../../contexts/AuthContext';
@@ -14,6 +14,7 @@ import { PostGeneralInfoCard } from './components/PostGeneralInfoCard';
 import { AddBlockMenu } from './components/AddBlockMenu';
 import { BlockItemWrapper } from './components/BlockItemWrapper';
 import { PostEditorSidebar } from './components/PostEditorSidebar';
+import { AiWritingAssistantModal } from './components/AiWritingAssistantModal';
 
 import { HeadingBlock } from './components/blocks/HeadingBlock';
 import { ParagraphBlock } from './components/blocks/ParagraphBlock';
@@ -49,6 +50,18 @@ export default function PostEditorPage() {
     return <AccessDenied message="Bạn không có quyền chỉnh sửa hoặc xuất bản bài viết." />;
   }
 
+  // Tóm tắt nội dung text của các block hiện có để làm ngữ cảnh cho AI
+  const currentContentSummary = editor.blocks
+    .map((b) => {
+      if (b.type === 'heading') return `[H${b.level || 2}] ${b.content || ''}`;
+      if (b.type === 'paragraph') return b.content || '';
+      if (b.type === 'callout') return `[Lưu ý] ${b.content || ''}`;
+      if (b.type === 'faq') return `[FAQ] ${b.faqs?.map((f) => `Q: ${f.question} | A: ${f.answer}`).join('; ') || ''}`;
+      return `[Khối ${b.type}]`;
+    })
+    .join('\n')
+    .slice(0, 3000);
+
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
       {/* 1. Header Toolbar */}
@@ -59,6 +72,7 @@ export default function PostEditorPage() {
         saving={editor.saving}
         onPreview={editor.handlePreview}
         onSave={editor.handleSave}
+        onOpenAi={() => editor.setIsAiModalOpen(true)}
       />
 
       {/* Toast Alert Banner */}
@@ -123,9 +137,21 @@ export default function PostEditorPage() {
                 </p>
               </div>
 
-              <span className="text-xs font-mono text-slate-400 bg-slate-800/80 px-2.5 py-1 rounded-md">
-                {editor.blocks.length} khối nội dung
-              </span>
+              <div className="flex items-center gap-3">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => editor.setIsAiModalOpen(true)}
+                  className="flex items-center gap-1.5 h-8 px-3 text-xs font-medium border border-cyan-500/30 bg-cyan-950/40 text-cyan-300 hover:bg-cyan-500/20 hover:text-cyan-100"
+                >
+                  <Bot size={14} className="text-cyan-400" />
+                  Gọi Trợ Lý AI
+                </Button>
+                <span className="text-xs font-mono text-slate-400 bg-slate-800/80 px-2.5 py-1 rounded-md">
+                  {editor.blocks.length} khối nội dung
+                </span>
+              </div>
             </div>
 
             {/* Block List Render */}
@@ -230,6 +256,19 @@ export default function PostEditorPage() {
           />
         </div>
       </div>
+
+      {/* Modal Trợ Lý AI Viết Bài */}
+      <AiWritingAssistantModal
+        isOpen={editor.isAiModalOpen}
+        onClose={() => editor.setIsAiModalOpen(false)}
+        currentTitle={editor.tieuDe}
+        currentKeyword={editor.focusKeyword}
+        currentBlocksText={currentContentSummary}
+        onInsertOutline={(items) => editor.insertOutlineBlocks(items)}
+        onInsertFaqs={(faqs) => editor.insertFaqBlock(faqs)}
+        onAppendText={(text) => editor.appendParagraphBlock(text)}
+        onApplySeo={(seo) => editor.applyAiSeo(seo)}
+      />
 
       {/* Modal Chọn Ảnh Từ Thư Viện Dùng Chung */}
       <MediaPickerModal

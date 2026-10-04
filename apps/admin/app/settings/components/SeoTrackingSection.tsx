@@ -8,6 +8,11 @@ import {
   Code,
   Globe,
   FolderOpen,
+  Sparkles,
+  Key,
+  Bot,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { Button, Card, Input } from '@cardealer/ui';
 import type { SiteSettings } from '@cardealer/types';
@@ -18,14 +23,15 @@ export interface SeoTrackingSectionProps {
   initialData: SiteSettings;
 }
 
-// 🧠 Mental Model: Quản trị Cấu hình SEO Tổng thể, Tracking Analytics, Pixels & Mã Nhúng Tùy Chỉnh.
+// 🧠 Mental Model: Quản trị Cấu hình SEO Tổng thể, Tracking Analytics, Pixels, Custom Scripts & AI Writing Assistant.
 // Hỗ trợ cấu hình GTM, GA4, Microsoft Clarity, FB Pixel, TikTok Pixel, Zalo Pixel,
-// Custom Header Scripts (<head>), Custom Body Scripts (<body>), và Global Fallback Meta.
+// Custom Header Scripts (<head>), Custom Body Scripts (<body>), Global Fallback Meta, và OpenAI API Key cho Post Editor.
 export const SeoTrackingSection: React.FC<SeoTrackingSectionProps> = ({ initialData }) => {
   const [formData, setFormData] = useState<SiteSettings>(initialData);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showApiKey, setShowApiKey] = useState(false);
 
   // Modal media picker cho OG Image và Favicon
   const [activeMediaTarget, setActiveMediaTarget] = useState<'defaultImage' | 'favicon' | null>(null);
@@ -59,13 +65,13 @@ export const SeoTrackingSection: React.FC<SeoTrackingSectionProps> = ({ initialD
           </div>
           <div>
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              SEO, Tracking & Mã Nhúng Tùy Chỉnh
+              SEO, Tracking & Trí Tuệ Nhân Tạo (AI)
               <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-normal border border-indigo-400/30">
-                Tracking & Metadata
+                SEO & AI Engine
               </span>
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Cấu hình mã theo dõi Google/Facebook/TikTok/Clarity, mã nhúng Header/Body và thông tin SEO mặc định toàn website
+              Cấu hình mã theo dõi Google/Facebook/TikTok, mã nhúng Header/Body, OpenAI API Key viết bài và SEO mặc định toàn website
             </p>
           </div>
         </div>
@@ -97,12 +103,81 @@ export const SeoTrackingSection: React.FC<SeoTrackingSectionProps> = ({ initialD
         </div>
       )}
 
-      {/* 2. Nhóm 1: Mã Theo Dõi (Tracking & Pixels) */}
+      {/* 2. Nhóm 1: Trợ Lý AI Viết Bài (OpenAI / ChatGPT) */}
+      <Card variant="glass" className="p-6 space-y-5 border-cyan-500/30 bg-slate-900/80">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-700/40">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-cyan-400" />
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+              1. Trợ Lý AI Viết Bài & Tối Ưu SEO (ChatGPT / OpenAI Engine)
+            </h3>
+          </div>
+          <span className="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-semibold">
+            Tiptap AI Integration
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="md:col-span-2">
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Key className="w-3.5 h-3.5 text-cyan-400" />
+                Khóa API OpenAI (OpenAI API Key)
+              </span>
+              <span className="text-[11px] text-slate-400 font-normal">
+                Bắt đầu bằng `sk-...`
+              </span>
+            </label>
+            <div className="relative">
+              <Input
+                type={showApiKey ? 'text' : 'password'}
+                value={formData.openaiApiKey || ''}
+                onChange={(e) => handleChange('openaiApiKey', e.target.value)}
+                placeholder="sk-proj-..."
+                className="bg-slate-950/80 border-slate-700 text-white font-mono text-xs pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowApiKey(!showApiKey)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                aria-label={showApiKey ? 'Ẩn API Key' : 'Hiện API Key'}
+              >
+                {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1">
+              Khóa API được lưu trữ an toàn trong Database và chỉ được gọi bảo mật qua backend server của hệ thống.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
+              <Bot className="w-3.5 h-3.5 text-cyan-400" />
+              Mô Hình AI (Model)
+            </label>
+            <select
+              value={formData.openaiModel || 'gpt-4o-mini'}
+              onChange={(e) => handleChange('openaiModel', e.target.value)}
+              className="w-full h-10 rounded-xl bg-slate-950/80 border border-slate-700 px-3 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+            >
+              <option value="gpt-4o-mini">GPT-4o Mini (Khuyên dùng: Siêu nhanh, Tiết kiệm chi phí)</option>
+              <option value="gpt-4o">GPT-4o (Thông minh & Sáng tạo cao cấp)</option>
+              <option value="gpt-4-turbo">GPT-4 Turbo</option>
+              <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+            </select>
+            <p className="text-[11px] text-slate-400 mt-1">
+              Khuyên dùng GPT-4o Mini cho bài viết đánh giá xe và dàn ý SEO.
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      {/* 3. Nhóm 2: Mã Theo Dõi (Tracking & Pixels) */}
       <Card variant="glass" className="p-6 space-y-5">
         <div className="flex items-center gap-2 pb-3 border-b border-slate-700/40">
           <Activity className="w-4 h-4 text-sky-400" />
           <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-            1. Mã Theo Dõi & Đo Lường (Tracking & Pixels)
+            2. Mã Theo Dõi & Đo Lường (Tracking & Pixels)
           </h3>
         </div>
 
@@ -199,12 +274,12 @@ export const SeoTrackingSection: React.FC<SeoTrackingSectionProps> = ({ initialD
         </div>
       </Card>
 
-      {/* 3. Nhóm 2: Mã Nhúng Tùy Chỉnh (Custom Scripts) */}
+      {/* 4. Nhóm 3: Mã Nhúng Tùy Chỉnh (Custom Scripts) */}
       <Card variant="glass" className="p-6 space-y-5">
         <div className="flex items-center gap-2 pb-3 border-b border-slate-700/40">
           <Code className="w-4 h-4 text-emerald-400" />
           <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-            2. Mã Nhúng Tùy Chỉnh (Custom Scripts & Meta Tags)
+            3. Mã Nhúng Tùy Chỉnh (Custom Scripts & Meta Tags)
           </h3>
         </div>
 
@@ -243,12 +318,12 @@ export const SeoTrackingSection: React.FC<SeoTrackingSectionProps> = ({ initialD
         </div>
       </Card>
 
-      {/* 4. Nhóm 3: SEO Mặc Định Toàn Trang (Global SEO Meta) */}
+      {/* 5. Nhóm 4: SEO Mặc Định Toàn Trang (Global SEO Meta) */}
       <Card variant="glass" className="p-6 space-y-5">
         <div className="flex items-center gap-2 pb-3 border-b border-slate-700/40">
           <Globe className="w-4 h-4 text-purple-400" />
           <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-            3. Cấu Hình SEO Mặc Định Toàn Trang (Global Meta Defaults)
+            4. Cấu Hình SEO Mặc Định Toàn Trang (Global Meta Defaults)
           </h3>
         </div>
 
@@ -338,7 +413,7 @@ export const SeoTrackingSection: React.FC<SeoTrackingSectionProps> = ({ initialD
         </div>
       </Card>
 
-      {/* 5. Media Picker Modal */}
+      {/* 6. Media Picker Modal */}
       {activeMediaTarget && (
         <MediaPickerModal
           isOpen={true}

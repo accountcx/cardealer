@@ -41,6 +41,10 @@ export const SiteSettingsSchema = z.object({
   customHeaderScripts: z.string().optional().default(''),
   customBodyScripts: z.string().optional().default(''),
 
+  // AI Writing Assistant Configuration (ChatGPT / OpenAI API)
+  openaiApiKey: z.string().optional().default(''),
+  openaiModel: z.string().default('gpt-4o-mini'),
+
   // Business Identity & Local SEO
   businessName: z.string().default('Xe Hyundai Vinh'),
   address: z.string().default('Km 3+500 Đại lộ Lê Nin, TP. Vinh, Nghệ An'),
