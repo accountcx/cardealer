@@ -82,7 +82,7 @@ describe('Phase 4.4: Car Detail Schema & Multi-Tier JSON-LD', () => {
     }
   });
 
-  it('TS-02: generateCarJsonLd tạo schema đa tầng Product, Person, Breadcrumbs, Warranty, ReturnPolicy', () => {
+  it('TS-02: generateCarJsonLd tạo schema đa tầng Product, Person, Breadcrumbs, Warranty (loại bỏ ReturnPolicy cho ngành xe)', () => {
     const siteUrl = 'https://salerhyundai.vn';
     const consultant = {
       name: 'Nguyễn Văn Saler',
@@ -114,7 +114,7 @@ describe('Phase 4.4: Car Detail Schema & Multi-Tier JSON-LD', () => {
     expect(product.offers.lowPrice).toBe(769000000);
     expect(product.offers.highPrice).toBe(919000000);
     expect(product.offers.availability).toBe('https://schema.org/InStock');
-    expect(product.offers.hasMerchantReturnPolicy['@type']).toBe('MerchantReturnPolicy');
+    expect(product.offers.hasMerchantReturnPolicy).toBeUndefined();
     expect(product.warranty['@type']).toBe('WarrantyPromise');
     expect(product.aggregateRating['@type']).toBe('AggregateRating');
     expect(product.aggregateRating.ratingValue).toBe('4.9');

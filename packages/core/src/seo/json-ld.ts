@@ -5,7 +5,7 @@
 // - FAQPage: Tự động trích xuất các câu hỏi từ FAQBlock Tiptap AST sinh Rich Snippet câu hỏi mở rộng.
 // - VideoObject: Tự động sinh rich snippet video cho YoutubeBlock & TikTokBlock.
 // - AutoDealer: Thực thể số định danh đại lý ô tô Hyundai Dũng Lạc (Vinh, Nghệ An).
-// - Product & Car: AggregateOffer, hasMerchantReturnPolicy, warranty 5 năm.
+// - Product & Car: AggregateOffer, warranty 5 năm.
 
 import type { Car, CarCatalogItem, CarDetail } from '@cardealer/types';
 import {
@@ -39,7 +39,6 @@ export interface CarJsonLdOptions {
   consultant?: ConsultantSchemaInfo;
   warrantyDurationYears?: number;
   warrantyMileageKm?: number;
-  returnPolicyDays?: number;
   aggregateRating?: CarAggregateRatingInfo; // Chỉ render khi có review thực tế từ database
 }
 
@@ -503,7 +502,6 @@ export function generatePostMasterJsonLd(post: PostForJsonLd, siteUrl: string, o
  * Đạt chuẩn Google Search Rich Results & Merchant Center:
  * - AggregateOffer: Chỉ sinh khi lowPrice > 0 (chống lỗi Invalid Price: 0 của Google Merchant Center).
  * - availability: Xác định động theo trạng thái xe (InStock / OutOfStock / PreOrder / Discontinued).
- * - hasMerchantReturnPolicy: Chính sách đổi trả minh bạch.
  * - warranty: Bảo hành chính hãng 5 năm / 100.000km.
  * - aggregateRating: TUYỆT ĐỐI KHÔNG HARDCODE. Chỉ render khi có dữ liệu reviews thực tế chống phạt Manual Action.
  * - Person Consultant: Định danh chuyên viên tư vấn bán xe cá nhân gắn với AutoDealer.
@@ -525,7 +523,6 @@ export function generateCarJsonLd(
   const consultant = options.consultant;
   const warrantyYears = options.warrantyDurationYears ?? 5;
   const warrantyKm = options.warrantyMileageKm ?? 100000;
-  const returnDays = options.returnPolicyDays ?? 7;
 
   const versions = Array.isArray(car.versions) ? car.versions : [];
 
@@ -591,14 +588,6 @@ export function generateCarJsonLd(
           offerCount: versions.length || 1,
           url: `${cleanSiteUrl}/xe/${car.slug}`,
           availability,
-          hasMerchantReturnPolicy: {
-            '@type': 'MerchantReturnPolicy',
-            applicableCountry: 'VN',
-            returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
-            merchantReturnDays: returnDays,
-            returnMethod: 'https://schema.org/ReturnInStore',
-            returnFees: 'https://schema.org/FreeReturn',
-          },
         }
       : undefined;
 
