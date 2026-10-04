@@ -13,6 +13,7 @@ import {
   Bot,
   Eye,
   EyeOff,
+  Sliders,
 } from 'lucide-react';
 import { Button, Card, Input } from '@cardealer/ui';
 import type { SiteSettings } from '@cardealer/types';
@@ -23,6 +24,20 @@ export interface SeoTrackingSectionProps {
   initialData: SiteSettings;
 }
 
+const PRESET_MODELS = [
+  'gpt-4o-mini',
+  'gpt-4o',
+  'gpt-5.6-luna',
+  'gpt-6',
+  'gpt-5',
+  'gpt-4.5-preview',
+  'o3-mini',
+  'o1-mini',
+  'o1',
+  'gpt-4-turbo',
+  'gpt-3.5-turbo',
+];
+
 // 🧠 Mental Model: Quản trị Cấu hình SEO Tổng thể, Tracking Analytics, Pixels, Custom Scripts & AI Writing Assistant.
 // Hỗ trợ cấu hình GTM, GA4, Microsoft Clarity, FB Pixel, TikTok Pixel, Zalo Pixel,
 // Custom Header Scripts (<head>), Custom Body Scripts (<body>), Global Fallback Meta, và OpenAI API Key cho Post Editor.
@@ -32,12 +47,24 @@ export const SeoTrackingSection: React.FC<SeoTrackingSectionProps> = ({ initialD
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showApiKey, setShowApiKey] = useState(false);
+  const [isCustomModel, setIsCustomModel] = useState(
+    !PRESET_MODELS.includes(formData.openaiModel || 'gpt-4o-mini')
+  );
 
   // Modal media picker cho OG Image và Favicon
   const [activeMediaTarget, setActiveMediaTarget] = useState<'defaultImage' | 'favicon' | null>(null);
 
   const handleChange = (field: keyof SiteSettings, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleModelSelect = (val: string) => {
+    if (val === 'custom') {
+      setIsCustomModel(true);
+    } else {
+      setIsCustomModel(false);
+      handleChange('openaiModel', val);
+    }
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -151,32 +178,59 @@ export const SeoTrackingSection: React.FC<SeoTrackingSectionProps> = ({ initialD
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
-              <Bot className="w-3.5 h-3.5 text-cyan-400" />
-              Mô Hình AI (Model)
-            </label>
-            <select
-              value={formData.openaiModel || 'gpt-4o-mini'}
-              onChange={(e) => handleChange('openaiModel', e.target.value)}
-              className="w-full h-10 rounded-xl bg-slate-950/80 border border-slate-700 px-3 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 font-medium"
-            >
-              <optgroup label="⚡ Dòng GPT-4o Thế Hệ Mới (Khuyên dùng cho Content & SEO)">
-                <option value="gpt-4o-mini">GPT-4o Mini (Khuyên dùng: Siêu nhanh, Tiết kiệm, Chuẩn SEO)</option>
-                <option value="gpt-4o">GPT-4o (Flagship: Sáng tạo cao cấp, Văn phong mượt mà)</option>
-                <option value="gpt-4.5-preview">GPT-4.5 Preview (Mô hình tri thức sâu thế hệ mới nhất)</option>
-              </optgroup>
-              <optgroup label="🧠 Dòng Tư Duy & Lập Luận Sâu (Reasoning - o-series)">
-                <option value="o3-mini">o3-mini (Mới nhất: Lập luận toán & thông số kỹ thuật xe sâu sắc)</option>
-                <option value="o1-mini">o1-mini (Lập luận tư duy nhanh, so sánh cấu hình)</option>
-                <option value="o1">o1 (Mô hình tư duy chuyên sâu cao cấp nhất)</option>
-              </optgroup>
-              <optgroup label="📦 Dòng Tiền Nhiệm (Legacy)">
-                <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-              </optgroup>
-            </select>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                <Bot className="w-3.5 h-3.5 text-cyan-400" />
+                Mô Hình AI (Model)
+              </label>
+              <button
+                type="button"
+                onClick={() => setIsCustomModel(!isCustomModel)}
+                className="text-[11px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
+              >
+                <Sliders className="w-3 h-3" />
+                {isCustomModel ? 'Chọn mẫu có sẵn' : 'Nhập mã tùy chỉnh'}
+              </button>
+            </div>
+
+            {isCustomModel ? (
+              <Input
+                value={formData.openaiModel || ''}
+                onChange={(e) => handleChange('openaiModel', e.target.value)}
+                placeholder="VD: gpt-5.6-luna, gpt-6, custom-model..."
+                className="h-10 bg-slate-950/80 border-cyan-500/50 text-white font-mono text-xs focus:ring-2 focus:ring-cyan-500"
+              />
+            ) : (
+              <select
+                value={formData.openaiModel || 'gpt-4o-mini'}
+                onChange={(e) => handleModelSelect(e.target.value)}
+                className="w-full h-10 rounded-xl bg-slate-950/80 border border-slate-700 px-3 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 font-medium"
+              >
+                <optgroup label="🚀 Mô Hình Thế Hệ Mới & Đột Phá (Frontier & Next-Gen)">
+                  <option value="gpt-6">GPT-6 (Next-Gen Autonomous Frontier AI)</option>
+                  <option value="gpt-5.6-luna">GPT-5.6 Luna (Mô hình sáng tạo & tốc độ cao thế hệ mới)</option>
+                  <option value="gpt-5">GPT-5 (Mô hình đa nhiệm toàn năng thế hệ 5)</option>
+                  <option value="gpt-4.5-preview">GPT-4.5 Preview (Mô hình tri thức sâu & ngữ cảnh khổng lồ)</option>
+                </optgroup>
+                <optgroup label="⚡ Dòng GPT-4o Tiêu Chuẩn (Khuyên dùng cho Content & SEO)">
+                  <option value="gpt-4o-mini">GPT-4o Mini (Khuyên dùng: Siêu nhanh, Tiết kiệm, Chuẩn SEO)</option>
+                  <option value="gpt-4o">GPT-4o (Flagship Omni: Văn phong mượt mà & Sáng tạo)</option>
+                </optgroup>
+                <optgroup label="🧠 Dòng Tư Duy Sâu (Reasoning - O Series)">
+                  <option value="o3-mini">o3-mini (Mới nhất: Lập luận toán & thông số kỹ thuật xe sâu sắc)</option>
+                  <option value="o1-mini">o1-mini (Lập luận tư duy nhanh, so sánh cấu hình)</option>
+                  <option value="o1">o1 (Mô hình tư duy chuyên sâu cao cấp nhất)</option>
+                </optgroup>
+                <optgroup label="📦 Dòng Tiền Nhiệm (Legacy)">
+                  <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                  <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                </optgroup>
+                <option value="custom">✏️ Nhập mã model tùy chỉnh khác...</option>
+              </select>
+            )}
+
             <p className="text-[11px] text-slate-400 mt-1">
-              Tương thích đầy đủ tài liệu API mới nhất của OpenAI. Khuyên dùng <span className="text-cyan-400 font-medium">GPT-4o Mini</span> hoặc <span className="text-cyan-400 font-medium">o3-mini</span>.
+              Đang dùng: <span className="font-mono text-cyan-400 font-semibold">{formData.openaiModel || 'gpt-4o-mini'}</span>.
             </p>
           </div>
         </div>
