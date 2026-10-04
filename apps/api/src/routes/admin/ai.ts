@@ -12,9 +12,114 @@ import {
   type FullArticleResult,
 } from '@cardealer/types';
 
+// 🛠️ Helper trích xuất và sửa lỗi JSON thông minh (cho các trường hợp AI trả về markdown code block hoặc bị cắt ngắn)
+function extractAndParseJson<T = any>(raw: string): T | null {
+  if (!raw || typeof raw !== 'string') return null;
+  const trimmed = raw.trim();
+
+  // 1. Parse trực tiếp
+  try {
+    return JSON.parse(trimmed);
+  } catch {}
+
+  // 2. Bóc tách code block ```json ... ```
+  const fenceMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (fenceMatch && fenceMatch[1]) {
+    try {
+      return JSON.parse(fenceMatch[1].trim());
+    } catch {}
+  }
+
+  // 3. Tìm cặp ngoặc { ... } hoặc [ ... ] ngoài cùng
+  const firstBrace = trimmed.indexOf('{');
+  const lastBrace = trimmed.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    try {
+      return JSON.parse(trimmed.slice(firstBrace, lastBrace + 1));
+    } catch {}
+  }
+
+  // 4. Tự động sửa chữa JSON bị cắt ngang do token limit
+  if (firstBrace !== -1) {
+    try {
+      let candidate = trimmed.slice(firstBrace);
+      const stack: string[] = [];
+      let inString = false;
+      let escaped = false;
+      for (let i = 0; i < candidate.length; i++) {
+        const char = candidate[i];
+        if (escaped) {
+          escaped = false;
+          continue;
+        }
+        if (char === '\\') {
+          escaped = true;
+          continue;
+        }
+        if (char === '"') {
+          inString = !inString;
+          continue;
+        }
+        if (!inString) {
+          if (char === '{') stack.push('}');
+          else if (char === '[') stack.push(']');
+          else if (char === '}' || char === ']') {
+            if (stack.length > 0 && stack[stack.length - 1] === char) {
+              stack.pop();
+            }
+          }
+        }
+      }
+      if (inString) candidate += '"';
+      while (stack.length > 0) {
+        candidate += stack.pop();
+      }
+      return JSON.parse(candidate);
+    } catch {}
+  }
+
+  return null;
+}
+
+// 🛠️ Fallback chuyển văn bản thường / Markdown sang cấu trúc FullArticleResult nếu AI không xuất JSON
+function fallbackTextToFullArticle(text: string, titleHint: string, keywordHint: string): FullArticleResult {
+  const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
+  const blocks: any[] = [];
+  let currentParagraph = '';
+
+  for (const line of lines) {
+    if (line.startsWith('## ') || line.startsWith('### ')) {
+      if (currentParagraph) {
+        blocks.push({ type: 'paragraph', content: currentParagraph });
+        currentParagraph = '';
+      }
+      const level = line.startsWith('### ') ? 3 : 2;
+      const content = line.replace(/^#{2,3}\s*/, '');
+      blocks.push({ type: 'heading', level, content });
+    } else {
+      currentParagraph = currentParagraph ? `${currentParagraph}\n${line}` : line;
+    }
+  }
+  if (currentParagraph) {
+    blocks.push({ type: 'paragraph', content: currentParagraph });
+  }
+
+  const finalBlocks = blocks.length > 0 ? blocks : [{ type: 'paragraph', content: text }];
+  const firstP = finalBlocks.find((b) => b.type === 'paragraph')?.content || '';
+
+  return {
+    title: titleHint || (lines[0] ? lines[0].replace(/^#*\s*/, '') : 'Bài viết tư vấn mua xe Hyundai chính hãng'),
+    summary: firstP.slice(0, 220),
+    focusKeyword: keywordHint,
+    metaTitle: (titleHint || 'Đánh giá xe Hyundai').slice(0, 60),
+    metaDescription: firstP.slice(0, 155),
+    suggestedKeywords: [keywordHint],
+    blocks: finalBlocks,
+  };
+}
+
 // 🧠 Mental Model: Router API Trợ Lý AI Viết Bài & Tối Ưu SEO (@cardealer/api)
-// Chiến lược "Cyborg Content Engine": Tự động ra quyết định điều phối 14 Content Block tinh hoa:
-// (paragraph, heading, singleImage, imageGallery, specTable, priceTable, relatedCar, prosCons, callout, leadForm, faq, ctaButton, youtube, tiktok)
+// Chiến lược "Cyborg Content Engine": Tự động ra quyết định điều phối 14 Content Block tinh hoa
 // Dựa trên dữ liệu xe thực tế từ kho đại lý (availableCars), bám sát thị trường địa phương và tối ưu SEO On-Page.
 export async function handleAdminAiRoutes(
   req: IncomingMessage,
@@ -95,9 +200,9 @@ export async function handleAdminAiRoutes(
             .map(
               (c) =>
                 `- Tên xe: "${c.tenXe}" | Slug: "${c.slug}" | Giá niêm yết từ: ${
-                  c.giaNiemYetTu ? c.giaNiemYetTu.toLocaleString('vi-VN') + ' VNĐ' : 'Liên hệ'
-                } | Ảnh đại diện: "${c.anhDaiDienUrl || ''}" | Số chỗ: ${c.soChoNgoi || 5} chỗ | Nhiên liệu: ${
-                  c.loaiNhienLieu || 'Xăng'
+                  c.minPrice || c.giaNiemYetTu ? (c.minPrice || c.giaNiemYetTu)!.toLocaleString('vi-VN') + ' VNĐ' : 'Liên hệ'
+                } | Ảnh đại diện: "${c.anhDaiDienUrl || ''}" | Số chỗ: ${c.seatRange || c.soChoNgoi || 5} | Nhiên liệu: ${
+                  c.fuelType || c.loaiNhienLieu || 'Xăng'
                 }`
             )
             .join('\n')}\n`
@@ -124,7 +229,7 @@ Nguyên tắc cốt lõi của bạn tuân thủ triệt để chiến lược "
    - "ctaButton": Nút bấm kêu gọi hành động nổi bật Hotline/Zalo/Báo giá (gồm: ctaButtonText, ctaActionType: 'hotline'|'zalo'|'quoteForm', ctaSubtext, ctaVariant: 'red'|'blue'|'emerald').
 4. Ngôn từ & Văn phong: Văn phong của chuyên viên tư vấn bán hàng tận tâm, trung thực, truyền cảm hứng và thôi thúc người đọc liên hệ lái thử / nhận báo giá.
 5. TUYỆT ĐỐI CẤM văn phong AI rập khuôn: Cấm dùng các cụm từ sáo rỗng như "Trong bối cảnh hiện nay", "Nhìn chung", "Không thể phủ nhận", "Tóm lại là", "Có thể nói rằng", "Đáng chú ý là", "Hãy cùng chúng tôi tìm hiểu", "Hy vọng bài viết này sẽ đem lại". Hãy viết trực diện, mở đầu ấn tượng, thông tin đắt giá.
-6. Khi có yêu cầu JSON, BẮT BUỘC trả về đúng định dạng JSON hợp lệ, không thừa ký tự ngoài.`;
+6. BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON HỢP LỆ THEO YÊU CẦU.`;
 
     let userPrompt = '';
     let responseFormat: { type: 'json_object' } | undefined = undefined;
@@ -133,7 +238,7 @@ Nguyên tắc cốt lõi của bạn tuân thủ triệt để chiến lược "
     switch (action) {
       case 'generate_full_article':
         responseFormat = { type: 'json_object' };
-        defaultTokenLimit = 4000;
+        defaultTokenLimit = 6000;
         userPrompt = `Hãy viết một BÀI VIẾT HOÀN CHỈNH TỪ A-Z CHUẨN SEO & CHUYÊN SÂU về chủ đề: "${prompt}".
 
 Thông tin trọng tâm:
@@ -263,7 +368,7 @@ TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON:
 
       case 'generate_outline':
         responseFormat = { type: 'json_object' };
-        defaultTokenLimit = 2000;
+        defaultTokenLimit = 2500;
         userPrompt = `Hãy tạo một dàn ý bài viết chuẩn SEO chi tiết, sâu sắc cho chủ đề: "${prompt}".
 Dòng xe: ${targetCar}
 Địa phương / Tỉnh thành: ${targetLocation}
@@ -439,6 +544,17 @@ Yêu cầu trả về JSON:
     const openaiData = (await openaiRes.json()) as any;
     const aiContent = openaiData.choices?.[0]?.message?.content || '';
 
+    if (!aiContent.trim()) {
+      sendJson(500, {
+        success: false,
+        error: {
+          code: 'EMPTY_AI_RESPONSE',
+          message: 'Mô hình AI không trả về nội dung. Vui lòng thử lại với từ khóa hoặc yêu cầu cụ thể hơn.',
+        },
+      });
+      return true;
+    }
+
     // 4. Xử lý phản hồi trả về
     const resultData: AiGenerateResponseData = {
       action,
@@ -453,40 +569,67 @@ Yêu cầu trả về JSON:
     };
 
     if (responseFormat?.type === 'json_object') {
-      try {
-        const parsedJson = JSON.parse(aiContent);
-        if (action === 'generate_full_article') {
+      const parsedJson = extractAndParseJson(aiContent);
+
+      if (action === 'generate_full_article') {
+        if (parsedJson && (parsedJson.title || parsedJson.blocks)) {
           resultData.fullArticle = {
-            title: String(parsedJson.title || ''),
+            title: String(parsedJson.title || prompt || 'Bài viết tư vấn mua xe Hyundai'),
             summary: String(parsedJson.summary || ''),
             focusKeyword: String(parsedJson.focusKeyword || targetKeyword),
-            metaTitle: String(parsedJson.metaTitle || ''),
-            metaDescription: String(parsedJson.metaDescription || ''),
-            suggestedKeywords: Array.isArray(parsedJson.suggestedKeywords) ? parsedJson.suggestedKeywords : [],
-            blocks: Array.isArray(parsedJson.blocks) ? parsedJson.blocks : [],
+            metaTitle: String(parsedJson.metaTitle || parsedJson.title || ''),
+            metaDescription: String(parsedJson.metaDescription || parsedJson.summary || ''),
+            suggestedKeywords: Array.isArray(parsedJson.suggestedKeywords) ? parsedJson.suggestedKeywords : [targetKeyword],
+            blocks: Array.isArray(parsedJson.blocks) && parsedJson.blocks.length > 0 ? parsedJson.blocks : [{ type: 'paragraph', content: aiContent }],
           };
           resultData.seo = {
-            metaTitle: String(parsedJson.metaTitle || ''),
-            metaDescription: String(parsedJson.metaDescription || ''),
-            suggestedKeywords: Array.isArray(parsedJson.suggestedKeywords) ? parsedJson.suggestedKeywords : [],
+            metaTitle: resultData.fullArticle.metaTitle,
+            metaDescription: resultData.fullArticle.metaDescription,
+            suggestedKeywords: resultData.fullArticle.suggestedKeywords,
           };
-          resultData.text = parsedJson.summary || '';
+          resultData.text = resultData.fullArticle.summary;
           resultData.rawText = aiContent;
-        } else if (action === 'generate_outline' && Array.isArray(parsedJson.outline)) {
+        } else {
+          // Fallback parsing nếu OpenAI không trả về JSON hợp lệ
+          const fallback = fallbackTextToFullArticle(aiContent, prompt, targetKeyword);
+          resultData.fullArticle = fallback;
+          resultData.seo = {
+            metaTitle: fallback.metaTitle,
+            metaDescription: fallback.metaDescription,
+            suggestedKeywords: fallback.suggestedKeywords,
+          };
+          resultData.text = fallback.summary;
+          resultData.rawText = aiContent;
+        }
+      } else if (action === 'generate_outline') {
+        if (parsedJson && Array.isArray(parsedJson.outline)) {
           resultData.outline = parsedJson.outline as OutlineItem[];
-        } else if (action === 'generate_faqs' && Array.isArray(parsedJson.faqs)) {
+        } else {
+          // Fallback outline từ các dòng markdown
+          const lines = aiContent.split('\n').filter((l: string) => l.trim().startsWith('#') || l.trim().startsWith('-'));
+          resultData.outline = lines.map((l: string) => ({
+            level: l.startsWith('###') ? 3 : 2,
+            title: l.replace(/^#+\s*/, '').replace(/^-\s*/, ''),
+          }));
+        }
+      } else if (action === 'generate_faqs') {
+        if (parsedJson && Array.isArray(parsedJson.faqs)) {
           resultData.faqs = parsedJson.faqs as FaqItem[];
-        } else if (action === 'optimize_seo') {
+        } else {
+          resultData.faqs = [
+            { question: `Giá lăn bánh ${targetCar} tại ${targetLocation} là bao nhiêu?`, answer: `Giá lăn bánh bao gồm giá bán xe, thuế trước bạ, phí cấp biển số và các chi phí đăng kiểm đường bộ.` },
+            { question: `Mua xe ${targetCar} trả góp cần chuẩn bị thủ tục gì?`, answer: `Chỉ cần CCCD gắn chip và giấy xác nhận thu nhập, ngân hàng liên kết duyệt hồ sơ trong vòng 24 giờ.` },
+          ];
+        }
+      } else if (action === 'optimize_seo') {
+        if (parsedJson) {
           resultData.seo = {
             metaTitle: String(parsedJson.metaTitle || ''),
             metaDescription: String(parsedJson.metaDescription || ''),
             suggestedKeywords: Array.isArray(parsedJson.suggestedKeywords) ? parsedJson.suggestedKeywords : [],
           } as SeoOptimizationResult;
-        } else {
-          resultData.text = aiContent;
-          resultData.rawText = aiContent;
         }
-      } catch (jsonErr) {
+      } else {
         resultData.text = aiContent;
         resultData.rawText = aiContent;
       }

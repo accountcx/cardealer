@@ -21,6 +21,7 @@ import {
   MessageSquare,
   MousePointerClick,
   Video,
+  ArrowRight,
 } from 'lucide-react';
 import { Modal, Button, Card, Input } from '@cardealer/ui';
 import { aiService } from '../../../../services/ai.service';
@@ -142,7 +143,20 @@ export function AiWritingAssistantModal({
 
       if (data?.fullArticle) {
         setFullArticleResult(data.fullArticle);
+      } else if (action === 'generate_full_article' && (data?.text || data?.rawText)) {
+        // Client fallback nếu API chỉ trả về text
+        const textContent = data.rawText || data.text || '';
+        setFullArticleResult({
+          title: prompt || currentTitle || 'Bài viết tư vấn mua xe Hyundai',
+          summary: textContent.slice(0, 200),
+          focusKeyword: keyword || currentKeyword || 'xe hyundai',
+          metaTitle: (prompt || 'Đánh giá xe Hyundai').slice(0, 60),
+          metaDescription: textContent.slice(0, 150),
+          suggestedKeywords: [keyword || 'xe hyundai'],
+          blocks: [{ type: 'paragraph', content: textContent }],
+        });
       }
+
       if (data?.outline) {
         setOutlineResult(data.outline);
       }
@@ -360,9 +374,21 @@ export function AiWritingAssistantModal({
                 className="flex items-center gap-2 h-9 px-4 text-xs font-semibold shrink-0 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500"
               >
                 {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-                {loading ? 'Đang viết toàn bộ bài viết...' : 'Tạo Toàn Bộ Bài Viết (A-Z)'}
+                {loading ? 'Đang viết bài viết từ A-Z...' : 'Tạo Toàn Bộ Bài Viết (A-Z)'}
               </Button>
             </div>
+
+            {loading && (
+              <Card className="p-6 bg-slate-950/80 border-cyan-500/30 rounded-xl space-y-3 text-center animate-pulse">
+                <div className="flex items-center justify-center gap-3 text-cyan-400">
+                  <RefreshCw className="w-6 h-6 animate-spin" />
+                  <span className="text-sm font-bold">Trợ lý AI đang soạn thảo bài viết hoàn chỉnh...</span>
+                </div>
+                <p className="text-xs text-slate-400 max-w-md mx-auto">
+                  Hệ thống đang đối chiếu dữ liệu kỹ thuật, giá lăn bánh tại {location}, phân bổ hình ảnh, video và 14 Content Block tinh hoa. Quá trình mất khoảng 10-25 giây.
+                </p>
+              </Card>
+            )}
 
             {fullArticleResult && (
               <Card className="p-4 bg-slate-950/70 border-cyan-500/40 rounded-xl space-y-4">
@@ -379,7 +405,7 @@ export function AiWritingAssistantModal({
                         onInsertFullArticle(fullArticleResult);
                         onClose();
                       }}
-                      className="h-8 px-3.5 text-xs font-bold flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950"
+                      className="h-8 px-3.5 text-xs font-bold flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/20"
                     >
                       <Check className="w-3.5 h-3.5" /> Áp dụng vào Bài Viết & SEO (1-Click)
                     </Button>
@@ -453,6 +479,24 @@ export function AiWritingAssistantModal({
                       ))}
                     </div>
                   </div>
+
+                  {/* Bottom 1-Click Apply */}
+                  {onInsertFullArticle && (
+                    <div className="pt-2 border-t border-slate-800/80 flex justify-end">
+                      <Button
+                        variant="accent"
+                        size="sm"
+                        onClick={() => {
+                          onInsertFullArticle(fullArticleResult);
+                          onClose();
+                        }}
+                        className="h-9 px-4 text-xs font-bold flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20"
+                      >
+                        <Check className="w-4 h-4" /> Áp dụng toàn bộ vào Bài Viết & SEO (1-Click)
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </Card>
             )}
