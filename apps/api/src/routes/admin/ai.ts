@@ -14,8 +14,7 @@ import {
 // 🧠 Mental Model: Router API Trợ Lý AI Viết Bài (@cardealer/api)
 // Hỗ trợ Admin sinh dàn ý, viết tiếp nội dung, tối ưu SEO On-Page và tự động tạo khối FAQ.
 // API Key và Model được nạp động từ database `site_settings` (hoặc fallback biến môi trường OPENAI_API_KEY).
-// Tương thích các Model mới nhất: GPT-4o, GPT-4o Mini, GPT-4.5 Preview, o3-mini, o1-mini, o1.
-// Tự động phân nhánh tham số tối ưu (temperature, max_completion_tokens, developer role) phù hợp từng model.
+// Sử dụng `max_completion_tokens` chuẩn OpenAI API mới nhất cho toàn bộ các model (GPT-4o, GPT-5, GPT-6, o1, o3-mini...).
 
 export async function handleAdminAiRoutes(
   req: IncomingMessage,
@@ -171,36 +170,73 @@ Yêu cầu trả về JSON:
         return true;
     }
 
-    // 3. Phân nhánh tham số tương thích với từng loại Model (Reasoning o-series vs Chat Completion)
-    const isReasoningModel = model.startsWith('o1') || model.startsWith('o3');
+    // 3. Chuẩn hóa tham số gọi OpenAI API
+    // Dùng `max_completion_tokens` cho TẤT CẢ các model thay vì `max_tokens` đã bị deprecate
+    const isReasoningModel =
+      model.startsWith('o1') ||
+      model.startsWith('o3') ||
+      model.startsWith('o4') ||
+      model.includes('reasoning');
+
     const systemRole = isReasoningModel ? 'developer' : 'system';
 
-    const requestBody: Record<string, unknown> = {
-      model: model || 'gpt-4o-mini',
-      messages: [
-        { role: systemRole, content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-      ...(responseFormat ? { response_format: responseFormat } : {}),
+    const buildPayload = (includeTemperature = true) => {
+      const payload: Record<string, unknown> = {
+        model: model || 'gpt-4o-mini',
+        messages: [
+          { role: systemRole, content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        max_completion_tokens: maxTokens || 2000,
+        ...(responseFormat ? { response_format: responseFormat } : {}),
+      };
+
+      if (!isReasoningModel && includeTemperature) {
+        payload.temperature = 0.7;
+      }
+      return payload;
     };
 
-    if (isReasoningModel) {
-      // O-series dùng max_completion_tokens và không nhận tham số temperature tùy chỉnh
-      requestBody.max_completion_tokens = maxTokens || 2000;
-    } else {
-      requestBody.temperature = 0.7;
-      requestBody.max_tokens = maxTokens || 1500;
-    }
-
     // Gửi request tới OpenAI API endpoint
-    const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+    let openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify(buildPayload(true)),
     });
+
+    // Nếu lỗi liên quan đến temperature không được hỗ trợ ở model tùy chỉnh, thử lại tự động không kèm temperature
+    if (!openaiRes.ok) {
+      const firstErrText = await openaiRes.text();
+      if (firstErrText.includes('temperature') || firstErrText.includes('unsupported_parameter')) {
+        openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify(buildPayload(false)),
+        });
+      } else {
+        let errJson: any;
+        try {
+          errJson = JSON.parse(firstErrText);
+        } catch {
+          errJson = null;
+        }
+        const openAiErrMsg = errJson?.error?.message || `OpenAI API Error (${openaiRes.status}): ${firstErrText.slice(0, 200)}`;
+        sendJson(502, {
+          success: false,
+          error: {
+            code: 'OPENAI_API_ERROR',
+            message: openAiErrMsg,
+          },
+        });
+        return true;
+      }
+    }
 
     if (!openaiRes.ok) {
       const errText = await openaiRes.text();
