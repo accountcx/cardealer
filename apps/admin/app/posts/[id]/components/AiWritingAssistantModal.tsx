@@ -105,7 +105,7 @@ export function AiWritingAssistantModal({
     setCopied(false);
 
     try {
-      const resp = await aiService.generate({
+      const data = await aiService.generate({
         action,
         prompt: prompt || currentTitle || 'Bài viết tư vấn mua xe ô tô Hyundai chính hãng',
         context: currentBlocksText || undefined,
@@ -114,12 +114,6 @@ export function AiWritingAssistantModal({
         location: location || undefined,
       });
 
-      if (!resp.success) {
-        setErrorMsg(resp.error?.message || 'Có lỗi khi gọi trợ lý AI. Vui lòng kiểm tra lại cấu hình API Key.');
-        return;
-      }
-
-      const data = resp.data;
       if (data?.outline) {
         setOutlineResult(data.outline);
       }
