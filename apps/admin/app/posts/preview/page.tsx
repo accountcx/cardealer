@@ -1,18 +1,18 @@
 'use client';
 
-// 🧠 Mental Model: Trang Xem Trước Bài Viết Bí Mật (Secret Preview Page) với Token 24h (apps/admin).
+// 🧠 Mental Model: Trang Xem Trước Bài Viết Bí Mật (Secret Preview Page) & Live Draft Preview (apps/admin).
 // Tuân thủ triệt để universal-agentic-workflow.xml, fullstack-dev-executor.xml và tailwind-ui-designer.xml:
-// 1. Secret Token Verification: Xác thực token 64 ký tự qua endpoint public `/api/posts/preview?token=...`,
-//    cho phép Ban Biên Tập, Giám Đốc và Đại Lý xem trước bản nháp mà không cần đăng nhập CMS.
-// 2. Multi-Device Frame Switcher: Chuyển đổi khung hình mô phỏng tức thì giữa Desktop (100%), Tablet (768px),
-//    và Mobile (375px) với animation mượt mà (hỗ trợ motion-reduce:transition-none).
-// 3. 4-State UI Matrix Chuẩn Mực:
-//    - Loading State: Skeleton Shimmer giả lập toàn diện khung toolbar, hero image và đoạn văn triệt tiêu CLS.
-//    - Empty State: Khung thông báo chuyên nghiệp khi thiếu token hoặc không tìm thấy bài viết kèm nút CTA.
-//    - Error State: Banner cảnh báo chi tiết kèm mã lỗi và nút Thử lại (onRetry).
-//    - Success / Data State: Hiển thị trọn vẹn 8 Content Blocks (@cardealer/ui) chuẩn Tiptap AST JSON.
-// 4. E-E-A-T & Inbound Attribution: Hiển thị tác giả chuyên gia (author box), chuyên mục, thời gian đọc, ngày đăng.
-// 5. 100% Named Export song hành cùng Default Export cho Next.js App Router page.
+// 1. Dual Data Sources:
+//    - SessionStorage: Hiển thị ngay tức thì bản nháp đang soạn thảo ở Post Editor mà không cần xuất bản.
+//    - Secret Token Verification: Xác thực token 64 ký tự qua endpoint `/api/posts/preview?token=...`
+//    - Admin Post ID: Tải bài viết theo ID từ `/api/admin/posts/:id` (kể cả bản nháp draft).
+// 2. Multi-Device Frame Switcher: Desktop (100%), Tablet (768px), Mobile (390px).
+// 3. 4-State UI Matrix:
+//    - Loading State: Skeleton Shimmer mượt mà, triệt tiêu CLS.
+//    - Empty State: Khung thông báo chuyên nghiệp khi thiếu dữ liệu kèm nút CTA.
+//    - Error State: Banner cảnh báo chi tiết kèm nút Thử lại.
+//    - Success / Data State: Hiển thị trọn vẹn 14 Content Blocks (@cardealer/ui & custom AST renderers).
+// 4. E-E-A-T & Inbound Attribution: Tác giả chuyên gia, chuyên mục, thời gian đọc, ngày tạo.
 
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
@@ -49,7 +49,6 @@ import {
 import { apiClient } from '../../../lib/api-client';
 import type { PostItem } from '../../../services/post.service';
 
-// Các kiểu thiết bị xem trước
 type DeviceMode = 'desktop' | 'tablet' | 'mobile';
 
 interface TiptapContentNode {
@@ -85,17 +84,71 @@ function PreviewContent() {
   const [deviceMode, setDeviceMode] = useState<DeviceMode>('desktop');
   const [copied, setCopied] = useState(false);
 
-  // Tải dữ liệu bài viết xem trước
+  // Tải dữ liệu bài viết xem trước (kết hợp sessionStorage và API)
   const loadPreviewPost = useCallback(async () => {
+    let loadedFromStorage = false;
+
+    // 1. Kiểm tra sessionStorage trước để load tức thì
+    if (typeof window !== 'undefined') {
+      try {
+        const cachedRaw = sessionStorage.getItem('cardealer_post_preview');
+        if (cachedRaw) {
+          const cached = JSON.parse(cachedRaw);
+          if (cached && (cached.tieuDe || cached.noiDung)) {
+            const previewObj: PostDetailData = {
+              id: cached.id || postId || 'preview-draft',
+              tieuDe: cached.tieuDe || 'Bài viết xem trước',
+              slug: cached.slug || 'bai-viet-xem-truoc',
+              categoryId: cached.categoryId || '',
+              category: cached.categoryName
+                ? { id: cached.categoryId, tenChuyenMuc: cached.categoryName, slug: '' }
+                : undefined,
+              anhDaiDienUrl: cached.anhDaiDienUrl || '',
+              anhDaiDienAlt: cached.anhDaiDienAlt || '',
+              tomTat: cached.tomTat || '',
+              noiDung: cached.noiDung || { type: 'doc', content: [] },
+              status: cached.status || 'draft',
+              isFeatured: cached.isFeatured || false,
+              featuredOrder: cached.featuredOrder || 0,
+              viewCount: 0,
+              readingTime: 3,
+              wordCount: 500,
+              createdAt: cached.updatedAt || new Date().toISOString(),
+              updatedAt: cached.updatedAt || new Date().toISOString(),
+              author: {
+                id: 'author-preview',
+                fullName: 'Ban Biên Tập & Cố Vấn Xe',
+                role: 'admin',
+                phone: '0981.234.567',
+              },
+              tags: [],
+            };
+            setPost(previewObj);
+            setLoading(false);
+            loadedFromStorage = true;
+          }
+        }
+      } catch (storageErr) {
+        console.warn('Lỗi đọc sessionStorage:', storageErr);
+      }
+    }
+
+    // Nếu không có token và không có postId, nhưng đã load được từ sessionStorage thì hoàn tất
     if (!token && !postId) {
-      setError('Thiếu mã token hoặc ID bài viết để xem trước');
+      if (loadedFromStorage) {
+        setLoading(false);
+        return;
+      }
+      setError('Thiếu thông tin bài viết để xem trước');
       setErrorCode('MISSING_TOKEN');
       setLoading(false);
       return;
     }
 
     try {
-      setLoading(true);
+      if (!loadedFromStorage) {
+        setLoading(true);
+      }
       setError(null);
       setErrorCode(null);
 
@@ -107,23 +160,24 @@ function PreviewContent() {
           `/api/posts/preview?token=${encodeURIComponent(token)}`
         );
         fetchedPost = res?.data || res;
-      } else if (postId) {
-        // Tải qua Admin Post ID (yêu cầu quyền admin)
+      } else if (postId && postId !== 'new' && postId !== 'preview-draft') {
+        // Tải qua Admin Post ID (hỗ trợ cả bản nháp draft)
         const res = await apiClient.get<any>(
           `/api/admin/posts/${postId}`
         );
         fetchedPost = res?.data || res;
       }
 
-      if (!fetchedPost) {
-        throw new Error('Không tìm thấy dữ liệu bài viết');
+      if (fetchedPost) {
+        setPost(fetchedPost);
       }
-
-      setPost(fetchedPost);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi tải bài viết xem trước';
-      setError(msg);
-      setErrorCode('FETCH_FAILED');
+      // Nếu chưa load được từ sessionStorage thì hiển thị lỗi
+      if (!loadedFromStorage) {
+        const msg = err instanceof Error ? err.message : 'Lỗi tải bài viết xem trước';
+        setError(msg);
+        setErrorCode('FETCH_FAILED');
+      }
     } finally {
       setLoading(false);
     }
@@ -238,7 +292,7 @@ function PreviewContent() {
       <header className="sticky top-0 z-50 w-full bg-slate-900/90 backdrop-blur-xl border-b border-white/10 px-4 md:px-8 py-3 flex flex-wrap items-center justify-between gap-3 shadow-lg">
         {/* Left: Back Link & Status */}
         <div className="flex items-center gap-3">
-          <Link href={`/posts/${post.id}`}>
+          <Link href={post.id && post.id !== 'preview-draft' ? `/posts/${post.id}` : '/posts'}>
             <Button variant="ghost" size="sm" className="h-9 px-2.5 text-slate-400 hover:text-slate-100">
               <ChevronLeft size={16} />
               Quay lại biên tập
@@ -259,13 +313,13 @@ function PreviewContent() {
             {post.status === 'published'
               ? 'Đã xuất bản'
               : post.status === 'draft'
-              ? 'Bản nháp bí mật'
+              ? 'Bản nháp (Đang xem trước)'
               : post.status === 'scheduled'
               ? 'Đã hẹn giờ'
               : 'Lưu trữ'}
           </Badge>
           <span className="hidden lg:inline-flex items-center gap-1.5 text-xs font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
-            <Lock size={12} /> Token Preview
+            <Lock size={12} /> Live Preview
           </span>
         </div>
 
@@ -299,7 +353,7 @@ function PreviewContent() {
             size="sm"
             onClick={() => setDeviceMode('mobile')}
             className="h-8 px-3 rounded-lg text-xs"
-            title="Xem trước màn hình Di động (Mobile 375px)"
+            title="Xem trước màn hình Di động (Mobile 390px)"
           >
             <Smartphone size={14} className="mr-1.5" />
             <span className="hidden md:inline">Mobile</span>
@@ -320,7 +374,7 @@ function PreviewContent() {
             {copied ? 'Đã sao chép' : 'Sao chép link'}
           </Button>
 
-          <Link href={`/posts/${post.id}`}>
+          <Link href={post.id && post.id !== 'preview-draft' ? `/posts/${post.id}` : '/posts'}>
             <Button variant="accent" size="sm" className="h-9 px-3.5 text-xs font-semibold">
               <Edit size={14} className="mr-1.5" />
               Chỉnh sửa
@@ -368,12 +422,12 @@ function PreviewContent() {
 
               <div className="flex items-center gap-1.5">
                 <Clock size={14} className="text-slate-500" />
-                <span>{post.readingTime} phút đọc</span>
+                <span>{post.readingTime || 3} phút đọc</span>
               </div>
 
               <div className="flex items-center gap-1.5">
                 <BookOpen size={14} className="text-slate-500" />
-                <span>{post.wordCount} từ</span>
+                <span>{post.wordCount || 500} từ</span>
               </div>
 
               {post.author && (
@@ -452,8 +506,65 @@ function PreviewContent() {
                   );
                 }
 
+                // Single Image Block
+                if (node.type === 'singleImage' || node.type === 'imageBlock' || node.type === 'image') {
+                  const url = (node.attrs?.url as string) || (node.attrs?.imageUrl as string) || (node.attrs?.src as string) || '';
+                  const alt = (node.attrs?.alt as string) || (node.attrs?.imageAlt as string) || 'Hình ảnh minh họa xe';
+                  const caption = (node.attrs?.caption as string) || '';
+                  if (!url) return null;
+                  return (
+                    <figure key={idx} className="my-6 space-y-2">
+                      <div className="aspect-video w-full rounded-2xl overflow-hidden bg-slate-900 border border-white/10 shadow-xl">
+                        <img
+                          src={url}
+                          alt={alt}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/images/placeholder-car.webp';
+                          }}
+                        />
+                      </div>
+                      {caption && (
+                        <figcaption className="text-center text-xs text-slate-400 italic">
+                          {caption}
+                        </figcaption>
+                      )}
+                    </figure>
+                  );
+                }
+
+                // Image Gallery Block
+                if (node.type === 'galleryBlock' || node.type === 'imageGallery') {
+                  const images = (node.attrs?.images as any[]) || (node.attrs?.galleryImages as any[]) || [];
+                  const title = (node.attrs?.title as string) || 'Bộ Sưu Tập Hình Ảnh Chi Tiết';
+                  if (images.length === 0) return null;
+                  return (
+                    <div key={idx} className="my-8 space-y-4">
+                      <h3 className="text-lg font-bold text-slate-200 border-l-4 border-cyan-500 pl-3">{title}</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        {images.map((img: any, i: number) => {
+                          const imgSrc = typeof img === 'string' ? img : img.url || img.imageUrl;
+                          const imgAlt = typeof img === 'string' ? `Ảnh ${i + 1}` : img.alt || img.caption || `Ảnh ${i + 1}`;
+                          return (
+                            <div key={i} className="aspect-video rounded-xl overflow-hidden border border-white/10 bg-slate-900 group">
+                              <img
+                                src={imgSrc}
+                                alt={imgAlt}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = '/images/placeholder-car.webp';
+                                }}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                }
+
                 // Callout Block
-                if (node.type === 'calloutBlock') {
+                if (node.type === 'calloutBlock' || node.type === 'callout') {
                   return (
                     <CalloutBlock
                       key={idx}
@@ -465,7 +576,7 @@ function PreviewContent() {
                 }
 
                 // YouTube Block
-                if (node.type === 'youtubeBlock') {
+                if (node.type === 'youtubeBlock' || node.type === 'youtube') {
                   return (
                     <YoutubeBlock
                       key={idx}
@@ -477,27 +588,139 @@ function PreviewContent() {
                 }
 
                 // TikTok Block
-                if (node.type === 'tikTokBlock') {
+                if (node.type === 'tikTokBlock' || node.type === 'tiktok') {
                   return (
                     <TikTokBlock
                       key={idx}
                       videoId={(node.attrs?.videoId as string) || ''}
                       videoUrl={(node.attrs?.videoUrl as string) || ''}
-                      title={(node.attrs?.title as string) || 'Video TikTok Hyundai'}
+                      title={(node.attrs?.title as string) || 'Video TikTok Trải Nghiệm'}
                       posterImageUrl={(node.attrs?.posterImageUrl as string) || null}
                     />
                   );
                 }
 
                 // FAQ Block
-                if (node.type === 'faqBlock') {
-                  const questions = (node.attrs?.questions as any) || [];
+                if (node.type === 'faqBlock' || node.type === 'faq') {
+                  const questions = (node.attrs?.questions as any) || (node.attrs?.faqs as any) || [];
                   return (
                     <FAQBlock
                       key={idx}
-                      title="Câu Hỏi Thường Gặp"
+                      title="Câu Hỏi Thường Gặp (FAQ)"
                       questions={questions}
                     />
+                  );
+                }
+
+                // Spec Comparison Table Block
+                if (node.type === 'specComparisonBlock' || node.type === 'specTable') {
+                  const title = (node.attrs?.title as string) || 'Bảng So Sánh Thông Số Kỹ Thuật';
+                  const versions = (node.attrs?.versions as string[]) || (node.attrs?.specVersions as string[]) || ['Bản Tiêu Chuẩn', 'Bản Đặc Biệt'];
+                  const rows = (node.attrs?.rows as Array<{ name: string; values: string[] }>) || (node.attrs?.specRows as any[]) || [];
+                  return (
+                    <div key={idx} className="my-8 rounded-2xl bg-slate-900/80 border border-white/10 overflow-hidden shadow-xl p-5 space-y-4">
+                      <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                        {title}
+                      </h3>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs border-collapse">
+                          <thead>
+                            <tr className="border-b border-white/10 bg-white/[0.03]">
+                              <th className="py-3 px-4 text-slate-400 font-semibold">Thông số / Phiên bản</th>
+                              {versions.map((ver, vIdx) => (
+                                <th key={vIdx} className="py-3 px-4 text-cyan-400 font-bold">{ver}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/5">
+                            {rows.map((row, rIdx) => (
+                              <tr key={rIdx} className="hover:bg-white/[0.02]">
+                                <td className="py-3 px-4 font-medium text-slate-300">{row.name}</td>
+                                {versions.map((_, vIdx) => (
+                                  <td key={vIdx} className="py-3 px-4 text-slate-300">
+                                    {row.values?.[vIdx] || '—'}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Pros & Cons Block
+                if (node.type === 'prosConsBlock' || node.type === 'prosCons') {
+                  const title = (node.attrs?.title as string) || 'Đánh Giá Ưu & Nhược Điểm Thực Tế';
+                  const pros = (node.attrs?.pros as string[]) || [];
+                  const cons = (node.attrs?.cons as string[]) || [];
+                  return (
+                    <div key={idx} className="my-8 rounded-2xl bg-slate-900/60 border border-white/10 p-5 space-y-4">
+                      <h3 className="text-lg font-bold text-slate-100">{title}</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/20 space-y-2">
+                          <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <Check size={14} /> Ưu Điểm Nổi Bật
+                          </h4>
+                          <ul className="space-y-1.5 text-xs text-slate-300">
+                            {pros.map((p, pIdx) => (
+                              <li key={pIdx} className="flex items-start gap-2">
+                                <span className="text-emerald-400 font-bold">+</span>
+                                <span>{p}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div className="p-4 rounded-xl bg-rose-950/20 border border-rose-500/20 space-y-2">
+                          <h4 className="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <AlertTriangle size={14} /> Điểm Cần Cân Nhắc
+                          </h4>
+                          <ul className="space-y-1.5 text-xs text-slate-300">
+                            {cons.map((c, cIdx) => (
+                              <li key={cIdx} className="flex items-start gap-2">
+                                <span className="text-rose-400 font-bold">-</span>
+                                <span>{c}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Lead Quote Form Block
+                if (node.type === 'leadFormBlock' || node.type === 'inlineQuickForm' || node.type === 'leadForm') {
+                  const headline = (node.attrs?.headline as string) || 'Đăng Ký Nhận Báo Giá Lăn Bánh & Ưu Đãi';
+                  const subheadline = (node.attrs?.subheadline as string) || 'Chuyên viên tư vấn sẽ liên hệ gửi dự toán chi phí chi tiết trong 5 phút.';
+                  const buttonText = (node.attrs?.buttonText as string) || 'Gửi Yêu Cầu Báo Giá';
+                  const carName = (node.attrs?.carName as string) || '';
+                  return (
+                    <div key={idx} className="my-8 p-6 rounded-2xl bg-gradient-to-br from-cyan-950/40 via-slate-900 to-slate-900 border border-cyan-500/30 shadow-2xl space-y-4 text-center">
+                      <div className="space-y-1">
+                        <h3 className="text-lg sm:text-xl font-extrabold text-white">{headline}</h3>
+                        {subheadline && <p className="text-xs text-slate-400">{subheadline}</p>}
+                      </div>
+                      <div className="max-w-md mx-auto space-y-3 pt-2">
+                        <input
+                          type="text"
+                          disabled
+                          placeholder={carName ? `Dòng xe quan tâm: ${carName}` : 'Họ và tên của bạn...'}
+                          className="w-full h-10 px-3.5 text-xs rounded-xl bg-slate-950/80 border border-white/10 text-slate-400 cursor-not-allowed"
+                        />
+                        <input
+                          type="tel"
+                          disabled
+                          placeholder="Số điện thoại nhận báo giá Zalo..."
+                          className="w-full h-10 px-3.5 text-xs rounded-xl bg-slate-950/80 border border-white/10 text-slate-400 cursor-not-allowed"
+                        />
+                        <Button variant="accent" className="w-full h-11 text-xs font-bold shadow-lg bg-gradient-to-r from-cyan-500 to-blue-600">
+                          {buttonText}
+                        </Button>
+                      </div>
+                    </div>
                   );
                 }
 
@@ -557,7 +780,7 @@ function PreviewContent() {
                 }
 
                 // Related Car Block
-                if (node.type === 'relatedCarBlock') {
+                if (node.type === 'relatedCarBlock' || node.type === 'relatedCar') {
                   return (
                     <RelatedCarBlock
                       key={idx}
@@ -570,7 +793,7 @@ function PreviewContent() {
                 }
 
                 // Price Table Block
-                if (node.type === 'priceTableBlock') {
+                if (node.type === 'priceTableBlock' || node.type === 'priceTable') {
                   return (
                     <PriceTableBlock
                       key={idx}

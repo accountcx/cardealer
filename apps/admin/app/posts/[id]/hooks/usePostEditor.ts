@@ -494,18 +494,24 @@ export function usePostEditor() {
     }
   };
 
-  // Preview Real-time (Đồng bộ vào sessionStorage và mở tab xem trước)
-  const handlePreview = () => {
+  // Preview Real-time (Tự động lưu bản nháp ngầm vào DB + Đồng bộ vào sessionStorage + Mở tab xem trước)
+  const handlePreview = async () => {
+    let activePostId = postId;
+    const finalTieuDe = tieuDe.trim() || 'Bài viết xem trước (Bản nháp)';
+    const finalSlug = slug.trim() || toSlug(finalTieuDe) || `draft-${Date.now()}`;
+    const targetSaveStatus = status === 'published' ? 'published' : 'draft';
+
     const previewPayload = {
-      tieuDe,
-      slug,
+      id: activePostId !== 'new' ? activePostId : undefined,
+      tieuDe: finalTieuDe,
+      slug: finalSlug,
       categoryId,
       categoryName: categories.find((c) => c.id === categoryId)?.tenChuyenMuc || 'Tin tức xe',
       anhDaiDienUrl,
       anhDaiDienAlt,
       tomTat,
       noiDung: tiptapDoc,
-      status,
+      status: targetSaveStatus,
       isFeatured,
       metaTitle,
       metaDescription,
@@ -513,13 +519,58 @@ export function usePostEditor() {
       updatedAt: new Date().toISOString(),
     };
 
+    // 1. Lưu ngay vào sessionStorage để preview trang có thể hiển thị tức thì
     try {
       sessionStorage.setItem('cardealer_post_preview', JSON.stringify(previewPayload));
-      window.open('/preview/post', '_blank');
     } catch (err) {
-      console.error('Lỗi khi mở Preview:', err);
-      setToast({ type: 'error', message: 'Không thể mở chế độ xem trước' });
+      console.warn('Lỗi khi ghi sessionStorage preview:', err);
     }
+
+    // 2. Tự động lưu bản nháp vào CSDL ngầm không chặn preview
+    setSaving(true);
+    try {
+      const payload = {
+        tieuDe: finalTieuDe,
+        slug: finalSlug,
+        categoryId: categoryId || undefined,
+        anhDaiDienUrl: anhDaiDienUrl || undefined,
+        anhDaiDienAlt: anhDaiDienAlt || undefined,
+        tomTat: tomTat.trim() || undefined,
+        noiDung: tiptapDoc,
+        status: targetSaveStatus,
+        isFeatured,
+        featuredOrder,
+        metaTitle: metaTitle.trim() || undefined,
+        metaDescription: metaDescription.trim() || undefined,
+        canonicalUrl: canonicalUrl.trim() || undefined,
+        noIndex,
+      };
+
+      if (isNew) {
+        const res = await postService.createPost(payload);
+        if (res.data?.id) {
+          activePostId = res.data.id;
+          router.replace(`/posts/${activePostId}`);
+          // Cập nhật lại ID trong sessionStorage
+          previewPayload.id = activePostId;
+          sessionStorage.setItem('cardealer_post_preview', JSON.stringify(previewPayload));
+        }
+      } else {
+        await postService.updatePost(activePostId, payload);
+      }
+      setToast({ type: 'success', message: 'Đã tự động lưu bản nháp và mở Xem trước!' });
+    } catch (err: unknown) {
+      console.warn('Lưu nháp ngầm server báo lỗi nhưng vẫn mở xem trước:', err);
+    } finally {
+      setSaving(false);
+    }
+
+    // 3. Mở tab Preview
+    const targetUrl = activePostId && activePostId !== 'new'
+      ? `/posts/preview?id=${encodeURIComponent(activePostId)}`
+      : '/posts/preview';
+
+    window.open(targetUrl, '_blank');
   };
 
   // Save / Publish
@@ -554,7 +605,7 @@ export function usePostEditor() {
 
       if (isNew) {
         const res = await postService.createPost(payload);
-        setToast({ type: 'success', message: 'Tạo bài viết mới thành công!' });
+        setToast({ type: 'success', message: targetStatus === 'published' ? 'Đã xuất bản bài viết thành công!' : 'Tạo bản nháp bài viết mới thành công!' });
         if (res.data?.id) {
           router.replace(`/posts/${res.data.id}`);
         }
@@ -562,7 +613,10 @@ export function usePostEditor() {
         await postService.updatePost(postId, payload);
         setStatus(targetStatus);
         setOriginalSlug(slug.trim());
-        setToast({ type: 'success', message: 'Đã lưu thay đổi bài viết thành công!' });
+        setToast({
+          type: 'success',
+          message: targetStatus === 'published' ? 'Đã xuất bản bài viết thành công!' : 'Đã lưu bản nháp bài viết thành công!',
+        });
       }
     } catch (err: unknown) {
       console.error('Lỗi khi lưu bài viết:', err);
