@@ -1,10 +1,13 @@
 import React, { Suspense } from 'react';
 import type { Metadata } from 'next';
-import { getCarBySlug } from '@/services/cars.service';
+import Link from 'next/link';
+import { Sparkles, ChevronRight } from 'lucide-react';
+import { getCarBySlug, getCatalogCars } from '@/services/cars.service';
+import { SmartCarCard } from '@/app/xe/components/SmartCarCard';
 import { getStorefrontSettings } from '@/services/settings.service';
 import { generateCarJsonLd } from '@cardealer/core';
 import { getSiteUrl } from '@cardealer/env';
-import { BulkSettingsSchema } from '@cardealer/types';
+import { BulkSettingsSchema, type CarCatalogItem } from '@cardealer/types';
 import { CarDetailView, type ConsultantInfo } from './components/CarDetailView';
 import { CarDetailSkeleton } from './components/CarDetailSkeleton';
 import { CarDetailErrorState } from './components/CarDetailErrorState';
@@ -89,14 +92,17 @@ export default async function CarDetailPage({ params, searchParams }: PageProps)
 
   let car = null;
   let settings = null;
+  let allCars: CarCatalogItem[] = [];
 
   try {
-    const [fetchedCar, fetchedSettings] = await Promise.all([
+    const [fetchedCar, fetchedSettings, fetchedAllCars] = await Promise.all([
       getCarBySlug(carSlug),
       getStorefrontSettings(),
+      getCatalogCars(),
     ]);
     car = fetchedCar;
     settings = fetchedSettings;
+    allCars = fetchedAllCars || [];
   } catch (err) {
     console.error(`[CarDetailPage] Lỗi nạp dữ liệu xe slug "${carSlug}":`, err);
   }
@@ -145,6 +151,22 @@ export default async function CarDetailPage({ params, searchParams }: PageProps)
     },
   });
 
+  // Tìm các dòng xe cùng phân khúc hoặc dòng xe tương đương (Internal Linking Architecture)
+  const sameSegmentCars = allCars
+    .filter((c) => c.slug !== carSlug && (c.status === 'published' || !c.status))
+    .filter((c) => (car.segment ? c.segment === car.segment : true))
+    .slice(0, 3);
+
+  const displayRelatedCars =
+    sameSegmentCars.length >= 2
+      ? sameSegmentCars
+      : [
+          ...sameSegmentCars,
+          ...allCars.filter(
+            (c) => c.slug !== carSlug && !sameSegmentCars.some((sc) => sc.id === c.id)
+          ),
+        ].slice(0, 3);
+
   return (
     <>
       {/* 📊 Schema JSON-LD Đa Tầng cho Google Rich Snippets */}
@@ -162,6 +184,37 @@ export default async function CarDetailPage({ params, searchParams }: PageProps)
           consultant={consultant}
         />
       </Suspense>
+
+      {/* 🔗 Các Dòng Xe Cùng Phân Khúc (Internal Linking Architecture) */}
+      {displayRelatedCars.length > 0 && (
+        <section className="bg-slate-100/70 border-t border-slate-200/80 py-12 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-[#0072CE]" />
+                  Các Dòng Xe Cùng Phân Khúc & Lựa Chọn Khác
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                  Khám phá thêm các mẫu xe Hyundai {car.segment ? `phân khúc ${car.segment.toUpperCase()}` : 'chính hãng'} đang được quan tâm nhiều nhất
+                </p>
+              </div>
+              <Link
+                href="/xe"
+                className="inline-flex items-center gap-1 text-xs font-bold text-[#0072CE] hover:text-[#005BA4] transition-colors"
+              >
+                Xem toàn bộ bảng giá xe <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {displayRelatedCars.map((relatedCar) => (
+                <SmartCarCard key={relatedCar.id} car={relatedCar} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 🛡️ Disclaimer Minh Bạch Về Website Cá Nhân Của Saler */}
       <footer className="border-t border-slate-200/80 bg-slate-100/70 py-6 text-center text-xs text-slate-500">

@@ -612,6 +612,19 @@ function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): string {
   return renderNodes(doc.content);
 }
 
+async function getRelatedPosts(categorySlug?: string, currentSlug?: string): Promise<PostDetailData[]> {
+  try {
+    const res = await apiClient.get<any>("/api/posts", {
+      category: categorySlug,
+      limit: 6,
+    });
+    const posts: any[] = Array.isArray(res) ? res : res?.data || [];
+    return posts.filter((p) => p.slug && p.slug !== currentSlug).slice(0, 3);
+  } catch {
+    return [];
+  }
+}
+
 // ============================================================================
 // HÀM LẤY BÀI VIẾT THEO SLUG (API)
 // ============================================================================
@@ -707,6 +720,8 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
     getPostBySlug(slug, token),
     getStorefrontSettings(),
   ]);
+
+  const relatedPosts = post ? await getRelatedPosts(post.category?.slug, post.slug) : [];
 
   // Hotline & Zalo: Ưu tiên tác giả bài viết -> Cài đặt Admin (hotlineKinhDoanh/zaloNumber) -> Site Settings -> Fallback an toàn
   const rawHotline =
@@ -1102,6 +1117,70 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
           </aside>
         </div>
       </div>
+
+      {/* 5. Cụm Bài Viết Liên Quan Cùng Chuyên Mục (Internal Linking Engine) */}
+      {relatedPosts.length > 0 && (
+        <section className="bg-slate-100/70 border-t border-slate-200/80 py-12 px-4 sm:px-6 lg:px-8 mt-12">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-blue-600" />
+                  Bài Viết Liên Quan Cùng Chuyên Mục
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                  Khám phá thêm các thông tin giá xe, chương trình khuyến mãi và cẩm nang lái xe hữu ích
+                </p>
+              </div>
+              <Link
+                href="/tin-tuc"
+                className="hidden sm:inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors"
+              >
+                Xem tất cả bài viết <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {relatedPosts.map((article) => (
+                <Link
+                  key={article.id}
+                  href={`/tin-tuc/${article.slug}`}
+                  className="group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md hover:border-blue-300 transition-all flex flex-col"
+                >
+                  <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
+                    <img
+                      src={article.anhDaiDienUrl}
+                      alt={article.anhDaiDienAlt || article.tieuDe}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                    {article.category && (
+                      <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-lg bg-blue-600/90 text-white text-[11px] font-bold">
+                        {article.category.tenChuyenMuc}
+                      </span>
+                    )}
+                  </div>
+                  <div className="p-4 flex-1 flex flex-col justify-between space-y-2">
+                    <h4 className="font-bold text-sm text-slate-900 group-hover:text-blue-600 line-clamp-2 leading-snug">
+                      {article.tieuDe}
+                    </h4>
+                    <div className="flex items-center justify-between text-slate-400 text-xs pt-2 border-t border-slate-100">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5" />
+                        {new Date(article.publishedAt || article.createdAt).toLocaleDateString('vi-VN')}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" />
+                        {article.readingTime || 4} phút đọc
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 4. Client Islands: Thanh điều hướng đáy Mobile & Banner trượt góc Exit-Intent */}
       <PostBottomBar

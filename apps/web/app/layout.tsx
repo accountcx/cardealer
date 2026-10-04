@@ -72,7 +72,7 @@ export default async function RootLayout({
   const site = settings.site;
 
   return (
-    <html lang="vi" className="overflow-x-clip scroll-smooth">
+    <html lang="vi-VN" className="overflow-x-clip scroll-smooth">
       <head>
         {/* Google Tag Manager / GA4 Injection nếu có cấu hình */}
         {site.gtmId && (

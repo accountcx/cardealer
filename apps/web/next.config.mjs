@@ -2,6 +2,7 @@
 const nextConfig = {
   transpilePackages: ['@cardealer/ui', '@cardealer/core', '@cardealer/types'],
   images: {
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
         protocol: 'https',

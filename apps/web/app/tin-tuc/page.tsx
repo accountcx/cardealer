@@ -74,29 +74,34 @@ interface NewsPageProps {
   }>;
 }
 
-// 🧠 Dynamic SEO Metadata Generator cho Hub Tin Tức
-export async function generateMetadata(): Promise<Metadata> {
-  const title = 'Tin Tức, Bảng Giá & Ưu Đãi Lăn Bánh Xe Hyundai Mới Nhất 2026';
-  const description =
-    'Cập nhật tin tức thị trường ô tô Hyundai, khuyến mãi giảm 50% - 100% lệ phí trước bạ, hướng dẫn mua xe trả góp và đánh giá chi tiết các dòng xe Tucson, Santa Fe, Accent tại TP. Vinh, Nghệ An.';
+// 🧠 Dynamic SEO Metadata Generator cho Hub Tin Tức (Hỗ trợ phân trang không trùng lặp)
+export async function generateMetadata({ searchParams }: NewsPageProps): Promise<Metadata> {
+  const search = await searchParams;
+  const pageNum = parseInt(search?.trang || search?.page || '1', 10);
+  const pageSuffix = pageNum > 1 ? ` - Trang ${pageNum}` : '';
+  const canonicalUrl = pageNum > 1 ? `/tin-tuc?trang=${pageNum}` : '/tin-tuc';
+
+  const baseTitle = 'Tin Tức, Bảng Giá & Ưu Đãi Lăn Bánh Xe Hyundai Mới Nhất 2026';
+  const title = `${baseTitle}${pageSuffix}`;
+  const description = `Cập nhật tin tức thị trường ô tô Hyundai, khuyến mãi giảm 50% - 100% lệ phí trước bạ, hướng dẫn mua xe trả góp và đánh giá chi tiết các dòng xe Tucson, Santa Fe, Accent tại TP. Vinh, Nghệ An.${pageSuffix}`;
 
   return {
     title,
     description,
     alternates: {
-      canonical: '/tin-tuc',
+      canonical: canonicalUrl,
     },
     openGraph: {
       title,
       description,
-      url: '/tin-tuc',
+      url: canonicalUrl,
       type: 'website',
       images: [
         {
           url: '/images/banners/hero-event.webp',
           width: 1200,
           height: 630,
-          alt: 'Tin tức & Khuyến mãi Hyundai Vinh',
+          alt: `Tin tức & Khuyến mãi Hyundai Vinh${pageSuffix}`,
         },
       ],
     },
