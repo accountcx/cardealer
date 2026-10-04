@@ -805,6 +805,22 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
     : (settings.author?.role || 'Chuyên gia tư vấn xe ô tô Hyundai');
 
   const masterSchema = generatePostMasterJsonLd(postForJsonLd, 'https://xehyundaivinh.com', {
+    dealer: {
+      name: settings.contact.showroomName || settings.site.businessName,
+      legalName: settings.contact.legal?.businessName || settings.site.businessName,
+      logoUrl: settings.site.favicon || '/images/logo-hyundai-vinh.png',
+      telephone: settings.contact.hotlineKinhDoanh || settings.site.phone,
+      address: {
+        streetAddress: settings.contact.diaChi || settings.site.address,
+        addressLocality: settings.contact.tinhThanh || 'Vinh',
+        addressRegion: 'Nghệ An',
+        addressCountry: 'VN',
+      },
+      geo: {
+        latitude: settings.site.mapLatitude || 18.6796,
+        longitude: settings.site.mapLongitude || 105.6813,
+      },
+    },
     defaultAuthor: {
       name: post.author?.fullName || settings.author.fullName,
       jobTitle: resolvedJobTitle,
