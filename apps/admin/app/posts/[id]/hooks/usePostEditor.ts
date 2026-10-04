@@ -6,7 +6,7 @@ import { postService, type CategoryItem } from '../../../../services/post.servic
 import { catalogService, type CarSummary } from '../../../../services/catalog.service';
 import { uploadSingleMedia } from '../../../../services/media.service';
 import { calculateSeoScore, type SeoAnalysisResult, type TiptapDoc } from '@cardealer/core';
-import type { OutlineItem, FaqItem, SeoOptimizationResult } from '@cardealer/types';
+import type { OutlineItem, FaqItem, SeoOptimizationResult, FullArticleResult } from '@cardealer/types';
 import type { BlockType, EditorBlock, MediaPickerTarget, PostStatus } from '../types';
 import { toSlug, createDefaultBlock } from '../utils';
 import { serializeTiptapDoc, deserializeTiptapDoc } from '../ast';
@@ -228,6 +228,85 @@ export function usePostEditor() {
     if (seo.metaDescription) setMetaDescription(seo.metaDescription);
     if (seo.focusKeyword) setFocusKeyword(seo.focusKeyword);
     setToast({ type: 'success', message: 'Đã tối ưu hóa Meta Title & Description vào SEO Sidebar!' });
+  };
+
+  const applyFullArticle = (article: FullArticleResult) => {
+    if (article.title && (!tieuDe || tieuDe.trim() === 'Bài viết chưa có tiêu đề' || isNew)) {
+      handleTitleChange(article.title);
+    }
+    if (article.summary) {
+      setTomTat(article.summary);
+    }
+    if (article.focusKeyword) {
+      setFocusKeyword(article.focusKeyword);
+    }
+    if (article.metaTitle) {
+      setMetaTitle(article.metaTitle);
+    }
+    if (article.metaDescription) {
+      setMetaDescription(article.metaDescription);
+    }
+
+    if (article.blocks && article.blocks.length > 0) {
+      const baseId = Date.now();
+      const newBlocks: EditorBlock[] = article.blocks.map((b, idx) => {
+        const id = `ai-full-${baseId}-${idx}`;
+        if (b.type === 'heading') {
+          return {
+            id,
+            type: 'heading',
+            level: b.level || 2,
+            content: b.content || '',
+          };
+        }
+        if (b.type === 'callout') {
+          return {
+            id,
+            type: 'callout',
+            title: b.title || 'Lưu ý tư vấn mua xe',
+            calloutType: b.calloutType || 'info',
+            content: b.content || '',
+          };
+        }
+        if (b.type === 'faq') {
+          return {
+            id,
+            type: 'faq',
+            title: b.title || 'Câu Hỏi Thường Gặp (FAQ)',
+            faqs: b.faqs || [],
+          };
+        }
+        if (b.type === 'prosCons') {
+          return {
+            id,
+            type: 'prosCons',
+            title: b.title || 'Đánh giá Ưu & Nhược điểm thực tế',
+            pros: b.pros || [],
+            cons: b.cons || [],
+          };
+        }
+        if (b.type === 'ctaButton') {
+          return {
+            id,
+            type: 'ctaButton',
+            ctaButtonText: b.ctaButtonText || 'Nhận Báo Giá Lăn Bánh & Lái Thử',
+            ctaActionType: b.ctaActionType || 'hotline',
+            ctaSubtext: b.ctaSubtext || 'Hỗ trợ 24/7 - Giao xe tận nơi',
+          };
+        }
+        return {
+          id,
+          type: 'paragraph',
+          content: b.content || '',
+        };
+      });
+
+      setBlocks(newBlocks);
+      setToast({
+        type: 'success',
+        message: `Đã tự động khởi tạo toàn bộ bài viết hoàn chỉnh (${newBlocks.length} khối nội dung) & Cấu hình SEO!`,
+      });
+    }
   };
 
   // Upload ảnh trực tiếp lên Cloudinary
@@ -462,6 +541,7 @@ export function usePostEditor() {
     insertFaqBlock,
     appendParagraphBlock,
     applyAiSeo,
+    applyFullArticle,
 
     // Media & SEO
     mediaPickerTarget,

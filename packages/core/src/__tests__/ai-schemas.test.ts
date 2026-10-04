@@ -19,8 +19,9 @@ describe('AI Writing Assistant Schemas & Model Configurations', () => {
     expect(customSettings.openaiModel).toBe('o3-mini');
   });
 
-  it('TC-AI-2: AiActionSchema chấp nhận tất cả các action hợp lệ', () => {
+  it('TC-AI-2: AiActionSchema chấp nhận tất cả các action hợp lệ bao gồm generate_full_article', () => {
     const validActions = [
+      'generate_full_article',
       'generate_outline',
       'continue_writing',
       'optimize_seo',
@@ -32,16 +33,16 @@ describe('AI Writing Assistant Schemas & Model Configurations', () => {
     }
   });
 
-  it('TC-AI-3: AiGenerateRequestSchema validate request tạo dàn ý hợp lệ', () => {
+  it('TC-AI-3: AiGenerateRequestSchema validate request tạo dàn ý và toàn bộ bài viết hợp lệ', () => {
     const req = AiGenerateRequestSchema.parse({
-      action: 'generate_outline',
-      prompt: 'Giá lăn bánh Accent 2026 tại Nghệ An',
-      carModel: 'Hyundai Accent',
+      action: 'generate_full_article',
+      prompt: 'Đánh giá và giá lăn bánh Hyundai Tucson 2026 tại Nghệ An',
+      carModel: 'Hyundai Tucson',
       location: 'Nghệ An',
     });
-    expect(req.action).toBe('generate_outline');
-    expect(req.prompt).toBe('Giá lăn bánh Accent 2026 tại Nghệ An');
-    expect(req.carModel).toBe('Hyundai Accent');
+    expect(req.action).toBe('generate_full_article');
+    expect(req.prompt).toBe('Đánh giá và giá lăn bánh Hyundai Tucson 2026 tại Nghệ An');
+    expect(req.carModel).toBe('Hyundai Tucson');
     expect(req.location).toBe('Nghệ An');
   });
 

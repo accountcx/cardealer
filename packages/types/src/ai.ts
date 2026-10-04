@@ -1,8 +1,9 @@
 import { z } from 'zod';
 
 // 🧠 Mental Model: Type Definitions & Zod Schemas cho AI Writing Assistant (ChatGPT / OpenAI Integration).
-// Phục vụ tạo Dàn ý SEO, Viết tiếp nội dung, Tối ưu hóa SEO/Meta, và Tự động sinh Khối FAQ chuẩn Schema.
+// Phục vụ viết Toàn bộ Bài viết (Full Article A-Z), Dàn ý SEO, Viết tiếp nội dung, Tối ưu hóa SEO/Meta, và Tự động sinh Khối FAQ chuẩn Schema.
 export const AiActionSchema = z.enum([
+  'generate_full_article',
   'generate_outline',
   'continue_writing',
   'optimize_seo',
@@ -43,6 +44,32 @@ export interface SeoOptimizationResult {
   suggestedTags?: string[];
 }
 
+export interface FullArticleBlock {
+  type: 'heading' | 'paragraph' | 'callout' | 'faq' | 'prosCons' | 'ctaButton';
+  level?: number;
+  content?: string;
+  title?: string;
+  calloutType?: 'info' | 'warning' | 'success' | 'note';
+  faqs?: Array<{ question: string; answer: string }>;
+  pros?: string[];
+  cons?: string[];
+  ctaButtonText?: string;
+  ctaActionType?: 'hotline' | 'zalo' | 'quoteForm' | 'customLink';
+  ctaPhone?: string;
+  ctaSubtext?: string;
+}
+
+export interface FullArticleResult {
+  title: string;
+  summary: string;
+  focusKeyword: string;
+  metaTitle: string;
+  metaDescription: string;
+  suggestedKeywords: string[];
+  blocks: FullArticleBlock[];
+  htmlContent?: string;
+}
+
 export interface AiGenerateResponseData {
   action: AiAction;
   model?: string;
@@ -51,6 +78,7 @@ export interface AiGenerateResponseData {
   outline?: OutlineItem[];
   faqs?: FaqItem[];
   seo?: SeoOptimizationResult;
+  fullArticle?: FullArticleResult;
   usage?: {
     promptTokens?: number;
     completionTokens?: number;

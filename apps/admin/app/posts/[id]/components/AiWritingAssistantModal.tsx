@@ -15,6 +15,9 @@ import {
   ArrowRight,
   ListPlus,
   RefreshCw,
+  Zap,
+  BookOpen,
+  CheckCircle2,
 } from 'lucide-react';
 import { Modal, Button, Card, Input } from '@cardealer/ui';
 import { aiService } from '../../../../services/ai.service';
@@ -23,6 +26,7 @@ import type {
   OutlineItem,
   FaqItem,
   SeoOptimizationResult,
+  FullArticleResult,
 } from '@cardealer/types';
 
 export interface AiWritingAssistantModalProps {
@@ -31,37 +35,40 @@ export interface AiWritingAssistantModalProps {
   currentTitle: string;
   currentKeyword: string;
   currentBlocksText: string;
+  onInsertFullArticle?: (article: FullArticleResult) => void;
   onInsertOutline: (outline: OutlineItem[]) => void;
   onInsertFaqs: (faqs: FaqItem[]) => void;
   onAppendText: (text: string) => void;
   onApplySeo: (seo: SeoOptimizationResult) => void;
 }
 
-type AiTab = 'outline' | 'continue' | 'seo' | 'faq';
+type AiTab = 'full' | 'outline' | 'continue' | 'seo' | 'faq';
 
 // 🧠 Mental Model: Trợ Lý AI Viết Bài & Tối Ưu SEO Toàn Diện (Cyborg Content Engine).
 // Tận dụng sức mạnh ChatGPT / OpenAI Model để hỗ trợ biên tập viên:
-// 1. Tạo dàn ý chuẩn H2/H3 cho bài đánh giá/bảng giá xe
-// 2. Viết tiếp đoạn văn thông số kỹ thuật & trải nghiệm
-// 3. Tối ưu SEO On-page: sinh Meta Title, Meta Description, từ khóa LSI
-// 4. Sinh khối FAQ chuẩn Schema FAQPage cho Local SEO & YMYL
+// 1. Viết toàn bộ bài viết hoàn chỉnh từ A-Z chuẩn E-E-A-T + SEO + FAQ + CTA (Full Article)
+// 2. Tạo dàn ý chuẩn H2/H3 cho bài đánh giá/bảng giá xe
+// 3. Viết tiếp đoạn văn thông số kỹ thuật & trải nghiệm
+// 4. Tối ưu SEO On-page: sinh Meta Title, Meta Description, từ khóa LSI
+// 5. Sinh khối FAQ chuẩn Schema FAQPage cho Local SEO & YMYL
 export function AiWritingAssistantModal({
   isOpen,
   onClose,
   currentTitle,
   currentKeyword,
   currentBlocksText,
+  onInsertFullArticle,
   onInsertOutline,
   onInsertFaqs,
   onAppendText,
   onApplySeo,
 }: AiWritingAssistantModalProps) {
-  const [activeTab, setActiveTab] = useState<AiTab>('outline');
+  const [activeTab, setActiveTab] = useState<AiTab>('full');
 
   // Input states
   const [prompt, setPrompt] = useState('');
   const [carModel, setCarModel] = useState('');
-  const [location, setLocation] = useState('Nghệ An');
+  const [location, setLocation] = useState('Nghệ An & Hà Tĩnh');
   const [keyword, setKeyword] = useState('');
 
   // Execution states
@@ -70,6 +77,7 @@ export function AiWritingAssistantModal({
   const [copied, setCopied] = useState(false);
 
   // Result states
+  const [fullArticleResult, setFullArticleResult] = useState<FullArticleResult | null>(null);
   const [outlineResult, setOutlineResult] = useState<OutlineItem[] | null>(null);
   const [textResult, setTextResult] = useState<string | null>(null);
   const [seoResult, setSeoResult] = useState<SeoOptimizationResult | null>(null);
@@ -114,6 +122,9 @@ export function AiWritingAssistantModal({
         location: location || undefined,
       });
 
+      if (data?.fullArticle) {
+        setFullArticleResult(data.fullArticle);
+      }
       if (data?.outline) {
         setOutlineResult(data.outline);
       }
@@ -134,8 +145,8 @@ export function AiWritingAssistantModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} className="max-w-3xl max-h-[90vh] overflow-y-auto">
-      <div className="space-y-6">
+    <Modal isOpen={isOpen} onClose={onClose} className="max-w-4xl max-h-[92vh] overflow-y-auto">
+      <div className="space-y-5">
         {/* Header Modal */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-4">
           <div className="flex items-center gap-3">
@@ -144,69 +155,81 @@ export function AiWritingAssistantModal({
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                Trợ Lý AI Viết Bài & Tối Ưu SEO (ChatGPT)
+                Trợ Lý AI Viết Bài & Tối Ưu SEO (Cyborg Content Engine)
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                Chiến lược Cyborg Content (Người lai Máy): Tự động hóa dàn ý, thông số và FAQ chuẩn SEO
+                Tạo bài viết hoàn chỉnh A-Z, cấu trúc chuẩn E-E-A-T, bám sát thị trường địa phương & tối ưu SEO
               </p>
             </div>
           </div>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 p-1 bg-slate-950/60 rounded-xl border border-white/5">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-950/60 rounded-xl border border-white/5 overflow-x-auto">
+          <button
+            type="button"
+            onClick={() => setActiveTab('full')}
+            className={`flex-1 min-w-[130px] flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-semibold transition-all ${
+              activeTab === 'full'
+                ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
+            }`}
+          >
+            <Zap className="w-3.5 h-3.5 text-cyan-400" />
+            1. Viết Toàn Bộ Bài (A-Z)
+          </button>
           <button
             type="button"
             onClick={() => setActiveTab('outline')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex-1 min-w-[120px] flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-semibold transition-all ${
               activeTab === 'outline'
                 ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
             }`}
           >
-            <ListTree className="w-4 h-4" />
-            1. Tạo Dàn Ý (Outline)
+            <ListTree className="w-3.5 h-3.5" />
+            2. Tạo Dàn Ý
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('continue')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex-1 min-w-[120px] flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-semibold transition-all ${
               activeTab === 'continue'
                 ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
             }`}
           >
-            <FileText className="w-4 h-4" />
-            2. Viết Tiếp / Bổ Sung
+            <FileText className="w-3.5 h-3.5" />
+            3. Viết Tiếp / Bổ Sung
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('seo')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex-1 min-w-[110px] flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-semibold transition-all ${
               activeTab === 'seo'
                 ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
             }`}
           >
-            <Search className="w-4 h-4" />
-            3. Tối Ưu SEO & LSI
+            <Search className="w-3.5 h-3.5" />
+            4. Tối Ưu SEO
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('faq')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex-1 min-w-[110px] flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-semibold transition-all ${
               activeTab === 'faq'
                 ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
             }`}
           >
-            <HelpCircle className="w-4 h-4" />
-            4. Khối FAQ Tự Động
+            <HelpCircle className="w-3.5 h-3.5" />
+            5. Khối FAQ
           </button>
         </div>
 
         {/* Global Parameters Card */}
-        <Card className="p-4 bg-slate-950/40 border-slate-800 rounded-xl space-y-3">
+        <Card className="p-3.5 bg-slate-950/40 border-slate-800 rounded-xl space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="text-xs font-medium text-slate-300 mb-1 block">Dòng xe liên quan</label>
@@ -227,7 +250,7 @@ export function AiWritingAssistantModal({
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-slate-300 mb-1 block">Từ khóa SEO chính</label>
+              <label className="text-xs font-medium text-slate-300 mb-1 block">Từ khóa SEO chính (Focus Keyword)</label>
               <Input
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
@@ -238,7 +261,118 @@ export function AiWritingAssistantModal({
           </div>
         </Card>
 
-        {/* Tab 1: Tạo Dàn Ý */}
+        {/* Tab 1: Viết Toàn Bộ Bài Viết (Full Article) */}
+        {activeTab === 'full' && (
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-medium text-slate-200 mb-1.5 block">
+                Chủ đề hoặc Yêu cầu bài viết hoàn chỉnh
+              </label>
+              <Input
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="VD: Đánh giá chi tiết và giá lăn bánh Hyundai Tucson 2026 tại Nghệ An"
+                className="h-10 text-sm bg-slate-950/80 border-slate-700"
+              />
+            </div>
+
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+              <p className="text-xs text-slate-400">
+                AI sẽ tự động tạo trọn bộ: Tiêu đề, Tóm tắt, Thẻ H2/H3, Nội dung đánh giá, Bảng giá lăn bánh, Callout trả góp, Pros & Cons, Khối FAQ và Nút CTA.
+              </p>
+              <Button
+                variant="accent"
+                onClick={() => handleRunAi('generate_full_article')}
+                disabled={loading}
+                className="flex items-center gap-2 h-9 px-4 text-xs font-semibold shrink-0 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500"
+              >
+                {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                {loading ? 'Đang viết toàn bộ bài viết...' : 'Tạo Toàn Bộ Bài Viết (A-Z)'}
+              </Button>
+            </div>
+
+            {fullArticleResult && (
+              <Card className="p-4 bg-slate-950/70 border-cyan-500/40 rounded-xl space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    Bài viết hoàn chỉnh sẵn sàng ({fullArticleResult.blocks?.length || 0} khối nội dung)
+                  </span>
+                  {onInsertFullArticle && (
+                    <Button
+                      variant="accent"
+                      size="sm"
+                      onClick={() => {
+                        onInsertFullArticle(fullArticleResult);
+                        onClose();
+                      }}
+                      className="h-8 px-3.5 text-xs font-bold flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950"
+                    >
+                      <Check className="w-3.5 h-3.5" /> Áp dụng vào Bài Viết & SEO (1-Click)
+                    </Button>
+                  )}
+                </div>
+
+                <div className="space-y-3 text-xs">
+                  {/* Title & Summary */}
+                  <div>
+                    <span className="text-slate-400 font-medium block mb-1">Tiêu đề bài viết:</span>
+                    <p className="p-2.5 bg-slate-900 rounded-lg text-slate-100 font-bold border border-slate-800">
+                      {fullArticleResult.title}
+                    </p>
+                  </div>
+
+                  <div>
+                    <span className="text-slate-400 font-medium block mb-1">Đoạn tóm tắt (Excerpt):</span>
+                    <p className="p-2.5 bg-slate-900/80 rounded-lg text-slate-200 leading-relaxed border border-slate-800">
+                      {fullArticleResult.summary}
+                    </p>
+                  </div>
+
+                  {/* SEO Metadata */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div>
+                      <span className="text-slate-400 font-medium block mb-1">Meta Title ({fullArticleResult.metaTitle?.length || 0}/60 ký tự):</span>
+                      <p className="p-2 bg-slate-900 rounded-lg text-cyan-300 font-medium border border-slate-800 text-[11px]">
+                        {fullArticleResult.metaTitle}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 font-medium block mb-1">Từ khóa chính (Focus):</span>
+                      <p className="p-2 bg-slate-900 rounded-lg text-emerald-300 font-mono border border-slate-800 text-[11px]">
+                        {fullArticleResult.focusKeyword}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Block Structure Preview */}
+                  <div>
+                    <span className="text-slate-400 font-medium block mb-1.5">
+                      Cấu trúc các khối nội dung sinh ra ({fullArticleResult.blocks?.length || 0} khối):
+                    </span>
+                    <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+                      {fullArticleResult.blocks?.map((block, idx) => (
+                        <div
+                          key={idx}
+                          className="p-2 bg-slate-900/60 rounded border border-slate-800/80 text-[11px] flex items-start gap-2"
+                        >
+                          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-cyan-400 font-mono text-[10px] shrink-0 uppercase">
+                            {block.type === 'heading' ? `H${block.level || 2}` : block.type}
+                          </span>
+                          <span className="text-slate-300 line-clamp-1">
+                            {block.content || block.title || (block.faqs ? `${block.faqs.length} câu hỏi FAQ` : '') || (block.pros ? `${block.pros.length} ưu điểm` : '') || block.ctaButtonText}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )}
+          </div>
+        )}
+
+        {/* Tab 2: Tạo Dàn Ý */}
         {activeTab === 'outline' && (
           <div className="space-y-4">
             <div>
@@ -313,7 +447,7 @@ export function AiWritingAssistantModal({
           </div>
         )}
 
-        {/* Tab 2: Viết Tiếp / Mở Rộng */}
+        {/* Tab 3: Viết Tiếp / Mở Rộng */}
         {activeTab === 'continue' && (
           <div className="space-y-4">
             <div>
@@ -384,7 +518,7 @@ export function AiWritingAssistantModal({
           </div>
         )}
 
-        {/* Tab 3: Tối Ưu SEO & LSI */}
+        {/* Tab 4: Tối Ưu SEO & LSI */}
         {activeTab === 'seo' && (
           <div className="space-y-4">
             <div>
@@ -469,7 +603,7 @@ export function AiWritingAssistantModal({
           </div>
         )}
 
-        {/* Tab 4: FAQ Schema */}
+        {/* Tab 5: FAQ Schema */}
         {activeTab === 'faq' && (
           <div className="space-y-4">
             <div>
