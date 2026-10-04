@@ -372,7 +372,7 @@ export function generateVideoSchema(
       thumbnailUrl = video.posterUrl || `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`;
       embedUrl = `https://www.youtube.com/embed/${video.videoId}`;
     } else {
-      thumbnailUrl = video.posterUrl || `${cleanSiteUrl}/images/tiktok-video-cover.webp`;
+      thumbnailUrl = video.posterUrl || `${cleanSiteUrl}/images/banners/hero-event.webp`;
     }
 
     const uploadDate = video.uploadDate ? toIsoDateString(video.uploadDate) : toIsoDateString(fallbackUploadDate);
@@ -578,6 +578,49 @@ export function generateCarJsonLd(
   // có lowPrice: 0 vì sẽ bị Google Search Console báo lỗi "Invalid Price: 0".
   const availability = resolveAvailability(car);
 
+  // 🧠 Mental Model: Semantic Vehicle Properties for Google Search & Semantic Query:
+  const segmentBodyTypeMap: Record<string, string> = {
+    sedan: 'Sedan',
+    suv: 'SUV',
+    mpv: 'MPV',
+    hatchback: 'Hatchback',
+    ev: 'Electric Vehicle',
+  };
+
+  const bodyType =
+    ('kieuDang' in car && (car as any).kieuDang) ||
+    ('segment' in car && car.segment && segmentBodyTypeMap[String(car.segment).toLowerCase()]) ||
+    undefined;
+
+  const fuelType =
+    ('fuelType' in car && car.fuelType) ||
+    ('loaiNhienLieu' in car && (car as any).loaiNhienLieu) ||
+    undefined;
+
+  const firstVersion = versions[0];
+  const seatingCapacity =
+    (firstVersion && 'seatCount' in firstVersion && firstVersion.seatCount) ||
+    ('soChoNgoi' in car && (car as any).soChoNgoi) ||
+    undefined;
+
+  const vehicleEngine =
+    (firstVersion && 'dongCo' in firstVersion && firstVersion.dongCo) ||
+    ('dongCo' in car && (car as any).dongCo) ||
+    undefined;
+
+  const vehicleTransmission =
+    (firstVersion && 'hopSo' in firstVersion && firstVersion.hopSo) ||
+    ('hopSo' in car && (car as any).hopSo) ||
+    undefined;
+
+  const driveWheelConfiguration =
+    (firstVersion && 'danDong' in firstVersion && firstVersion.danDong) ||
+    ('danDong' in car && (car as any).danDong) ||
+    undefined;
+
+  const modelYearMatch = car.tenXe ? car.tenXe.match(/\b(202[0-9])\b/) : null;
+  const vehicleModelDate = modelYearMatch ? modelYearMatch[1] : undefined;
+
   const offersNode =
     validLowestPrice > 0
       ? {
@@ -604,6 +647,13 @@ export function generateCarJsonLd(
       '@type': 'Brand',
       name: 'Hyundai',
     },
+    ...(bodyType ? { bodyType } : {}),
+    ...(fuelType ? { fuelType } : {}),
+    ...(vehicleModelDate ? { vehicleModelDate, modelDate: vehicleModelDate } : {}),
+    ...(seatingCapacity ? { seatingCapacity: Number(seatingCapacity) } : {}),
+    ...(vehicleEngine ? { vehicleEngine: { '@type': 'EngineSpecification', name: vehicleEngine } } : {}),
+    ...(vehicleTransmission ? { vehicleTransmission } : {}),
+    ...(driveWheelConfiguration ? { driveWheelConfiguration } : {}),
     ...(aggregateRatingNode ? { aggregateRating: aggregateRatingNode } : {}),
     ...(offersNode ? { offers: offersNode } : {}),
     warranty: {

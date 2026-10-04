@@ -115,6 +115,14 @@ describe('Phase 4.4: Car Detail Schema & Multi-Tier JSON-LD', () => {
     expect(product.offers.highPrice).toBe(919000000);
     expect(product.offers.availability).toBe('https://schema.org/InStock');
     expect(product.offers.hasMerchantReturnPolicy).toBeUndefined();
+    expect(product.bodyType).toBe('SUV');
+    expect(product.fuelType).toBe('Xăng / Turbo / Dầu');
+    expect(product.seatingCapacity).toBe(5);
+    expect(product.vehicleEngine['@type']).toBe('EngineSpecification');
+    expect(product.vehicleEngine.name).toBe('SmartStream G2.0');
+    expect(product.vehicleTransmission).toBe('6 AT');
+    expect(product.driveWheelConfiguration).toBe('FWD');
+    expect(product.vehicleModelDate).toBe('2026');
     expect(product.warranty['@type']).toBe('WarrantyPromise');
     expect(product.aggregateRating['@type']).toBe('AggregateRating');
     expect(product.aggregateRating.ratingValue).toBe('4.9');
