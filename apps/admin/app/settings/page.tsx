@@ -16,6 +16,7 @@ import { NavigationSection } from './components/NavigationSection';
 import { FloatingSellerSection } from './components/FloatingSellerSection';
 import { StickyBarSection } from './components/StickyBarSection';
 import { SlideInBannerSection } from './components/SlideInBannerSection';
+import { AuthorSettingsSection } from './components/AuthorSettingsSection';
 import { FooterSection } from './components/FooterSection';
 import { HomepageFunnelSection } from './components/HomepageFunnelSection';
 import { settingsService } from '../../services/settings.service';
@@ -65,6 +66,7 @@ export default function SettingsPage() {
     sellerData,
     stickyData,
     slideInData,
+    authorData,
     footerData,
     homepageData,
   } = useSettingsLoader(form, can('system:read'), authLoading);
@@ -224,6 +226,7 @@ export default function SettingsPage() {
       {activeTab === 'floatingSeller' && <FloatingSellerSection initialData={sellerData} />}
       {activeTab === 'stickyBar' && <StickyBarSection initialData={stickyData} />}
       {activeTab === 'slideInBanner' && <SlideInBannerSection initialData={slideInData} />}
+      {activeTab === 'author' && <AuthorSettingsSection initialData={authorData} />}
       {activeTab === 'footer' && <FooterSection initialData={footerData} />}
     </div>
   );

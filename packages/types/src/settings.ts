@@ -209,13 +209,29 @@ export const FooterSettingsSchema = z.object({
 });
 export type FooterSettings = z.infer<typeof FooterSettingsSchema>;
 
-// 8. Bulk Settings Schema (Aggregator nạp gộp toàn bộ cấu hình Storefront)
+// 8. E-E-A-T Author & Editorial Settings Schema
+export const AuthorSettingsSchema = z.object({
+  fullName: z.string().default("Ban Biên Tập Hyundai Vinh"),
+  role: z.string().default("Chuyên gia Phân tích Thị trường & Tư vấn Xe Ô tô"),
+  experienceYears: z.number().int().min(0).max(50).default(8),
+  phone: z.string().default("0981.234.567"),
+  zaloPhone: z.string().default("0981234567"),
+  avatarUrl: z.string().default(""),
+  bio: z.string().default(
+    "Đội ngũ chuyên viên tư vấn tài chính, kỹ thuật và thị trường xe ô tô Hyundai tại Nghệ An - Hà Tĩnh, cam kết cung cấp thông tin chính xác, minh bạch và giải pháp mua xe tối ưu chi phí nhất."
+  ),
+});
+export type AuthorSettings = z.infer<typeof AuthorSettingsSchema>;
+export const DEFAULT_AUTHOR_SETTINGS: AuthorSettings = AuthorSettingsSchema.parse({});
+
+// 9. Bulk Settings Schema (Aggregator nạp gộp toàn bộ cấu hình Storefront)
 // 🧠 Mental Model: Cung cấp toàn bộ các nhóm cấu hình trong 1 payload duy nhất giúp Storefront RootLayout
 // chỉ cần gọi 1 HTTP request, triệt tiêu độ trễ mạng và loại bỏ hoàn toàn hiện tượng nhảy layout (CLS = 0).
 export const BulkSettingsSchema = z.object({
   site: SiteSettingsSchema.default(() => SiteSettingsSchema.parse({})),
   navigation: NavigationSettingsSchema.default(() => NavigationSettingsSchema.parse({})),
   contact: ContactSettingsSchema.default(() => ContactSettingsSchema.parse({})),
+  author: AuthorSettingsSchema.default(() => AuthorSettingsSchema.parse({})),
   floatingSeller: FloatingSellerSettingsSchema.default(() => FloatingSellerSettingsSchema.parse({})),
   stickyBar: StickyBarSettingsSchema.default(() => StickyBarSettingsSchema.parse({})),
   slideInBanner: SlideInBannerSettingsSchema.default(() => SlideInBannerSettingsSchema.parse({})),
@@ -223,7 +239,7 @@ export const BulkSettingsSchema = z.object({
 });
 export type BulkSettings = z.infer<typeof BulkSettingsSchema>;
 
-// 9. Homepage Funnel 6 Zones Schemas (Phase 4.2)
+// 10. Homepage Funnel 6 Zones Schemas (Phase 4.2)
 // 🧠 Mental Model: Mỗi phân khu đều có công tắc enabled độc lập. Khi enabled = false hoặc dữ liệu rỗng,
 // Storefront áp dụng cơ chế Graceful Degradation tự động ẩn phân khu, không gây lỗi runtime hay vỡ layout.
 

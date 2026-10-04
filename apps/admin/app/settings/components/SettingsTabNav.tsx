@@ -1,6 +1,6 @@
 'use client';
 
-import { Building2, Compass, UserCheck, Pin, LayoutTemplate, Sparkles, Gift } from 'lucide-react';
+import { Building2, Compass, UserCheck, Pin, LayoutTemplate, Sparkles, Gift, Award } from 'lucide-react';
 import { Button } from '@cardealer/ui';
 
 export type SettingsTabId =
@@ -10,6 +10,7 @@ export type SettingsTabId =
   | 'floatingSeller'
   | 'stickyBar'
   | 'slideInBanner'
+  | 'author'
   | 'footer';
 
 export interface TabItem {
@@ -55,6 +56,12 @@ export const SETTINGS_TABS: TabItem[] = [
     label: 'Popup Voucher & Trượt',
     description: 'Banner trượt góc, popup voucher ưu đãi, thời gian trễ và % cuộn',
     icon: Gift,
+  },
+  {
+    id: 'author',
+    label: 'Tác Giả & E-E-A-T',
+    description: 'Thông tin ban biên tập, chuyên gia bài viết, số năm kinh nghiệm và tiểu sử E-E-A-T',
+    icon: Award,
   },
   {
     id: 'footer',

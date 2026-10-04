@@ -1,8 +1,8 @@
-// 🧠 Mental Model: EeatAuthorBox là Khối Thẩm Quyền Tác Giả Chuẩn Google E-E-A-T & Inbound Contact (Hyundai Vinh).
-// Tuân thủ triệt để universal-agentic-workflow.xml, fullstack-dev-executor.xml và tailwind-ui-designer.xml:
+// 🧠 Mental Model: EeatAuthorBox là Khối Thẩm Quyền Chuyên Gia & Ban Biên Tập cuối bài viết (/tin-tuc/[slug]).
+// Tuân thủ triệt để universal-agentic-workflow.xml và fullstack-dev-executor.xml:
 // 1. Tối Ưu Tín Hiệu E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness):
 //    - Cung cấp định danh tác giả minh bạch (Person Schema match), kinh nghiệm trong ngành ô tô và chức danh phân tích chuyên sâu.
-//    - Huy hiệu xác thực uy tín 'Chuyên Gia Được Xác Minh' từ Đại lý Ủy quyền Hyundai Dũng Lạc (Nghệ An - Hà Tĩnh).
+//    - Huy hiệu xác thực uy tín 'Chuyên Gia Được Xác Minh' từ Đại lý Ủy quyền.
 // 2. Component-Driven & Shared Primitives First:
 //    - Tái sử dụng 100% UI Primitives: Card, Badge, Button từ @cardealer/ui.
 //    - Tái sử dụng Link từ next/link cho các liên kết điều hướng và tương tác liên lạc.
@@ -10,8 +10,8 @@
 //    - Nút Gọi Trực Tiếp Tác Giả (Hotline).
 //    - Nút Nhắn Zalo Tư Vấn Báo Giá & Trả Góp 1-chạm.
 //    - Nút Chia Sẻ Bài Viết (Sao chép liên kết vào clipboard kèm Toast feedback).
-// 4. WCAG AAA & Accessibility:
-//    - Touch target đạt chuẩn Google/Apple (min-h-[44px]), đầy đủ aria-label, hỗ trợ motion-reduce:transition-none.
+// 4. Dynamic Admin Config:
+//    - Nhận authorSettings từ Admin Settings với fallback defaults an toàn (Zero-Crash Guarantee).
 // 5. 100% Named Export: TUYỆT ĐỐI CẤM export default.
 
 'use client';
@@ -28,6 +28,8 @@ import {
   Check,
 } from 'lucide-react';
 import { Card, Badge, Button } from '@cardealer/ui';
+import type { AuthorSettings } from '@cardealer/types';
+import { DEFAULT_AUTHOR_SETTINGS } from '@cardealer/types';
 
 export interface AuthorInfo {
   id?: string;
@@ -42,29 +44,32 @@ export interface AuthorInfo {
 
 export interface EeatAuthorBoxProps {
   author?: AuthorInfo | null;
+  authorSettings?: AuthorSettings;
   postTitle?: string;
   className?: string;
 }
 
 export function EeatAuthorBox({
   author,
+  authorSettings,
   postTitle = 'Bài viết',
   className = '',
 }: EeatAuthorBoxProps) {
   const [copied, setCopied] = React.useState<boolean>(false);
 
-  // Dữ liệu tác giả mặc định nếu chưa truyền từ props
-  const defaultAuthor: AuthorInfo = {
-    fullName: 'Ban Biên Tập Hyundai Vinh',
-    role: 'Chuyên gia Phân tích Thị trường & Tư vấn Xe Ô tô',
-    experienceYears: 8,
-    phone: '0941.000.000',
-    zaloPhone: '0941000000',
-    bio: 'Đội ngũ chuyên viên tư vấn tài chính, kỹ thuật và thị trường xe ô tô Hyundai tại Nghệ An - Hà Tĩnh, cam kết cung cấp thông tin chính xác, minh bạch và giải pháp mua xe tối ưu chi phí nhất.',
+  const fallback = authorSettings || DEFAULT_AUTHOR_SETTINGS;
+
+  const currentAuthor: AuthorInfo = {
+    fullName: author?.fullName || fallback.fullName,
+    role: author?.role || fallback.role,
+    avatarUrl: author?.avatarUrl || fallback.avatarUrl || null,
+    phone: author?.phone || fallback.phone,
+    zaloPhone: author?.zaloPhone || fallback.zaloPhone,
+    experienceYears: author?.experienceYears ?? fallback.experienceYears,
+    bio: author?.bio || fallback.bio,
   };
 
-  const currentAuthor = author || defaultAuthor;
-  const cleanPhone = (currentAuthor.phone || '0941000000').replace(/[^0-9]/g, '');
+  const cleanPhone = (currentAuthor.phone || '0981234567').replace(/[^0-9]/g, '');
   const cleanZalo = (currentAuthor.zaloPhone || cleanPhone).replace(/[^0-9]/g, '');
 
   const handleShareClick = () => {
@@ -95,7 +100,7 @@ export function EeatAuthorBox({
             </div>
           )}
           <span
-            title="Tác giả được xác thực chuyên môn bởi Hyundai Vinh"
+            title="Tác giả được xác thực chuyên môn"
             className="absolute -bottom-1.5 -right-1.5 bg-blue-600 text-white p-1 rounded-full border-2 border-white shadow-xs"
           >
             <ShieldCheck className="w-3.5 h-3.5" />
@@ -115,18 +120,18 @@ export function EeatAuthorBox({
           </div>
 
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 text-xs text-slate-500 font-medium">
-            <span>{currentAuthor.role || 'Chuyên gia tư vấn xe'}</span>
+            <span>{currentAuthor.role}</span>
             <span className="text-slate-300">•</span>
             <span className="flex items-center gap-1 text-blue-700">
               <Award className="w-3.5 h-3.5" />
-              {currentAuthor.experienceYears || 8}+ năm kinh nghiệm
+              {currentAuthor.experienceYears}+ năm kinh nghiệm
             </span>
             <span className="text-slate-300">•</span>
-            <span>Đại lý Hyundai Vinh</span>
+            <span>Đại lý Ủy Quyền Chính Hãng</span>
           </div>
 
           <p className="text-xs text-slate-600 leading-relaxed max-w-2xl">
-            {currentAuthor.bio || defaultAuthor.bio}
+            {currentAuthor.bio}
           </p>
 
           {/* Cụm Nút Tác Vụ Chuẩn Packages Button & Link */}
@@ -139,7 +144,7 @@ export function EeatAuthorBox({
                 className="min-h-[44px] px-4 text-xs font-semibold bg-white border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800 rounded-xl shadow-2xs transition-colors flex items-center gap-1.5"
               >
                 <Phone className="w-3.5 h-3.5 text-blue-600" />
-                <span>Gọi Tác Giả: {currentAuthor.phone || '0941.000.000'}</span>
+                <span>Gọi Tác Giả: {currentAuthor.phone || '0981.234.567'}</span>
               </Button>
             </Link>
 

@@ -9,6 +9,7 @@ import {
   FloatingSellerSettingsSchema,
   StickyBarSettingsSchema,
   SlideInBannerSettingsSchema,
+  AuthorSettingsSchema,
   FooterSettingsSchema,
   HomepageSettingsSchema,
 } from '@cardealer/types';
@@ -262,6 +263,7 @@ export async function handleCatalogRoutes(
         contact: contactMerged,
         floatingSeller: settingsMap.get('floating_seller_settings') || {},
         stickyBar: settingsMap.get('sticky_bar_settings') || {},
+        author: settingsMap.get('author_settings') || {},
         slideInBanner: settingsMap.get('slide_in_banner_settings') || {},
         footer: settingsMap.get('footer_settings') || {},
       };
@@ -324,6 +326,10 @@ export async function handleCatalogRoutes(
         }
         if (key === 'sticky_bar_settings') {
           sendJson(200, { success: true, data: StickyBarSettingsSchema.parse({}) });
+          return true;
+        }
+        if (key === 'author_settings') {
+          sendJson(200, { success: true, data: AuthorSettingsSchema.parse({}) });
           return true;
         }
         if (key === 'slide_in_banner_settings') {

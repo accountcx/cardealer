@@ -789,12 +789,17 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
     noiDung: post.noiDungAst || undefined,
   };
 
+  const authorAvatar = post.author?.avatarUrl || settings.author?.avatarUrl;
+  const authorAvatarFull = authorAvatar
+    ? (authorAvatar.startsWith('http') ? authorAvatar : `https://xehyundaivinh.com${authorAvatar}`)
+    : undefined;
+
   const masterSchema = generatePostMasterJsonLd(postForJsonLd, 'https://xehyundaivinh.com', {
     defaultAuthor: {
-      name: post.author?.fullName || 'Ban Biên Tập Hyundai Vinh',
-      jobTitle: post.author?.role || 'Chuyên gia tư vấn xe ô tô Hyundai',
-      avatarUrl: post.author?.avatarUrl ? `https://xehyundaivinh.com${post.author.avatarUrl}` : undefined,
-      phone: post.author?.phone || rawHotline,
+      name: post.author?.fullName || settings.author.fullName,
+      jobTitle: post.author?.role || settings.author.role,
+      avatarUrl: authorAvatarFull,
+      phone: post.author?.phone || settings.author.phone || rawHotline,
     },
   });
 
@@ -992,6 +997,7 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
                   }
                   : null
               }
+              authorSettings={settings.author}
               postTitle={post.tieuDe}
               className="mt-8"
             />

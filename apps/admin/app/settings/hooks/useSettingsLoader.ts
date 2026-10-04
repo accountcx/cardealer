@@ -7,6 +7,7 @@ import type {
   FloatingSellerSettings,
   StickyBarSettings,
   SlideInBannerSettings,
+  AuthorSettings,
   FooterSettings,
   ContactSettings,
   HomepageSettings,
@@ -16,6 +17,7 @@ import {
   FloatingSellerSettingsSchema,
   StickyBarSettingsSchema,
   SlideInBannerSettingsSchema,
+  AuthorSettingsSchema,
   FooterSettingsSchema,
   ContactSettingsSchema,
   HomepageSettingsSchema,
@@ -38,6 +40,7 @@ export function useSettingsLoader(
   const [sellerData, setSellerData] = useState<FloatingSellerSettings>(FloatingSellerSettingsSchema.parse({}));
   const [stickyData, setStickyData] = useState<StickyBarSettings>(StickyBarSettingsSchema.parse({}));
   const [slideInData, setSlideInData] = useState<SlideInBannerSettings>(SlideInBannerSettingsSchema.parse({}));
+  const [authorData, setAuthorData] = useState<AuthorSettings>(AuthorSettingsSchema.parse({}));
   const [footerData, setFooterData] = useState<FooterSettings>(FooterSettingsSchema.parse({}));
   const [homepageData, setHomepageData] = useState<HomepageSettings>(HomepageSettingsSchema.parse({}));
 
@@ -53,7 +56,7 @@ export function useSettingsLoader(
         setLoading(true);
         setError(null);
 
-        const [showroomRes, contactRes, navRes, sellerRes, stickyRes, slideInRes, footerRes, homepageRes] =
+        const [showroomRes, contactRes, navRes, sellerRes, stickyRes, slideInRes, authorRes, footerRes, homepageRes] =
           await Promise.allSettled([
             settingsService.getSettingByKey<Record<string, unknown>>('showroom_settings'),
             settingsService.getSettingByKey<ContactSettings>('contact_settings'),
@@ -61,6 +64,7 @@ export function useSettingsLoader(
             settingsService.getSettingByKey<FloatingSellerSettings>('floating_seller_settings'),
             settingsService.getSettingByKey<StickyBarSettings>('sticky_bar_settings'),
             settingsService.getSettingByKey<SlideInBannerSettings>('slide_in_banner_settings'),
+            settingsService.getSettingByKey<AuthorSettings>('author_settings'),
             settingsService.getSettingByKey<FooterSettings>('footer_settings'),
             settingsService.getSettingByKey<HomepageSettings>('homepage_settings'),
           ]);
@@ -103,6 +107,9 @@ export function useSettingsLoader(
         if (slideInRes.status === 'fulfilled' && slideInRes.value) {
           setSlideInData(SlideInBannerSettingsSchema.parse(slideInRes.value));
         }
+        if (authorRes.status === 'fulfilled' && authorRes.value) {
+          setAuthorData(AuthorSettingsSchema.parse(authorRes.value));
+        }
         if (footerRes.status === 'fulfilled' && footerRes.value) {
           setFooterData(FooterSettingsSchema.parse(footerRes.value));
         }
@@ -129,6 +136,7 @@ export function useSettingsLoader(
     sellerData,
     stickyData,
     slideInData,
+    authorData,
     footerData,
     homepageData,
   };

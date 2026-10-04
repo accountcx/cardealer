@@ -6,6 +6,7 @@ import {
   FloatingSellerSettingsSchema,
   StickyBarSettingsSchema,
   SlideInBannerSettingsSchema,
+  AuthorSettingsSchema,
   FooterSettingsSchema,
   BulkSettingsSchema,
   sanitizePhoneNumber,
@@ -85,7 +86,17 @@ describe('Settings Zod Schemas & Zero-Crash Fallbacks', () => {
     expect(result.triggerScrollPercent).toBe(25);
   });
 
-  it('TC-1.7: BulkSettingsSchema nạp gộp toàn bộ 7 keys mà không ném lỗi', () => {
+  it("TC-1.7: AuthorSettingsSchema sinh cấu hình tác giả E-E-A-T mặc định", () => {
+    const result = AuthorSettingsSchema.parse({});
+    expect(result.fullName).toBe("Ban Biên Tập Hyundai Vinh");
+    expect(result.role).toContain("Chuyên gia Phân tích");
+    expect(result.experienceYears).toBe(8);
+    expect(result.phone).toBe("0981.234.567");
+    expect(result.zaloPhone).toBe("0981234567");
+    expect(result.bio).toContain("Đội ngũ chuyên viên tư vấn");
+  });
+
+  it('TC-1.8: BulkSettingsSchema nạp gộp toàn bộ 8 keys mà không ném lỗi', () => {
     const parseResult = BulkSettingsSchema.safeParse({});
     expect(parseResult.success).toBe(true);
     if (parseResult.success) {
@@ -94,12 +105,13 @@ describe('Settings Zod Schemas & Zero-Crash Fallbacks', () => {
       expect(parseResult.data.contact.hotlineKinhDoanh).toBeDefined();
       expect(parseResult.data.floatingSeller.sellerName).toBeDefined();
       expect(parseResult.data.stickyBar.ctaText).toBeDefined();
+      expect(parseResult.data.author.fullName).toBe('Ban Biên Tập Hyundai Vinh');
       expect(parseResult.data.slideInBanner.title).toContain('15.000.000đ');
       expect(parseResult.data.footer.column2Title).toBe('Dòng Xe Hyundai');
     }
   });
 
-  it('TC-1.8: FooterSettingsSchema sinh cấu hình 4 cột chân trang đầy đủ', () => {
+  it('TC-1.9: FooterSettingsSchema sinh cấu hình 4 cột chân trang đầy đủ', () => {
     const result = FooterSettingsSchema.parse({});
     expect(result.column2Title).toBe('Dòng Xe Hyundai');
     expect(result.column2Links.length).toBeGreaterThan(0);
@@ -108,7 +120,7 @@ describe('Settings Zod Schemas & Zero-Crash Fallbacks', () => {
     expect(result.showCertifiedBadge).toBe(true);
   });
 
-  it('TC-1.9: sanitizePhoneNumber khử sạch ký tự phân cách cho thẻ tel:', () => {
+  it('TC-1.10: sanitizePhoneNumber khử sạch ký tự phân cách cho thẻ tel:', () => {
     expect(sanitizePhoneNumber('0981.234.567')).toBe('0981234567');
     expect(sanitizePhoneNumber('0981 234 567')).toBe('0981234567');
     expect(sanitizePhoneNumber('+84 981-234-567')).toBe('+84981234567');
@@ -116,7 +128,7 @@ describe('Settings Zod Schemas & Zero-Crash Fallbacks', () => {
     expect(sanitizePhoneNumber(undefined)).toBe('');
   });
 
-  it('TC-1.10: normalizeZaloUrl tự động tạo đường dẫn Zalo OA/cá nhân chính xác', () => {
+  it('TC-1.11: normalizeZaloUrl tự động tạo đường dẫn Zalo OA/cá nhân chính xác', () => {
     expect(normalizeZaloUrl('0981.234.567')).toBe('https://zalo.me/0981234567');
     expect(normalizeZaloUrl('https://zalo.me/0981234567')).toBe('https://zalo.me/0981234567');
     expect(normalizeZaloUrl('0981 234 567')).toBe('https://zalo.me/0981234567');

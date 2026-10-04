@@ -8,6 +8,7 @@ import {
   FloatingSellerSettingsSchema,
   StickyBarSettingsSchema,
   SlideInBannerSettingsSchema,
+  AuthorSettingsSchema,
   FooterSettingsSchema,
   HomepageSettingsSchema,
 } from '@cardealer/types';
@@ -534,6 +535,7 @@ export async function handleAdminRoutes(
           if (key === 'contact_settings') return sendJson(200, { success: true, data: ContactSettingsSchema.parse({}) }), true;
           if (key === 'floating_seller_settings') return sendJson(200, { success: true, data: FloatingSellerSettingsSchema.parse({}) }), true;
           if (key === 'sticky_bar_settings') return sendJson(200, { success: true, data: StickyBarSettingsSchema.parse({}) }), true;
+          if (key === 'author_settings') return sendJson(200, { success: true, data: AuthorSettingsSchema.parse({}) }), true;
           if (key === 'slide_in_banner_settings') return sendJson(200, { success: true, data: SlideInBannerSettingsSchema.parse({}) }), true;
           if (key === 'footer_settings') return sendJson(200, { success: true, data: FooterSettingsSchema.parse({}) }), true;
 
@@ -600,6 +602,7 @@ export async function handleAdminRoutes(
       else if (key === 'contact_settings') validatedData = ContactSettingsSchema.parse(body);
       else if (key === 'floating_seller_settings') validatedData = FloatingSellerSettingsSchema.parse(body);
       else if (key === 'sticky_bar_settings') validatedData = StickyBarSettingsSchema.parse(body);
+      else if (key === 'author_settings') validatedData = AuthorSettingsSchema.parse(body);
       else if (key === 'slide_in_banner_settings') validatedData = SlideInBannerSettingsSchema.parse(body);
       else if (key === 'footer_settings') validatedData = FooterSettingsSchema.parse(body);
       else if (key === 'homepage_settings') validatedData = HomepageSettingsSchema.parse(body);
