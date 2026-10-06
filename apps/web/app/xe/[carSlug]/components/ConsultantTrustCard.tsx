@@ -105,14 +105,14 @@ export function ConsultantTrustCard({
             <CheckCircle2 className="w-3.5 h-3.5 text-white" />
           </span>
         </div>
-        <div>
-          <span className="text-[11px] uppercase tracking-wider font-bold text-blue-700 bg-blue-100/70 px-2.5 py-0.5 rounded-full inline-block">
+        <div className="min-w-0 flex-1">
+          <span className="text-[10px] sm:text-[11px] uppercase tracking-wide font-bold text-blue-700 bg-blue-100/80 px-2.5 py-0.5 rounded-md inline-block whitespace-nowrap">
             Chuyên Viên Tư Vấn Chính Hãng
           </span>
-          <p className="text-lg sm:text-xl font-black text-slate-900 tracking-tight mt-1">
+          <p className="text-lg sm:text-xl font-black text-slate-900 tracking-tight mt-1 truncate">
             {salerName}
           </p>
-          <p className="text-xs text-slate-600">
+          <p className="text-xs text-slate-600 line-clamp-2">
             Đồng hành & hỗ trợ quý khách từ tư vấn, lái thử đến ngày nhận xe
           </p>
         </div>
@@ -159,12 +159,12 @@ export function ConsultantTrustCard({
 
       {/* Form Nhanh: Đăng Ký Lái Thử Tận Nhà */}
       <div className="p-4 rounded-2xl bg-white border border-blue-100 shadow-2xs space-y-2.5">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-            <Car className="w-4 h-4 text-blue-600" />
-            Đăng ký lái thử {carName} tận nhà
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5 min-w-0 truncate">
+            <Car className="w-4 h-4 text-blue-600 shrink-0" />
+            <span className="truncate">Đăng ký lái thử {carName} tận nhà</span>
           </span>
-          <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full">
+          <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full shrink-0">
             Miễn phí 100%
           </span>
         </div>
@@ -184,7 +184,7 @@ export function ConsultantTrustCard({
             <div className="flex gap-2">
               <input
                 type="tel"
-                placeholder="Nhập số điện thoại của anh/chị..."
+                placeholder="Nhập số điện thoại..."
                 {...register('phone', {
                   required: 'Vui lòng nhập số điện thoại',
                   pattern: {
@@ -220,35 +220,49 @@ export function ConsultantTrustCard({
       </div>
 
       {/* Nút Hành Động Trực Tiếp (Gọi điện & Chat Zalo) */}
-      <div className="grid grid-cols-2 gap-3 pt-1">
-        <Button
-          asChild
-          size="lg"
-          className="h-12 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-blue-500/20 active:scale-[0.98] transition-all motion-reduce:transition-none border-0"
-        >
+      <div className="space-y-2 pt-1">
+        <div className="grid grid-cols-2 gap-3">
+          <Button
+            asChild
+            size="lg"
+            className="h-11 sm:h-12 px-3 sm:px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-blue-500/20 active:scale-[0.98] transition-all motion-reduce:transition-none border-0"
+          >
+            <a
+              href={`tel:${hotline.replace(/\D/g, '')}`}
+              className="inline-flex items-center justify-center whitespace-nowrap"
+              title={`Gọi trực tiếp: ${hotline}`}
+            >
+              <PhoneCall className="w-4 h-4 mr-1.5 shrink-0" />
+              <span>Gọi Hotline</span>
+            </a>
+          </Button>
+          <Button
+            asChild
+            size="lg"
+            className="h-11 sm:h-12 px-3 sm:px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-500/20 active:scale-[0.98] transition-all motion-reduce:transition-none border-0"
+          >
+            <a
+              href={zaloUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center whitespace-nowrap"
+              title="Chat Zalo nhận báo giá lăn bánh ưu đãi"
+            >
+              <MessageSquare className="w-4 h-4 mr-1.5 shrink-0" />
+              <span>Chat Zalo</span>
+            </a>
+          </Button>
+        </div>
+        <p className="text-center text-[11px] text-slate-500">
+          Hotline trực tiếp:{' '}
           <a
             href={`tel:${hotline.replace(/\D/g, '')}`}
-            className="inline-flex items-center justify-center"
+            className="font-bold text-blue-600 hover:underline"
           >
-            <PhoneCall className="w-4 h-4 mr-1.5" />
-            Gọi Em ({hotline})
-          </a>
-        </Button>
-        <Button
-          asChild
-          size="lg"
-          className="h-12 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-500/20 active:scale-[0.98] transition-all motion-reduce:transition-none border-0"
-        >
-          <a
-            href={zaloUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center"
-          >
-            <MessageSquare className="w-4 h-4 mr-1.5" />
-            Chat Zalo Báo Giá
-          </a>
-        </Button>
+            {hotline}
+          </a>{' '}
+          (Hỗ trợ 24/7)
+        </p>
       </div>
     </div>
   );

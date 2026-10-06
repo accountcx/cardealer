@@ -8,9 +8,16 @@ import { leads } from './leads';
 import { posts, categories, postTags } from './posts';
 import { media } from './media';
 import { staticPages } from './static-pages';
+import { carArticles } from './car_articles';
 
-export const carsRelations = relations(cars, ({ many }) => ({
+export const carsRelations = relations(cars, ({ one, many }) => ({
   versions: many(carVersions),
+  article: one(carArticles),
+}));
+
+export const carArticlesRelations = relations(carArticles, ({ one }) => ({
+  car: one(cars, { fields: [carArticles.carId], references: [cars.id] }),
+  author: one(users, { fields: [carArticles.authorId], references: [users.id] }),
 }));
 
 export const carVersionsRelations = relations(carVersions, ({ one, many }) => ({

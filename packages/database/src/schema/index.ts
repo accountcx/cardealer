@@ -7,5 +7,7 @@ export * from './media';
 export * from './system_settings';
 export * from './leads';
 export * from './posts';
+export * from './car_articles';
 export * from './relations';
 export * from './static-pages';
+export * from './redirects';

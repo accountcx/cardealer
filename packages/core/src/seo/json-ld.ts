@@ -711,6 +711,69 @@ export function generateCarJsonLd(
     ],
   });
 
+  // 📰 Schema Article & Rich Snippets gắn liền với Dòng xe (Car Article 1-1)
+  const carArticle = 'article' in car && (car as any).article ? (car as any).article : undefined;
+  if (carArticle && carArticle.tieuDe) {
+    const articleAuthorName = carArticle.author?.fullName || consultant?.name || 'Ban Biên Tập';
+    graph.push({
+      '@type': 'Article',
+      '@id': `${cleanSiteUrl}/xe/${car.slug}#article`,
+      isPartOf: {
+        '@type': 'WebPage',
+        '@id': `${cleanSiteUrl}/xe/${car.slug}`,
+      },
+      headline: carArticle.tieuDe,
+      description: carArticle.tomTat || carArticle.metaDescription || `Đánh giá chi tiết dòng xe ${car.tenXe}`,
+      image: car.anhDaiDienUrl,
+      datePublished: carArticle.publishedAt || carArticle.createdAt || new Date().toISOString(),
+      dateModified: carArticle.updatedAt || carArticle.publishedAt || carArticle.createdAt || new Date().toISOString(),
+      about: {
+        '@id': `${cleanSiteUrl}/xe/${car.slug}#car`,
+      },
+      author: {
+        '@type': 'Person',
+        name: articleAuthorName,
+        jobTitle: carArticle.author?.role || consultant?.jobTitle || 'Chuyên viên tư vấn ô tô Hyundai',
+        ...(carArticle.author?.avatarUrl ? { image: carArticle.author.avatarUrl } : {}),
+      },
+      publisher: {
+        '@type': 'AutoDealer',
+        name: consultant?.showroomName || 'Hyundai Showroom',
+        url: cleanSiteUrl,
+      },
+      mainEntityOfPage: {
+        '@type': 'WebPage',
+        '@id': `${cleanSiteUrl}/xe/${car.slug}`,
+      },
+    });
+
+    if (carArticle.noiDung) {
+      try {
+        const faqs = extractFaqsFromTiptap(carArticle.noiDung);
+        if (faqs && faqs.length > 0) {
+          const faqSchema = generateFaqSchema(faqs);
+          if (faqSchema) {
+            graph.push(faqSchema);
+          }
+        }
+      } catch {}
+
+      try {
+        const videos = extractVideosFromTiptap(carArticle.noiDung);
+        if (videos && videos.length > 0) {
+          const videoSchemas = generateVideoSchema(
+            videos,
+            cleanSiteUrl,
+            carArticle.publishedAt || carArticle.createdAt
+          );
+          if (videoSchemas && videoSchemas.length > 0) {
+            graph.push(...videoSchemas);
+          }
+        }
+      } catch {}
+    }
+  }
+
   return {
     '@context': 'https://schema.org',
     '@graph': graph,

@@ -11,7 +11,9 @@ import {
   AuthorSettingsSchema,
   FooterSettingsSchema,
   HomepageSettingsSchema,
+  CarArticleInputSchema,
 } from '@cardealer/types';
+import { calculateReadingTimeAndWordCount } from '@cardealer/core';
 import { verifyToken, parseCookies } from '../auth';
 import { handleUserManagementRoutes } from './admin/users';
 import { handleProfileRoutes } from './admin/profile';
@@ -116,7 +118,7 @@ export async function handleAdminRoutes(
   }
 
   // 2. GET /api/admin/cars/:slug (Chi tiết xe quản trị kèm toàn bộ phiên bản và màu sắc)
-  if (url.pathname.startsWith('/api/admin/cars/') && !url.pathname.endsWith('/version-colors') && req.method === 'GET') {
+  if (url.pathname.startsWith('/api/admin/cars/') && !url.pathname.endsWith('/version-colors') && !url.pathname.endsWith('/article') && req.method === 'GET') {
     const slugOrId = url.pathname.replace('/api/admin/cars/', '');
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
     try {
@@ -183,6 +185,9 @@ export async function handleAdminRoutes(
           const vName = String(v.tenPhienBan || `Phiên bản ${idx + 1}`).trim();
           const vSlug = String(v.slug || vName).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
           const isUuid = v.id && typeof v.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v.id);
+          const versionGallery = Array.isArray(v.boSuuTapAnh) && v.boSuuTapAnh.length > 0
+            ? v.boSuuTapAnh
+            : (Array.isArray(body.galleryImages) ? body.galleryImages : (Array.isArray(body.boSuuTapAnh) ? body.boSuuTapAnh : []));
           await db.insert(schema.carVersions).values({
             ...(isUuid ? { id: v.id } : {}),
             carId: inserted.id,
@@ -194,6 +199,7 @@ export async function handleAdminRoutes(
             dongCo: v.dongCo ? String(v.dongCo) : null,
             hopSo: v.hopSo ? String(v.hopSo) : null,
             danDong: v.danDong ? String(v.danDong) : null,
+            boSuuTapAnh: versionGallery,
             sortOrder: idx + 1,
           }).onConflictDoNothing();
         }
@@ -212,6 +218,7 @@ export async function handleAdminRoutes(
   if (
     url.pathname.startsWith('/api/admin/cars/') &&
     !url.pathname.endsWith('/version-colors') &&
+    !url.pathname.endsWith('/article') &&
     req.method === 'PUT'
   ) {
     const slugOrId = url.pathname.replace('/api/admin/cars/', '');
@@ -264,6 +271,10 @@ export async function handleAdminRoutes(
           const isUuid = v.id && typeof v.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v.id);
           const isExisting = isUuid && existingVersionIds.has(v.id);
 
+          const versionGallery = Array.isArray(v.boSuuTapAnh) && v.boSuuTapAnh.length > 0
+            ? v.boSuuTapAnh
+            : (Array.isArray(body.galleryImages) ? body.galleryImages : (Array.isArray(body.boSuuTapAnh) ? body.boSuuTapAnh : undefined));
+
           if (isExisting) {
             await db
               .update(schema.carVersions)
@@ -276,6 +287,7 @@ export async function handleAdminRoutes(
                 dongCo: v.dongCo ? String(v.dongCo) : null,
                 hopSo: v.hopSo ? String(v.hopSo) : null,
                 danDong: v.danDong ? String(v.danDong) : null,
+                ...(versionGallery !== undefined ? { boSuuTapAnh: versionGallery } : {}),
                 sortOrder: idx + 1,
                 updatedAt: new Date(),
               })
@@ -292,6 +304,7 @@ export async function handleAdminRoutes(
               dongCo: v.dongCo ? String(v.dongCo) : null,
               hopSo: v.hopSo ? String(v.hopSo) : null,
               danDong: v.danDong ? String(v.danDong) : null,
+              ...(versionGallery !== undefined ? { boSuuTapAnh: versionGallery } : {}),
               sortOrder: idx + 1,
             }).onConflictDoNothing();
           }
@@ -330,6 +343,157 @@ export async function handleAdminRoutes(
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Lỗi xóa dòng xe';
       sendJson(400, { success: false, error: { code: 'DELETE_ERROR', message: msg } });
+      return true;
+    }
+  }
+
+  // 4.5. GET /api/admin/cars/:slugOrId/article (Lấy bài viết dòng xe)
+  if (url.pathname.startsWith('/api/admin/cars/') && url.pathname.endsWith('/article') && req.method === 'GET') {
+    const slugOrId = url.pathname.replace('/api/admin/cars/', '').replace('/article', '');
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
+    try {
+      const car = await db.query.cars.findFirst({
+        where: (t: any, { eq }: any) => (isUuid ? eq(t.id, slugOrId) : eq(t.slug, slugOrId)),
+      });
+
+      if (!car) {
+        sendJson(404, { success: false, error: { code: 'NOT_FOUND', message: 'Không tìm thấy dòng xe' } });
+        return true;
+      }
+
+      const article = await db.query.carArticles.findFirst({
+        where: eq(schema.carArticles.carId, car.id),
+        with: {
+          author: {
+            columns: {
+              id: true,
+              fullName: true,
+              role: true,
+              avatarUrl: true,
+              phone: true,
+            },
+          },
+        },
+      });
+
+      sendJson(200, { success: true, data: article || null });
+      return true;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi truy vấn bài viết dòng xe';
+      sendJson(500, { success: false, error: { code: 'DATABASE_QUERY_ERROR', message: msg } });
+      return true;
+    }
+  }
+
+  // 4.6. PUT /api/admin/cars/:slugOrId/article (Cập nhật hoặc tạo mới bài viết dòng xe)
+  if (url.pathname.startsWith('/api/admin/cars/') && url.pathname.endsWith('/article') && req.method === 'PUT') {
+    const slugOrId = url.pathname.replace('/api/admin/cars/', '').replace('/article', '');
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
+    const body = await readBody();
+    try {
+      const car = await db.query.cars.findFirst({
+        where: (t: any, { eq }: any) => (isUuid ? eq(t.id, slugOrId) : eq(t.slug, slugOrId)),
+      });
+
+      if (!car) {
+        sendJson(404, { success: false, error: { code: 'NOT_FOUND', message: 'Không tìm thấy dòng xe' } });
+        return true;
+      }
+
+      const parseResult = CarArticleInputSchema.safeParse(body);
+      if (!parseResult.success) {
+        sendJson(400, {
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: parseResult.error.issues.map((e) => e.message).join(', '),
+            details: parseResult.error.format(),
+          },
+        });
+        return true;
+      }
+
+      const data = parseResult.data;
+
+      // 🧠 Publish Gatekeeper: Chặn xuất bản nếu còn ký tự giữ chỗ [...] hoặc [todo]
+      if (data.status === 'published') {
+        const contentStr = JSON.stringify(data.noiDung).toLowerCase();
+        if (contentStr.includes('[...]') || contentStr.includes('[todo]')) {
+          sendJson(400, {
+            success: false,
+            error: {
+              code: 'UNFINISHED_CONTENT',
+              message: 'Không thể xuất bản bài viết khi nội dung còn chứa ký tự giữ chỗ chưa hoàn thành [...] hoặc [todo]',
+            },
+          });
+          return true;
+        }
+      }
+
+      const { readingTime, wordCount } = calculateReadingTimeAndWordCount(data.noiDung);
+      const auth = await authenticateAdmin(req);
+      const authorId = data.authorId || (auth.user ? auth.user.id : null);
+
+      const existingArticle = await db.query.carArticles.findFirst({
+        where: eq(schema.carArticles.carId, car.id),
+      });
+
+      let customPublishedAt: Date | null = null;
+      if (data.publishedAt) {
+        customPublishedAt = new Date(data.publishedAt);
+      } else if (data.status === 'published' && (!existingArticle || !existingArticle.publishedAt)) {
+        customPublishedAt = new Date();
+      } else if (existingArticle?.publishedAt) {
+        customPublishedAt = existingArticle.publishedAt;
+      }
+
+      let savedArticle;
+      if (existingArticle) {
+        const [updated] = await db
+          .update(schema.carArticles)
+          .set({
+            tieuDe: data.tieuDe,
+            tomTat: data.tomTat || null,
+            noiDung: data.noiDung,
+            status: data.status,
+            authorId,
+            focusKeyword: data.focusKeyword || null,
+            metaTitle: data.metaTitle || null,
+            metaDescription: data.metaDescription || null,
+            readingTime,
+            wordCount,
+            publishedAt: customPublishedAt,
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.carArticles.id, existingArticle.id))
+          .returning();
+        savedArticle = updated;
+      } else {
+        const [inserted] = await db
+          .insert(schema.carArticles)
+          .values({
+            carId: car.id,
+            authorId,
+            tieuDe: data.tieuDe,
+            tomTat: data.tomTat || null,
+            noiDung: data.noiDung,
+            status: data.status,
+            focusKeyword: data.focusKeyword || null,
+            metaTitle: data.metaTitle || null,
+            metaDescription: data.metaDescription || null,
+            readingTime,
+            wordCount,
+            publishedAt: customPublishedAt,
+          })
+          .returning();
+        savedArticle = inserted;
+      }
+
+      sendJson(200, { success: true, data: savedArticle });
+      return true;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi lưu bài viết dòng xe';
+      sendJson(500, { success: false, error: { code: 'SAVE_ERROR', message: msg } });
       return true;
     }
   }

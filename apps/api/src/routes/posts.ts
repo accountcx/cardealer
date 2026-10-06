@@ -19,6 +19,7 @@ import { authenticateAdmin } from '../middleware/rbac';
 // 3. Tự Động Sinh 301 Redirect: Khi Slug bài viết thay đổi, tự động tạo bản ghi trong bảng redirects để bảo toàn 100% PageRank.
 // 4. Inbound Lead Receiver & Honeypot Guard: Tiếp nhận Leads từ InlineQuickForm và GatedContent, silent-drop bot spam.
 // 5. Preview Token Engine: Sinh token bảo mật 64 ký tự cho phép xem trước bài viết nháp mà không cần tài khoản admin.
+// 6. Car Post Hub Engine: Cho phép liên kết bài viết với từng dòng xe cụ thể và truy vấn bài viết theo xe.
 
 export async function handlePostRoutes(
   req: IncomingMessage,
@@ -179,7 +180,7 @@ export async function handlePostRoutes(
     }
   }
 
-  // 1.4. GET /api/posts (Danh sách bài viết đã xuất bản cho Storefront kèm lọc category & search)
+  // 1.4. GET /api/posts (Danh sách bài viết đã xuất bản cho Storefront kèm lọc category, car & search)
   if (pathname === '/api/posts' && method === 'GET') {
     try {
       const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
@@ -234,7 +235,7 @@ export async function handlePostRoutes(
         orderBy: [
           desc(schema.posts.isFeatured),
           asc(schema.posts.featuredOrder),
-          desc(schema.posts.createdAt),
+          desc(sql`coalesce(${schema.posts.publishedAt}, ${schema.posts.createdAt})`),
         ],
         limit,
         offset,
@@ -597,18 +598,15 @@ export async function handlePostRoutes(
 
       const statusFilter = url.searchParams.get('status');
       const categoryIdFilter = url.searchParams.get('categoryId');
-      const searchQuery = url.searchParams.get('search')?.trim();
+      const searchQuery = url.searchParams.get('search');
 
-      const conditions = [];
-
-      if (statusFilter && ['draft', 'published', 'scheduled', 'archived'].includes(statusFilter)) {
+      const conditions: any[] = [];
+      if (statusFilter) {
         conditions.push(eq(schema.posts.status, statusFilter as any));
       }
-
       if (categoryIdFilter) {
         conditions.push(eq(schema.posts.categoryId, categoryIdFilter));
       }
-
       if (searchQuery) {
         conditions.push(ilike(schema.posts.tieuDe, `%${searchQuery}%`));
       }
@@ -624,7 +622,7 @@ export async function handlePostRoutes(
 
       const postsList = await db.query.posts.findMany({
         where: whereClause,
-        orderBy: [desc(schema.posts.createdAt)],
+        orderBy: [desc(sql`coalesce(${schema.posts.publishedAt}, ${schema.posts.createdAt})`)],
         limit,
         offset,
         with: {
@@ -739,6 +737,23 @@ export async function handlePostRoutes(
 
       const authorId = postData.authorId || currentUser.id;
 
+      // Xử lý ngày viết bài / ngày đăng tùy chỉnh
+      let customPublishedAt: Date | null = null;
+      if (postData.publishedAt) {
+        customPublishedAt = new Date(postData.publishedAt);
+      } else if (postData.createdAt) {
+        customPublishedAt = new Date(postData.createdAt);
+      } else if (postData.status === 'published') {
+        customPublishedAt = new Date();
+      }
+
+      let customCreatedAt: Date | undefined = undefined;
+      if (postData.createdAt) {
+        customCreatedAt = new Date(postData.createdAt);
+      } else if (postData.publishedAt) {
+        customCreatedAt = new Date(postData.publishedAt);
+      }
+
       const [newPost] = await db
         .insert(schema.posts)
         .values({
@@ -751,12 +766,15 @@ export async function handlePostRoutes(
           tomTat: postData.tomTat || null,
           noiDung: postData.noiDung,
           status: postData.status,
+          publishedAt: customPublishedAt,
+          ...(customCreatedAt ? { createdAt: customCreatedAt } : {}),
           scheduledAt: postData.scheduledAt ? new Date(postData.scheduledAt) : null,
           expiredPromoDate: postData.expiredPromoDate ? new Date(postData.expiredPromoDate) : null,
           isFeatured: postData.isFeatured,
           featuredOrder: postData.featuredOrder,
           readingTime,
           wordCount,
+          focusKeyword: postData.focusKeyword || null,
           metaTitle: postData.metaTitle || null,
           metaDescription: postData.metaDescription || null,
           canonicalUrl: postData.canonicalUrl || null,
@@ -928,6 +946,21 @@ export async function handlePostRoutes(
       // Sinh token bảo mật 64 ký tự cho preview nháp nếu chưa có
       const previewToken = existingPost.previewToken || crypto.randomBytes(32).toString('hex');
 
+      // Xử lý ngày viết bài / ngày đăng tùy chỉnh
+      let customPublishedAt: Date | null | undefined = undefined;
+      if (updateData.publishedAt !== undefined) {
+        customPublishedAt = updateData.publishedAt ? new Date(updateData.publishedAt) : null;
+      } else if (updateData.createdAt !== undefined) {
+        customPublishedAt = updateData.createdAt ? new Date(updateData.createdAt) : null;
+      }
+
+      let customCreatedAt: Date | undefined = undefined;
+      if (updateData.createdAt !== undefined && updateData.createdAt) {
+        customCreatedAt = new Date(updateData.createdAt);
+      } else if (updateData.publishedAt !== undefined && updateData.publishedAt) {
+        customCreatedAt = new Date(updateData.publishedAt);
+      }
+
       const [updatedPost] = await db
         .update(schema.posts)
         .set({
@@ -940,6 +973,8 @@ export async function handlePostRoutes(
           ...(updateData.tomTat !== undefined ? { tomTat: updateData.tomTat } : {}),
           ...(updateData.noiDung !== undefined ? { noiDung: updateData.noiDung } : {}),
           ...(updateData.status !== undefined ? { status: updateData.status } : {}),
+          ...(customPublishedAt !== undefined ? { publishedAt: customPublishedAt } : {}),
+          ...(customCreatedAt !== undefined ? { createdAt: customCreatedAt } : {}),
           ...(updateData.scheduledAt !== undefined
             ? { scheduledAt: updateData.scheduledAt ? new Date(updateData.scheduledAt) : null }
             : {}),
@@ -948,6 +983,7 @@ export async function handlePostRoutes(
             : {}),
           ...(updateData.isFeatured !== undefined ? { isFeatured: updateData.isFeatured } : {}),
           ...(updateData.featuredOrder !== undefined ? { featuredOrder: updateData.featuredOrder } : {}),
+          ...(updateData.focusKeyword !== undefined ? { focusKeyword: updateData.focusKeyword } : {}),
           ...(updateData.metaTitle !== undefined ? { metaTitle: updateData.metaTitle } : {}),
           ...(updateData.metaDescription !== undefined ? { metaDescription: updateData.metaDescription } : {}),
           ...(updateData.canonicalUrl !== undefined ? { canonicalUrl: updateData.canonicalUrl } : {}),

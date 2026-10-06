@@ -39,12 +39,19 @@ import {
   Badge,
   Card,
 } from '@cardealer/ui';
-import { generatePostMasterJsonLd, type PostForJsonLd } from '@cardealer/core';
+import {
+  generatePostMasterJsonLd,
+  type PostForJsonLd,
+  extractHeadingsFromTiptap,
+  slugifyVietnamese,
+  convertTiptapToHtml,
+} from '@cardealer/core';
 import { apiClient } from '../../../lib/api-client';
 import { StickyToc } from '../../../components/StickyToc';
 import { PostBottomBar } from '../../../components/PostBottomBar';
 import { SlideInBanner } from '../../../components/SlideInBanner';
 import { EeatAuthorBox } from '../../../components/EeatAuthorBox';
+import { PostShareBar } from '../../../components/PostShareBar';
 import { getStorefrontSettings } from '../../../services/settings.service';
 
 export const revalidate = 60; // Next.js ISR: 60s
@@ -92,525 +99,14 @@ export interface PostDetailPageProps {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-
-// ============================================================================
-// CHUYỂN ĐỔI TIPTAP JSON AST SANG HTML ĐỘNG
-// ============================================================================
-interface ConvertTiptapOptions {
-  hotline?: string;
-  rawHotline?: string;
-  zalo?: string;
+/**
+ * Loại bỏ các hậu tố kỹ thuật nội bộ khỏi tên tác giả (VD: " - Quản Trị Showroom", " - Admin")
+ */
+function cleanAuthorFullName(name?: string | null): string {
+  if (!name) return 'Ban Biên Tập Hyundai Vinh';
+  return name.replace(/\s*-\s*(Quản Trị Showroom|Quản Trị Viên|Admin|Quản Lý|Nhân Viên).*$/gi, '').trim();
 }
 
-function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): string {
-  if (!doc) return '';
-  if (typeof doc === 'string') return doc;
-  if (!doc.content || !Array.isArray(doc.content)) return '';
-
-  const defaultHotline = options?.hotline || '0981234567';
-  const defaultRawHotline = options?.rawHotline || '0981.234.567';
-  const defaultZalo = options?.zalo || defaultHotline;
-
-  const renderNodes = (nodes: any[]): string => {
-    return nodes
-      .map((node) => {
-        if (!node) return '';
-        if (node.type === 'text') {
-          let text = node.text || '';
-          if (node.marks && Array.isArray(node.marks)) {
-            for (const mark of node.marks) {
-              if (mark.type === 'bold') text = `<strong>${text}</strong>`;
-              if (mark.type === 'italic') text = `<em>${text}</em>`;
-              if (mark.type === 'strike') text = `<s>${text}</s>`;
-              if (mark.type === 'underline') text = `<u>${text}</u>`;
-              if (mark.type === 'link') {
-                const href = mark.attrs?.href || '#';
-                text = `<a href="${href}" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">${text}</a>`;
-              }
-            }
-          }
-          return text;
-        }
-
-        const innerHtml = node.content && Array.isArray(node.content) ? renderNodes(node.content) : '';
-
-        if (node.type === 'paragraph') {
-          return `<p class="my-4 text-slate-700 leading-relaxed whitespace-pre-line">${innerHtml || '<br/>'}</p>`;
-        }
-        if (node.type === 'heading') {
-          const level = node.attrs?.level || 2;
-          const id = node.attrs?.id || '';
-          const idAttr = id ? ` id="${id}"` : '';
-          const headingClass =
-            level === 2
-              ? 'text-2xl font-bold mt-8 mb-4 text-slate-900 border-l-4 border-blue-600 pl-3.5 scroll-mt-20'
-              : 'text-xl font-bold mt-6 mb-3 text-slate-900 scroll-mt-20';
-          return `<h${level}${idAttr} class="${headingClass}">${innerHtml}</h${level}>`;
-        }
-        if (node.type === 'calloutBlock' || node.type === 'callout') {
-          const type = (node.attrs?.type as string) || 'info';
-          const title = node.attrs?.title || '';
-          const content = node.attrs?.content || innerHtml;
-
-          // Phối màu Callout chuẩn quốc tế (Design System Standard):
-          // Nền Tint siêu nhạt (Pastel 50/100), Viền đậm (500/600), Tiêu đề sẫm (900/950), Nội dung dễ đọc (600/700/800).
-          let borderClass = 'border-blue-600';
-          let bgClass = 'bg-blue-50';
-          let titleColor = 'text-blue-900';
-          let contentColor = 'text-slate-700';
-          let iconSvg = `<svg class="w-5 h-5 shrink-0 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
-
-          if (type === 'warning') {
-            borderClass = 'border-amber-500';
-            bgClass = 'bg-amber-50';
-            titleColor = 'text-amber-950';
-            contentColor = 'text-amber-900';
-            iconSvg = `<svg class="w-5 h-5 shrink-0 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
-          } else if (type === 'success') {
-            borderClass = 'border-emerald-500';
-            bgClass = 'bg-emerald-50';
-            titleColor = 'text-emerald-950';
-            contentColor = 'text-emerald-900';
-            iconSvg = `<svg class="w-5 h-5 shrink-0 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 12 20 22 4 22 4 12"/><rect width="20" height="5" x="2" y="7"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>`;
-          } else if (type === 'note') {
-            borderClass = 'border-slate-400';
-            bgClass = 'bg-slate-100';
-            titleColor = 'text-slate-900';
-            contentColor = 'text-slate-600';
-            iconSvg = `<svg class="w-5 h-5 shrink-0 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`;
-          }
-
-          const titleHtml = title
-            ? `<h4 class="font-bold text-base leading-snug tracking-tight ${titleColor}">${title}</h4>`
-            : '';
-
-          return `
-            <aside class="not-prose my-6 rounded-r-2xl rounded-l-sm border-l-4 ${borderClass} ${bgClass} p-4.5 sm:p-5 shadow-xs transition-colors" role="${type === 'warning' ? 'alert' : 'note'}">
-              <div class="flex items-start gap-3.5">
-                <div class="mt-0.5 shrink-0">${iconSvg}</div>
-                <div class="flex-1 space-y-1.5">
-                  ${titleHtml}
-                  ${content ? `<div class="text-sm leading-relaxed whitespace-pre-line ${contentColor}">${content}</div>` : ''}
-                </div>
-              </div>
-            </aside>`;
-        }
-        if (node.type === 'bulletList') {
-          return `<ul class="list-disc pl-6 my-4 space-y-2 text-slate-700">${innerHtml}</ul>`;
-        }
-        if (node.type === 'orderedList') {
-          return `<ol class="list-decimal pl-6 my-4 space-y-2 text-slate-700">${innerHtml}</ol>`;
-        }
-        if (node.type === 'listItem') {
-          return `<li>${innerHtml}</li>`;
-        }
-        if (node.type === 'blockquote') {
-          return `<blockquote class="border-l-4 border-slate-300 pl-4 italic my-4 text-slate-600 whitespace-pre-line">${innerHtml}</blockquote>`;
-        }
-        if (node.type === 'image' || node.type === 'imageBlock' || node.type === 'singleImage') {
-          const src = node.attrs?.src || node.attrs?.url || '';
-          const alt = node.attrs?.alt || 'Hình ảnh xe Hyundai';
-          const caption = node.attrs?.caption || '';
-          return `
-            <figure class="my-8 mx-auto max-w-4xl text-center not-prose">
-              <div class="overflow-hidden rounded-2xl border border-slate-200/80 shadow-md bg-slate-100 group">
-                <img src="${src}" alt="${alt}" loading="lazy" class="w-full h-auto object-cover max-h-[550px] transition-transform duration-300 group-hover:scale-[1.01]" />
-              </div>
-              ${caption ? `<figcaption class="mt-2.5 text-center text-xs sm:text-sm text-slate-500 italic font-medium flex items-center justify-center gap-1.5"><span class="inline-block w-1.5 h-1.5 rounded-full bg-blue-600"></span>${caption}</figcaption>` : ''}
-            </figure>`;
-        }
-        if (node.type === 'imageGallery' || node.type === 'galleryBlock') {
-          const title = node.attrs?.title || 'Bộ Sưu Tập Hình Ảnh Chi Tiết';
-          const layout = node.attrs?.layout || node.attrs?.style || 'slider';
-          const images = (node.attrs?.images as Array<{ url: string; alt?: string; caption?: string }>) || [];
-          if (!images.length) return '';
-
-          if (layout === 'grid') {
-            const gridItems = images
-              .map(
-                (img) => `
-              <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs group">
-                <img src="${img.url}" alt="${img.alt || 'Hình ảnh'}" loading="lazy" class="w-full h-48 sm:h-56 object-cover transition-transform duration-300 group-hover:scale-105" />
-                ${img.caption ? `<p class="p-2.5 text-xs text-slate-600 text-center italic bg-slate-50 border-t border-slate-100">${img.caption}</p>` : ''}
-              </div>`
-              )
-              .join('');
-            return `
-              <div class="my-8 not-prose">
-                ${title ? `<h3 class="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2"><span>📸</span> ${title}</h3>` : ''}
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">${gridItems}</div>
-              </div>`;
-          } else {
-            const slides = images
-              .map(
-                (img, i) => `
-              <div class="shrink-0 snap-center w-[85vw] sm:w-[380px] rounded-2xl overflow-hidden border border-slate-200/90 bg-white shadow-sm flex flex-col group">
-                <div class="relative overflow-hidden aspect-[16/10] bg-slate-100">
-                  <img src="${img.url}" alt="${img.alt || 'Hình ảnh'}" loading="lazy" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
-                  <span class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md text-white text-[11px] font-mono">${i + 1}/${images.length}</span>
-                </div>
-                ${img.caption ? `<div class="p-3 text-xs text-slate-600 italic bg-white border-t border-slate-100">${img.caption}</div>` : ''}
-              </div>`
-              )
-              .join('');
-            return `
-              <div class="my-8 not-prose">
-                <div class="flex items-center justify-between mb-3">
-                  ${title ? `<h3 class="text-xl font-bold text-slate-900 flex items-center gap-2"><span>📸</span> ${title}</h3>` : ''}
-                  <span class="text-xs text-slate-400 font-medium hidden sm:inline">👈 Vuốt ngang để xem thêm 👉</span>
-                </div>
-                <div class="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-3 scrollbar-thin scrollbar-thumb-slate-300">${slides}</div>
-              </div>`;
-          }
-        }
-        if (node.type === 'specTable' || node.type === 'specComparisonBlock') {
-          const title = node.attrs?.title || 'Bảng So Sánh Thông Số Kỹ Thuật';
-          const versions = (node.attrs?.versions as string[]) || [];
-          const rows = (node.attrs?.rows as Array<{ specName: string; values: string[] }>) || [];
-          if (!versions.length || !rows.length) return '';
-
-          const headerCols = versions
-            .map((v) => `<th class="py-3.5 px-4 font-bold text-center text-white bg-[#002C6C] border-l border-blue-900/50 min-w-[160px]">${v}</th>`)
-            .join('');
-          const bodyRows = rows
-            .map((r, idx) => {
-              const isEven = idx % 2 === 0;
-              const cells = (r.values || [])
-                .map((val) => `<td class="py-3 px-4 text-center text-xs sm:text-sm text-slate-700 border-l border-slate-200">${val || '-'}</td>`)
-                .join('');
-              return `
-                <tr class="${isEven ? 'bg-slate-50/70' : 'bg-white'} border-b border-slate-200/80 hover:bg-blue-50/40 transition-colors">
-                  <td class="py-3 px-4 font-semibold text-xs sm:text-sm text-slate-900 min-w-[140px] sticky left-0 ${isEven ? 'bg-slate-50' : 'bg-white'} shadow-[2px_0_5px_rgba(0,0,0,0.03)]">${r.specName}</td>
-                  ${cells}
-                </tr>`;
-            })
-            .join('');
-
-          return `
-            <div class="my-8 not-prose">
-              <h3 class="text-xl font-bold text-slate-900 mb-3 flex items-center gap-2"><span>📊</span> ${title}</h3>
-              <div class="overflow-x-auto rounded-2xl border border-slate-200/90 shadow-md bg-white scrollbar-thin">
-                <table class="w-full text-left text-sm border-collapse">
-                  <thead>
-                    <tr>
-                      <th class="py-3.5 px-4 font-bold text-white bg-[#001A44] min-w-[140px] sticky left-0 z-10">Thông Số / Tính Năng</th>
-                      ${headerCols}
-                    </tr>
-                  </thead>
-                  <tbody>${bodyRows}</tbody>
-                </table>
-              </div>
-              <p class="text-xs text-slate-400 mt-2 italic">* Thông số kỹ thuật có thể được điều chỉnh theo công bố mới nhất từ nhà sản xuất.</p>
-            </div>`;
-        }
-        if (node.type === 'ctaButton' || node.type === 'ctaButtonBlock') {
-          const buttonText = node.attrs?.buttonText || 'Liên Hệ Tư Vấn Ngay';
-          const actionType = node.attrs?.actionType || 'hotline';
-          const customUrl = node.attrs?.customUrl || '';
-          const customPhone = (node.attrs?.phoneNumber as string || '').trim();
-          const targetHotline = (customPhone ? customPhone.replace(/\D/g, '') : '') || defaultHotline;
-          const targetZalo = (customPhone ? customPhone.replace(/\D/g, '') : '') || defaultZalo;
-          const subtext = node.attrs?.subtext || '';
-          const variant = node.attrs?.variant || 'red';
-
-          let href = '#';
-          let targetAttr = '';
-          let onClickAttr = '';
-
-          if (actionType === 'hotline') {
-            href = `tel:${targetHotline}`;
-          } else if (actionType === 'zalo') {
-            href = `https://zalo.me/${targetZalo}`;
-            targetAttr = 'target="_blank" rel="noopener noreferrer"';
-          } else if (actionType === 'quoteForm') {
-            href = '#lead-form';
-            onClickAttr = 'onclick="document.getElementById(\'lead-form\')?.scrollIntoView({behavior:\'smooth\'})"';
-          } else if (actionType === 'customLink') {
-            href = customUrl || '#';
-            targetAttr = 'target="_blank" rel="noopener noreferrer"';
-          }
-
-          let btnColor = 'bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-red-500/25';
-          if (variant === 'blue') {
-            btnColor = 'bg-gradient-to-r from-blue-700 via-blue-600 to-sky-600 hover:from-blue-800 hover:to-sky-700 text-white shadow-blue-500/25';
-          } else if (variant === 'emerald') {
-            btnColor = 'bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white shadow-emerald-500/25';
-          }
-
-          // Loại bỏ icon call theo yêu cầu người dùng, làm sạch nếu text có gắn kèm emoji 📞
-          const cleanButtonText = buttonText.replace(/^\📞\s*/, '');
-
-          return `
-            <div class="my-8 mx-auto max-w-lg text-center not-prose p-5 rounded-2xl bg-slate-50 border border-slate-200/80 shadow-xs">
-              <a href="${href}" ${targetAttr} ${onClickAttr} class="inline-flex items-center justify-center gap-2.5 w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-sm sm:text-base shadow-lg transition-all transform hover:scale-[1.02] active:scale-95 ${btnColor}">
-                <span>${cleanButtonText}</span>
-              </a>
-              ${subtext ? `<p class="mt-2 text-xs text-slate-500 font-medium whitespace-pre-line">${subtext}</p>` : ''}
-            </div>`;
-        }
-        if (node.type === 'prosCons' || node.type === 'prosConsBlock') {
-          const title = node.attrs?.title || 'Đánh Giá Ưu & Nhược Điểm';
-          const pros = (node.attrs?.pros as string[]) || [];
-          const cons = (node.attrs?.cons as string[]) || [];
-
-          const prosList = pros
-            .filter(Boolean)
-            .map(
-              (p) => `
-            <li class="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700">
-              <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs shrink-0 font-bold mt-0.5">✓</span>
-              <span class="leading-relaxed font-medium whitespace-pre-line">${p}</span>
-            </li>`
-            )
-            .join('');
-
-          const consList = cons
-            .filter(Boolean)
-            .map(
-              (c) => `
-            <li class="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700">
-              <span class="w-5 h-5 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center text-xs shrink-0 font-bold mt-0.5">✕</span>
-              <span class="leading-relaxed font-medium whitespace-pre-line">${c}</span>
-            </li>`
-            )
-            .join('');
-
-          return `
-            <div class="my-8 not-prose">
-              <h3 class="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2"><span>⚖️</span> ${title}</h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="p-5 rounded-2xl bg-emerald-50/60 border border-emerald-200/90 shadow-xs">
-                  <div class="flex items-center gap-2 mb-3.5 pb-2.5 border-b border-emerald-200">
-                    <span class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-black text-xs uppercase tracking-wider flex items-center gap-1">
-                      👍 Ưu Điểm
-                    </span>
-                    <span class="text-xs text-emerald-800 font-bold">(${pros.length} điểm mạnh)</span>
-                  </div>
-                  <ul class="space-y-2.5">${prosList || '<li class="text-xs text-slate-400 italic">Đang cập nhật ưu điểm...</li>'}</ul>
-                </div>
-                <div class="p-5 rounded-2xl bg-rose-50/60 border border-rose-200/90 shadow-xs">
-                  <div class="flex items-center gap-2 mb-3.5 pb-2.5 border-b border-rose-200">
-                    <span class="px-2.5 py-1 rounded-lg bg-rose-600 text-white font-black text-xs uppercase tracking-wider flex items-center gap-1">
-                      👎 Nhược Điểm
-                    </span>
-                    <span class="text-xs text-rose-800 font-bold">(${cons.length} điểm lưu ý)</span>
-                  </div>
-                  <ul class="space-y-2.5">${consList || '<li class="text-xs text-slate-400 italic">Đang cập nhật nhược điểm...</li>'}</ul>
-                </div>
-              </div>
-            </div>`;
-        }
-        if (node.type === 'faqBlock') {
-          const questions = (node.attrs?.questions as Array<{ question: string; answer: string }>) || [];
-          if (!questions.length) return '';
-          const faqItems = questions
-            .map(
-              (q, i) => `
-            <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm mb-3">
-              <div class="font-bold text-slate-900 flex items-center gap-2 mb-2 text-base">
-                <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs shrink-0 font-bold">${i + 1}</span>
-                ${q.question || 'Câu hỏi'}
-              </div>
-              <p class="text-slate-600 text-sm pl-8 leading-relaxed whitespace-pre-line">${q.answer || 'Nội dung câu trả lời đang được cập nhật...'}</p>
-            </div>`
-            )
-            .join('');
-          return `
-            <div class="my-8">
-              <h3 class="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <span>❓</span> Câu Hỏi Khách Hàng Quan Tâm (FAQ)
-              </h3>
-              <div class="space-y-3">${faqItems}</div>
-            </div>`;
-        }
-        if (node.type === 'youtubeBlock') {
-          const videoId = node.attrs?.videoId || '';
-          const caption = node.attrs?.caption || '';
-          return `
-            <figure class="my-8">
-              <div class="relative w-full aspect-video rounded-xl overflow-hidden bg-slate-900 shadow-md">
-                <iframe
-                  src="https://www.youtube-nocookie.com/embed/${videoId}"
-                  title="YouTube video player"
-                  class="w-full h-full border-0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowfullscreen
-                ></iframe>
-              </div>
-              ${caption ? `<figcaption class="text-center text-xs text-slate-500 mt-2 italic">${caption}</figcaption>` : ''}
-            </figure>`;
-        }
-        if (node.type === 'tikTokBlock') {
-          const videoId = node.attrs?.videoId || '';
-          const title = node.attrs?.title || '';
-          return `
-            <div class="my-8 p-4 rounded-xl border border-slate-200 bg-slate-50 flex flex-col items-center">
-              <p class="text-sm font-semibold text-slate-800 mb-2">🎬 ${title || 'Xem trên TikTok'}</p>
-              <a href="https://www.tiktok.com/@hyundai/video/${videoId}" target="_blank" rel="noopener noreferrer" class="text-xs text-blue-600 hover:underline">
-                Mở video TikTok (#${videoId}) &rarr;
-              </a>
-            </div>`;
-        }
-        if (node.type === 'relatedCarBlock') {
-          const carName = node.attrs?.carName || 'Hyundai Accent 2026';
-          const carSlug = node.attrs?.slug || 'hyundai-accent';
-          const minPrice = Number(node.attrs?.minPrice) || 439000000;
-          const imageUrl = node.attrs?.imageUrl || '/images/cars/accent.webp';
-          const seatCount = Number(node.attrs?.seatCount) || 5;
-          const fuelType = node.attrs?.fuelType || 'Xăng 1.5L Smartstream';
-          const formattedPrice = minPrice.toLocaleString('vi-VN');
-          return `
-            <div class="my-8 p-5 rounded-2xl border border-slate-200 bg-gradient-to-r from-blue-50/50 to-white flex flex-col sm:flex-row items-center gap-5 shadow-sm">
-              <img src="${imageUrl}" alt="${carName}" class="w-full sm:w-48 h-32 object-cover rounded-xl shrink-0" />
-              <div class="flex-1">
-                <span class="text-xs font-semibold text-blue-600 uppercase tracking-wider">Mẫu xe quan tâm</span>
-                <h4 class="text-lg font-bold text-slate-900 mt-1">${carName}</h4>
-                <div class="flex items-center gap-3 text-xs text-slate-500 mt-1 mb-2">
-                  <span>💺 ${seatCount} chỗ ngồi</span>
-                  <span>•</span>
-                  <span>⛽ ${fuelType}</span>
-                </div>
-                <p class="text-sm text-slate-600">Giá niêm yết từ: <strong class="text-red-600 font-bold text-base">${formattedPrice} đ</strong></p>
-                <a href="/xe/${carSlug}" class="inline-block mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors">
-                  Xem chi tiết xe &rarr;
-                </a>
-              </div>
-            </div>`;
-        }
-        if (node.type === 'priceTableBlock') {
-          const title = node.attrs?.title || 'Bảng Giá Xe Hyundai Mới Nhất';
-          const prices = (node.attrs?.prices as any[]) || [];
-          let tableHtml = '';
-          if (Array.isArray(prices) && prices.length > 0) {
-            const rows = prices
-              .map((p) => {
-                const version = p.version || p.name || 'Phiên bản';
-                const listed = Number(p.listedPrice || p.price || 0);
-                const listedStr = listed > 0 ? `${listed.toLocaleString('vi-VN')}&nbsp;₫` : 'Liên hệ';
-                const disc = Number(p.discount || 0);
-                const discStr = disc > 0
-                  ? `-${disc.toLocaleString('vi-VN')}&nbsp;₫`
-                  : '<span class="text-slate-400 font-normal">Liên hệ</span>';
-                const rolling = Number(p.rollingPrice || p.onRoadPriceEstimate || 0);
-                const rollingStr = rolling > 0 ? `${rolling.toLocaleString('vi-VN')}&nbsp;₫` : 'Liên hệ';
-                const cleanVersionEscaped = version.replace(/'/g, "\\'");
-
-                return `
-                  <tr class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors">
-                    <td class="py-3.5 px-4 font-semibold text-slate-900 text-left align-middle">
-                      <div class="leading-snug">${version}</div>
-                    </td>
-                    <td class="py-3.5 px-4 text-right whitespace-nowrap text-slate-600 font-mono text-sm align-middle">
-                      ${listedStr}
-                    </td>
-                    <td class="py-3.5 px-4 text-right whitespace-nowrap text-emerald-600 font-semibold font-mono text-sm align-middle">
-                      ${discStr}
-                    </td>
-                    <td class="py-3.5 px-4 text-right whitespace-nowrap text-blue-700 font-bold font-mono text-base align-middle">
-                      ${rollingStr}
-                    </td>
-                    <td class="py-3.5 px-4 text-center whitespace-nowrap align-middle">
-                      <button
-                        type="button"
-                        onclick="
-                          const form = document.getElementById('lead-form') || document.querySelector('[data-role=\\'lead-form\\']') || document.querySelector('form');
-                          if (form) {
-                            form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            const inp = form.querySelector('input[type=\\'tel\\'], input[name=\\'phone\\'], input');
-                            if (inp) {
-                              setTimeout(() => {
-                                inp.focus();
-                                inp.setAttribute('placeholder', 'Nhận báo giá ${cleanVersionEscaped}...');
-                              }, 400);
-                            }
-                          } else {
-                            window.open('https://zalo.me/${defaultZalo}', '_blank');
-                          }
-                        "
-                        class="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 active:scale-95 rounded-lg shadow-xs hover:shadow transition-all cursor-pointer whitespace-nowrap"
-                        title="Nhận báo giá lăn bánh chi tiết cho ${cleanVersionEscaped}"
-                      >
-                        Báo giá
-                      </button>
-                    </td>
-                  </tr>`;
-              })
-              .join('');
-
-            tableHtml = `
-              <div class="overflow-x-auto my-4 rounded-xl border border-slate-200 shadow-sm bg-white">
-                <table class="w-full text-sm border-collapse">
-                  <thead class="bg-slate-50 border-b border-slate-200 text-xs uppercase font-bold text-slate-700">
-                    <tr>
-                      <th class="py-3.5 px-4 text-left w-[36%] min-w-[200px]">Phiên Bản Xe</th>
-                      <th class="py-3.5 px-4 text-right whitespace-nowrap">Giá Niêm Yết</th>
-                      <th class="py-3.5 px-4 text-right whitespace-nowrap">Ưu Đãi Đại Lý</th>
-                      <th class="py-3.5 px-4 text-right whitespace-nowrap">Giá Lăn Bánh Tạm Tính</th>
-                      <th class="py-3.5 px-4 text-center whitespace-nowrap w-[110px]">Hành Động</th>
-                    </tr>
-                  </thead>
-                  <tbody>${rows}</tbody>
-                </table>
-              </div>`;
-          }
-
-          return `
-            <div class="my-8 p-4 sm:p-6 rounded-2xl border border-blue-200/80 bg-blue-50/40 shadow-xs">
-              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
-                <h3 class="text-lg sm:text-xl font-bold text-slate-900 flex items-center gap-2">
-                  ${title}
-                </h3>
-                <span class="text-xs text-blue-700 font-semibold flex items-center gap-1">
-                  <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Báo giá cập nhật mới nhất
-                </span>
-              </div>
-              ${tableHtml}
-              <p class="text-xs text-slate-500 mt-2">* Giá lăn bánh tạm tính đã bao gồm VAT, lệ phí trước bạ, biển số và phí đường bộ. Giá thực tế có thể giảm sâu hơn tùy chính sách ưu đãi tháng.</p>
-            </div>`;
-        }
-        if (node.type === 'leadFormBlock' || node.type === 'inlineQuickForm') {
-          const headline = node.attrs?.headline || 'Nhận Báo Giá Lăn Bánh Chi Tiết Tận Tay';
-          const subheadline = node.attrs?.subheadline || 'Để lại thông tin, chuyên viên tư vấn sẽ gửi bảng tính chi phí lăn bánh chính xác và số tiền trả góp hàng tháng qua Zalo trong 5 phút.';
-          const buttonText = node.attrs?.buttonText || 'Gửi Báo Giá Ngay';
-          const carName = node.attrs?.carName || 'Hyundai Accent / Creta';
-          return `
-            <div id="lead-form" data-role="lead-form" class="my-8 p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-blue-700 to-indigo-900 text-white shadow-xl">
-              <div class="max-w-xl mx-auto text-center space-y-3">
-                <span class="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-semibold uppercase tracking-wider text-amber-300">
-                  ⚡ Ưu Đãi Độc Quyền Showroom
-                </span>
-                <h3 class="text-2xl font-bold">${headline}</h3>
-                <p class="text-sm text-blue-100 leading-relaxed whitespace-pre-line">${subheadline}</p>
-                <form class="mt-6 flex flex-col sm:flex-row gap-3 justify-center items-center max-w-md mx-auto" onsubmit="event.preventDefault(); alert('Cảm ơn bạn! Chuyên viên Hyundai Vinh sẽ liên hệ qua Zalo/SĐT trong 5 phút.');">
-                  <input type="tel" placeholder="Nhập số điện thoại Zalo..." required class="w-full sm:flex-1 px-4 py-3 rounded-xl bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder:text-slate-400 font-medium" />
-                  <button type="submit" class="w-full sm:w-auto px-6 py-3 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-sm rounded-xl shadow-lg transition-all shrink-0">
-                    ${buttonText}
-                  </button>
-                </form>
-                <p class="text-[11px] text-blue-200 mt-2">Áp dụng cho dòng xe: <strong>${carName}</strong> • Cam kết bảo mật thông tin 100%</p>
-              </div>
-            </div>`;
-        }
-        if (node.type === 'gatedContent') {
-          // Legacy gatedContent → hiển thị dưới dạng nút CTA đơn giản (lấy Hotline từ Admin)
-          const ctaTitle = (node.attrs?.title || 'Nhận Báo Giá Lăn Bánh Ưu Đãi').replace(/^\📞\s*/, '');
-          return `
-            <div class="my-8 mx-auto max-w-lg text-center not-prose p-5 rounded-2xl bg-slate-50 border border-slate-200/80 shadow-xs">
-              <a href="tel:${defaultHotline}" class="inline-flex items-center justify-center gap-2.5 w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-sm sm:text-base shadow-lg transition-all transform hover:scale-[1.02] active:scale-95 bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-red-500/25">
-                <span>${ctaTitle}</span>
-              </a>
-            </div>`;
-        }
-        if (node.type === 'horizontalRule') {
-          return `<hr class="my-8 border-slate-200" />`;
-        }
-        return innerHtml;
-      })
-      .join('');
-  };
-
-  return renderNodes(doc.content);
-}
 
 async function getRelatedPosts(categorySlug?: string, currentSlug?: string): Promise<PostDetailData[]> {
   try {
@@ -664,6 +160,9 @@ export async function generateMetadata({ params, searchParams }: PostDetailPageP
     };
   }
 
+  const rawAuthorName = post.author?.fullName || 'Hyundai Vinh';
+  const resolvedAuthorName = cleanAuthorFullName(rawAuthorName);
+
   const title = post.metaTitle || `${post.tieuDe} | Đại Lý Hyundai Vinh`;
   const description =
     post.metaDescription ||
@@ -687,7 +186,7 @@ export async function generateMetadata({ params, searchParams }: PostDetailPageP
       type: 'article',
       publishedTime: post.publishedAt || post.createdAt,
       modifiedTime: post.updatedAt || post.publishedAt || post.createdAt,
-      authors: [post.author?.fullName || 'Hyundai Vinh'],
+      authors: [resolvedAuthorName],
       section: post.category?.tenChuyenMuc || 'Tin tức',
       tags: post.tags?.map((t) => t.tenTag || t.tag || '').filter(Boolean),
       images: [
@@ -720,6 +219,8 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
     getPostBySlug(slug, token),
     getStorefrontSettings(),
   ]);
+
+  const postHeadings = post?.noiDung ? extractHeadingsFromTiptap(post.noiDung) : [];
 
   const relatedPosts = post ? await getRelatedPosts(post.category?.slug, post.slug) : [];
 
@@ -778,6 +279,9 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
     });
   }
 
+  const rawAuthorName = post.author?.fullName || settings.author?.fullName;
+  const resolvedAuthorName = cleanAuthorFullName(rawAuthorName);
+
   // 2. CHUẨN BỊ MASTER SCHEMA JSON-LD (@cardealer/core)
   const postForJsonLd: PostForJsonLd = {
     id: post.id,
@@ -795,7 +299,7 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
     author: post.author
       ? {
         id: post.author.id,
-        name: post.author.fullName,
+        name: resolvedAuthorName,
         jobTitle: post.author.role,
         avatarUrl: post.author.avatarUrl || undefined,
         phone: post.author.phone || undefined,
@@ -812,7 +316,19 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
   const isTechnicalRole = (r?: string | null) => {
     if (!r) return true;
     const lower = r.trim().toLowerCase();
-    return ['admin', 'manager', 'saler', 'sales', 'user', 'editor', 'superadmin'].includes(lower);
+    return [
+      'admin',
+      'manager',
+      'saler',
+      'sales',
+      'user',
+      'editor',
+      'superadmin',
+      'quản trị showroom',
+      'quản trị viên',
+      'quản lý',
+      'nhân viên',
+    ].includes(lower);
   };
 
   const resolvedJobTitle = !isTechnicalRole(post.author?.role)
@@ -837,7 +353,7 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
       },
     },
     defaultAuthor: {
-      name: post.author?.fullName || settings.author.fullName,
+      name: resolvedAuthorName,
       jobTitle: resolvedJobTitle,
       avatarUrl: authorAvatarFull,
       phone: post.author?.phone || settings.author.phone || rawHotline,
@@ -921,35 +437,47 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
             {post.tieuDe}
           </h1>
 
-          {/* E-E-A-T Metadata Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-4 py-4 border-y border-slate-100 text-xs sm:text-sm text-slate-500">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center font-bold text-blue-800 text-sm overflow-hidden flex-shrink-0">
-                {post.author?.fullName ? post.author.fullName.charAt(0).toUpperCase() : <User className="w-4 h-4 text-blue-700" />}
-              </div>
-              <div className="font-semibold text-slate-900 flex items-center gap-1.5 text-sm">
-                <span>{post.author?.fullName || settings.author?.fullName || 'Ban Biên Tập Hyundai Vinh'}</span>
-                <span title="Tác giả được xác minh bởi Hyundai Vinh" className="inline-flex">
-                  <CheckCircle2 className="w-4 h-4 text-blue-600" />
-                </span>
+          {/* E-E-A-T Metadata Bar (Redesigned & Clean) */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 border-y border-slate-100 text-xs text-slate-500">
+            {/* Cụm Tác giả E-E-A-T */}
+            <div className="flex items-center gap-3">
+              {post.author?.avatarUrl ? (
+                <img
+                  src={post.author.avatarUrl}
+                  alt={resolvedAuthorName}
+                  className="w-10 h-10 rounded-full object-cover border-2 border-slate-100 shadow-2xs shrink-0"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-700 via-blue-600 to-sky-600 text-white font-bold text-sm flex items-center justify-center border-2 border-slate-100 shadow-2xs shrink-0">
+                  {resolvedAuthorName ? resolvedAuthorName.charAt(0).toUpperCase() : <User className="w-4 h-4" />}
+                </div>
+              )}
+              <div className="leading-snug">
+                <div className="font-bold text-slate-900 flex items-center gap-1.5 text-sm">
+                  <span>{resolvedAuthorName}</span>
+                  <span title="Tác giả được xác minh chuyên môn bởi Hyundai Vinh" className="inline-flex">
+                    <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium">
+                  {resolvedJobTitle}
+                </p>
               </div>
             </div>
 
-            <div className="flex items-center flex-wrap gap-4 text-slate-500">
+            {/* Cụm Meta thông tin & Nút chia sẻ (Đã bỏ lượt xem) */}
+            <div className="flex items-center flex-wrap gap-3 sm:gap-4 text-slate-500">
               <span className="flex items-center gap-1.5" title="Ngày xuất bản">
-                <Calendar className="w-4 h-4 text-slate-400" />
+                <Calendar className="w-3.5 h-3.5 text-slate-400" />
                 <time dateTime={post.publishedAt || post.createdAt}>{formattedDate}</time>
               </span>
+              <span className="text-slate-300 hidden sm:inline">•</span>
               <span className="flex items-center gap-1.5" title="Thời gian đọc ước tính">
-                <Clock className="w-4 h-4 text-slate-400" />
+                <Clock className="w-3.5 h-3.5 text-slate-400" />
                 {post.readingTime || 4} phút đọc
               </span>
-              {post.viewCount !== undefined && (
-                <span className="hidden sm:flex items-center gap-1.5" title="Lượt xem">
-                  <Eye className="w-4 h-4 text-slate-400" />
-                  {post.viewCount.toLocaleString('vi-VN')} xem
-                </span>
-              )}
+              <span className="text-slate-300 hidden sm:inline">•</span>
+              <PostShareBar variant="compact" title={post.tieuDe} />
             </div>
           </div>
         </div>
@@ -958,23 +486,21 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
       {/* ======================================================================
           3. NỘI DUNG CHÍNH (2 CỘT: CONTENT + SIDEBAR)
       ====================================================================== */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-          {/* CỘT TRÁI: BÀI VIẾT CHI TIẾT (8 CỘT) */}
-          <section className="lg:col-span-8 bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/90 shadow-sm">
-            {/* Ảnh đại diện 16:9 */}
+          {/* CỘT TRÁI: ARTICLE CONTENT (8 CỘT) */}
+          <section className="lg:col-span-8 min-w-0">
+            {/* Ảnh đại diện Featured Image */}
             {post.anhDaiDienUrl && (
-              <figure className="mb-8 rounded-xl overflow-hidden border border-slate-100 bg-slate-100">
-                <div className="aspect-video relative overflow-hidden">
-                  <img
-                    src={post.anhDaiDienUrl}
-                    alt={post.anhDaiDienAlt || post.tieuDe}
-                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-[1.01]"
-                    loading="eager"
-                  />
-                </div>
+              <figure className="mb-8 overflow-hidden rounded-2xl border border-slate-200 shadow-md">
+                <img
+                  src={post.anhDaiDienUrl}
+                  alt={post.anhDaiDienAlt || post.tieuDe}
+                  className="w-full h-auto object-cover max-h-[500px]"
+                  loading="eager"
+                />
                 {post.anhDaiDienAlt && (
-                  <figcaption className="text-center text-xs text-slate-500 py-2.5 px-4 bg-slate-50 border-t border-slate-100 italic">
+                  <figcaption className="p-3 text-center text-xs text-slate-500 italic bg-white border-t border-slate-100">
                     {post.anhDaiDienAlt}
                   </figcaption>
                 )}
@@ -989,7 +515,7 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
             )}
 
             {/* Nội dung Tiptap / Render Content Blocks */}
-            <div className="prose prose-slate prose-lg max-w-none space-y-6 text-slate-700 leading-relaxed">
+            <div id="article-content" className="prose prose-slate prose-lg max-w-none space-y-6 text-slate-700 leading-relaxed">
               {post.noiDungHtml ? (
                 <div
                   dangerouslySetInnerHTML={{ __html: post.noiDungHtml }}
@@ -1023,12 +549,15 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
               </div>
             )}
 
-            {/* Chân Tác Giả E-E-A-T Chuẩn Google & Inbound Contact */}
+            {/* Thanh Chia Sẻ Mạng Xã Hội */}
+            <PostShareBar title={post.tieuDe} className="mt-8" />
+
+            {/* Chân Tác Giả E-E-A-T Chuẩn Google & Thẩm Quyền Showroom */}
             <EeatAuthorBox
               author={
                 post.author
                   ? {
-                    fullName: post.author.fullName,
+                    fullName: resolvedAuthorName,
                     role: post.author.role,
                     avatarUrl: post.author.avatarUrl,
                     phone: post.author.phone,
@@ -1044,7 +573,7 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
           {/* CỘT PHẢI: CONVERSION SIDEBAR (4 CỘT) */}
           <aside className="lg:col-span-4 space-y-6 lg:sticky lg:top-24">
             {/* Mục Lục Bài Viết Thông Minh (StickyToc Client Island) */}
-            <StickyToc className="mb-2" />
+            <StickyToc headings={postHeadings} className="mb-2" />
 
             {/* Khung Tư Vấn Trực Tiếp 24/7 */}
             <Card className="p-6 bg-gradient-to-br from-blue-900 via-blue-950 to-slate-950 text-white rounded-2xl border-none shadow-lg relative overflow-hidden">

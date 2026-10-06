@@ -2,7 +2,7 @@
 
 // 🧠 Mental Model: Khối Hỏi Đáp FAQ chuẩn Schema FAQPage (FaqBlock).
 // Tối ưu hóa SEO Rich Snippets cho kết quả tìm kiếm Google.
-// Quản lý linh hoạt danh sách câu hỏi - giải đáp chi tiết, thêm/xóa từng câu hỏi.
+// Quản lý linh hoạt tiêu đề khối FAQ tùy biến và danh sách câu hỏi - giải đáp chi tiết, thêm/xóa từng câu hỏi.
 
 import React from 'react';
 import { FileQuestion, Plus, Trash2 } from 'lucide-react';
@@ -34,10 +34,10 @@ export function FaqBlock({ block, onUpdate }: FaqBlockProps) {
   };
 
   return (
-    <div className="space-y-3 p-3.5 bg-emerald-500/5 rounded-xl border border-emerald-500/20">
+    <div className="space-y-3.5 p-4 bg-emerald-500/5 rounded-xl border border-emerald-500/20">
       <div className="flex items-center justify-between">
         <label className="text-xs font-semibold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-          <FileQuestion size={14} /> Danh sách câu hỏi & giải đáp (Schema FAQPage)
+          <FileQuestion size={14} /> Khối Hỏi Đáp FAQ (Schema FAQPage)
         </label>
         <Button
           type="button"
@@ -48,6 +48,19 @@ export function FaqBlock({ block, onUpdate }: FaqBlockProps) {
         >
           <Plus size={13} /> Thêm câu hỏi
         </Button>
+      </div>
+
+      {/* Ô nhập tiêu đề khối FAQ */}
+      <div className="space-y-1">
+        <label className="block text-[11px] font-semibold text-slate-300">
+          Tiêu đề khối FAQ hiển thị trên bài viết
+        </label>
+        <Input
+          value={block.title || ''}
+          onChange={(e) => onUpdate({ title: e.target.value })}
+          placeholder="e.g. Câu Hỏi Thường Gặp (FAQ), Giải Đáp Thắc Mắc..."
+          className="h-9 bg-slate-950/80 border-white/10 text-slate-100 text-xs font-semibold placeholder:text-slate-600 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/60"
+        />
       </div>
 
       <div className="space-y-3">

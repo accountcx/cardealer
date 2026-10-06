@@ -30,6 +30,7 @@ export interface EditorBlock {
   level?: number; // Cho heading (2, 3)
   content?: string; // Cho paragraph, heading, callout
   title?: string;
+  ignoreToc?: boolean; // Cơ chế Opt-out: Ẩn khỏi Mục lục (TOC)
   calloutType?: 'info' | 'warning' | 'success' | 'note';
   videoId?: string;
   videoUrl?: string;
@@ -73,6 +74,7 @@ export type MediaPickerTarget =
   | { type: 'featured' }
   | { type: 'singleImage'; blockId: string }
   | { type: 'gallery'; blockId: string }
+  | { type: 'relatedCar'; blockId: string }
   | null;
 
 export type PostStatus = 'draft' | 'published' | 'scheduled' | 'archived';

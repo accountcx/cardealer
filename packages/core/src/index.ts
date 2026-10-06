@@ -6,4 +6,5 @@ export * from './seo/score';
 export * from './seo/redirects';
 export * from './tiptap/extractor';
 export * from './tiptap/steps-extractor';
+export * from './tiptap/render-html';
 export * from './seo/static-page-json-ld';

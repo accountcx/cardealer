@@ -149,4 +149,51 @@ describe('Phase 4.4: Car Detail Schema & Multi-Tier JSON-LD', () => {
     expect(breadcrumb.itemListElement[2].name).toBe('Hyundai Tucson 2026');
     expect(breadcrumb.itemListElement[2].item).toBe('https://salerhyundai.vn/xe/tucson-2026');
   });
+
+  it('TS-03: generateCarJsonLd tạo schema Article & FAQ khi xe có bài viết car.article', () => {
+    const siteUrl = 'https://salerhyundai.vn';
+    const carWithArticle: CarDetail = {
+      ...mockCarDetail,
+      article: {
+        id: 'art-1',
+        carId: 'car-tucson-uuid',
+        tieuDe: 'Đánh Giá Chi Tiết Hyundai Tucson 2026: Đột Phá Thiết Kế & Vận Hành',
+        tomTat: 'Đánh giá toàn diện Hyundai Tucson thế hệ mới.',
+        noiDung: {
+          type: 'doc',
+          content: [
+            {
+              type: 'faqBlock',
+              attrs: {
+                title: 'Hỏi đáp về Tucson 2026',
+                questions: [
+                  { question: 'Tucson 2026 giá bao nhiêu?', answer: 'Từ 769 triệu đồng.' },
+                ],
+              },
+            },
+          ],
+        },
+        status: 'published',
+        focusKeyword: 'Hyundai Tucson 2026',
+        metaTitle: 'Hyundai Tucson 2026 Giá Lăn Bánh & Đánh Giá Chi Tiết',
+        metaDescription: 'Cập nhật giá xe Tucson 2026 mới nhất.',
+        readingTime: 5,
+        wordCount: 1200,
+        publishedAt: '2026-10-06T10:00:00Z',
+      },
+    };
+
+    const jsonLd = generateCarJsonLd(carWithArticle, siteUrl) as any;
+    const graph = jsonLd['@graph'];
+
+    const articleNode = graph.find((item: any) => item['@type'] === 'Article');
+    expect(articleNode).toBeDefined();
+    expect(articleNode.headline).toBe('Đánh Giá Chi Tiết Hyundai Tucson 2026: Đột Phá Thiết Kế & Vận Hành');
+    expect(articleNode.about['@id']).toBe('https://salerhyundai.vn/xe/tucson-2026#car');
+
+    const faqNode = graph.find((item: any) => item['@type'] === 'FAQPage');
+    expect(faqNode).toBeDefined();
+    expect(faqNode.mainEntity[0].name).toBe('Tucson 2026 giá bao nhiêu?');
+  });
 });
+

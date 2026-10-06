@@ -132,6 +132,7 @@ export interface AiGenerateResponseData {
   model?: string;
   text?: string;
   rawText?: string;
+  blocks?: FullArticleBlock[];
   outline?: OutlineItem[];
   faqs?: FaqItem[];
   seo?: SeoOptimizationResult;

@@ -1,7 +1,7 @@
 import { apiClient } from '../lib/api-client';
 
 // 🧠 Mental Model: Typed Service Layer cho Quản trị Bài viết Tin tức (apps/admin).
-// Tương tác trực tiếp với API namespace /api/admin/posts/* và /api/admin/categories/*.
+// Tương tác trực tiếp với API namespace /api/admin/posts/* và /api/admin/categories/* và liên kết dòng xe (carId).
 // Phục vụ danh sách bài viết, bộ lọc chuyên mục, trạng thái và xóa bài viết.
 
 export interface PostItem {
@@ -14,8 +14,12 @@ export interface PostItem {
   anhDaiDienAlt: string;
   tomTat?: string | null;
   status: 'draft' | 'published' | 'scheduled' | 'archived';
+  publishedAt?: string | null;
   scheduledAt?: string | null;
   expiredPromoDate?: string | null;
+  focusKeyword?: string | null;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
   isFeatured: boolean;
   featuredOrder: number;
   readingTime: number;
@@ -100,7 +104,7 @@ export const postService = {
   /**
    * Lấy chi tiết bài viết theo ID
    */
-  getPostById: async (id: string): Promise<{ success: boolean; data: PostItem & { noiDung: unknown } }> => {
+  getPostById: async (id: string): Promise<{ success: boolean; data: PostItem & { noiDung: unknown; focusKeyword?: string; metaTitle?: string; metaDescription?: string; canonicalUrl?: string; noIndex?: boolean } }> => {
     const res = await apiClient.get<any>(`/api/admin/posts/${id}`);
     const postData = (res && res.data) ? res.data : res;
     return { success: true, data: postData };

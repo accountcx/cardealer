@@ -14,6 +14,8 @@ interface TabGeneralInfoProps {
   setCarSlug: (v: string) => void;
   anhDaiDienUrl: string;
   setAnhDaiDienUrl: (v: string) => void;
+  galleryImages: string[];
+  setGalleryImages: (imgs: string[]) => void;
   segment: string;
   setSegment: (v: string) => void;
   traTruocTu: string;
@@ -35,6 +37,8 @@ export function TabGeneralInfo({
   setCarSlug,
   anhDaiDienUrl,
   setAnhDaiDienUrl,
+  galleryImages,
+  setGalleryImages,
   segment,
   setSegment,
   traTruocTu,
@@ -49,6 +53,11 @@ export function TabGeneralInfo({
   setIsFeatured,
 }: TabGeneralInfoProps) {
   const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
+  const [isGalleryPickerOpen, setIsGalleryPickerOpen] = useState(false);
+
+  const handleRemoveGalleryImage = (index: number) => {
+    setGalleryImages(galleryImages.filter((_, idx) => idx !== index));
+  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -197,6 +206,74 @@ export function TabGeneralInfo({
         />
       </div>
 
+      {/* 📸 Album Ảnh Thực Tế (Gallery) */}
+      <div className="md:col-span-2 space-y-3 pt-4 border-t border-slate-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <label className="block text-xs font-semibold text-slate-200">
+              Album Ảnh Thực Tế Của Xe (Gallery / Lightbox)
+            </label>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Ảnh chi tiết nội ngoại thất thực tế (khoang lái, ghế, mâm lốp, cốp xe) hiển thị trong khối Thư Viện Ảnh trên web.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setIsGalleryPickerOpen(true)}
+            className="h-8 text-xs flex items-center gap-1.5 cursor-pointer border-slate-700 bg-slate-800/60 hover:bg-slate-700 text-sky-400 hover:text-sky-300 shrink-0"
+          >
+            <ImageIcon size={14} />
+            <span>Thêm Ảnh Từ Thư Viện</span>
+          </Button>
+        </div>
+
+        {galleryImages.length === 0 ? (
+          <div className="p-6 rounded-xl border border-dashed border-slate-800 bg-slate-950/40 text-center space-y-2">
+            <ImageIcon className="w-8 h-8 text-slate-600 mx-auto" />
+            <p className="text-xs text-slate-400">
+              Chưa có ảnh thực tế nào trong bộ sưu tập.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsGalleryPickerOpen(true)}
+              className="text-xs text-sky-400 border-sky-500/30 bg-sky-500/10 hover:bg-sky-500/20"
+            >
+              Chọn ảnh từ Thư Viện
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            {galleryImages.map((imgUrl, idx) => (
+              <div
+                key={`${imgUrl}-${idx}`}
+                className="group relative aspect-4/3 rounded-xl border border-slate-800 bg-slate-950/80 overflow-hidden shadow-xs hover:border-sky-500/50 transition-all"
+              >
+                <img
+                  src={imgUrl}
+                  alt={`Ảnh thực tế ${idx + 1}`}
+                  className="w-full h-full object-cover"
+                />
+                <span className="absolute top-1.5 left-1.5 w-5 h-5 rounded-md bg-slate-900/80 text-[10px] font-bold text-slate-300 flex items-center justify-center backdrop-blur-xs">
+                  {idx + 1}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveGalleryImage(idx)}
+                  className="absolute top-1.5 right-1.5 w-6 h-6 rounded-md bg-rose-500/80 hover:bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-xs"
+                  title="Xóa ảnh này khỏi album"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="md:col-span-2 flex items-center gap-3 pt-2">
         <input
           type="checkbox"
@@ -210,7 +287,7 @@ export function TabGeneralInfo({
         </label>
       </div>
 
-      {/* Modal Chọn / Tải Ảnh Dùng Chung */}
+      {/* Modal Chọn / Tải Ảnh Đại Diện Dùng Chung */}
       <MediaPickerModal
         isOpen={isMediaPickerOpen}
         onClose={() => setIsMediaPickerOpen(false)}
@@ -220,6 +297,21 @@ export function TabGeneralInfo({
         onSelect={(selected) => {
           if (selected.length > 0) {
             setAnhDaiDienUrl(selected[0].url);
+          }
+        }}
+      />
+
+      {/* Modal Chọn Nhiều Ảnh Cho Album Gallery */}
+      <MediaPickerModal
+        isOpen={isGalleryPickerOpen}
+        onClose={() => setIsGalleryPickerOpen(false)}
+        mode="multiple"
+        title="Chọn Ảnh Cho Album Thực Tế (Gallery)"
+        initialSelectedUrls={galleryImages}
+        onSelect={(selected) => {
+          if (selected.length > 0) {
+            const newUrls = selected.map((s) => s.url);
+            setGalleryImages(Array.from(new Set([...galleryImages, ...newUrls])));
           }
         }}
       />

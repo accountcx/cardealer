@@ -2,10 +2,10 @@
 
 // 🧠 Mental Model: Khối Bảng Giá & Chi Phí Lăn Bánh Tham Khảo (PriceTableBlock).
 // Thiết kế giao diện Spreadsheet trực quan, hỗ trợ lọc theo dòng xe hoặc toàn bộ danh mục xe.
-// Tự động tính toán giá lăn bánh dự kiến (Read-only) theo biểu thuế trước bạ 10% + phí biển số, bảo trì đường bộ.
+// Tính năng 1-chạm "Tự động điền giá từ Showroom" để nạp ngay danh sách tất cả phiên bản kèm giá niêm yết, ưu đãi và lăn bánh.
 
 import React from 'react';
-import { Table as TableIcon, Car, Plus } from 'lucide-react';
+import { Table as TableIcon, Car, Plus, Sparkles } from 'lucide-react';
 import { Button, Input } from '@cardealer/ui';
 import type { CarSummary } from '../../../../../services/catalog.service';
 import type { EditorBlock, PriceVersionItem } from '../../types';
@@ -18,7 +18,7 @@ export interface PriceTableBlockProps {
 }
 
 export function PriceTableBlock({ block, availableCars, onUpdate }: PriceTableBlockProps) {
-  // Chuẩn hóa danh sách các phiên bản phục vụ dropdown
+  // Chuẩn hóa danh sách các phiên bản phục vụ dropdown & auto-fill
   const allVersionOptions: VersionOptionItem[] = React.useMemo(() => {
     return availableCars.flatMap((c) =>
       (c.versions || []).map((v) => {
@@ -110,6 +110,32 @@ export function PriceTableBlock({ block, availableCars, onUpdate }: PriceTableBl
     });
   };
 
+  // Tự động điền tất cả các phiên bản của dòng xe đang chọn (hoặc tất cả các xe)
+  const handleAutoFillFromCatalog = () => {
+    const targetVersions = filteredVersions.length > 0 ? filteredVersions : allVersionOptions;
+    if (targetVersions.length === 0) return;
+
+    const newPrices: PriceVersionItem[] = targetVersions.map((opt) => ({
+      version: opt.fullLabel,
+      listedPrice: opt.listedPrice,
+      discount: opt.discount,
+      rollingPrice: opt.rollingPrice,
+    }));
+
+    const selectedCar = availableCars.find((c) => c.id === currentCarFilter);
+    const updatedTitle =
+      !block.title || block.title === 'Bảng Giá Xe Hyundai Mới Nhất'
+        ? selectedCar
+          ? `Bảng Giá Xe ${selectedCar.tenXe} & Dự Toán Lăn Bánh`
+          : 'Bảng Giá & Chi Phí Lăn Bánh Các Dòng Xe Hyundai'
+        : block.title;
+
+    onUpdate({
+      title: updatedTitle,
+      prices: newPrices,
+    });
+  };
+
   return (
     <div className="space-y-3.5 p-3.5 bg-blue-500/5 rounded-xl border border-blue-500/20">
       {/* Header bar: Tiêu đề bảng & Bộ lọc dòng xe */}
@@ -195,15 +221,28 @@ export function PriceTableBlock({ block, availableCars, onUpdate }: PriceTableBl
 
       {/* Footer Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          onClick={handleAddVersion}
-          className="h-8 text-xs text-blue-300 hover:text-blue-200 border-blue-500/30 flex items-center gap-1.5 self-start"
-        >
-          <Plus size={13} /> Thêm phiên bản xe
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={handleAddVersion}
+            className="h-8 text-xs text-blue-300 hover:text-blue-200 border-blue-500/30 flex items-center gap-1.5 self-start"
+          >
+            <Plus size={13} /> Thêm phiên bản
+          </Button>
+
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={handleAutoFillFromCatalog}
+            className="h-8 text-xs text-cyan-300 hover:text-cyan-100 bg-cyan-950/40 border-cyan-500/30 hover:bg-cyan-900/50 flex items-center gap-1.5 self-start"
+            title="Tự động nạp danh sách phiên bản và giá niêm yết từ cơ sở dữ liệu showroom"
+          >
+            <Sparkles size={13} className="text-cyan-400" /> Tự động điền giá từ Showroom ({filteredVersions.length} bản)
+          </Button>
+        </div>
 
         <span className="text-[11px] text-slate-500 italic">
           💡 Giá lăn bánh tạm tính được khóa (Read-only) và tự động tính theo công thức: (Niêm yết -

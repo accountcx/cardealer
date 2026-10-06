@@ -475,22 +475,33 @@ function PreviewContent() {
                 if (node.type === 'heading') {
                   const level = (node.attrs?.level as number) || 2;
                   const text = renderNodeText(node);
+                  const isIgnored = Boolean(node.attrs?.ignoreToc || node.attrs?.hideFromToc || node.attrs?.noToc);
                   if (level === 3) {
                     return (
                       <h3
                         key={idx}
-                        className="text-lg md:text-xl font-bold text-slate-200 mt-6 mb-3 scroll-mt-20"
+                        className="text-lg md:text-xl font-bold text-slate-200 mt-6 mb-3 scroll-mt-20 flex items-center gap-2"
                       >
-                        {text}
+                        <span>{text}</span>
+                        {isIgnored && (
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                            Ẩn khỏi TOC
+                          </span>
+                        )}
                       </h3>
                     );
                   }
                   return (
                     <h2
                       key={idx}
-                      className="text-xl md:text-2xl font-extrabold text-slate-100 mt-8 mb-4 border-l-4 border-cyan-500 pl-3.5 scroll-mt-20"
+                      className="text-xl md:text-2xl font-extrabold text-slate-100 mt-8 mb-4 border-l-4 border-cyan-500 pl-3.5 scroll-mt-20 flex items-center gap-2"
                     >
-                      {text}
+                      <span>{text}</span>
+                      {isIgnored && (
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                          Ẩn khỏi TOC
+                        </span>
+                      )}
                     </h2>
                   );
                 }
@@ -603,10 +614,11 @@ function PreviewContent() {
                 // FAQ Block
                 if (node.type === 'faqBlock' || node.type === 'faq') {
                   const questions = (node.attrs?.questions as any) || (node.attrs?.faqs as any) || [];
+                  const title = (node.attrs?.title as string) || (node.attrs?.headline as string) || undefined;
                   return (
                     <FAQBlock
                       key={idx}
-                      title="Câu Hỏi Thường Gặp (FAQ)"
+                      title={title}
                       questions={questions}
                     />
                   );
@@ -726,11 +738,12 @@ function PreviewContent() {
 
                 // Nút Kêu Gọi Hành Động (CTA Button Block)
                 if (node.type === 'ctaButton' || node.type === 'ctaButtonBlock') {
-                  const buttonText = ((node.attrs?.buttonText as string) || 'Liên Hệ Tư Vấn Ngay').replace(/^📞\s*/, '');
+                  const buttonText = ((node.attrs?.buttonText as string) || 'Liên Hệ Tư Vấn Ngay').replace(/^\ud83d\udcde\s*/, '');
                   const actionType = (node.attrs?.actionType as string) || 'hotline';
                   const customUrl = (node.attrs?.customUrl as string) || '';
-                  const phoneNumber = (node.attrs?.phoneNumber as string) || post?.author?.phone || '0981.234.567';
-                  const cleanPhone = phoneNumber.replace(/\D/g, '') || '0981234567';
+                  const customPhone = ((node.attrs?.phoneNumber as string) || '').trim();
+                  const targetHotline = (customPhone ? customPhone.replace(/\D/g, '') : '') || (post?.author?.phone || '0981.234.567').replace(/\D/g, '') || '0981234567';
+                  const cleanPhone = targetHotline;
                   const subtext = (node.attrs?.subtext as string) || '';
                   const variant = (node.attrs?.variant as string) || 'red';
 
@@ -765,7 +778,7 @@ function PreviewContent() {
 
                 // Legacy gatedContent → hiển thị dưới dạng nút CTA đơn giản
                 if (node.type === 'gatedContent') {
-                  const ctaTitle = ((node.attrs?.title as string) || 'Nhận Báo Giá Lăn Bánh Ưu Đãi').replace(/^📞\s*/, '');
+                  const ctaTitle = ((node.attrs?.title as string) || 'Nhận Báo Giá Lăn Bánh Ưu Đãi').replace(/^\ud83d\udcde\s*/, '');
                   const cleanPhone = (post?.author?.phone || '0981.234.567').replace(/\D/g, '') || '0981234567';
                   return (
                     <div key={idx} className="my-6 mx-auto max-w-lg text-center p-5 rounded-2xl bg-slate-50 border border-slate-200/80 shadow-xs dark:bg-slate-900/40 dark:border-slate-800">
@@ -865,7 +878,7 @@ export default function PostPreviewPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-slate-950 p-8 flex items-center justify-center">
+        <div className="min-h-screen bg-slate-950 flex items-center justify-center">
           <Skeleton className="h-12 w-64 bg-slate-800 rounded-xl" />
         </div>
       }

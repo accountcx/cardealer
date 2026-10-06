@@ -1,6 +1,7 @@
 import { apiClient } from '../lib/api-client';
 import type { CarItem } from '../components/calculator/SmartCalculator';
 import type { CarCatalogItem, CarDetail } from '@cardealer/types';
+import type { PostArticle } from '../app/tin-tuc/page';
 
 // 🧠 Mental Model: Typed Service Layer quản lý danh sách xe cho Storefront (Web).
 // Thay thế toàn bộ lời gọi fetch() trực tiếp bằng apiClient trung tâm.
@@ -109,6 +110,13 @@ export const carsService = {
 
     return null;
   },
+
+  /**
+   * 🚗 @deprecated Đã chuyển đổi sang cấu trúc bài viết đánh giá 1-1 trực tiếp trong car.article
+   */
+  getPostsByCarSlug: async (_carSlug: string, _limit = 6): Promise<PostArticle[]> => {
+    return [];
+  },
 };
 
 // Aliases duy trì tương thích ngược cho các import hiện hữu
@@ -116,3 +124,4 @@ export const getCarsList = carsService.getCarsList;
 export const getFeaturedCars = carsService.getFeaturedCars;
 export const getCatalogCars = carsService.getCatalogCars;
 export const getCarBySlug = carsService.getCarBySlug;
+export const getPostsByCarSlug = carsService.getPostsByCarSlug;

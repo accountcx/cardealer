@@ -219,6 +219,9 @@ importers:
 
   packages/database:
     dependencies:
+      '@cardealer/core':
+        specifier: workspace:*
+        version: link:../core
       '@cardealer/types':
         specifier: workspace:*
         version: link:../types

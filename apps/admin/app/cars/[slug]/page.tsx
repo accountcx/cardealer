@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Save, Info, Sparkles, Layers, Palette, Check, AlertCircle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Save, Info, Sparkles, Layers, Palette, Check, AlertCircle, RefreshCw, BookOpen } from 'lucide-react';
 import { Button, Card, Tabs, TabItem, Skeleton } from '@cardealer/ui';
 import { TabGeneralInfo } from './components/TabGeneralInfo';
 import { TabFeatures, HighlightFeatureItem } from './components/TabFeatures';
 import { TabVersions, VersionItem } from './components/TabVersions';
 import { TabColors, VersionColorConfig } from './components/TabColors';
+import { TabCarArticle } from './components/TabCarArticle';
 import { catalogService } from '../../../services/catalog.service';
 import { colorService } from '../../../services/color.service';
 
@@ -26,7 +27,7 @@ function toSlug(text: string): string {
 // Đầy đủ 4 Tabs: Thông tin chung, Tính năng nổi bật, Phiên bản & giá, Bảng màu ngoại thất.
 // Ghép nối trực tiếp API: POST /api/admin/cars khi tạo mới, PUT /api/admin/cars/:slug khi chỉnh sửa.
 
-type TabType = 'info' | 'features' | 'versions' | 'colors';
+type TabType = 'info' | 'features' | 'versions' | 'colors' | 'article';
 
 export default function CarEditPage() {
   const params = useParams();
@@ -71,6 +72,9 @@ export default function CarEditPage() {
   // Form State: Tab 3
   const [versions, setVersions] = useState<VersionItem[]>([]);
 
+  // Form State: Gallery Images
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+
   // Form State: Tab 4
   const [colorConfigs, setColorConfigs] = useState<VersionColorConfig[]>([]);
 
@@ -97,6 +101,15 @@ export default function CarEditPage() {
 
           if (Array.isArray(carData.versions)) {
             setVersions(carData.versions);
+            const firstWithGallery = carData.versions.find(
+              (v: any) => Array.isArray(v.boSuuTapAnh) && v.boSuuTapAnh.length > 0
+            );
+            if (firstWithGallery?.boSuuTapAnh) {
+              setGalleryImages(firstWithGallery.boSuuTapAnh);
+            } else if (Array.isArray(carData.boSuuTapAnh)) {
+              setGalleryImages(carData.boSuuTapAnh);
+            }
+
             const loadedConfigs: VersionColorConfig[] = [];
             carData.versions.forEach((ver: any) => {
               if (Array.isArray(ver.versionColors)) {
@@ -192,6 +205,8 @@ export default function CarEditPage() {
       status,
       isFeatured,
       highlightFeatures: features,
+      galleryImages,
+      boSuuTapAnh: galleryImages,
       versions: sanitizedVersions.map((v, idx) => ({
         id: v.id,
         tenPhienBan: v.tenPhienBan,
@@ -202,6 +217,7 @@ export default function CarEditPage() {
         dongCo: v.dongCo || null,
         hopSo: v.hopSo || null,
         danDong: v.danDong || null,
+        boSuuTapAnh: galleryImages,
         sortOrder: idx + 1,
       })),
     };
@@ -248,6 +264,7 @@ export default function CarEditPage() {
     { id: 'features', label: '2. 6 Tính Năng Nổi Bật', icon: <Sparkles size={16} /> },
     { id: 'versions', label: '3. Phiên Bản & Giá', icon: <Layers size={16} />, badge: versions.length },
     { id: 'colors', label: '4. Bảng Màu Ngoại Thất', icon: <Palette size={16} />, badge: colorConfigs.filter((c) => c.selected).length },
+    { id: 'article', label: '5. Bài Viết Đánh Giá', icon: <BookOpen size={16} /> },
   ];
 
   return (
@@ -370,6 +387,8 @@ export default function CarEditPage() {
                 setCarSlug={setCarSlug}
                 anhDaiDienUrl={anhDaiDienUrl}
                 setAnhDaiDienUrl={setAnhDaiDienUrl}
+                galleryImages={galleryImages}
+                setGalleryImages={setGalleryImages}
                 segment={segment}
                 setSegment={setSegment}
                 traTruocTu={traTruocTu}
@@ -391,6 +410,12 @@ export default function CarEditPage() {
                 versions={versions}
                 colorConfigs={colorConfigs}
                 setColorConfigs={setColorConfigs}
+              />
+            )}
+            {activeTab === 'article' && (
+              <TabCarArticle
+                carSlug={carSlug || slug}
+                carName={tenXe || slug}
               />
             )}
           </>

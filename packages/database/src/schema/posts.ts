@@ -30,12 +30,14 @@ export const posts = pgTable('posts', {
   tomTat: text('tom_tat'),
   noiDung: jsonb('noi_dung').notNull(), // Tiptap JSON AST Tree
   status: postStatusEnum('status').default('draft').notNull(),
+  publishedAt: timestamp('published_at', { withTimezone: true }), // Ngày viết bài / Ngày đăng tùy chỉnh
   scheduledAt: timestamp('scheduled_at', { withTimezone: true }),
   expiredPromoDate: timestamp('expired_promo_date', { withTimezone: true }), // Ngày hết hạn khuyến mãi (hiển thị banner nhắc nhở)
   isFeatured: boolean('is_featured').default(false).notNull(),
   featuredOrder: integer('featured_order').default(0).notNull(), // 1, 2, 3 cho Top 3 bài ghim
   readingTime: integer('reading_time').default(1).notNull(), // Thời gian đọc tính bằng phút
   wordCount: integer('word_count').default(0).notNull(),
+  focusKeyword: varchar('focus_keyword', { length: 255 }), // Từ khóa chính SEO Real-Time
   metaTitle: varchar('meta_title', { length: 255 }),
   metaDescription: varchar('meta_description', { length: 500 }),
   canonicalUrl: varchar('canonical_url', { length: 500 }),
@@ -58,32 +60,13 @@ export const postTags = pgTable('post_tags', {
   postId: uuid('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
   tag: varchar('tag', { length: 100 }).notNull(),
 }, (table) => [
-  index('post_tags_post_id_idx').on(table.postId),
+  uniqueIndex('post_tags_post_tag_idx').on(table.postId, table.tag),
   index('post_tags_tag_idx').on(table.tag),
 ]);
 
-// 4. Bảng Động Cơ Chuyển Hướng 301 (Bảo toàn 100% PageRank khi đổi URL)
-export const redirects = pgTable('redirects', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  oldPath: varchar('old_path', { length: 500 }).notNull(),
-  newPath: varchar('new_path', { length: 500 }).notNull(),
-  statusCode: integer('status_code').default(301).notNull(),
-  hitCount: integer('hit_count').default(0).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
-}, (table) => [
-  uniqueIndex('redirects_old_path_uidx').on(table.oldPath),
-]);
-
-// TypeScript Types Inference
-export type CategoryRow = typeof categories.$inferSelect;
-export type NewCategoryRow = typeof categories.$inferInsert;
-
 export type PostRow = typeof posts.$inferSelect;
 export type NewPostRow = typeof posts.$inferInsert;
-
+export type CategoryRow = typeof categories.$inferSelect;
+export type NewCategoryRow = typeof categories.$inferInsert;
 export type PostTagRow = typeof postTags.$inferSelect;
 export type NewPostTagRow = typeof postTags.$inferInsert;
-
-export type RedirectRow = typeof redirects.$inferSelect;
-export type NewRedirectRow = typeof redirects.$inferInsert;

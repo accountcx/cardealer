@@ -110,6 +110,19 @@ export async function handleCatalogRoutes(
       const car = await db.query.cars.findFirst({
         where: and(eq(schema.cars.slug, slug), eq(schema.cars.status, 'published')),
         with: {
+          article: {
+            with: {
+              author: {
+                columns: {
+                  id: true,
+                  fullName: true,
+                  role: true,
+                  avatarUrl: true,
+                  phone: true,
+                },
+              },
+            },
+          },
           versions: {
             orderBy: [schema.carVersions.sortOrder],
             with: {
@@ -181,6 +194,31 @@ export async function handleCatalogRoutes(
       const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
       const maxPrice = listPrices.length > 0 ? Math.max(...listPrices) : minPrice;
 
+      const formattedArticle = car.article && car.article.status === 'published' ? {
+        id: car.article.id,
+        carId: car.article.carId,
+        authorId: car.article.authorId,
+        tieuDe: car.article.tieuDe,
+        tomTat: car.article.tomTat,
+        noiDung: car.article.noiDung,
+        status: car.article.status,
+        focusKeyword: car.article.focusKeyword,
+        metaTitle: car.article.metaTitle,
+        metaDescription: car.article.metaDescription,
+        readingTime: car.article.readingTime,
+        wordCount: car.article.wordCount,
+        publishedAt: car.article.publishedAt ? car.article.publishedAt.toISOString() : null,
+        createdAt: car.article.createdAt ? car.article.createdAt.toISOString() : undefined,
+        updatedAt: car.article.updatedAt ? car.article.updatedAt.toISOString() : undefined,
+        author: car.article.author ? {
+          id: car.article.author.id,
+          fullName: car.article.author.fullName,
+          role: car.article.author.role,
+          avatarUrl: car.article.author.avatarUrl,
+          phone: car.article.author.phone,
+        } : null,
+      } : null;
+
       const formattedCar = {
         id: car.id,
         tenXe: car.tenXe,
@@ -201,12 +239,14 @@ export async function handleCatalogRoutes(
         maxPrice,
         versionCount: formattedVersions.length,
         versions: formattedVersions,
+        article: formattedArticle,
       };
 
       sendJson(200, { success: true, data: formattedCar }, {
         'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
       });
       return true;
+
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Lỗi truy vấn thông tin chi tiết xe';
       sendJson(500, {

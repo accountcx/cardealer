@@ -164,6 +164,49 @@ export interface CatalogFilterState {
   price: PriceRangeId;
 }
 
+// 🧠 Mental Model: Schema bài viết gắn liền dòng xe (Car Article 1-1)
+export const CarArticleStatusSchema = z.enum(['draft', 'published']);
+export type CarArticleStatus = z.infer<typeof CarArticleStatusSchema>;
+
+export const CarArticleSchema = z.object({
+  id: z.string(),
+  carId: z.string(),
+  authorId: z.string().optional().nullable(),
+  tieuDe: z.string(),
+  tomTat: z.string().optional().nullable(),
+  noiDung: z.record(z.string(), z.unknown()), // Tiptap JSON AST Tree
+  status: CarArticleStatusSchema.default('draft'),
+  focusKeyword: z.string().optional().nullable(),
+  metaTitle: z.string().optional().nullable(),
+  metaDescription: z.string().optional().nullable(),
+  readingTime: z.number().default(1),
+  wordCount: z.number().default(0),
+  publishedAt: z.string().optional().nullable(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+  author: z.object({
+    id: z.string(),
+    fullName: z.string(),
+    role: z.string().optional().nullable(),
+    avatarUrl: z.string().optional().nullable(),
+    phone: z.string().optional().nullable(),
+  }).optional().nullable(),
+});
+export type CarArticle = z.infer<typeof CarArticleSchema>;
+
+export const CarArticleInputSchema = z.object({
+  tieuDe: z.string().trim().min(3, 'Tiêu đề bài viết phải có ít nhất 3 ký tự').max(255),
+  tomTat: z.string().max(1000).optional().nullable(),
+  noiDung: z.record(z.string(), z.unknown()),
+  status: CarArticleStatusSchema.default('draft'),
+  authorId: z.string().uuid().optional().nullable(),
+  focusKeyword: z.string().max(255).optional().nullable(),
+  metaTitle: z.string().max(255).optional().nullable(),
+  metaDescription: z.string().max(500).optional().nullable(),
+  publishedAt: z.string().optional().nullable(),
+});
+export type CarArticleInput = z.infer<typeof CarArticleInputSchema>;
+
 // 🧠 Mental Model: Data Contracts cho Trang Chi Tiết Dòng Xe (Phase 4.4 Car Detail Experience)
 export const CarDetailVersionSchema = CarVersionSchema.extend({
   colors: z.array(VersionColorSchema).default([]),
@@ -175,5 +218,6 @@ export const CarDetailSchema = CarSchema.extend({
   maxPrice: z.number(),
   versionCount: z.number().default(0),
   versions: z.array(CarDetailVersionSchema).default([]),
+  article: CarArticleSchema.optional().nullable(),
 });
 export type CarDetail = z.infer<typeof CarDetailSchema>;

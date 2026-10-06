@@ -54,4 +54,13 @@ export const catalogService = {
   deleteCar: async (id: string): Promise<{ success: boolean; id: string }> => {
     return apiClient.delete<{ success: boolean; id: string }>(`/api/admin/cars/${id}`);
   },
+
+  getCarArticle: async <T = unknown>(slugOrId: string): Promise<T | null> => {
+    return apiClient.get<T>(`/api/admin/cars/${slugOrId}/article`);
+  },
+
+  saveCarArticle: async <T = unknown>(slugOrId: string, data: Record<string, unknown>): Promise<T> => {
+    return apiClient.put<T>(`/api/admin/cars/${slugOrId}/article`, data);
+  },
 };
+

@@ -89,7 +89,7 @@ describe('Tiptap AST Extractor Suite (Slice 1 Verification)', () => {
   });
 
   describe('extractHeadingsFromTiptap', () => {
-    it('trích xuất đúng danh sách tiêu đề H2, H3 và khử trùng lặp ID', () => {
+    it('trích xuất đúng danh sách tiêu đề H2, H3, gán parentId theo Nesting Logic và khử trùng lặp ID', () => {
       const headings = extractHeadingsFromTiptap(sampleTiptapDoc);
       expect(headings).toHaveLength(3);
 
@@ -99,15 +99,90 @@ describe('Tiptap AST Extractor Suite (Slice 1 Verification)', () => {
         level: 2,
       });
 
+      // H3 bắt buộc phải nhận diện đúng parentId là H2 gần nhất phía trên nó
       expect(headings[1]).toEqual({
         id: 'thiet-ke-dau-xe-va-luoi-tan-nhiet-parametric',
         title: 'Thiết kế đầu xe và lưới tản nhiệt Parametric',
         level: 3,
+        parentId: '1-danh-gia-ngoai-that-hyundai-tucson-2026',
       });
 
       // Tiêu đề trùng lặp phải tự động thêm hậu tố -1
       expect(headings[2].id).toBe('1-danh-gia-ngoai-that-hyundai-tucson-2026-1');
       expect(headings[2].level).toBe(2);
+      expect(headings[2].parentId).toBeUndefined();
+    });
+
+    it('loại trừ thẻ có cờ ignoreToc (Opt-out mechanism)', () => {
+      const docWithIgnored = {
+        type: 'doc',
+        content: [
+          {
+            type: 'heading',
+            attrs: { level: 2 },
+            content: [{ type: 'text', text: 'Chương 1: Tổng quan' }],
+          },
+          {
+            type: 'heading',
+            attrs: { level: 3, ignoreToc: true },
+            content: [{ type: 'text', text: 'Tiêu đề phụ không muốn hiện TOC' }],
+          },
+          {
+            type: 'heading',
+            attrs: { level: 2, hideFromToc: true },
+            content: [{ type: 'text', text: 'Tiêu đề ẩn khác' }],
+          },
+          {
+            type: 'heading',
+            attrs: { level: 3 },
+            content: [{ type: 'text', text: 'Mục con hợp lệ' }],
+          },
+        ],
+      };
+
+      const headings = extractHeadingsFromTiptap(docWithIgnored);
+      expect(headings).toHaveLength(2);
+      expect(headings[0].title).toBe('Chương 1: Tổng quan');
+      expect(headings[1].title).toBe('Mục con hợp lệ');
+      expect(headings[1].parentId).toBe('chuong-1-tong-quan');
+    });
+
+    it('Strict Heading Filter: chỉ lấy heading ở top-level luồng bài viết, không hút heading từ custom blocks', () => {
+      const docWithCustomBlocks = {
+        type: 'doc',
+        content: [
+          {
+            type: 'heading',
+            attrs: { level: 2 },
+            content: [{ type: 'text', text: 'Quy trình 4 bước mua xe' }],
+          },
+          {
+            type: 'priceTableBlock',
+            attrs: {
+              title: 'Bảng Giá Xe Hyundai',
+              prices: [{ version: 'Hyundai Creta', price: 599000000 }, { version: 'Hyundai Accent', price: 439000000 }],
+            },
+          },
+          {
+            type: 'calloutBlock',
+            attrs: {
+              title: 'Lưu ý về hồ sơ trả góp',
+              content: 'Chuẩn bị CCCD và sao kê thu nhập',
+            },
+          },
+          {
+            type: 'heading',
+            attrs: { level: 3 },
+            content: [{ type: 'text', text: 'Bước 1: Chọn xe và nhận tư vấn' }],
+          },
+        ],
+      };
+
+      const headings = extractHeadingsFromTiptap(docWithCustomBlocks);
+      expect(headings).toHaveLength(2);
+      expect(headings[0].title).toBe('Quy trình 4 bước mua xe');
+      expect(headings[1].title).toBe('Bước 1: Chọn xe và nhận tư vấn');
+      expect(headings[1].parentId).toBe('quy-trinh-4-buoc-mua-xe');
     });
 
     it('trả về mảng rỗng an toàn khi tài liệu rỗng hoặc không hợp lệ', () => {

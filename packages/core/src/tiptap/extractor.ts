@@ -19,6 +19,7 @@ export interface TocHeading {
   id: string;
   title: string;
   level: number;
+  parentId?: string;
 }
 
 export interface ExtractedFaq {
@@ -73,7 +74,13 @@ export function extractTextFromTiptap(doc: unknown): string {
 }
 
 /**
- * 1. Trích xuất danh sách Headings (H2, H3, H4) phục vụ render Sticky TOC
+ * 1. Trích xuất danh sách Headings (H2, H3) phục vụ render Sticky TOC & Google Sitelinks
+ *
+ * 🛡️ 3 Nguyên tắc bắt buộc:
+ * 1. Strict Heading Filter: Chỉ lấy các thẻ heading (H2, H3) nằm trực tiếp ở luồng văn bản chính (top-level),
+ *    tuyệt đối loại trừ các thẻ tiêu đề nằm trong các Component UI đặc thù (Bảng giá, FAQ, Callout, Gallery, v.v.).
+ * 2. Nesting Logic (Cha - Con): Khi gặp một thẻ H3, nó bắt buộc phải thuộc về thẻ H2 gần nhất nằm ngay phía trên nó.
+ * 3. Cơ chế Opt-out (ignore-toc): Bỏ qua bất kỳ thẻ nào được đánh dấu `ignoreToc: true` / `hideFromToc: true` / `noToc: true`.
  */
 export function extractHeadingsFromTiptap(doc: unknown): TocHeading[] {
   if (!doc || typeof doc !== 'object') return [];
@@ -82,34 +89,51 @@ export function extractHeadingsFromTiptap(doc: unknown): TocHeading[] {
 
   const headings: TocHeading[] = [];
   const seenIds = new Set<string>();
+  let currentH2Id: string | undefined = undefined;
 
-  const traverse = (nodes: TiptapNode[]) => {
-    for (const node of nodes) {
-      if (node.type === 'heading') {
-        const level = typeof node.attrs?.level === 'number' ? node.attrs.level : 2;
-        // Chỉ lấy các thẻ tiêu đề H2, H3, H4 cho bảng mục lục
-        if (level >= 2 && level <= 4) {
-          const title = extractTextFromNode(node);
-          if (title) {
-            let baseId = slugifyVietnamese(title) || `heading-${headings.length + 1}`;
-            let uniqueId = baseId;
-            let counter = 1;
-            while (seenIds.has(uniqueId)) {
-              uniqueId = `${baseId}-${counter}`;
-              counter++;
-            }
-            seenIds.add(uniqueId);
-            headings.push({ id: uniqueId, title, level });
-          }
+  for (const node of root.content) {
+    if (!node || node.type !== 'heading') continue;
+
+    // 1. Opt-out check (ignore-toc)
+    const isIgnored = Boolean(
+      node.attrs?.ignoreToc ||
+      node.attrs?.hideFromToc ||
+      node.attrs?.noToc
+    );
+    if (isIgnored) continue;
+
+    const level = typeof node.attrs?.level === 'number' ? node.attrs.level : 2;
+    // 2. Strict Filter: Chỉ lấy H2 và H3 ở luồng văn bản chính
+    if (level === 2 || level === 3) {
+      const title = extractTextFromNode(node);
+      if (title) {
+        let baseId = slugifyVietnamese(title) || `heading-${headings.length + 1}`;
+        let uniqueId = baseId;
+        let counter = 1;
+        while (seenIds.has(uniqueId)) {
+          uniqueId = `${baseId}-${counter}`;
+          counter++;
         }
-      }
-      if (Array.isArray(node.content)) {
-        traverse(node.content);
+        seenIds.add(uniqueId);
+
+        let parentId: string | undefined = undefined;
+        if (level === 2) {
+          currentH2Id = uniqueId;
+        } else if (level === 3) {
+          // 3. Nesting Logic: H3 bắt buộc phải thuộc về thẻ H2 gần nhất nằm ngay phía trên nó
+          parentId = currentH2Id;
+        }
+
+        headings.push({
+          id: uniqueId,
+          title,
+          level,
+          ...(parentId ? { parentId } : {}),
+        });
       }
     }
-  };
+  }
 
-  traverse(root.content);
   return headings;
 }
 

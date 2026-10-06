@@ -1,45 +1,67 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { BookOpen, ChevronDown, ListFilter } from 'lucide-react';
-import { Button } from '@cardealer/ui';
+import React, { useState, useEffect, useMemo } from 'react';
+import { BookOpen, ChevronDown, ListFilter, Calendar, Clock, User } from 'lucide-react';
+import type { CarArticle } from '@cardealer/types';
+import { extractHeadingsFromTiptap, convertTiptapToHtml, type TocHeading } from '@cardealer/core';
 
 interface CarReviewWithTOCProps {
   carName: string;
   generalDescription?: string | null;
   reviewContent?: any;
+  article?: CarArticle | null;
+  consultantHotline?: string;
+  consultantZalo?: string;
 }
-
-interface TOCItem {
-  id: string;
-  title: string;
-}
-
-const DEFAULT_TOC_ITEMS: TOCItem[] = [
-  { id: 'tong-quan', title: '1. Tổng quan & Vị thế' },
-  { id: 'ngoai-that', title: '2. Thiết kế Ngoại thất' },
-  { id: 'noi-that', title: '3. Không gian Nội thất & Tiện nghi' },
-  { id: 'van-hanh', title: '4. Khả năng Vận hành' },
-  { id: 'an-toan', title: '5. Công nghệ An toàn chủ động' },
-];
 
 /**
- * 🧠 Mental Model: Bài viết đánh giá chuyên sâu kèm Mục lục thông minh (CarReviewWithTOC).
- * - Cung cấp nội dung đánh giá giàu tính chuyên môn từ góc nhìn Saler ô tô kỳ cựu.
- * - Sticky Table of Contents (TOC) trên Desktop bám theo khi người dùng cuộn trang.
+ * 🧠 Mental Model: Bài viết đánh giá chuyên sâu dòng xe kèm Mục lục thông minh (CarReviewWithTOC).
+ * - Tự động trích xuất Headings từ Tiptap JSON AST AST của car.article làm Sticky Table of Contents (TOC).
  * - Scrollspy sử dụng IntersectionObserver tự động đánh dấu mục đang xem.
- * - Accordion mục lục trên Mobile giúp tiết kiệm diện tích và định hướng đọc tiện lợi.
+ * - Accordion mục lục trên Mobile giúp định hướng đọc mượt mà và tiện lợi.
+ * - Render Semantic HTML chuẩn SEO: Headings, Callouts, Images, SpecTables, ProsCons, CTAs...
+ * - Tự động ẩn sạch sẽ nếu dòng xe chưa có bài viết xuất bản, không render boilerplate rác.
  */
 export function CarReviewWithTOC({
   carName,
   generalDescription,
   reviewContent,
+  article,
+  consultantHotline,
+  consultantZalo,
 }: CarReviewWithTOCProps) {
-  const [activeId, setActiveId] = useState<string>('tong-quan');
-  const [isMobileTocOpen, setIsMobileTocOpen] = useState(false);
+  // Chỉ hiển thị khi có article đã xuất bản
+  const hasPublishedArticle = Boolean(article && article.status === 'published');
+
+  // Trích xuất Headings cho TOC động
+  const tocHeadings: TocHeading[] = useMemo(() => {
+    if (!hasPublishedArticle || !article?.noiDung) return [];
+    return extractHeadingsFromTiptap(article.noiDung);
+  }, [hasPublishedArticle, article?.noiDung]);
+
+  // Chuyển đổi Tiptap AST sang HTML
+  const articleHtml: string = useMemo(() => {
+    if (!hasPublishedArticle || !article?.noiDung) return '';
+    return convertTiptapToHtml(article.noiDung, {
+      hotline: consultantHotline,
+      zalo: consultantZalo,
+    });
+  }, [hasPublishedArticle, article?.noiDung, consultantHotline, consultantZalo]);
+
+  const [activeId, setActiveId] = useState<string>('');
+  const [isTocOpen, setIsTocOpen] = useState(false);
+
+  // Set default activeId
+  useEffect(() => {
+    if (tocHeadings.length > 0 && !activeId) {
+      setActiveId(tocHeadings[0].id);
+    }
+  }, [tocHeadings, activeId]);
 
   // Scrollspy bằng IntersectionObserver
   useEffect(() => {
+    if (tocHeadings.length === 0) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -54,13 +76,13 @@ export function CarReviewWithTOC({
       }
     );
 
-    DEFAULT_TOC_ITEMS.forEach((item) => {
+    tocHeadings.forEach((item) => {
       const el = document.getElementById(item.id);
       if (el) observer.observe(el);
     });
 
     return () => observer.disconnect();
-  }, []);
+  }, [tocHeadings]);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -68,166 +90,140 @@ export function CarReviewWithTOC({
       const topOffset = element.getBoundingClientRect().top + window.scrollY - 90;
       window.scrollTo({ top: topOffset, behavior: 'smooth' });
       setActiveId(id);
-      setIsMobileTocOpen(false);
     }
   };
 
+  // Nếu không có bài viết đánh giá đã xuất bản, trả về null để tránh trùng lặp nội dung rác
+  if (!hasPublishedArticle || !article) {
+    return null;
+  }
+
+  const publishedDate = article.publishedAt || article.createdAt;
+  const formattedDate = publishedDate
+    ? new Date(publishedDate).toLocaleDateString('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      })
+    : null;
+
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 space-y-6 shadow-sm">
-      <div className="flex items-center gap-2.5 border-b border-slate-100 pb-4">
-        <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-          <BookOpen className="w-5 h-5" />
+    <article
+      id="danh-gia-chi-tiet"
+      className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-8 space-y-6 shadow-sm scroll-mt-24"
+    >
+      {/* Header bài viết */}
+      <div className="space-y-3 border-b border-slate-100 pb-5">
+        <div className="flex items-center gap-2 text-xs font-bold text-blue-600 uppercase tracking-wider">
+          <BookOpen className="w-4 h-4 text-blue-600" />
+          <span>Đánh Giá Chuyên Sâu</span>
         </div>
-        <div>
-          <h2 className="text-xl font-black text-slate-900 tracking-tight">
-            Đánh Giá Chi Tiết Dòng Xe {carName}
-          </h2>
-          <p className="text-xs text-slate-500">
-            Góc nhìn thực tế từ chuyên viên tư vấn bán hàng kinh nghiệm
-          </p>
+
+        <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight leading-snug">
+          {article.tieuDe || `Đánh Giá Chi Tiết Dòng Xe ${carName}`}
+        </h2>
+
+        {/* Metadata info: Tác giả, Ngày đăng, Thời gian đọc */}
+        <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 pt-1">
+          {article.author?.fullName && (
+            <div className="flex items-center gap-1.5 font-medium text-slate-700">
+              <User size={14} className="text-blue-600" />
+              <span>{article.author.fullName}</span>
+            </div>
+          )}
+
+          {formattedDate && (
+            <div className="flex items-center gap-1.5">
+              <Calendar size={14} className="text-slate-400" />
+              <span>{formattedDate}</span>
+            </div>
+          )}
+
+          {article.readingTime && (
+            <div className="flex items-center gap-1.5">
+              <Clock size={14} className="text-slate-400" />
+              <span>{article.readingTime} phút đọc</span>
+            </div>
+          )}
+
+          {article.wordCount && (
+            <span className="hidden sm:inline text-slate-400">
+              • {article.wordCount} từ
+            </span>
+          )}
         </div>
-      </div>
 
-      {/* 📱 Mobile TOC Accordion */}
-      <div className="lg:hidden">
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={() => setIsMobileTocOpen(!isMobileTocOpen)}
-          className="w-full h-auto flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 hover:bg-slate-100"
-        >
-          <span className="flex items-center gap-2">
-            <ListFilter className="w-4 h-4 text-blue-600" />
-            Mục lục bài đánh giá
-          </span>
-          <ChevronDown
-            className={`w-4 h-4 transition-transform duration-200 ${
-              isMobileTocOpen ? 'rotate-180' : ''
-            }`}
-          />
-        </Button>
-
-        {isMobileTocOpen && (
-          <div className="mt-2 p-2 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
-            {DEFAULT_TOC_ITEMS.map((item) => (
-              <Button
-                key={item.id}
-                type="button"
-                variant={activeId === item.id ? 'accent' : 'ghost'}
-                size="sm"
-                onClick={() => scrollToSection(item.id)}
-                className={`w-full justify-start text-left whitespace-normal h-auto px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
-                  activeId === item.id
-                    ? 'bg-blue-600 text-white shadow-2xs font-bold'
-                    : 'text-slate-700 hover:bg-slate-200/60'
-                }`}
-              >
-                {item.title}
-              </Button>
-            ))}
+        {/* Sapo / Đoạn văn tóm tắt */}
+        {article.tomTat && (
+          <div className="p-4 sm:p-5 rounded-2xl bg-blue-50/60 border border-blue-100 text-slate-800 text-sm sm:text-base font-medium leading-relaxed mt-4">
+            {article.tomTat}
           </div>
         )}
       </div>
 
-      {/* Main Grid: Nội dung và Sticky TOC trên Desktop */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Cột Trái: Nội dung chi tiết các phần */}
-        <div className="lg:col-span-8 space-y-8 text-slate-700 leading-relaxed text-sm sm:text-base">
-          {/* Section 1: Tổng quan */}
-          <section id="tong-quan" className="space-y-3 scroll-mt-24">
-            <h3 className="text-lg sm:text-xl font-bold text-slate-900 border-l-4 border-blue-600 pl-3">
-              1. Tổng quan & Vị thế dòng xe
-            </h3>
-            <p>
-              {generalDescription ||
-                `Dòng xe ${carName} khẳng định vị thế dẫn đầu trong phân khúc nhờ sự kết hợp hoàn hảo giữa ngôn ngữ thiết kế thời thượng, công nghệ an toàn chủ động hàng đầu và không gian nội thất sang trọng tiện nghi. Đây là sự lựa chọn ưu tiên của các gia đình hiện đại cũng như các khách hàng doanh nhân tìm kiếm một mẫu xe đa dụng, phong cách và kinh tế.`}
-            </p>
-          </section>
+      {/* 📌 Mục lục đưa lên đầu, mặc định đóng (collapsible) để tối ưu không gian */}
+      {tocHeadings.length > 0 && (
+        <div className="rounded-2xl border border-slate-200/90 bg-slate-50/80 p-3.5 sm:p-4 transition-all">
+          <button
+            type="button"
+            onClick={() => setIsTocOpen(!isTocOpen)}
+            className="w-full flex items-center justify-between text-left group focus:outline-none cursor-pointer"
+            aria-expanded={isTocOpen}
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-100/80 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                <ListFilter className="w-4 h-4" />
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-slate-800 group-hover:text-blue-600 transition-colors">
+                Mục lục bài đánh giá
+              </span>
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-600">
+                {tocHeadings.length} mục
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 group-hover:text-blue-600 transition-colors">
+              <span>{isTocOpen ? 'Thu gọn' : 'Xem mục lục'}</span>
+              <ChevronDown
+                className={`w-4 h-4 transition-transform duration-200 ${
+                  isTocOpen ? 'rotate-180 text-blue-600' : ''
+                }`}
+              />
+            </div>
+          </button>
 
-          {/* Section 2: Ngoại thất */}
-          <section id="ngoai-that" className="space-y-3 scroll-mt-24">
-            <h3 className="text-lg sm:text-xl font-bold text-slate-900 border-l-4 border-blue-600 pl-3">
-              2. Thiết kế Ngoại thất ấn tượng
-            </h3>
-            <p>
-              {carName} sở hữu diện mạo nổi bật với cụm lưới tản nhiệt dạng tham số đặc trưng,
-              hệ thống đèn LED ban ngày ẩn tích hợp tinh tế và đường dập nổi gân guốc chạy dọc thân
-              xe. La-zăng hợp kim phay xước kích thước lớn cùng đuôi xe thể thao tạo nên dáng vẻ vững
-              chãi, cuốn hút từ mọi góc nhìn trên đường phố.
-            </p>
-          </section>
-
-          {/* Section 3: Nội thất */}
-          <section id="noi-that" className="space-y-3 scroll-mt-24">
-            <h3 className="text-lg sm:text-xl font-bold text-slate-900 border-l-4 border-blue-600 pl-3">
-              3. Không gian Nội thất & Tiện nghi cao cấp
-            </h3>
-            <p>
-              Bước vào khoang lái, quý khách sẽ cảm nhận ngay triết lý thiết kế tối giản nhưng giàu cảm
-              xúc. Màn hình cảm ứng giải trí kích thước lớn hỗ trợ kết nối Apple CarPlay/Android Auto
-              không dây, hệ thống âm thanh vòm sống động, ghế ngồi bọc da cao cấp chỉnh điện đa hướng
-              kèm chức năng sưởi/làm mát mang lại sự thoải mái tuyệt đối trên những hành trình dài.
-            </p>
-          </section>
-
-          {/* Section 4: Vận hành */}
-          <section id="van-hanh" className="space-y-3 scroll-mt-24">
-            <h3 className="text-lg sm:text-xl font-bold text-slate-900 border-l-4 border-blue-600 pl-3">
-              4. Khả năng Vận hành & Tiết kiệm nhiên liệu
-            </h3>
-            <p>
-              Được trang bị khối động cơ thế hệ mới tối ưu công suất và mô-men xoắn, {carName} mang lại
-              cảm giác lái nhạy bén, tăng tốc mượt mà nhưng vẫn duy trì mức tiêu hao nhiên liệu vô cùng
-              ấn tượng. Hệ thống treo êm ái cùng khả năng cách âm vượt trội giúp mọi chuyến đi êm đềm
-              và tĩnh lặng.
-            </p>
-          </section>
-
-          {/* Section 5: An toàn */}
-          <section id="an-toan" className="space-y-3 scroll-mt-24">
-            <h3 className="text-lg sm:text-xl font-bold text-slate-900 border-l-4 border-blue-600 pl-3">
-              5. Hệ thống An toàn chủ động hàng đầu
-            </h3>
-            <p>
-              An tâm tối đa là ưu tiên cốt lõi. Xe được trang bị gói công nghệ an toàn chủ động với các
-              tính năng hiện đại như: Hỗ trợ phòng tránh va chạm phía trước, Cảnh báo điểm mù, Giữ làn
-              đường tự động, Kiểm soát hành trình thích ứng Smart Cruise Control và hệ thống túi khí
-              bảo vệ toàn diện cho mọi hành khách.
-            </p>
-          </section>
-        </div>
-
-        {/* 🖥️ Cột Phải: Sticky Table of Contents (TOC) trên Desktop */}
-        <div className="hidden lg:block lg:col-span-4 sticky top-24 space-y-3">
-          <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2">
-              <ListFilter className="w-3.5 h-3.5 text-blue-600" />
-              Mục lục nội dung
-            </p>
-            <nav className="space-y-1">
-              {DEFAULT_TOC_ITEMS.map((item) => {
+          {isTocOpen && (
+            <nav className="mt-3.5 pt-3.5 border-t border-slate-200/70 grid grid-cols-1 sm:grid-cols-2 gap-1.5 animate-in fade-in-50 duration-200">
+              {tocHeadings.map((item) => {
                 const isActive = activeId === item.id;
                 return (
-                  <Button
+                  <button
                     key={item.id}
                     type="button"
-                    variant={isActive ? 'accent' : 'ghost'}
-                    size="sm"
                     onClick={() => scrollToSection(item.id)}
-                    className={`w-full justify-start text-left whitespace-normal h-auto text-xs font-semibold px-3 py-2 rounded-xl transition-all ${
+                    className={`text-left text-xs font-medium px-3 py-2 rounded-xl transition-all cursor-pointer ${
+                      item.level === 3 ? 'pl-6 text-[11px]' : ''
+                    } ${
                       isActive
                         ? 'bg-blue-600 text-white font-bold shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+                        : 'text-slate-700 hover:text-blue-600 hover:bg-slate-200/60'
                     }`}
                   >
                     {item.title}
-                  </Button>
+                  </button>
                 );
               })}
             </nav>
-          </div>
+          )}
         </div>
+      )}
+
+      {/* 📖 Nội dung bài viết chiếm trọn 100% độ rộng (Full Width) */}
+      <div className="w-full text-slate-700 leading-relaxed text-sm sm:text-base">
+        <div
+          className="prose prose-slate max-w-none prose-headings:scroll-mt-24 prose-img:rounded-2xl"
+          dangerouslySetInnerHTML={{ __html: articleHtml }}
+        />
       </div>
-    </div>
+    </article>
   );
 }

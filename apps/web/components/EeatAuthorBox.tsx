@@ -4,30 +4,20 @@
 //    - Cung cấp định danh tác giả minh bạch (Person Schema match), kinh nghiệm trong ngành ô tô và chức danh phân tích chuyên sâu.
 //    - Huy hiệu xác thực uy tín 'Chuyên Gia Được Xác Minh' từ Đại lý Ủy quyền.
 // 2. Component-Driven & Shared Primitives First:
-//    - Tái sử dụng 100% UI Primitives: Card, Badge, Button từ @cardealer/ui.
-//    - Tái sử dụng Link từ next/link cho các liên kết điều hướng và tương tác liên lạc.
-// 3. Tối Đa Hóa Tỉ Lệ Chuyển Đổi Inbound (CRO):
-//    - Nút Gọi Trực Tiếp Tác Giả (Hotline).
-//    - Nút Nhắn Zalo Tư Vấn Báo Giá & Trả Góp 1-chạm.
-//    - Nút Chia Sẻ Bài Viết (Sao chép liên kết vào clipboard kèm Toast feedback).
-// 4. Dynamic Admin Config:
+//    - Tái sử dụng 100% UI Primitives: Card, Badge từ @cardealer/ui.
+// 3. Dynamic Admin Config:
 //    - Nhận authorSettings từ Admin Settings với fallback defaults an toàn (Zero-Crash Guarantee).
-// 5. 100% Named Export: TUYỆT ĐỐI CẤM export default.
+// 4. 100% Named Export: TUYỆT ĐỐI CẤM export default.
 
 'use client';
 
 import * as React from 'react';
-import Link from 'next/link';
 import {
-  Phone,
-  MessageSquare,
-  Share2,
   CheckCircle2,
   ShieldCheck,
   Award,
-  Check,
 } from 'lucide-react';
-import { Card, Badge, Button } from '@cardealer/ui';
+import { Card, Badge } from '@cardealer/ui';
 import type { AuthorSettings } from '@cardealer/types';
 import { DEFAULT_AUTHOR_SETTINGS } from '@cardealer/types';
 
@@ -49,45 +39,55 @@ export interface EeatAuthorBoxProps {
   className?: string;
 }
 
+/**
+ * Loại bỏ các hậu tố chức danh kỹ thuật nội bộ (ví dụ: " - Quản Trị Showroom", " - Admin")
+ * để hiển thị tên tác giả trang nhã, đúng chuẩn bài viết báo chí & SEO E-E-A-T.
+ */
+function cleanAuthorFullName(name?: string | null): string {
+  if (!name) return 'Ban Biên Tập Hyundai Vinh';
+  return name.replace(/\s*-\s*(Quản Trị Showroom|Quản Trị Viên|Admin|Quản Lý|Nhân Viên).*$/gi, '').trim();
+}
+
 export function EeatAuthorBox({
   author,
   authorSettings,
-  postTitle = 'Bài viết',
   className = '',
 }: EeatAuthorBoxProps) {
-  const [copied, setCopied] = React.useState<boolean>(false);
-
   const fallback = authorSettings || DEFAULT_AUTHOR_SETTINGS;
 
   const isTechnicalRole = (r?: string | null) => {
     if (!r) return true;
     const lower = r.trim().toLowerCase();
-    return ['admin', 'manager', 'saler', 'sales', 'user', 'editor', 'superadmin'].includes(lower);
+    return [
+      'admin',
+      'manager',
+      'saler',
+      'sales',
+      'user',
+      'editor',
+      'superadmin',
+      'quản trị showroom',
+      'quản trị viên',
+      'quản lý',
+      'nhân viên',
+    ].includes(lower);
   };
 
   const resolvedRole = !isTechnicalRole(author?.role)
     ? author!.role!
     : fallback.role;
 
+  const rawFullName = author?.fullName || fallback.fullName;
+  const displayFullName = cleanAuthorFullName(rawFullName);
+
   const currentAuthor: AuthorInfo = {
-    fullName: author?.fullName || fallback.fullName,
+    fullName: displayFullName,
     role: resolvedRole,
     avatarUrl: author?.avatarUrl || fallback.avatarUrl || null,
     phone: author?.phone || fallback.phone,
     zaloPhone: author?.zaloPhone || fallback.zaloPhone,
     experienceYears: author?.experienceYears ?? fallback.experienceYears,
     bio: author?.bio || fallback.bio,
-  };
-
-  const cleanPhone = (currentAuthor.phone || '0981234567').replace(/[^0-9]/g, '');
-  const cleanZalo = (currentAuthor.zaloPhone || cleanPhone).replace(/[^0-9]/g, '');
-
-  const handleShareClick = () => {
-    if (typeof window !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    }
   };
 
   return (
@@ -143,59 +143,6 @@ export function EeatAuthorBox({
           <p className="text-xs text-slate-600 leading-relaxed max-w-2xl">
             {currentAuthor.bio}
           </p>
-
-          {/* Cụm Nút Tác Vụ Chuẩn Packages Button & Link */}
-          <div className="pt-2 flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
-            {/* Nút Gọi Hotline */}
-            <Link href={`tel:${cleanPhone}`} className="inline-flex">
-              <Button
-                variant="outline"
-                size="sm"
-                className="min-h-[44px] px-4 text-xs font-semibold bg-white border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800 rounded-xl shadow-2xs transition-colors flex items-center gap-1.5"
-              >
-                <Phone className="w-3.5 h-3.5 text-blue-600" />
-                <span>Gọi Tác Giả: {currentAuthor.phone || '0981.234.567'}</span>
-              </Button>
-            </Link>
-
-            {/* Nút Nhắn Zalo */}
-            <Link
-              href={`https://zalo.me/${cleanZalo}`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex"
-            >
-              <Button
-                variant="outline"
-                size="sm"
-                className="min-h-[44px] px-4 text-xs font-semibold bg-white border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl shadow-2xs transition-colors flex items-center gap-1.5"
-              >
-                <MessageSquare className="w-3.5 h-3.5 text-blue-600" />
-                <span>Nhắn Zalo</span>
-              </Button>
-            </Link>
-
-            {/* Nút Chia Sẻ Bài Viết */}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleShareClick}
-              className="min-h-[44px] px-4 text-xs font-semibold bg-white border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl shadow-2xs transition-colors flex items-center gap-1.5"
-            >
-              {copied ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-emerald-600 animate-in zoom-in-50" />
-                  <span className="text-emerald-700">Đã chép link!</span>
-                </>
-              ) : (
-                <>
-                  <Share2 className="w-3.5 h-3.5 text-slate-500" />
-                  <span>Chia sẻ bài viết</span>
-                </>
-              )}
-            </Button>
-          </div>
         </div>
       </div>
     </Card>

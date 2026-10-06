@@ -115,6 +115,8 @@ export default function PostEditorPage() {
             categories={editor.categories}
             categoryId={editor.categoryId}
             setCategoryId={editor.setCategoryId}
+            publishedAt={editor.publishedAt}
+            setPublishedAt={editor.setPublishedAt}
             anhDaiDienUrl={editor.anhDaiDienUrl}
             setAnhDaiDienUrl={editor.setAnhDaiDienUrl}
             anhDaiDienAlt={editor.anhDaiDienAlt}
@@ -214,7 +216,12 @@ export default function PostEditorPage() {
                     <LeadFormBlock block={block} onUpdate={(upd) => editor.updateBlock(block.id, upd)} availableCars={editor.availableCars} />
                   )}
                   {block.type === 'relatedCar' && (
-                    <RelatedCarBlock block={block} onUpdate={(upd) => editor.updateBlock(block.id, upd)} availableCars={editor.availableCars} />
+                    <RelatedCarBlock
+                      block={block}
+                      onUpdate={(upd) => editor.updateBlock(block.id, upd)}
+                      availableCars={editor.availableCars}
+                      onOpenMediaPicker={() => editor.setMediaPickerTarget({ type: 'relatedCar', blockId: block.id })}
+                    />
                   )}
                   {block.type === 'priceTable' && (
                     <PriceTableBlock
@@ -268,6 +275,7 @@ export default function PostEditorPage() {
         onInsertFullArticle={(article) => editor.applyFullArticle(article)}
         onInsertOutline={(items) => editor.insertOutlineBlocks(items)}
         onInsertFaqs={(faqs) => editor.insertFaqBlock(faqs)}
+        onInsertBlocks={(blocks) => editor.insertContentBlocks(blocks)}
         onAppendText={(text) => editor.appendParagraphBlock(text)}
         onApplySeo={(seo) => editor.applyAiSeo(seo)}
       />
@@ -282,6 +290,8 @@ export default function PostEditorPage() {
             ? 'Chọn Ảnh Đại Diện Bài Viết (Featured Image)'
             : editor.mediaPickerTarget?.type === 'gallery'
             ? 'Chọn Nhiều Ảnh Cho Bộ Sưu Tập (Gallery)'
+            : editor.mediaPickerTarget?.type === 'relatedCar'
+            ? 'Chọn Ảnh Đại Diện Xe Gợi Ý'
             : 'Chọn Hình Ảnh Cho Bài Viết'
         }
         initialSelectedUrls={
@@ -302,6 +312,11 @@ export default function PostEditorPage() {
               imageUrl: first.url,
               imageAlt: first.altText || first.filename,
               caption: first.filename,
+            });
+          } else if (editor.mediaPickerTarget.type === 'relatedCar') {
+            const first = selected[0];
+            editor.updateBlock(editor.mediaPickerTarget.blockId, {
+              carImage: first.url,
             });
           } else if (editor.mediaPickerTarget.type === 'gallery') {
             const targetBlockId = editor.mediaPickerTarget.blockId;

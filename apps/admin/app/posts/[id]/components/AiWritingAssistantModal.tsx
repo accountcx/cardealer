@@ -32,6 +32,7 @@ import type {
   FaqItem,
   SeoOptimizationResult,
   FullArticleResult,
+  FullArticleBlock,
 } from '@cardealer/types';
 
 export interface AiWritingAssistantModalProps {
@@ -44,6 +45,7 @@ export interface AiWritingAssistantModalProps {
   onInsertFullArticle?: (article: FullArticleResult) => void;
   onInsertOutline: (outline: OutlineItem[]) => void;
   onInsertFaqs: (faqs: FaqItem[]) => void;
+  onInsertBlocks?: (blocks: FullArticleBlock[]) => void;
   onAppendText: (text: string) => void;
   onApplySeo: (seo: SeoOptimizationResult) => void;
 }
@@ -67,6 +69,7 @@ export function AiWritingAssistantModal({
   onInsertFullArticle,
   onInsertOutline,
   onInsertFaqs,
+  onInsertBlocks,
   onAppendText,
   onApplySeo,
 }: AiWritingAssistantModalProps) {
@@ -86,6 +89,7 @@ export function AiWritingAssistantModal({
   // Result states
   const [fullArticleResult, setFullArticleResult] = useState<FullArticleResult | null>(null);
   const [outlineResult, setOutlineResult] = useState<OutlineItem[] | null>(null);
+  const [sectionBlocksResult, setSectionBlocksResult] = useState<FullArticleBlock[] | null>(null);
   const [textResult, setTextResult] = useState<string | null>(null);
   const [seoResult, setSeoResult] = useState<SeoOptimizationResult | null>(null);
   const [faqResult, setFaqResult] = useState<FaqItem[] | null>(null);
@@ -159,6 +163,9 @@ export function AiWritingAssistantModal({
 
       if (data?.outline) {
         setOutlineResult(data.outline);
+      }
+      if (data?.blocks) {
+        setSectionBlocksResult(data.blocks);
       }
       if (data?.text) {
         setTextResult(data.text);
@@ -615,24 +622,48 @@ export function AiWritingAssistantModal({
           </div>
         )}
 
-        {/* Tab 3: Viết Tiếp / Mở Rộng */}
+        {/* Tab 3: Viết Tiếp / Mở Rộng Content Block Tinh Hoa */}
         {activeTab === 'continue' && (
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-medium text-slate-200 mb-1.5 block">
-                Yêu cầu viết tiếp hoặc chủ đề phần thân bài cần AI triển khai
+              <label className="text-xs font-medium text-slate-200 mb-1.5 flex items-center justify-between">
+                <span>Yêu cầu viết tiếp / Chủ đề Content Block cần AI triển khai</span>
+                <span className="text-[11px] text-cyan-400 font-normal">
+                  ⚡ Tự động phân bổ 14 Content Block tinh hoa
+                </span>
               </label>
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="VD: Viết tiếp phần đánh giá trải nghiệm động cơ Smartstream 1.5L và khả năng tiết kiệm nhiên liệu khi di chuyển thực tế tại TP. Vinh"
+                placeholder="VD: Viết tiếp phần đánh giá trải nghiệm động cơ Smartstream 1.5L, kèm Bảng thông số kỹ thuật và Hộp lưu ý ưu đãi bảo dưỡng tại TP. Vinh"
                 className="w-full h-24 p-3 text-xs bg-slate-950/80 border border-slate-700 rounded-xl text-slate-200 focus:outline-none focus:border-cyan-500/50"
               />
             </div>
 
+            {/* Gợi ý chủ đề nhanh */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] text-slate-400 mr-1 font-medium">Gợi ý nhanh:</span>
+              {[
+                { label: 'Thông số & Vận hành', text: `Phân tích thông số kỹ thuật và cảm giác lái ${carModel || 'xe'} kèm Bảng so sánh` },
+                { label: 'Bảng giá & Lăn bánh', text: `Cập nhật bảng giá niêm yết và dự toán lăn bánh ${carModel || 'xe'} tại ${location}` },
+                { label: 'Đánh giá Ưu / Nhược điểm', text: `Tổng hợp ưu điểm và nhược điểm thực tế khi vận hành ${carModel || 'xe'}` },
+                { label: 'Hộp Lưu Ý & Hậu Mãi', text: `Chính sách bảo hành 5 năm, bảo dưỡng định kỳ và dịch vụ hỗ trợ showroom tại ${location}` },
+                { label: 'Hỏi Đáp FAQ Chi Tiết', text: `Giải đáp 3-4 thắc mắc thực tế nhất của người mua ${carModel || 'xe'} tại ${location}` },
+              ].map((preset, pIdx) => (
+                <button
+                  key={pIdx}
+                  type="button"
+                  onClick={() => setPrompt(preset.text)}
+                  className="px-2.5 py-1 text-[11px] rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-cyan-300 hover:border-cyan-500/40 transition-colors"
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+
             <div className="flex justify-between items-center">
               <p className="text-xs text-slate-400">
-                AI sẽ tổng hợp thông số kỹ thuật và văn phong chuyên gia ô tô uy tín.
+                AI sẽ tổng hợp số liệu, tạo các Content Block chuyên biệt (Heading, Thông số, Ưu nhược, Callout, CTA...).
               </p>
               <Button
                 variant="accent"
@@ -641,15 +672,181 @@ export function AiWritingAssistantModal({
                 className="flex items-center gap-2 h-9 px-4 text-xs font-semibold"
               >
                 {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                {loading ? 'Đang sinh nội dung...' : 'Viết Tiếp Nội Dung'}
+                {loading ? 'Đang sinh Content Block...' : 'Viết Tiếp & Tạo Khối'}
               </Button>
             </div>
 
-            {textResult && (
+            {loading && (
+              <Card className="p-5 bg-slate-950/80 border-cyan-500/30 rounded-xl space-y-2 text-center animate-pulse">
+                <div className="flex items-center justify-center gap-2 text-cyan-400 text-xs font-bold">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Đang phân tích và điều phối các Content Block tinh hoa...
+                </div>
+              </Card>
+            )}
+
+            {/* Hiển thị kết quả dạng Content Block Preview */}
+            {sectionBlocksResult && sectionBlocksResult.length > 0 && (
+              <Card className="p-4 bg-slate-950/60 border-cyan-500/30 rounded-xl space-y-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-800 pb-2.5 gap-2">
+                  <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
+                    <Check className="w-4 h-4" /> Đã sinh {sectionBlocksResult.length} Content Block tinh hoa
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const rawContent = sectionBlocksResult
+                          .map((b) => b.content || b.title || b.ctaButtonText || '')
+                          .filter(Boolean)
+                          .join('\n\n');
+                        navigator.clipboard.writeText(rawContent || textResult || '');
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }}
+                      className="h-8 px-2.5 text-xs text-slate-300"
+                    >
+                      {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copied ? 'Đã sao chép' : 'Sao chép văn bản'}
+                    </Button>
+                    <Button
+                      variant="accent"
+                      size="sm"
+                      onClick={() => {
+                        if (onInsertBlocks) {
+                          onInsertBlocks(sectionBlocksResult);
+                        } else {
+                          onAppendText(textResult || '');
+                        }
+                        onClose();
+                      }}
+                      className="h-8 px-3.5 text-xs font-bold flex items-center gap-1.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/20"
+                    >
+                      <ListPlus className="w-3.5 h-3.5" /> Chèn {sectionBlocksResult.length} khối vào bài viết
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Danh sách các khối preview */}
+                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                  {sectionBlocksResult.map((b, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3 bg-slate-900/90 rounded-lg border border-slate-800 text-xs space-y-1.5 hover:border-cyan-500/30 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="w-5 h-5 rounded-md bg-slate-800 flex items-center justify-center text-[11px] font-bold text-slate-400">
+                            {idx + 1}
+                          </span>
+                          <span className="font-semibold text-slate-200 capitalize flex items-center gap-1.5">
+                            {getBlockIcon(b.type)}
+                            {b.type === 'heading'
+                              ? `Tiêu đề H${b.level || 2}`
+                              : b.type === 'paragraph'
+                              ? 'Đoạn văn'
+                              : b.type === 'specTable'
+                              ? 'Bảng so sánh thông số'
+                              : b.type === 'priceTable'
+                              ? 'Bảng giá xe'
+                              : b.type === 'prosCons'
+                              ? 'Ưu & Nhược điểm'
+                              : b.type === 'callout'
+                              ? `Callout Box (${b.calloutType || 'info'})`
+                              : b.type === 'singleImage'
+                              ? 'Ảnh & Chú thích'
+                              : b.type === 'relatedCar'
+                              ? 'Xe liên quan'
+                              : b.type === 'ctaButton'
+                              ? 'Nút bấm CTA'
+                              : b.type === 'faq'
+                              ? 'Hỏi đáp FAQ'
+                              : b.type === 'youtube'
+                              ? 'Video YouTube'
+                              : b.type}
+                          </span>
+                        </div>
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-cyan-300 font-mono border border-slate-700">
+                          {b.type}
+                        </span>
+                      </div>
+
+                      {/* Chi tiết nội dung khối */}
+                      {b.type === 'heading' && (
+                        <p className="text-slate-100 font-bold pl-7">{b.content}</p>
+                      )}
+                      {b.type === 'paragraph' && (
+                        <p className="text-slate-300 leading-relaxed pl-7 line-clamp-2">{b.content}</p>
+                      )}
+                      {b.type === 'callout' && (
+                        <div className="pl-7 text-amber-200/90 font-medium">
+                          <strong>{b.title}:</strong> {b.content}
+                        </div>
+                      )}
+                      {b.type === 'specTable' && (
+                        <div className="pl-7 text-slate-300 flex items-center gap-2">
+                          <span className="font-semibold text-amber-300">{b.title}</span>
+                          <span className="text-slate-500">•</span>
+                          <span>{b.specVersions?.length || 0} phiên bản</span>
+                          <span className="text-slate-500">•</span>
+                          <span>{b.specRows?.length || 0} tiêu chí</span>
+                        </div>
+                      )}
+                      {b.type === 'priceTable' && (
+                        <div className="pl-7 text-slate-300 flex items-center gap-2">
+                          <span className="font-semibold text-blue-300">{b.title}</span>
+                          <span className="text-slate-500">•</span>
+                          <span>{b.prices?.length || 0} dòng xe</span>
+                        </div>
+                      )}
+                      {b.type === 'prosCons' && (
+                        <div className="pl-7 text-slate-300 flex items-center gap-3">
+                          <span className="text-emerald-400 font-medium">✓ {b.pros?.length || 0} ưu điểm</span>
+                          <span className="text-rose-400 font-medium">✕ {b.cons?.length || 0} nhược điểm</span>
+                        </div>
+                      )}
+                      {b.type === 'singleImage' && (
+                        <div className="pl-7 text-purple-300 flex items-center gap-1.5">
+                          <span>📸 {b.caption || b.imageAlt || 'Hình ảnh xe Hyundai'}</span>
+                        </div>
+                      )}
+                      {b.type === 'relatedCar' && (
+                        <div className="pl-7 text-emerald-300 flex items-center gap-2">
+                          <span>🚗 {b.carName}</span>
+                          <span className="text-slate-500">•</span>
+                          <span className="text-slate-300 font-mono font-bold">
+                            {b.carPrice ? `${b.carPrice.toLocaleString('vi-VN')} VNĐ` : 'Liên hệ'}
+                          </span>
+                        </div>
+                      )}
+                      {b.type === 'ctaButton' && (
+                        <div className="pl-7 text-rose-300 flex items-center gap-2">
+                          <span>🔘 {b.ctaButtonText || 'Nhận Báo Giá'}</span>
+                        </div>
+                      )}
+                      {b.type === 'faq' && (
+                        <div className="pl-7 text-cyan-300 flex items-center gap-1.5">
+                          <span>❓ {b.faqs?.length || 0} câu hỏi giải đáp</span>
+                        </div>
+                      )}
+                      {b.type === 'youtube' && (
+                        <div className="pl-7 text-red-400 flex items-center gap-1.5">
+                          <span>▶ {b.title || 'Video trải nghiệm lái thử'}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
+
+            {/* Fallback nếu chỉ có text đơn thuần */}
+            {(!sectionBlocksResult || sectionBlocksResult.length === 0) && textResult && (
               <Card className="p-4 bg-slate-950/60 border-cyan-500/30 rounded-xl space-y-3">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
                   <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
-                    <Check className="w-4 h-4" /> Nội dung AI sinh ra
+                    <Check className="w-4 h-4" /> Nội dung văn bản AI sinh ra
                   </span>
                   <div className="flex items-center gap-2">
                     <Button

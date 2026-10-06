@@ -20,8 +20,8 @@ interface PageProps {
 }
 
 // 🧠 Mental Model: Dynamic SEO Metadata Generator cho trang chi tiết dòng xe (/xe/[carSlug]).
-// Cố định Canonical URL tuyệt đối tại `/xe/[slug]` (bỏ toàn bộ query params)
-// nhằm bảo toàn 100% PageRank và triệt tiêu rủi ro Duplicate Content theo chuẩn Google Webmaster Guidelines.
+// Ưu tiên nạp Meta Title, Meta Description & Focus Keyword trực tiếp từ bài viết đánh giá chuyên sâu (car.article).
+// Cố định Canonical URL tuyệt đối tại `/xe/[slug]` nhằm bảo toàn 100% PageRank theo Google Guidelines.
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { carSlug } = await params;
 
@@ -35,15 +35,24 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       };
     }
 
-    const title = `Bảng Giá Xe ${car.tenXe} 2026 Lăn Bánh & Ưu Đãi Mới Nhất`;
+    const title =
+      car.article?.metaTitle ||
+      `Bảng Giá Xe ${car.tenXe} 2026 Lăn Bánh & Ưu Đãi Mới Nhất`;
     const description =
+      car.article?.metaDescription ||
+      car.article?.tomTat ||
       car.promotionSummary ||
       car.moTaChung ||
       `Đánh giá chi tiết xe ${car.tenXe}, bảng giá niêm yết, dự toán lăn bánh, thông số kỹ thuật và ưu đãi trả góp tốt nhất từ chuyên viên tư vấn bán hàng chính hãng.`;
 
+    const keywords = car.article?.focusKeyword
+      ? [car.article.focusKeyword, car.tenXe, `giá xe ${car.tenXe}`, `đánh giá ${car.tenXe}`]
+      : undefined;
+
     return {
       title,
       description,
+      keywords,
       alternates: {
         canonical: `/xe/${car.slug}`, // Cố định Canonical URL không dính query params
       },
@@ -72,11 +81,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 // 🧠 Mental Model: Next.js App Router Server Component (RSC) cho trang Chi Tiết Dòng Xe.
-// 1. Nạp chi tiết xe theo slug qua carsService.getCarBySlug (ISR 60s, tag car-detail-[slug]).
-// 2. Kiểm tra nếu xe không tồn tại hoặc draft -> Chuyển sang CarDetailErrorState thân thiện kèm hotline.
-// 3. Nạp cấu hình Showroom & Thông tin Saler tư vấn từ settingsService.
-// 4. Sinh và nhúng dữ liệu có cấu trúc Google Schema đa tầng (@graph: Product, Car, Person Consultant, BreadcrumbList).
-// 5. Bọc Suspense với CarDetailSkeleton đảm bảo CLS = 0 khi truyền dữ liệu sang Client Island CarDetailView.
+// 1. Nạp chi tiết xe theo slug qua carsService.getCarBySlug (kèm car.article 1-1).
+// 2. Nạp cấu hình Showroom & Thông tin Saler tư vấn từ settingsService.
+// 3. Sinh và nhúng dữ liệu có cấu trúc Google Schema đa tầng (@graph: Product, Car, Article, FAQPage, VideoObject).
+// 4. Bọc Suspense với CarDetailSkeleton đảm bảo CLS = 0 khi truyền dữ liệu sang Client Island CarDetailView.
 export default async function CarDetailPage({ params, searchParams }: PageProps) {
   const { carSlug } = await params;
   const resolvedSearchParams = await searchParams;
@@ -126,7 +134,6 @@ export default async function CarDetailPage({ params, searchParams }: PageProps)
       : 'https://xehyundaivinh.com');
 
   // 🧠 Mental Model: Lấy trực tiếp thông tin Chuyên Viên Tư Vấn từ cấu hình "Chuyên Viên Nổi" (floatingSeller)
-  // được quản trị tại Admin (/settings). Không đoán mò hoặc fallback chuỗi tĩnh tùy tiện.
   const consultant: ConsultantInfo = {
     name: safeSettings.floatingSeller.sellerName,
     phone: safeSettings.floatingSeller.sellerPhone,
@@ -185,6 +192,8 @@ export default async function CarDetailPage({ params, searchParams }: PageProps)
         />
       </Suspense>
 
+
+
       {/* 🔗 Các Dòng Xe Cùng Phân Khúc (Internal Linking Architecture) */}
       {displayRelatedCars.length > 0 && (
         <section className="bg-slate-100/70 border-t border-slate-200/80 py-12 px-4 sm:px-6 lg:px-8">
@@ -193,7 +202,7 @@ export default async function CarDetailPage({ params, searchParams }: PageProps)
               <div>
                 <h3 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-[#0072CE]" />
-                  Các Dòng Xe Cùng Phân Khúc & Lựa Chọn Khác
+                  Các Dòng Xe Cùng Phân Khúc &amp; Lựa Chọn Khác
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-500 mt-1">
                   Khám phá thêm các mẫu xe Hyundai {car.segment ? `phân khúc ${car.segment.toUpperCase()}` : 'chính hãng'} đang được quan tâm nhiều nhất
@@ -220,7 +229,7 @@ export default async function CarDetailPage({ params, searchParams }: PageProps)
       <footer className="border-t border-slate-200/80 bg-slate-100/70 py-6 text-center text-xs text-slate-500">
         <div className="max-w-4xl mx-auto px-4 space-y-1">
           <p className="font-semibold text-slate-700">
-            Trang thông tin & tư vấn bán hàng chính hãng
+            Trang thông tin &amp; tư vấn bán hàng chính hãng
             {consultant.name ? ` của Chuyên viên tư vấn ${consultant.name}` : ''}
             {consultant.showroomName ? ` (${consultant.showroomName})` : ''}
           </p>

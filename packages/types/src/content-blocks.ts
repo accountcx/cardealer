@@ -1,177 +1,115 @@
 import { z } from 'zod';
 
-// ============================================================================
-// 1. SCHEMAS CHO 8 CONTENT BLOCKS TINH HOA (TIPTAP NODE VIEWS)
-// ============================================================================
+// 🧠 Mental Model: Schema Validation cho Toàn Bộ Content Blocks Tiptap & Inbound Marketing
+// Hỗ trợ Tiptap Blocks tinh hoa: Heading, Callout, FAQ, PriceTable, RelatedCar, ImageGallery, SpecTable, LeadForm, CtaButton, ProsCons.
 
-// 1. CalloutBlock: Hộp ghi chú, cảnh báo hoặc thông báo ưu đãi
 export const CalloutBlockAttrsSchema = z.object({
   type: z.enum(['info', 'warning', 'success', 'note']).default('info'),
-  title: z.string().optional().nullable(),
-  content: z.string().min(1, 'Nội dung ghi chú không được để trống'),
+  title: z.string().optional(),
+  content: z.string().optional(),
 });
 export type CalloutBlockAttrs = z.infer<typeof CalloutBlockAttrsSchema>;
 
-// 2. FeatureGridBlock: Lưới trang bị, tiện ích công nghệ SmartSense
-export const FeatureItemSchema = z.object({
-  title: z.string().min(1, 'Tiêu đề tính năng bắt buộc'),
-  description: z.string().optional().nullable(),
-  imageUrl: z.string().url().optional().nullable(),
-});
-export type FeatureItem = z.infer<typeof FeatureItemSchema>;
-
-export const FeatureGridBlockAttrsSchema = z.object({
-  columns: z.enum(['2', '3', '4']).default('3'),
-  features: z.array(FeatureItemSchema).min(1, 'Cần ít nhất 1 tính năng'),
-});
-export type FeatureGridBlockAttrs = z.infer<typeof FeatureGridBlockAttrsSchema>;
-
-// 3. TableBlock: Bảng dữ liệu thông minh (cuộn ngang, Live Search, Export UTF-8 BOM CSV)
-export const TableCellSchema = z.object({
-  content: z.string(),
-  isHeader: z.boolean().default(false),
-});
-export type TableCell = z.infer<typeof TableCellSchema>;
-
-export const TableRowSchema = z.object({
-  cells: z.array(TableCellSchema),
-});
-export type TableRow = z.infer<typeof TableRowSchema>;
-
-export const TableBlockAttrsSchema = z.object({
-  caption: z.string().optional().nullable(),
-  enableSearch: z.boolean().default(false),
-  enableExport: z.boolean().default(false),
-  rows: z.array(TableRowSchema).min(1, 'Bảng cần có ít nhất 1 dòng dữ liệu'),
-});
-export type TableBlockAttrs = z.infer<typeof TableBlockAttrsSchema>;
-
-// 4. RelatedCarBlock: Thẻ xe liên quan gắn giá niêm yết và link trực tiếp
-export const RelatedCarBlockAttrsSchema = z.object({
-  carId: z.string().uuid('ID xe không hợp lệ'),
-  carSlug: z.string().min(1, 'Slug xe bắt buộc'),
-  tenXe: z.string().min(1, 'Tên xe bắt buộc'),
-  anhDaiDienUrl: z.string().url('URL ảnh không hợp lệ'),
-  giaNiemYetTu: z.number().nonnegative('Giá niêm yết không âm'),
-  seatCount: z.number().default(5),
-  fuelType: z.string().optional().nullable(),
-});
-export type RelatedCarBlockAttrs = z.infer<typeof RelatedCarBlockAttrsSchema>;
-
-// 5. PriceTableBlock: Bảng giá lăn bánh và ưu đãi đồng bộ tự động từ database
-export const PriceTableBlockAttrsSchema = z.object({
-  carId: z.string().uuid('ID xe không hợp lệ'),
-  headline: z.string().optional().nullable(),
-  showNote: z.boolean().default(true),
-});
-export type PriceTableBlockAttrs = z.infer<typeof PriceTableBlockAttrsSchema>;
-
-// 6. YoutubeBlock: Nhúng video YouTube 16:9 với Facade Lazy Load
-export const YoutubeBlockAttrsSchema = z.object({
-  videoUrl: z.string().url('URL video không hợp lệ'),
-  videoId: z.string().min(1, 'Không trích xuất được video ID'),
-  caption: z.string().optional().nullable(),
-});
-export type YoutubeBlockAttrs = z.infer<typeof YoutubeBlockAttrsSchema>;
-
-// 7. TikTokBlock: Nhúng video dọc 9:16 Facade poster, autoplay v1, khử scrollbar
-export const TikTokBlockAttrsSchema = z.object({
-  videoUrl: z.string().url('URL TikTok không hợp lệ'),
-  videoId: z.string().min(1, 'ID TikTok bắt buộc'),
-  title: z.string().min(1, 'Tiêu đề video bắt buộc cho SEO'),
-  posterImageUrl: z.string().url('Ảnh bìa video bắt buộc để tối ưu LCP'),
-});
-export type TikTokBlockAttrs = z.infer<typeof TikTokBlockAttrsSchema>;
-
-// 8. GalleryBlock: Bộ sưu tập ảnh slider vuốt mobile hoặc lưới kèm Lightbox
-export const GalleryImageSchema = z.object({
-  url: z.string().url('URL ảnh không hợp lệ'),
-  alt: z.string().default('Hình ảnh xe Hyundai'),
-  caption: z.string().optional().nullable(),
-});
-export type GalleryImage = z.infer<typeof GalleryImageSchema>;
-
-export const GalleryBlockAttrsSchema = z.object({
-  style: z.enum(['grid', 'slider']).default('slider'),
-  images: z.array(GalleryImageSchema).min(1, 'Cần ít nhất 1 ảnh trong thư viện'),
-});
-export type GalleryBlockAttrs = z.infer<typeof GalleryBlockAttrsSchema>;
-
-// 9. FAQBlock: Khối câu hỏi thường gặp Accordion hỗ trợ sinh FAQPage JSON-LD Schema
-export const FAQQuestionSchema = z.object({
-  question: z.string().min(1, 'Câu hỏi không được để trống'),
-  answer: z.string().min(1, 'Câu trả lời không được để trống'),
-});
-export type FAQQuestion = z.infer<typeof FAQQuestionSchema>;
-
-export const FAQBlockAttrsSchema = z.object({
-  title: z.string().default('Câu hỏi thường gặp'),
-  questions: z.array(FAQQuestionSchema).min(1, 'Cần ít nhất 1 câu hỏi'),
-});
-export type FAQBlockAttrs = z.infer<typeof FAQBlockAttrsSchema>;
-
-// 10. SingleImageBlock: Khối ảnh đơn có Alt Text chuẩn SEO & Chú thích chân ảnh (Caption)
 export const SingleImageBlockAttrsSchema = z.object({
-  url: z.string().url('URL ảnh không hợp lệ'),
-  alt: z.string().min(1, 'Thẻ Alt bắt buộc cho SEO'),
-  caption: z.string().optional().nullable(),
+  src: z.string().optional(),
+  url: z.string().optional(),
+  alt: z.string().default(''),
+  caption: z.string().optional(),
 });
 export type SingleImageBlockAttrs = z.infer<typeof SingleImageBlockAttrsSchema>;
 
-// 11. SpecComparisonBlock: Bảng so sánh thông số kỹ thuật giữa các phiên bản xe
-export const SpecRowSchema = z.object({
-  specName: z.string().min(1, 'Tên thông số kỹ thuật không được để trống'),
+export const GalleryImageItemSchema = z.object({
+  url: z.string(),
+  alt: z.string().optional(),
+  caption: z.string().optional(),
+});
+export type GalleryImageItem = z.infer<typeof GalleryImageItemSchema>;
+
+export const GalleryBlockAttrsSchema = z.object({
+  title: z.string().optional(),
+  layout: z.enum(['slider', 'grid']).default('slider'),
+  style: z.enum(['slider', 'grid']).optional(),
+  images: z.array(GalleryImageItemSchema).default([]),
+});
+export type GalleryBlockAttrs = z.infer<typeof GalleryBlockAttrsSchema>;
+
+export const SpecRowItemSchema = z.object({
+  specName: z.string(),
   values: z.array(z.string()),
 });
-export type SpecRow = z.infer<typeof SpecRowSchema>;
+export type SpecRowItem = z.infer<typeof SpecRowItemSchema>;
 
 export const SpecComparisonBlockAttrsSchema = z.object({
   title: z.string().default('Bảng So Sánh Thông Số Kỹ Thuật'),
-  versions: z.array(z.string()).min(1, 'Cần ít nhất 1 phiên bản'),
-  rows: z.array(SpecRowSchema).min(1, 'Cần ít nhất 1 thông số so sánh'),
+  versions: z.array(z.string()).default([]),
+  rows: z.array(SpecRowItemSchema).default([]),
 });
 export type SpecComparisonBlockAttrs = z.infer<typeof SpecComparisonBlockAttrsSchema>;
 
-// 12. CtaButtonBlock: Nút bấm chuyển đổi nhanh rải rác trong bài (Hotline, Zalo, Báo giá, Link)
+export const PriceTableRowSchema = z.object({
+  version: z.string().optional(),
+  name: z.string().optional(),
+  listedPrice: z.number().nonnegative().optional(),
+  price: z.number().nonnegative().optional(),
+  discount: z.number().nonnegative().default(0),
+  rollingPrice: z.number().nonnegative().optional(),
+  onRoadPriceEstimate: z.number().nonnegative().optional(),
+});
+export type PriceTableRow = z.infer<typeof PriceTableRowSchema>;
+
+export const PriceTableBlockAttrsSchema = z.object({
+  title: z.string().default('Bảng Giá Xe Hyundai Mới Nhất'),
+  carSlug: z.string().optional(),
+  prices: z.array(PriceTableRowSchema).default([]),
+});
+export type PriceTableBlockAttrs = z.infer<typeof PriceTableBlockAttrsSchema>;
+
+export const RelatedCarBlockAttrsSchema = z.object({
+  carName: z.string().default('Hyundai Accent 2026'),
+  slug: z.string().default('hyundai-accent'),
+  minPrice: z.number().nonnegative().default(439000000),
+  imageUrl: z.string().default('/images/cars/accent.webp'),
+  seatCount: z.number().int().positive().default(5),
+  fuelType: z.string().default('Xăng 1.5L Smartstream'),
+});
+export type RelatedCarBlockAttrs = z.infer<typeof RelatedCarBlockAttrsSchema>;
+
 export const CtaButtonBlockAttrsSchema = z.object({
-  buttonText: z.string().min(1, 'Nhãn nút bắt buộc'),
+  buttonText: z.string().default('Nhận Báo Giá Lăn Bánh & Lái Thử'),
   actionType: z.enum(['hotline', 'zalo', 'quoteForm', 'customLink']).default('hotline'),
-  customUrl: z.string().optional().nullable(),
-  subtext: z.string().optional().nullable(),
+  subtext: z.string().optional(),
   variant: z.enum(['red', 'blue', 'emerald']).default('red'),
+  phoneNumber: z.string().optional(),
+  customUrl: z.string().optional(),
 });
 export type CtaButtonBlockAttrs = z.infer<typeof CtaButtonBlockAttrsSchema>;
 
-// 13. ProsConsBlock: Khối Ưu điểm & Nhược điểm (Google Featured Snippet Booster)
 export const ProsConsBlockAttrsSchema = z.object({
-  title: z.string().default('Đánh Giá Ưu & Nhược Điểm'),
+  title: z.string().default('Đánh Giá Ưu & Nhược Điểm Thực Tế'),
   pros: z.array(z.string()).default([]),
   cons: z.array(z.string()).default([]),
 });
 export type ProsConsBlockAttrs = z.infer<typeof ProsConsBlockAttrsSchema>;
 
-// ============================================================================
-// 2. SCHEMAS CHO CÁC KHỐI INBOUND LEAD MARKETING (1-CHẠM CRO TINH GỌN)
-// ============================================================================
-
-// Form nhận báo giá 1-chạm giữa bài viết
-export const InlineQuickFormAttrsSchema = z.object({
-  headline: z.string().default('Nhận Ưu Đãi & Báo Giá Lăn Bánh'),
-  buttonText: z.string().default('Nhận Báo Giá Ngay'),
-  carSlug: z.string().optional().nullable(),
+export const FaqQuestionItemSchema = z.object({
+  question: z.string(),
+  answer: z.string(),
 });
-export type InlineQuickFormAttrs = z.infer<typeof InlineQuickFormAttrsSchema>;
+export type FaqQuestionItem = z.infer<typeof FaqQuestionItemSchema>;
 
-// Khối quà tặng/bảng dự toán đặc quyền bị làm mờ, mở khóa tức thì sau khi điền SĐT
-export const GatedContentAttrsSchema = z.object({
-  rewardTitle: z.string().default('Bảng Dự Toán Chi Phí Lăn Bánh Chi Tiết Từng Huyện'),
-  gatedHtml: z.string().min(1, 'Nội dung khóa không được để trống'),
+export const FaqBlockAttrsSchema = z.object({
+  title: z.string().default('Câu Hỏi Thường Gặp (FAQ)'),
+  questions: z.array(FaqQuestionItemSchema).default([]),
 });
-export type GatedContentAttrs = z.infer<typeof GatedContentAttrsSchema>;
+export type FaqBlockAttrs = z.infer<typeof FaqBlockAttrsSchema>;
 
-// ============================================================================
-// 3. SCHEMAS DTO BÀI VIẾT & MỤC LỤC BÀI VIẾT (TOC)
-// ============================================================================
+export const LeadFormBlockAttrsSchema = z.object({
+  headline: z.string().default('Đăng Ký Nhận Báo Giá Lăn Bánh & Lái Thử Tận Nhà'),
+  subheadline: z.string().default('Chuyên viên tư vấn sẽ liên hệ gửi dự toán chi phí chi tiết trong 5 phút.'),
+  buttonText: z.string().default('Gửi Yêu Cầu Nhận Báo Giá'),
+  carName: z.string().optional(),
+});
+export type LeadFormBlockAttrs = z.infer<typeof LeadFormBlockAttrsSchema>;
 
 export const PostTocItemSchema = z.object({
   id: z.string(),
@@ -190,6 +128,8 @@ export const CreatePostInputSchema = z.object({
   tomTat: z.string().max(1000).optional().nullable(),
   noiDung: z.record(z.string(), z.unknown()), // Tiptap JSON AST Tree
   status: z.enum(['draft', 'published', 'scheduled', 'archived']).default('draft'),
+  publishedAt: z.string().optional().nullable().or(z.literal('')),
+  createdAt: z.string().optional().nullable().or(z.literal('')),
   scheduledAt: z.string().datetime().optional().nullable().or(z.literal('')),
   expiredPromoDate: z.string().datetime().optional().nullable().or(z.literal('')),
   isFeatured: z.boolean().default(false),

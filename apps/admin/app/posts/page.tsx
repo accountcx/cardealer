@@ -7,9 +7,9 @@
 //    - Loading State: Skeleton Shimmer giả lập toàn diện bảng dữ liệu triệt tiêu CLS.
 //    - Empty State: Minh họa chuyên nghiệp khi không có bài viết hoặc không khớp bộ lọc + CTA Tạo bài mới.
 //    - Error State: Banner cảnh báo lỗi chi tiết kèm nút Thử lại (onRetry).
-//    - Data State: Bảng dữ liệu hiển thị ảnh đại diện, tiêu đề, chuyên mục, tác giả, trạng thái, lượt xem, thời gian đọc.
+//    - Data State: Bảng dữ liệu hiển thị ảnh đại diện, tiêu đề, dòng xe áp dụng, chuyên mục, tác giả, trạng thái, lượt xem, thời gian đọc.
 // 4. Thao tác nhanh 1 chạm:
-//    - Xem trước bài viết bí mật với previewToken (Copy link / Mở tab mới).
+//    - Xem trước bài viết bí mật với previewToken (Copy link / Mở tab mới trên Web Storefront).
 //    - Chỉnh sửa bài viết trong Tiptap WYSIWYG Editor.
 //    - Xóa bài viết an toàn qua ConfirmModal kính mờ.
 
@@ -101,7 +101,7 @@ export default function PostsManagementPage() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Tải danh mục bài viết 1 lần
+  // Tải danh mục bài viết & danh sách xe 1 lần
   useEffect(() => {
     let isMounted = true;
     postService
@@ -197,18 +197,35 @@ export default function PostsManagementPage() {
     }
   };
 
+  // Helper tính Base URL Storefront
+  const getStorefrontBaseUrl = () => {
+    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    return isLocal
+      ? `http://${window.location.hostname}:3002`
+      : (process.env.NEXT_PUBLIC_SITE_URL || 'https://xehyundaivinh.com');
+  };
+
   // Copy Preview URL
   const handleCopyPreview = (post: PostItem) => {
     if (!post.previewToken) return;
-    const previewUrl = `${window.location.origin.replace(':3001', ':3002')}/tin-tuc/preview?token=${post.previewToken}`;
+    const storefrontBase = getStorefrontBaseUrl();
+    const previewUrl = `${storefrontBase}/tin-tuc/${encodeURIComponent(post.slug)}?token=${encodeURIComponent(post.previewToken)}`;
     navigator.clipboard.writeText(previewUrl);
     setCopiedId(post.id);
-    setTimeout(() => setCopiedId(null), 2500);
+    setTimeout(() => setCopiedId(null), 2505);
     setNotification({
       type: 'success',
       title: 'Đã sao chép liên kết xem trước',
       message: 'Liên kết xem trước bài viết nháp đã được lưu vào khay nhớ tạm.',
     });
+  };
+
+  // Open Preview in New Tab
+  const handleOpenStorefront = (post: PostItem) => {
+    const storefrontBase = getStorefrontBaseUrl();
+    const queryParam = post.previewToken ? `?token=${encodeURIComponent(post.previewToken)}` : '';
+    const targetUrl = `${storefrontBase}/tin-tuc/${encodeURIComponent(post.slug)}${queryParam}`;
+    window.open(targetUrl, '_blank');
   };
 
   // Render Status Badge
@@ -271,7 +288,7 @@ export default function PostsManagementPage() {
             Quản Lý Bài Viết & Inbound Hub
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Biên tập bài viết chuẩn SEO Onpage, chèn Content Blocks tinh hoa và theo dõi khách hàng tiềm năng.
+            Biên tập bài viết chuẩn SEO Onpage theo từng dòng xe, chèn Content Blocks tinh hoa và theo dõi khách hàng tiềm năng.
           </p>
         </div>
 
@@ -427,23 +444,23 @@ export default function PostsManagementPage() {
 
         {/* Empty State */}
         {!loading && !error && posts.length === 0 && (
-          <div className="p-12 md:p-16 text-center flex flex-col items-center justify-center space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-slate-800/80 text-slate-400 border border-white/10 flex items-center justify-center">
+          <div className="p-16 text-center flex flex-col items-center justify-center space-y-4">
+            <div className="w-16 h-16 rounded-2xl bg-slate-800/80 border border-white/10 flex items-center justify-center text-slate-400">
               <FileText size={32} />
             </div>
             <div className="max-w-md">
-              <h3 className="text-lg font-bold text-slate-100">Chưa có bài viết nào</h3>
+              <h3 className="text-lg font-bold text-slate-200">Không tìm thấy bài viết nào</h3>
               <p className="text-sm text-slate-400 mt-1">
                 {searchQuery || statusFilter !== 'all' || selectedCategory !== 'all'
-                  ? 'Không tìm thấy bài viết nào phù hợp với bộ lọc hiện tại. Vui lòng thử tìm kiếm khác.'
-                  : 'Bắt đầu xuất bản các bài đánh giá xe, tin khuyến mãi và cẩm nang để tăng trưởng lượng truy cập.'}
+                  ? 'Không có bài viết nào khớp với tiêu chí tìm kiếm hiện tại.'
+                  : 'Chưa có bài viết nào trong hệ thống. Hãy bắt đầu tạo bài viết đầu tiên của bạn.'}
               </p>
             </div>
             {can('posts:write') && (
               <Link href="/posts/new">
-                <Button variant="accent" className="flex items-center gap-2 h-11 px-5 font-semibold text-sm">
+                <Button variant="accent" className="flex items-center gap-2 h-11 px-5 font-semibold text-sm mt-2">
                   <Plus size={18} />
-                  Tạo bài viết đầu tiên
+                  Tạo bài viết mới ngay
                 </Button>
               </Link>
             )}
@@ -460,7 +477,7 @@ export default function PostsManagementPage() {
                 <TableHead className="py-4 px-4 text-slate-400 font-semibold">Tác giả</TableHead>
                 <TableHead className="py-4 px-4 text-center text-slate-400 font-semibold">Trạng thái</TableHead>
                 <TableHead className="py-4 px-4 text-center text-slate-400 font-semibold">Thống kê</TableHead>
-                <TableHead className="py-4 px-4 text-center text-slate-400 font-semibold">Ngày tạo</TableHead>
+                <TableHead className="py-4 px-4 text-center text-slate-400 font-semibold">Ngày viết</TableHead>
                 <TableHead className="py-4 px-6 text-right text-slate-400 font-semibold">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
@@ -537,12 +554,24 @@ export default function PostsManagementPage() {
 
                   {/* Date */}
                   <TableCell className="py-4 px-4 text-center whitespace-nowrap text-xs text-slate-400 font-mono">
-                    {new Date(post.createdAt).toLocaleDateString('vi-VN')}
+                    {new Date(post.publishedAt || post.createdAt).toLocaleDateString('vi-VN')}
                   </TableCell>
 
                   {/* Actions */}
                   <TableCell className="py-4 px-6 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1.5">
+                      {/* Open Web Storefront Preview */}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleOpenStorefront(post)}
+                        title="Mở xem bài viết trên Web Storefront"
+                        className="h-8 w-8 text-slate-400 hover:text-cyan-300 hover:bg-cyan-500/10"
+                      >
+                        <ExternalLink size={16} />
+                      </Button>
+
                       {/* Copy Preview Link */}
                       {post.previewToken && (
                         <Button

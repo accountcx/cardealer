@@ -25,6 +25,7 @@ import {
   Gift,
   PhoneCall,
   Sparkles,
+  BookOpen,
 } from 'lucide-react';
 
 export interface ConsultantInfo {
@@ -130,7 +131,7 @@ export function CarDetailView({
     if (versionImages.length > 0) {
       return Array.from(new Set(versionImages));
     }
-    return [car.anhDaiDienUrl];
+    return [];
   }, [selectedVersion, car]);
 
   const cleanPhone = consultant.hotline.replace(/\D/g, '');
@@ -252,6 +253,18 @@ export function CarDetailView({
                   <Sparkles className="w-3 h-3" />
                   Sẵn xe giao ngay
                 </span>
+                {car.article && car.article.status === 'published' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      document.getElementById('danh-gia-chi-tiet')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 px-2.5 py-0.5 rounded-full flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <BookOpen className="w-3 h-3 text-blue-600" />
+                    <span>Đánh giá chi tiết</span>
+                  </button>
+                )}
               </div>
 
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">
@@ -348,6 +361,9 @@ export function CarDetailView({
               carName={car.tenXe}
               generalDescription={car.moTaChung}
               reviewContent={selectedVersion?.reviewContent}
+              article={car.article}
+              consultantHotline={consultant.hotline || consultant.phone}
+              consultantZalo={zaloUrl}
             />
           </div>
 

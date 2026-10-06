@@ -36,7 +36,7 @@ export interface FAQBlockProps {
 }
 
 export function FAQBlock({
-  title = 'Câu hỏi thường gặp',
+  title,
   questions = [],
   isLoading = false,
   error = null,
@@ -151,14 +151,16 @@ export function FAQBlock({
   return (
     <div className={cn('not-prose my-8 space-y-4 font-sans', className)}>
       {/* Tiêu đề mục FAQ */}
-      <div className="flex items-center gap-2.5">
-        <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-          {title}
-        </h3>
-        <Badge variant="accent" size="sm" className="font-semibold">
-          FAQ
-        </Badge>
-      </div>
+      {title && (
+        <div className="flex items-center gap-2.5">
+          <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+            {title}
+          </h3>
+          <Badge variant="accent" size="sm" className="font-semibold">
+            FAQ
+          </Badge>
+        </div>
+      )}
 
       {/* Danh sách Accordion câu hỏi & trả lời */}
       <div className="space-y-3">

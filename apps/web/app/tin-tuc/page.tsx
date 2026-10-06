@@ -60,6 +60,7 @@ export interface PostArticle {
   readingTime: number;
   wordCount?: number;
   viewCount?: number;
+  publishedAt?: string | null;
   createdAt: string;
 }
 
@@ -125,6 +126,7 @@ const FALLBACK_ARTICLES: PostArticle[] = [
     readingTime: 4,
     wordCount: 850,
     viewCount: 1420,
+    publishedAt: '2026-09-22T08:00:00.000Z',
     createdAt: '2026-09-22T08:00:00.000Z',
   },
   {
@@ -142,6 +144,7 @@ const FALLBACK_ARTICLES: PostArticle[] = [
     readingTime: 5,
     wordCount: 1100,
     viewCount: 980,
+    publishedAt: '2026-09-20T09:30:00.000Z',
     createdAt: '2026-09-20T09:30:00.000Z',
   },
   {
@@ -159,6 +162,7 @@ const FALLBACK_ARTICLES: PostArticle[] = [
     readingTime: 6,
     wordCount: 1350,
     viewCount: 2310,
+    publishedAt: '2026-09-18T14:15:00.000Z',
     createdAt: '2026-09-18T14:15:00.000Z',
   },
   {
@@ -176,6 +180,7 @@ const FALLBACK_ARTICLES: PostArticle[] = [
     readingTime: 5,
     wordCount: 950,
     viewCount: 750,
+    publishedAt: '2026-09-15T11:00:00.000Z',
     createdAt: '2026-09-15T11:00:00.000Z',
   },
   {
@@ -193,6 +198,7 @@ const FALLBACK_ARTICLES: PostArticle[] = [
     readingTime: 4,
     wordCount: 780,
     viewCount: 620,
+    publishedAt: '2026-09-12T16:20:00.000Z',
     createdAt: '2026-09-12T16:20:00.000Z',
   },
   {
@@ -210,6 +216,7 @@ const FALLBACK_ARTICLES: PostArticle[] = [
     readingTime: 4,
     wordCount: 890,
     viewCount: 1890,
+    publishedAt: '2026-09-10T10:00:00.000Z',
     createdAt: '2026-09-10T10:00:00.000Z',
   },
 ];
@@ -392,7 +399,7 @@ export default async function NewsListingPage({ searchParams }: NewsPageProps) {
                     <div className="flex items-center gap-4">
                       <span className="flex items-center gap-1.5">
                         <Calendar size={14} className="text-slate-400" />
-                        {new Date(heroArticle.createdAt).toLocaleDateString('vi-VN')}
+                        {new Date(heroArticle.publishedAt || heroArticle.createdAt).toLocaleDateString('vi-VN')}
                       </span>
                       <span className="flex items-center gap-1.5">
                         <Clock size={14} className="text-slate-400" />
@@ -522,7 +529,7 @@ export default async function NewsListingPage({ searchParams }: NewsPageProps) {
                   <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                     <span className="flex items-center gap-1.5">
                       <Calendar size={13} className="text-slate-400" />
-                      {new Date(article.createdAt).toLocaleDateString('vi-VN')}
+                      {new Date(article.publishedAt || article.createdAt).toLocaleDateString('vi-VN')}
                     </span>
                     <span className="flex items-center gap-1.5">
                       <Clock size={13} className="text-slate-400" />

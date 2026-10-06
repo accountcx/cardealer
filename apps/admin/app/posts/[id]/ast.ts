@@ -8,7 +8,10 @@ export function serializeTiptapDoc(blocks: EditorBlock[]): TiptapDoc {
       case 'heading':
         return {
           type: 'heading',
-          attrs: { level: b.level || 2 },
+          attrs: {
+            level: b.level || 2,
+            ignoreToc: Boolean(b.ignoreToc),
+          },
           content: [{ type: 'text', text: b.content || '' }],
         };
       case 'callout':
@@ -47,6 +50,7 @@ export function serializeTiptapDoc(blocks: EditorBlock[]): TiptapDoc {
         return {
           type: 'faqBlock',
           attrs: {
+            title: b.title || undefined,
             questions: b.faqs || [
               { question: 'Hyundai Santa Fe 2026 có mấy phiên bản?', answer: 'Có 5 phiên bản chính hãng.' },
             ],
@@ -160,6 +164,7 @@ export function deserializeTiptapDoc(doc: TiptapDoc): EditorBlock[] {
         id,
         type: 'heading',
         level: (node.attrs?.level as number) || 2,
+        ignoreToc: Boolean(node.attrs?.ignoreToc || node.attrs?.hideFromToc || node.attrs?.noToc),
         content: text,
       };
     }
@@ -195,6 +200,7 @@ export function deserializeTiptapDoc(doc: TiptapDoc): EditorBlock[] {
       return {
         id,
         type: 'faq',
+        title: (node.attrs?.title as string) || (node.attrs?.headline as string) || '',
         faqs: (node.attrs?.questions as any) || [],
       };
     }
@@ -249,37 +255,37 @@ export function deserializeTiptapDoc(doc: TiptapDoc): EditorBlock[] {
         caption: (node.attrs?.caption as string) || '',
       };
     }
-    if (node.type === 'imageGallery' || node.type === 'galleryBlock') {
+    if (node.type === 'galleryBlock' || node.type === 'imageGallery') {
       return {
         id,
         type: 'imageGallery',
         title: (node.attrs?.title as string) || 'Bộ Sưu Tập Hình Ảnh Chi Tiết',
-        galleryStyle: ((node.attrs?.style as any) || (node.attrs?.layout as any) || 'slider'),
-        galleryImages: (node.attrs?.images as any) || [],
+        galleryStyle: (node.attrs?.style as any) || 'slider',
+        galleryImages: (node.attrs?.images as any[]) || [],
       };
     }
-    if (node.type === 'specTable' || node.type === 'specComparisonBlock') {
+    if (node.type === 'specComparisonBlock' || node.type === 'specTable') {
       return {
         id,
         type: 'specTable',
         title: (node.attrs?.title as string) || 'Bảng So Sánh Thông Số Kỹ Thuật',
         specVersions: (node.attrs?.versions as string[]) || ['Bản Tiêu Chuẩn', 'Bản Đặc Biệt'],
-        specRows: (node.attrs?.rows as any) || [],
+        specRows: (node.attrs?.rows as any[]) || [],
       };
     }
-    if (node.type === 'ctaButton' || node.type === 'ctaButtonBlock') {
+    if (node.type === 'ctaButtonBlock' || node.type === 'ctaButton') {
       return {
         id,
         type: 'ctaButton',
-        ctaButtonText: ((node.attrs?.buttonText as string) || 'Gọi Hotline Tư Vấn Ngay').replace(/^\ud83d\udcde\s*/, ''),
+        ctaButtonText: (node.attrs?.buttonText as string) || 'Gọi Hotline Tư Vấn Ngay',
         ctaActionType: (node.attrs?.actionType as any) || 'hotline',
         ctaCustomUrl: (node.attrs?.customUrl as string) || '',
         ctaPhone: (node.attrs?.phoneNumber as string) || '',
-        ctaSubtext: (node.attrs?.subtext as string) || '',
+        ctaSubtext: (node.attrs?.subtext as string) || 'Hỗ trợ tư vấn giá lăn bánh & ưu đãi độc quyền 24/7',
         ctaVariant: (node.attrs?.variant as any) || 'red',
       };
     }
-    if (node.type === 'prosCons' || node.type === 'prosConsBlock') {
+    if (node.type === 'prosConsBlock' || node.type === 'prosCons') {
       return {
         id,
         type: 'prosCons',
@@ -288,6 +294,7 @@ export function deserializeTiptapDoc(doc: TiptapDoc): EditorBlock[] {
         cons: (node.attrs?.cons as string[]) || [],
       };
     }
+
     return {
       id,
       type: 'paragraph',

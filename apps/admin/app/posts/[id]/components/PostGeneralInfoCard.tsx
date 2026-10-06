@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Check, AlertCircle, ImageIcon, X } from 'lucide-react';
+import { Check, AlertCircle, ImageIcon, X, Calendar } from 'lucide-react';
 import { Card, Input, Button, Select } from '@cardealer/ui';
 import type { CategoryItem } from '../../../../services/post.service';
 
@@ -15,6 +15,8 @@ export interface PostGeneralInfoCardProps {
   categories: CategoryItem[];
   categoryId: string;
   setCategoryId: (val: string) => void;
+  publishedAt: string;
+  setPublishedAt: (val: string) => void;
   anhDaiDienUrl: string;
   setAnhDaiDienUrl: (val: string) => void;
   anhDaiDienAlt: string;
@@ -34,6 +36,8 @@ export function PostGeneralInfoCard({
   categories,
   categoryId,
   setCategoryId,
+  publishedAt,
+  setPublishedAt,
   anhDaiDienUrl,
   setAnhDaiDienUrl,
   anhDaiDienAlt,
@@ -81,7 +85,7 @@ export function PostGeneralInfoCard({
         )}
       </div>
 
-      {/* Category & Thumbnail */}
+      {/* Category & Custom Post Date */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-30">
         <Select
           label="Chuyên mục *"
@@ -92,6 +96,23 @@ export function PostGeneralInfoCard({
           className="h-10 rounded-lg bg-slate-950/60 border-white/10 text-slate-200 text-sm focus-visible:ring-cyan-500/20 focus-visible:border-cyan-500"
         />
 
+        <div>
+          <Input
+            type="datetime-local"
+            label="Ngày viết bài (Ngày đăng) *"
+            leftIcon={<Calendar size={14} className="text-cyan-400" />}
+            value={publishedAt}
+            onChange={(e) => setPublishedAt(e.target.value)}
+            className="h-10 bg-slate-950/60 border-white/10 text-slate-100 text-sm focus-visible:ring-cyan-500/20 focus-visible:border-cyan-500 font-mono"
+          />
+          <p className="text-[11px] text-slate-400 mt-1 px-1">
+            Tùy chỉnh ngày viết bài hiển thị và thứ tự trên website.
+          </p>
+        </div>
+      </div>
+
+      {/* Thumbnail & Alt Text */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label className="block text-xs font-semibold text-slate-300">
@@ -150,25 +171,24 @@ export function PostGeneralInfoCard({
             </div>
           )}
         </div>
-      </div>
 
-      {/* Alt text & Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input
-          label="Thẻ Alt ảnh đại diện (SEO Alt) *"
-          value={anhDaiDienAlt}
-          onChange={(e) => setAnhDaiDienAlt(e.target.value)}
-          placeholder="Mô tả ảnh chứa từ khóa chính..."
-          className="h-10 bg-slate-950/60 border-white/10 text-slate-100 text-sm focus-visible:ring-cyan-500/20 focus-visible:border-cyan-500"
-        />
+        <div className="space-y-4">
+          <Input
+            label="Thẻ Alt ảnh đại diện (SEO Alt) *"
+            value={anhDaiDienAlt}
+            onChange={(e) => setAnhDaiDienAlt(e.target.value)}
+            placeholder="Mô tả ảnh chứa từ khóa chính..."
+            className="h-10 bg-slate-950/60 border-white/10 text-slate-100 text-sm focus-visible:ring-cyan-500/20 focus-visible:border-cyan-500"
+          />
 
-        <Input
-          label="Tóm tắt bài viết (Meta Sapo)"
-          value={tomTat}
-          onChange={(e) => setTomTat(e.target.value)}
-          placeholder="Tóm tắt ngắn gọn 1-2 câu mở đầu..."
-          className="h-10 bg-slate-950/60 border-white/10 text-slate-100 text-sm focus-visible:ring-cyan-500/20 focus-visible:border-cyan-500"
-        />
+          <Input
+            label="Tóm tắt bài viết (Meta Sapo)"
+            value={tomTat}
+            onChange={(e) => setTomTat(e.target.value)}
+            placeholder="Tóm tắt ngắn gọn 1-2 câu mở đầu..."
+            className="h-10 bg-slate-950/60 border-white/10 text-slate-100 text-sm focus-visible:ring-cyan-500/20 focus-visible:border-cyan-500"
+          />
+        </div>
       </div>
     </Card>
   );

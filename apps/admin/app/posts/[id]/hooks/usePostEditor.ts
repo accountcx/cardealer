@@ -6,10 +6,177 @@ import { postService, type CategoryItem } from '../../../../services/post.servic
 import { catalogService, type CarSummary } from '../../../../services/catalog.service';
 import { uploadSingleMedia } from '../../../../services/media.service';
 import { calculateSeoScore, type SeoAnalysisResult, type TiptapDoc } from '@cardealer/core';
-import type { OutlineItem, FaqItem, SeoOptimizationResult, FullArticleResult } from '@cardealer/types';
+import type { OutlineItem, FaqItem, SeoOptimizationResult, FullArticleResult, FullArticleBlock } from '@cardealer/types';
 import type { BlockType, EditorBlock, MediaPickerTarget, PostStatus } from '../types';
 import { toSlug, createDefaultBlock } from '../utils';
 import { serializeTiptapDoc, deserializeTiptapDoc } from '../ast';
+
+// Helper format ISO date to datetime-local input string (YYYY-MM-DDTHH:mm)
+function formatDatetimeForInput(dateInput?: string | Date | null): string {
+  if (!dateInput) return '';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return '';
+  const offsetMs = d.getTimezoneOffset() * 60000;
+  const localDate = new Date(d.getTime() - offsetMs);
+  return localDate.toISOString().slice(0, 16);
+}
+
+
+/**
+ * Chuyển đổi mảng FullArticleBlock từ AI sang danh sách EditorBlock của Post Editor
+ */
+export function convertFullArticleBlocksToEditorBlocks(
+  blocks: FullArticleBlock[],
+  availableCars: CarSummary[] = [],
+  keywordOrTitle?: string
+): EditorBlock[] {
+  const baseId = Date.now();
+  return blocks.map((b, idx) => {
+    const id = `ai-blk-${baseId}-${idx}`;
+    if (b.type === 'heading') {
+      return {
+        id,
+        type: 'heading',
+        level: b.level || 2,
+        content: b.content || '',
+      };
+    }
+    if (b.type === 'callout') {
+      return {
+        id,
+        type: 'callout',
+        title: b.title || 'Lưu ý tư vấn mua xe',
+        calloutType: b.calloutType || 'info',
+        content: b.content || '',
+      };
+    }
+    if (b.type === 'faq') {
+      return {
+        id,
+        type: 'faq',
+        title: b.title || 'Câu Hỏi Thường Gặp (FAQ)',
+        faqs: b.faqs || [],
+      };
+    }
+    if (b.type === 'prosCons') {
+      return {
+        id,
+        type: 'prosCons',
+        title: b.title || 'Đánh Giá Ưu & Nhược Điểm Thực Tế',
+        pros: b.pros || [],
+        cons: b.cons || [],
+      };
+    }
+    if (b.type === 'ctaButton') {
+      return {
+        id,
+        type: 'ctaButton',
+        ctaButtonText: b.ctaButtonText || 'Nhận Báo Giá Lăn Bánh & Lái Thử',
+        ctaActionType: b.ctaActionType || 'hotline',
+        ctaSubtext: b.ctaSubtext || 'Hỗ trợ 24/7 - Giao xe tận nơi',
+        ctaVariant: b.ctaVariant || 'red',
+        ctaPhone: b.ctaPhone || '',
+        ctaCustomUrl: b.ctaCustomUrl || '',
+      };
+    }
+    if (b.type === 'singleImage') {
+      let fallbackImage = b.imageUrl || '';
+      if (!fallbackImage && availableCars.length > 0) {
+        const matched = availableCars.find((c) => c.anhDaiDienUrl);
+        if (matched?.anhDaiDienUrl) fallbackImage = matched.anhDaiDienUrl;
+      }
+      return {
+        id,
+        type: 'singleImage',
+        imageUrl: fallbackImage,
+        imageAlt: b.imageAlt || b.caption || keywordOrTitle || 'Hình ảnh chi tiết xe ô tô Hyundai',
+        caption: b.caption || '',
+      };
+    }
+    if (b.type === 'imageGallery') {
+      return {
+        id,
+        type: 'imageGallery',
+        title: b.title || 'Bộ Sưu Tập Hình Ảnh Chi Tiết',
+        galleryStyle: 'slider',
+        galleryImages: b.galleryImages || [],
+      };
+    }
+    if (b.type === 'specTable') {
+      return {
+        id,
+        type: 'specTable',
+        title: b.title || 'Bảng So Sánh Thông Số Kỹ Thuật Chi Tiết',
+        specVersions:
+          b.specVersions && b.specVersions.length > 0
+            ? b.specVersions
+            : ['Bản Tiêu Chuẩn', 'Bản Đặc Biệt', 'Bản Cao Cấp'],
+        specRows: b.specRows && b.specRows.length > 0 ? b.specRows : [],
+      };
+    }
+    if (b.type === 'priceTable') {
+      return {
+        id,
+        type: 'priceTable',
+        title: b.title || 'Bảng Giá Niêm Yết & Dự Toán Lăn Bánh',
+        carSlug: b.carSlug || '',
+        prices: b.prices || [],
+      };
+    }
+    if (b.type === 'relatedCar') {
+      const matchedCar = availableCars.find(
+        (c) =>
+          (b.carSlug && c.slug === b.carSlug) ||
+          (b.carName && c.tenXe.toLowerCase().includes(b.carName.toLowerCase()))
+      );
+      return {
+        id,
+        type: 'relatedCar',
+        carName: matchedCar?.tenXe || b.carName || 'Hyundai Accent 2026',
+        carSlug: matchedCar?.slug || b.carSlug || 'hyundai-accent',
+        carPrice: matchedCar?.minPrice || b.carPrice || 439000000,
+        carImage: matchedCar?.anhDaiDienUrl || b.carImage || '/images/cars/accent.webp',
+        seatCount: (matchedCar?.seatRange ? parseInt(matchedCar.seatRange) : 5) || b.seatCount || 5,
+        fuelType: matchedCar?.fuelType || b.fuelType || 'Xăng 1.5L',
+      };
+    }
+    if (b.type === 'leadForm') {
+      return {
+        id,
+        type: 'leadForm',
+        carName: b.carName || '',
+        formHeadline: b.formHeadline || 'Đăng Ký Nhận Báo Giá Lăn Bánh & Lái Thử Tận Nhà',
+        formSubheadline:
+          b.formSubheadline || 'Chuyên viên tư vấn sẽ liên hệ gửi dự toán chi phí chi tiết trong 5 phút.',
+        formButtonText: b.formButtonText || 'Gửi Yêu Cầu Nhận Báo Giá',
+      };
+    }
+    if (b.type === 'youtube') {
+      return {
+        id,
+        type: 'youtube',
+        videoId: b.videoId || 'dQw4w9WgXcQ',
+        videoUrl: b.videoUrl || (b.videoId ? `https://www.youtube.com/watch?v=${b.videoId}` : ''),
+        title: b.title || 'Video Đánh Giá Thực Tế & Trải Nghiệm Lái Thử',
+        caption: b.caption || '',
+      };
+    }
+    if (b.type === 'tiktok') {
+      return {
+        id,
+        type: 'tiktok',
+        videoUrl: b.videoUrl || '',
+        videoId: b.videoId || '',
+        title: b.title || 'Video Trải Nghiệm Ngắn',
+      };
+    }
+    return {
+      id,
+      type: 'paragraph',
+      content: b.content || '',
+    };
+  });
+}
 
 export function usePostEditor() {
   const router = useRouter();
@@ -30,11 +197,13 @@ export function usePostEditor() {
   const [tieuDe, setTieuDe] = useState('');
   const [slug, setSlug] = useState('');
   const [originalSlug, setOriginalSlug] = useState('');
+  const [previewToken, setPreviewToken] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [anhDaiDienUrl, setAnhDaiDienUrl] = useState('');
   const [anhDaiDienAlt, setAnhDaiDienAlt] = useState('');
   const [tomTat, setTomTat] = useState('');
   const [status, setStatus] = useState<PostStatus>('draft');
+  const [publishedAt, setPublishedAt] = useState<string>(() => formatDatetimeForInput(new Date()));
   const [isFeatured, setIsFeatured] = useState(false);
   const [featuredOrder, setFeaturedOrder] = useState(0);
   const [focusKeyword, setFocusKeyword] = useState('');
@@ -102,18 +271,25 @@ export function usePostEditor() {
         setTieuDe(post.tieuDe || '');
         setSlug(post.slug || '');
         setOriginalSlug(post.slug || '');
+        setPreviewToken(post.previewToken || '');
         setCategoryId(post.categoryId || '');
         setAnhDaiDienUrl(post.anhDaiDienUrl || '');
         setAnhDaiDienAlt(post.anhDaiDienAlt || '');
         setTomTat(post.tomTat || '');
         setStatus(post.status as PostStatus);
+
+        const rawDate = post.publishedAt || post.createdAt;
+        if (rawDate) {
+          setPublishedAt(formatDatetimeForInput(rawDate));
+        }
+
         setIsFeatured(post.isFeatured || false);
         setFeaturedOrder(post.featuredOrder || 0);
-        setFocusKeyword('');
-        setMetaTitle('');
-        setMetaDescription('');
-        setCanonicalUrl('');
-        setNoIndex(false);
+        setFocusKeyword(post.focusKeyword || '');
+        setMetaTitle(post.metaTitle || '');
+        setMetaDescription(post.metaDescription || '');
+        setCanonicalUrl(post.canonicalUrl || '');
+        setNoIndex(post.noIndex || false);
 
         if (post.noiDung) {
           const parsedBlocks = deserializeTiptapDoc(post.noiDung);
@@ -230,9 +406,27 @@ export function usePostEditor() {
     setToast({ type: 'success', message: 'Đã tối ưu hóa Meta Title & Description vào SEO Sidebar!' });
   };
 
+  const insertContentBlocks = (blocksToInsert: FullArticleBlock[]) => {
+    if (!blocksToInsert || blocksToInsert.length === 0) return;
+    const mapped = convertFullArticleBlocksToEditorBlocks(blocksToInsert, availableCars, focusKeyword || tieuDe);
+    setBlocks((prev) => {
+      if (prev.length === 1 && prev[0].type === 'paragraph' && !prev[0].content?.trim()) {
+        return mapped;
+      }
+      return [...prev, ...mapped];
+    });
+    setToast({
+      type: 'success',
+      message: `Đã chèn thành công ${mapped.length} Content Block tinh hoa vào bài viết!`,
+    });
+  };
+
   const applyFullArticle = (article: FullArticleResult) => {
-    if (article.title && (!tieuDe || tieuDe.trim() === 'Bài viết chưa có tiêu đề' || isNew)) {
-      handleTitleChange(article.title);
+    if (article.title) {
+      setTieuDe(article.title);
+      if (isNew || !slug || slug === originalSlug) {
+        setSlug(toSlug(article.title));
+      }
     }
     if (article.summary) {
       setTomTat(article.summary);
@@ -246,159 +440,20 @@ export function usePostEditor() {
     if (article.metaDescription) {
       setMetaDescription(article.metaDescription);
     }
+    if (!anhDaiDienAlt) {
+      setAnhDaiDienAlt(article.focusKeyword || article.title || 'Hình ảnh đại diện bài viết');
+    }
 
     if (article.blocks && article.blocks.length > 0) {
-      const baseId = Date.now();
-      const newBlocks: EditorBlock[] = article.blocks.map((b, idx) => {
-        const id = `ai-full-${baseId}-${idx}`;
-        if (b.type === 'heading') {
-          return {
-            id,
-            type: 'heading',
-            level: b.level || 2,
-            content: b.content || '',
-          };
-        }
-        if (b.type === 'callout') {
-          return {
-            id,
-            type: 'callout',
-            title: b.title || 'Lưu ý tư vấn mua xe',
-            calloutType: b.calloutType || 'info',
-            content: b.content || '',
-          };
-        }
-        if (b.type === 'faq') {
-          return {
-            id,
-            type: 'faq',
-            title: b.title || 'Câu Hỏi Thường Gặp (FAQ)',
-            faqs: b.faqs || [],
-          };
-        }
-        if (b.type === 'prosCons') {
-          return {
-            id,
-            type: 'prosCons',
-            title: b.title || 'Đánh giá Ưu & Nhược điểm thực tế',
-            pros: b.pros || [],
-            cons: b.cons || [],
-          };
-        }
-        if (b.type === 'ctaButton') {
-          return {
-            id,
-            type: 'ctaButton',
-            ctaButtonText: b.ctaButtonText || 'Nhận Báo Giá Lăn Bánh & Lái Thử',
-            ctaActionType: b.ctaActionType || 'hotline',
-            ctaSubtext: b.ctaSubtext || 'Hỗ trợ 24/7 - Giao xe tận nơi',
-            ctaVariant: b.ctaVariant || 'red',
-            ctaPhone: b.ctaPhone || '',
-            ctaCustomUrl: b.ctaCustomUrl || '',
-          };
-        }
-        if (b.type === 'singleImage') {
-          let fallbackImage = b.imageUrl || '';
-          if (!fallbackImage && availableCars.length > 0) {
-            const matched = availableCars.find((c) => c.anhDaiDienUrl);
-            if (matched?.anhDaiDienUrl) fallbackImage = matched.anhDaiDienUrl;
-          }
-          return {
-            id,
-            type: 'singleImage',
-            imageUrl: fallbackImage,
-            imageAlt: b.imageAlt || b.caption || 'Hình ảnh chi tiết xe ô tô Hyundai',
-            caption: b.caption || '',
-          };
-        }
-        if (b.type === 'imageGallery') {
-          return {
-            id,
-            type: 'imageGallery',
-            title: b.title || 'Bộ Sưu Tập Hình Ảnh Chi Tiết',
-            galleryStyle: 'slider',
-            galleryImages: b.galleryImages || [],
-          };
-        }
-        if (b.type === 'specTable') {
-          return {
-            id,
-            type: 'specTable',
-            title: b.title || 'Bảng So Sánh Thông Số Kỹ Thuật Chi Tiết',
-            specVersions:
-              b.specVersions && b.specVersions.length > 0
-                ? b.specVersions
-                : ['Bản Tiêu Chuẩn', 'Bản Đặc Biệt', 'Bản Cao Cấp'],
-            specRows: b.specRows && b.specRows.length > 0 ? b.specRows : [],
-          };
-        }
-        if (b.type === 'priceTable') {
-          return {
-            id,
-            type: 'priceTable',
-            title: b.title || 'Bảng Giá Niêm Yết & Dự Toán Lăn Bánh',
-            carSlug: b.carSlug || '',
-            prices: b.prices || [],
-          };
-        }
-        if (b.type === 'relatedCar') {
-          const matchedCar = availableCars.find(
-            (c) =>
-              (b.carSlug && c.slug === b.carSlug) ||
-              (b.carName && c.tenXe.toLowerCase().includes(b.carName.toLowerCase()))
-          );
-          return {
-            id,
-            type: 'relatedCar',
-            carName: matchedCar?.tenXe || b.carName || 'Hyundai Accent 2026',
-            carSlug: matchedCar?.slug || b.carSlug || 'hyundai-accent',
-            carPrice: matchedCar?.minPrice || b.carPrice || 439000000,
-            carImage: matchedCar?.anhDaiDienUrl || b.carImage || '/images/cars/accent.webp',
-            seatCount: (matchedCar?.seatRange ? parseInt(matchedCar.seatRange) : 5) || b.seatCount || 5,
-            fuelType: matchedCar?.fuelType || b.fuelType || 'Xăng 1.5L',
-          };
-        }
-        if (b.type === 'leadForm') {
-          return {
-            id,
-            type: 'leadForm',
-            carName: b.carName || '',
-            formHeadline: b.formHeadline || 'Đăng Ký Nhận Báo Giá Lăn Bánh & Lái Thử Tận Nhà',
-            formSubheadline:
-              b.formSubheadline || 'Chuyên viên tư vấn sẽ liên hệ gửi dự toán chi phí chi tiết trong 5 phút.',
-            formButtonText: b.formButtonText || 'Gửi Yêu Cầu Nhận Báo Giá',
-          };
-        }
-        if (b.type === 'youtube') {
-          return {
-            id,
-            type: 'youtube',
-            videoId: b.videoId || 'dQw4w9WgXcQ',
-            videoUrl: b.videoUrl || (b.videoId ? `https://www.youtube.com/watch?v=${b.videoId}` : ''),
-            title: b.title || 'Video Đánh Giá Thực Tế & Trải Nghiệm Lái Thử',
-            caption: b.caption || '',
-          };
-        }
-        if (b.type === 'tiktok') {
-          return {
-            id,
-            type: 'tiktok',
-            videoUrl: b.videoUrl || '',
-            videoId: b.videoId || '',
-            title: b.title || 'Video Trải Nghiệm Ngắn',
-          };
-        }
-        return {
-          id,
-          type: 'paragraph',
-          content: b.content || '',
-        };
-      });
-
+      const newBlocks = convertFullArticleBlocksToEditorBlocks(
+        article.blocks,
+        availableCars,
+        article.focusKeyword || article.title
+      );
       setBlocks(newBlocks);
       setToast({
         type: 'success',
-        message: `Đã tự động khởi tạo toàn bộ bài viết hoàn chỉnh (${newBlocks.length} khối nội dung) & Cấu hình SEO!`,
+        message: `Đã tự động khởi tạo toàn bộ bài viết hoàn chỉnh (${newBlocks.length} khối nội dung) & Cấu hình SEO 100% chuẩn On-Page!`,
       });
     }
   };
@@ -494,41 +549,18 @@ export function usePostEditor() {
     }
   };
 
-  // Preview Real-time (Tự động lưu bản nháp ngầm vào DB + Đồng bộ vào sessionStorage + Mở tab xem trước)
+  // Preview Real-time (Tự động lưu bản nháp vào DB + Mở trực tiếp Web Storefront UI /tin-tuc/[slug]?token=...)
   const handlePreview = async () => {
     let activePostId = postId;
     const finalTieuDe = tieuDe.trim() || 'Bài viết xem trước (Bản nháp)';
-    const finalSlug = slug.trim() || toSlug(finalTieuDe) || `draft-${Date.now()}`;
+    let finalSlug = slug.trim() || toSlug(finalTieuDe) || `draft-${Date.now()}`;
+    let activeToken = previewToken;
     const targetSaveStatus = status === 'published' ? 'published' : 'draft';
 
-    const previewPayload = {
-      id: activePostId !== 'new' ? activePostId : undefined,
-      tieuDe: finalTieuDe,
-      slug: finalSlug,
-      categoryId,
-      categoryName: categories.find((c) => c.id === categoryId)?.tenChuyenMuc || 'Tin tức xe',
-      anhDaiDienUrl,
-      anhDaiDienAlt,
-      tomTat,
-      noiDung: tiptapDoc,
-      status: targetSaveStatus,
-      isFeatured,
-      metaTitle,
-      metaDescription,
-      canonicalUrl,
-      updatedAt: new Date().toISOString(),
-    };
-
-    // 1. Lưu ngay vào sessionStorage để preview trang có thể hiển thị tức thì
-    try {
-      sessionStorage.setItem('cardealer_post_preview', JSON.stringify(previewPayload));
-    } catch (err) {
-      console.warn('Lỗi khi ghi sessionStorage preview:', err);
-    }
-
-    // 2. Tự động lưu bản nháp vào CSDL ngầm không chặn preview
+    // 1. Tự động lưu bản nháp vào CSDL để đồng bộ previewToken và nội dung mới nhất
     setSaving(true);
     try {
+      const resolvedPublishedAt = publishedAt ? new Date(publishedAt).toISOString() : undefined;
       const payload = {
         tieuDe: finalTieuDe,
         slug: finalSlug,
@@ -538,37 +570,52 @@ export function usePostEditor() {
         tomTat: tomTat.trim() || undefined,
         noiDung: tiptapDoc,
         status: targetSaveStatus,
+        publishedAt: resolvedPublishedAt,
+        createdAt: resolvedPublishedAt,
         isFeatured,
         featuredOrder,
+        focusKeyword: focusKeyword.trim() || undefined,
         metaTitle: metaTitle.trim() || undefined,
         metaDescription: metaDescription.trim() || undefined,
         canonicalUrl: canonicalUrl.trim() || undefined,
         noIndex,
       };
 
-      if (isNew) {
+      if (isNew || activePostId === 'new') {
         const res = await postService.createPost(payload);
         if (res.data?.id) {
           activePostId = res.data.id;
+          if (res.data.previewToken) activeToken = res.data.previewToken;
+          if (res.data.slug) finalSlug = res.data.slug;
+          setPreviewToken(activeToken);
+          setSlug(finalSlug);
+          setOriginalSlug(finalSlug);
           router.replace(`/posts/${activePostId}`);
-          // Cập nhật lại ID trong sessionStorage
-          previewPayload.id = activePostId;
-          sessionStorage.setItem('cardealer_post_preview', JSON.stringify(previewPayload));
         }
       } else {
-        await postService.updatePost(activePostId, payload);
+        const res = await postService.updatePost(activePostId, payload);
+        if (res.data?.previewToken) activeToken = res.data.previewToken;
+        if (res.data?.slug) finalSlug = res.data.slug;
+        setPreviewToken(activeToken);
+        setSlug(finalSlug);
+        setOriginalSlug(finalSlug);
       }
-      setToast({ type: 'success', message: 'Đã tự động lưu bản nháp và mở Xem trước!' });
+      setToast({ type: 'success', message: 'Đã lưu bản nháp và mở giao diện Web thực tế!' });
     } catch (err: unknown) {
-      console.warn('Lưu nháp ngầm server báo lỗi nhưng vẫn mở xem trước:', err);
+      console.warn('Lỗi khi tự động lưu bản nháp server:', err);
     } finally {
       setSaving(false);
     }
 
-    // 3. Mở tab Preview
-    const targetUrl = activePostId && activePostId !== 'new'
-      ? `/posts/preview?id=${encodeURIComponent(activePostId)}`
-      : '/posts/preview';
+    // 2. Xác định Base URL của Web Storefront (apps/web)
+    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    const storefrontBaseUrl = isLocal
+      ? `http://${window.location.hostname}:3002`
+      : (process.env.NEXT_PUBLIC_SITE_URL || 'https://xehyundaivinh.com');
+
+    // 3. Mở tab Xem trước trực tiếp trên Web Storefront (/tin-tuc/[slug]?token=...)
+    const queryParam = activeToken ? `?token=${encodeURIComponent(activeToken)}` : '';
+    const targetUrl = `${storefrontBaseUrl}/tin-tuc/${encodeURIComponent(finalSlug)}${queryParam}`;
 
     window.open(targetUrl, '_blank');
   };
@@ -586,6 +633,7 @@ export function usePostEditor() {
 
     setSaving(true);
     try {
+      const resolvedPublishedAt = publishedAt ? new Date(publishedAt).toISOString() : undefined;
       const payload = {
         tieuDe: tieuDe.trim(),
         slug: slug.trim(),
@@ -595,8 +643,11 @@ export function usePostEditor() {
         tomTat: tomTat.trim() || undefined,
         noiDung: tiptapDoc,
         status: targetStatus,
+        publishedAt: resolvedPublishedAt,
+        createdAt: resolvedPublishedAt,
         isFeatured,
         featuredOrder,
+        focusKeyword: focusKeyword.trim() || undefined,
         metaTitle: metaTitle.trim() || undefined,
         metaDescription: metaDescription.trim() || undefined,
         canonicalUrl: canonicalUrl.trim() || undefined,
@@ -607,10 +658,12 @@ export function usePostEditor() {
         const res = await postService.createPost(payload);
         setToast({ type: 'success', message: targetStatus === 'published' ? 'Đã xuất bản bài viết thành công!' : 'Tạo bản nháp bài viết mới thành công!' });
         if (res.data?.id) {
+          if (res.data.previewToken) setPreviewToken(res.data.previewToken);
           router.replace(`/posts/${res.data.id}`);
         }
       } else {
-        await postService.updatePost(postId, payload);
+        const res = await postService.updatePost(postId, payload);
+        if (res.data?.previewToken) setPreviewToken(res.data.previewToken);
         setStatus(targetStatus);
         setOriginalSlug(slug.trim());
         setToast({
@@ -645,6 +698,7 @@ export function usePostEditor() {
     setSlug,
     originalSlug,
     setOriginalSlug,
+    previewToken,
     categoryId,
     setCategoryId,
     anhDaiDienUrl,
@@ -655,6 +709,8 @@ export function usePostEditor() {
     setTomTat,
     status,
     setStatus,
+    publishedAt,
+    setPublishedAt,
     isFeatured,
     setIsFeatured,
     featuredOrder,
@@ -685,6 +741,7 @@ export function usePostEditor() {
     appendParagraphBlock,
     applyAiSeo,
     applyFullArticle,
+    insertContentBlocks,
     // UI states
     isAiModalOpen,
     setIsAiModalOpen,

@@ -12,7 +12,7 @@ export function toSlug(text: string): string {
     .replace(/(^-|-$)/g, '');
 }
 
-// 💰 Format tiền tệ VNĐ có phân cách hàng nghìn (ví dụ: 529000000 -> "529.000.000")
+// 💵 Format tiền tệ VNĐ có phân cách hàng nghìn (ví dụ: 529000000 -> "529.000.000")
 export function formatVnd(value: number | string | undefined | null): string {
   if (value === undefined || value === null || value === '') return '';
   const num = typeof value === 'number' ? value : Number(String(value).replace(/\D/g, ''));
@@ -54,7 +54,9 @@ export function createDefaultBlock(
     level: 2,
     calloutType: 'info',
     title:
-      type === 'priceTable'
+      type === 'faq'
+        ? ''
+        : type === 'priceTable'
         ? 'Bảng Giá & Chi Phí Lăn Bánh Tham Khảo (Tháng 09/2026)'
         : type === 'imageGallery'
           ? 'Bộ Sưu Tập Hình Ảnh Chi Tiết Ngoại Thất & Nội Thất'
@@ -134,39 +136,37 @@ export function createDefaultBlock(
           { url: '', alt: 'Không gian hàng ghế sau', caption: 'Khoang hành khách rộng rãi và độ ngả lưng ghế thoải mái' },
         ]
         : undefined,
-    specVersions:
-      type === 'specTable'
-        ? ['Bản Tiêu Chuẩn', 'Bản Đặc Biệt', 'Bản Cao Cấp']
-        : undefined,
+    specVersions: type === 'specTable' ? ['Hyundai Accent 1.5 MT', 'Hyundai Accent 1.5 AT', 'Hyundai Accent Cao Cấp'] : undefined,
     specRows:
       type === 'specTable'
         ? [
-          { specName: 'Động cơ & Hộp số', values: ['1.5L Xăng (115 Hp) - iVT', '1.5L Xăng (115 Hp) - iVT', '1.5L Turbo (160 Hp) - 7DCT'] },
-          { specName: 'Kích thước mâm lốp', values: ['17 inch Hợp kim', '18 inch Phay bóng', '19 inch Thể thao N-Line'] },
-          { specName: 'Hệ thống đèn chiếu sáng', values: ['Bi-Halogen Projector', 'LED toàn phần tự động', 'Full LED thích ứng Matrix'] },
-          { specName: 'Gói an toàn SmartSense', values: ['Cơ bản (ABS, ESC, HAC)', 'Cảnh báo điểm mù + Cam lùi', 'Full SmartSense chủ động'] },
-          { specName: 'Ghế bọc da & Làm mát', values: ['Ghế nỉ cao cấp', 'Da đục lỗ làm mát ghế', 'Da Nappa đục lỗ + Nhớ vị trí'] },
+          { specName: 'Kích thước D x R x C (mm)', values: ['4.440 x 1.729 x 1.460', '4.440 x 1.729 x 1.460', '4.440 x 1.729 x 1.460'] },
+          { specName: 'Chiều dài cơ sở (mm)', values: ['2.600', '2.600', '2.600'] },
+          { specName: 'Động cơ', values: ['Smartstream G 1.5L', 'Smartstream G 1.5L', 'Smartstream G 1.5L'] },
+          { specName: 'Công suất tối đa (mã lực)', values: ['115 / 6.300', '115 / 6.300', '115 / 6.300'] },
+          { specName: 'Hộp số', values: ['Số sàn 6 cấp', 'Vô cấp iVT', 'Vô cấp iVT'] },
+          { specName: 'Gói an toàn Hyundai Smartsense', values: ['Không', 'Không', 'Có'] },
         ]
         : undefined,
     ctaButtonText: type === 'ctaButton' ? 'Gọi Hotline Nhận Báo Giá Ưu Đãi' : undefined,
     ctaActionType: type === 'ctaButton' ? 'hotline' : undefined,
     ctaCustomUrl: type === 'ctaButton' ? '' : undefined,
-    ctaSubtext: type === 'ctaButton' ? 'Tư vấn tận tâm - Nhận báo giá lăn bánh kèm ưu đãi tiền mặt tốt nhất' : undefined,
+    ctaPhone: type === 'ctaButton' ? '' : undefined,
+    ctaSubtext: type === 'ctaButton' ? 'Tư vấn tận tâm - Cam kết giá và ưu đãi tốt nhất tại Showroom' : undefined,
     ctaVariant: type === 'ctaButton' ? 'red' : undefined,
     pros:
       type === 'prosCons'
         ? [
-          'Thiết kế ngoại thất Sensuous Sportiness thời thượng, bắt mắt',
-          'Khoang nội thất rộng rãi hàng đầu phân khúc, trang bị nhiều tiện nghi hiện đại',
-          'Động cơ Smartstream êm ái, vận hành mượt mà và tiết kiệm nhiên liệu',
-          'Gói công nghệ an toàn Hyundai SmartSense cao cấp bảo vệ tối đa',
+          'Thiết kế tương lai Parametric Dynamic đậm chất thể thao',
+          'Không gian nội thất rộng rãi hàng đầu phân khúc B',
+          'Trang bị gói an toàn chủ động Hyundai Smartsense cao cấp',
         ]
         : undefined,
     cons:
       type === 'prosCons'
         ? [
-          'Phiên bản Tiêu chuẩn vẫn trang bị phanh tay cơ và ghế nỉ',
-          'Khả năng cách âm gầm ở dải tốc độ cao trên 100km/h còn tiếng ồn nhẹ',
+          'Chưa trang bị phanh đĩa cho 2 bánh sau ở bản tiêu chuẩn',
+          'Độ ồn lốp khi di chuyển ở tốc độ cao trên 100km/h',
         ]
         : undefined,
   };

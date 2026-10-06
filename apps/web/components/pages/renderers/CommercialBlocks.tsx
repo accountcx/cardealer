@@ -55,8 +55,9 @@ export function CommercialBlock({ node, cleanHotline }: CommercialBlockProps) {
 
   // 3. FAQ Accordion Block
   if (node.type === 'faqBlock') {
+    const title = (node.attrs?.title as string) || (node.attrs?.headline as string) || undefined;
     const questions = (node.attrs?.questions as Array<{ question: string; answer: string }>) || [];
-    return <FAQBlock questions={questions} />;
+    return <FAQBlock title={title} questions={questions} />;
   }
 
   // 4. Nút bấm CTA (ctaButtonBlock)

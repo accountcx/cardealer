@@ -142,7 +142,7 @@ export function countKeywordOccurrences(fullText: string, keyword: string): numb
   if (!normText || !normKeyword) return 0;
 
   const escapedKw = normKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  // Word boundary regex: sử dụng lookbehind (?<=^|\\s) để không tiêu thụ khoảng trắng dẫn
+  // Word boundary regex: sử dụng lookbehind (?<=^|\s) để không tiêu thụ khoảng trắng dẫn
   const regex = new RegExp(`(?<=^|\\s)${escapedKw}(?=[\\s.,!?:;]|$)`, 'gi');
   const matches = normText.match(regex);
   return matches ? matches.length : 0;
@@ -191,7 +191,7 @@ export function countH1InBody(doc: unknown): number {
 }
 
 /**
- * Trích xuất toàn bộ ảnh và thẻ Alt từ tài liệu Tiptap
+ * Trích xuất toàn bộ ảnh và thẻ Alt từ tài liệu Tiptap (hỗ trợ image, singleImageBlock, galleryBlock)
  */
 export function extractImagesFromTiptap(doc: unknown): Array<{ src?: string; alt?: string }> {
   if (!doc || typeof doc !== 'object') return [];
@@ -202,17 +202,17 @@ export function extractImagesFromTiptap(doc: unknown): Array<{ src?: string; alt
 
   const traverse = (nodes: TiptapNode[]) => {
     for (const node of nodes) {
-      if (node.type === 'image' && node.attrs) {
+      if ((node.type === 'image' || node.type === 'singleImageBlock' || node.type === 'singleImage') && node.attrs) {
         images.push({
-          src: typeof node.attrs.src === 'string' ? node.attrs.src : undefined,
-          alt: typeof node.attrs.alt === 'string' ? node.attrs.alt : undefined,
+          src: typeof node.attrs.src === 'string' ? node.attrs.src : typeof node.attrs.url === 'string' ? node.attrs.url : undefined,
+          alt: typeof node.attrs.alt === 'string' ? node.attrs.alt : typeof node.attrs.caption === 'string' ? node.attrs.caption : undefined,
         });
       } else if (node.type === 'galleryBlock' && node.attrs?.images && Array.isArray(node.attrs.images)) {
         for (const img of node.attrs.images) {
           if (img && typeof img === 'object') {
             images.push({
-              src: typeof img.src === 'string' ? img.src : undefined,
-              alt: typeof img.alt === 'string' ? img.alt : undefined,
+              src: typeof img.src === 'string' ? img.src : typeof img.url === 'string' ? img.url : undefined,
+              alt: typeof img.alt === 'string' ? img.alt : typeof img.caption === 'string' ? img.caption : undefined,
             });
           }
         }
@@ -252,10 +252,16 @@ export function extractInternalLinksFromTiptap(doc: unknown): string[] {
       }
 
       // 2. Khối RelatedCarBlock hoặc PriceTableBlock cũng được tính là liên kết nội bộ
-      if (node.type === 'relatedCarBlock' && node.attrs?.carSlug) {
-        internalLinks.push(`/xe/${node.attrs.carSlug}`);
-      } else if (node.type === 'priceTableBlock' && node.attrs?.carSlug) {
-        internalLinks.push(`/xe/${node.attrs.carSlug}#bang-gia`);
+      if (node.type === 'relatedCarBlock') {
+        const slug = (node.attrs?.carSlug || node.attrs?.slug) as string | undefined;
+        if (slug) {
+          internalLinks.push(`/xe/${slug}`);
+        }
+      } else if (node.type === 'priceTableBlock') {
+        const slug = (node.attrs?.carSlug || node.attrs?.slug) as string | undefined;
+        if (slug) {
+          internalLinks.push(`/xe/${slug}#bang-gia`);
+        }
       }
 
       if (Array.isArray(node.content)) {
@@ -348,6 +354,7 @@ export function calculateSeoScore(input: SeoAnalysisInput): SeoAnalysisResult {
         ? (keywordOccurrences / wordCount) * 100
         : ((keywordOccurrences * kwWords) / wordCount) * 100
       : 0;
+
   const keywordDensity = Math.round(rawDensity * 10) / 10;
 
   // =========================================================================
@@ -801,10 +808,10 @@ export function calculateSeoScore(input: SeoAnalysisInput): SeoAnalysisResult {
       id: 'internal_links',
       label: 'Có ít nhất 2 liên kết nội bộ',
       passed: false,
-      score: 5,
+      score: 6,
       maxScore: 10,
       current: '1 liên kết',
-      message: 'Có 1 liên kết nội bộ, khuyến nghị bổ sung thêm 1 liên kết tới trang bảng giá hoặc bài viết khác',
+      message: 'Đã có 1 liên kết nội bộ, khuyến nghị thêm ít nhất 1 liên kết trỏ tới xe hoặc bài viết liên quan',
     });
   } else {
     criteria.push({
@@ -814,156 +821,144 @@ export function calculateSeoScore(input: SeoAnalysisInput): SeoAnalysisResult {
       score: 0,
       maxScore: 10,
       current: '0 liên kết',
-      message: 'Chưa có liên kết nội bộ nào trỏ tới các trang trong website',
+      message: 'Chưa có liên kết nội bộ nào để giữ chân khách hàng khám phá các dòng xe khác',
     });
   }
 
   // =========================================================================
-  // 9. Tiêu chí 9: Độ dài Meta Description (120 - 160 ký tự) - Tối đa 10 điểm
+  // 9. Tiêu chí 9: Thẻ mô tả Meta Description (120 - 155 ký tự) - Tối đa 10 điểm
   // =========================================================================
   const metaDescLength = metaDescription.trim().length;
-  const hasKwInDesc = normKeyword ? normalizeText(metaDescription).includes(normKeyword) : false;
+  const normMetaDesc = normalizeText(metaDescription);
+  const hasKwInMetaDesc = normKeyword ? normMetaDesc.includes(normKeyword) : false;
 
-  if (metaDescLength >= 120 && metaDescLength <= 160) {
-    if (hasKwInDesc || !trimmedKeyword) {
+  if (metaDescLength >= 120 && metaDescLength <= 155) {
+    if (hasKwInMetaDesc) {
       criteria.push({
         id: 'meta_desc',
-        label: 'Meta Description chuẩn (120-160 ký tự)',
+        label: 'Meta Description chuẩn SEO (120-155 ký tự)',
         passed: true,
         score: 10,
         maxScore: 10,
         current: `${metaDescLength} ký tự`,
-        message: 'Độ dài Meta Description chuẩn SEO và chứa từ khóa chính',
+        message: 'Độ dài Meta Description tối ưu và chứa từ khóa chính',
       });
     } else {
       criteria.push({
         id: 'meta_desc',
-        label: 'Meta Description chuẩn (120-160 ký tự)',
+        label: 'Meta Description chuẩn SEO (120-155 ký tự)',
         passed: true,
-        score: 7,
+        score: 8,
         maxScore: 10,
         current: `${metaDescLength} ký tự`,
         message: 'Độ dài Meta Description đạt chuẩn nhưng chưa chứa từ khóa chính',
       });
     }
-  } else if ((metaDescLength >= 80 && metaDescLength < 120) || (metaDescLength > 160 && metaDescLength <= 180)) {
+  } else if ((metaDescLength >= 80 && metaDescLength < 120) || (metaDescLength > 155 && metaDescLength <= 180)) {
     criteria.push({
       id: 'meta_desc',
-      label: 'Meta Description chuẩn (120-160 ký tự)',
+      label: 'Meta Description chuẩn SEO (120-155 ký tự)',
       passed: false,
       score: 5,
       maxScore: 10,
       current: `${metaDescLength} ký tự`,
       message:
         metaDescLength < 120
-          ? `Meta Description hơi ngắn (${metaDescLength}/120 ký tự), hãy thêm lời kêu gọi hành động (CTA)`
-          : `Meta Description hơi dài (${metaDescLength}/160 ký tự), có thể bị cắt bớt`,
+          ? `Thẻ Meta Description hơi ngắn (${metaDescLength}/120 ký tự), hãy bổ sung thêm kêu gọi hành động`
+          : `Thẻ Meta Description hơi dài (${metaDescLength}/155 ký tự), có thể bị cắt ngắn trên Google`,
     });
   } else {
     criteria.push({
       id: 'meta_desc',
-      label: 'Meta Description chuẩn (120-160 ký tự)',
+      label: 'Meta Description chuẩn SEO (120-155 ký tự)',
       passed: false,
       score: metaDescLength > 0 ? 2 : 0,
       maxScore: 10,
       current: `${metaDescLength} ký tự`,
       message:
         metaDescLength === 0
-          ? 'Chưa nhập thẻ Meta Description'
-          : 'Độ dài Meta Description không đạt chuẩn (cần 120-160 ký tự)',
+          ? 'Chưa nhập thẻ mô tả Meta Description'
+          : metaDescLength < 80
+            ? 'Meta Description quá ngắn (< 80 ký tự), không hiển thị tốt trên SERP'
+            : 'Meta Description quá dài (> 180 ký tự), chắc chắn bị cắt ngắn',
     });
   }
 
   // =========================================================================
-  // 10. Tiêu chí 10: Chống ăn thịt từ khóa (Cannibalization Guard) - Tối đa 10 điểm
-  // 🎯 Tích hợp Token Similarity kiểm tra trùng lặp biến thể từ khóa
+  // 10. Tiêu chí 10: Cannibalization Guard & Localized Relevance - Tối đa 10 điểm
+  // 🎯 Token Jaccard Similarity chống xung đột từ khóa với các bài viết đã xuất bản
   // =========================================================================
   if (!trimmedKeyword) {
     criteria.push({
       id: 'cannibalization',
-      label: 'Chống trùng lặp từ khóa chính (Cannibalization)',
-      passed: false,
-      score: 0,
+      label: 'Không xung đột từ khóa ăn thịt (Cannibalization)',
+      passed: true,
+      score: 10,
       maxScore: 10,
-      message: 'Chưa thiết lập từ khóa chính',
+      message: 'Không có xung đột từ khóa',
     });
   } else {
-    // 10a. Kiểm tra trùng lặp với tên thương mại dòng xe đang bán (Risk R-08)
-    const isCommercialCollision = COMMERCIAL_CAR_MODELS.some(
-      (model) => normKeyword === normalizeText(model)
-    );
+    const conflictingPosts = existingPosts.filter((p) => {
+      if (currentPostId && p.id === currentPostId) return false;
+      const otherKw = p.focusKeyword?.trim();
+      if (!otherKw) return false;
 
-    // 10b. Kiểm tra trùng lặp chính xác hoặc tương đồng cao (Jaccard >= 0.8) với bài đã đăng
-    let conflictingPost: SeoPostSummary | undefined;
-    let isHighSimilarity = false;
+      // 1. Trùng lặp hoàn toàn
+      if (normalizeText(otherKw) === normKeyword) return true;
 
-    for (const post of existingPosts) {
-      if (currentPostId && post.id === currentPostId) continue;
-      const otherKw = post.focusKeyword ? normalizeText(post.focusKeyword) : '';
-      if (!otherKw) continue;
-
-      if (otherKw === normKeyword) {
-        conflictingPost = post;
-        break;
+      // 2. Trùng lặp thương hiệu xe thương mại cụ thể
+      const currentCar = COMMERCIAL_CAR_MODELS.find((m) => normKeyword.includes(m));
+      const otherCar = COMMERCIAL_CAR_MODELS.find((m) => normalizeText(otherKw).includes(m));
+      if (currentCar && otherCar && currentCar === otherCar) {
+        // Cùng đề cập một dòng xe cụ thể và độ tương đồng token >= 0.6
+        const sim = calculateTokenSimilarity(normKeyword, otherKw);
+        return sim >= 0.6;
       }
 
-      // Kiểm tra độ tương đồng biến thể từ khóa
-      const sim = calculateTokenSimilarity(normKeyword, otherKw);
-      if (sim >= 0.8) {
-        conflictingPost = post;
-        isHighSimilarity = true;
-        break;
-      }
-    }
+      // 3. Jaccard similarity cao (>= 0.75) giữa các cụm từ
+      return calculateTokenSimilarity(normKeyword, otherKw) >= 0.75;
+    });
 
-    if (isCommercialCollision) {
+    if (conflictingPosts.length > 0) {
+      const conflictTitles = conflictingPosts.map((p) => `"${p.tieuDe || p.slug}"`).slice(0, 2).join(', ');
       criteria.push({
         id: 'cannibalization',
-        label: 'Chống trùng lặp từ khóa chính (Cannibalization)',
-        passed: false,
-        score: 4,
-        maxScore: 10,
-        current: trimmedKeyword,
-        message: `Từ khóa '${trimmedKeyword}' trùng với tên thương mại dòng xe. Hãy dùng từ khóa dài hơn, ví dụ: 'Đánh giá ${trimmedKeyword} tại Nghệ An'`,
-      });
-    } else if (conflictingPost) {
-      criteria.push({
-        id: 'cannibalization',
-        label: 'Chống trùng lặp từ khóa chính (Cannibalization)',
+        label: 'Không xung đột từ khóa ăn thịt (Cannibalization)',
         passed: false,
         score: 0,
         maxScore: 10,
-        current: conflictingPost.slug || conflictingPost.tieuDe,
-        message: isHighSimilarity
-          ? `Cảnh báo ăn thịt từ khóa: Từ khóa có độ tương đồng rất cao (${conflictingPost.focusKeyword}) với bài viết '${conflictingPost.tieuDe || conflictingPost.slug}'`
-          : `Cảnh báo ăn thịt từ khóa: Trùng lặp chính xác với bài viết đã xuất bản '${conflictingPost.tieuDe || conflictingPost.slug}'`,
+        current: `${conflictingPosts.length} bài trùng lặp`,
+        message: `Cảnh báo Keyword Cannibalization: Từ khóa '${trimmedKeyword}' bị trùng hoặc tương đồng cao (ăn thịt từ khóa) với bài viết: ${conflictTitles}`,
       });
     } else {
       criteria.push({
         id: 'cannibalization',
-        label: 'Chống trùng lặp từ khóa chính (Cannibalization)',
+        label: 'Không xung đột từ khóa ăn thịt (Cannibalization)',
         passed: true,
         score: 10,
         maxScore: 10,
-        message: 'Từ khóa độc nhất, không trùng lặp với danh mục xe hoặc bài viết khác',
+        message: 'Từ khóa độc nhất, không bị xung đột ăn thịt từ khóa (Cannibalization-free)',
       });
     }
   }
 
-  // Tổng hợp điểm và phân loại
-  const totalScore = criteria.reduce((sum, item) => sum + item.score, 0);
-  const maxScore = criteria.reduce((sum, item) => sum + item.maxScore, 0);
+  // =========================================================================
+  // Tổng hợp điểm số SEO Real-Time
+  // =========================================================================
+  const totalScore = criteria.reduce((sum, c) => sum + c.score, 0);
+  const maxScore = criteria.reduce((sum, c) => sum + c.maxScore, 0);
+  const normalizedScore = Math.min(100, Math.max(0, Math.round(totalScore)));
 
   let status: 'good' | 'needs_improvement' | 'poor' = 'poor';
-  if (totalScore >= 80) {
+  if (normalizedScore >= 80) {
     status = 'good';
-  } else if (totalScore >= 50) {
+  } else if (normalizedScore >= 50) {
     status = 'needs_improvement';
   }
 
   return {
     success: true,
-    score: totalScore,
+    score: normalizedScore,
     maxScore,
     status,
     criteria,
