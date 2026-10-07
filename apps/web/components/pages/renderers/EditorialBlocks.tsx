@@ -142,16 +142,19 @@ export function EditorialBlock({ node }: EditorialBlockProps) {
 
   // 5. Bảng thông số kỹ thuật (specComparisonBlock)
   if (node.type === 'specComparisonBlock' || node.type === 'specTable') {
-    const title = (node.attrs?.title as string) || 'Bảng So Sánh Thông Số Kỹ Thuật';
+    const rawTitle = typeof node.attrs?.title === 'string' ? node.attrs.title.trim() : '';
+    const title = rawTitle;
     const versions = (node.attrs?.versions as string[]) || [];
     const rows = (node.attrs?.rows as Array<{ specName: string; values: string[] }>) || [];
     if (!versions.length || !rows.length) return null;
 
     return (
       <div className="my-8 not-prose overflow-x-auto rounded-xl border border-slate-200 bg-white">
-        <div className="p-4 border-b border-slate-200 bg-slate-50">
-          <h4 className="font-bold text-slate-900 text-sm">{title}</h4>
-        </div>
+        {title ? (
+          <div className="p-4 border-b border-slate-200 bg-slate-50">
+            <h4 className="font-bold text-slate-900 text-sm">{title}</h4>
+          </div>
+        ) : null}
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="bg-slate-100 border-b border-slate-200">

@@ -89,7 +89,7 @@ export function CommercialBlock({ node, cleanHotline }: CommercialBlockProps) {
 
   // 5. Bảng giá xe (PriceTableBlock)
   if (node.type === 'priceTableBlock') {
-    const title = (node.attrs?.title as string) || 'Bảng Giá Xe Mới Nhất';
+    const title = typeof node.attrs?.title === 'string' ? node.attrs.title : '';
     const rawPrices = (node.attrs?.prices as Array<{ version?: string; name?: string; listedPrice?: number; price?: number; discount?: number; promotionalPrice?: number; rollingPrice?: number; onRoadPriceEstimate?: number }>) || [];
     const versions = rawPrices.map((p) => ({
       name: p.version || p.name || 'Phiên bản',

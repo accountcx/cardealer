@@ -104,6 +104,7 @@ export function CarReviewWithTOC({
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
+        timeZone: 'Asia/Ho_Chi_Minh',
       })
     : null;
 
@@ -133,7 +134,7 @@ export function CarReviewWithTOC({
           )}
 
           {formattedDate && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5" suppressHydrationWarning>
               <Calendar size={14} className="text-slate-400" />
               <span>{formattedDate}</span>
             </div>
@@ -222,6 +223,7 @@ export function CarReviewWithTOC({
         <div
           className="prose prose-slate max-w-none prose-headings:scroll-mt-24 prose-img:rounded-2xl"
           dangerouslySetInnerHTML={{ __html: articleHtml }}
+          suppressHydrationWarning
         />
       </div>
     </article>

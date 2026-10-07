@@ -9,6 +9,8 @@ export const AiActionSchema = z.enum([
   'optimize_seo',
   'generate_faqs',
   'expand_section',
+  'generate_car_content',
+  'generate_single_block',
 ]);
 export type AiAction = z.infer<typeof AiActionSchema>;
 
@@ -127,6 +129,14 @@ export interface FullArticleResult {
   htmlContent?: string;
 }
 
+export interface CarFullContentResult {
+  moTaChung: string;
+  promotionSummary: string;
+  traTruocTu?: number;
+  highlightFeatures: Array<{ icon: string; title: string; value: string }>;
+  article?: FullArticleResult;
+}
+
 export interface AiGenerateResponseData {
   action: AiAction;
   model?: string;
@@ -137,6 +147,7 @@ export interface AiGenerateResponseData {
   faqs?: FaqItem[];
   seo?: SeoOptimizationResult;
   fullArticle?: FullArticleResult;
+  carContent?: CarFullContentResult;
   usage?: {
     promptTokens?: number;
     completionTokens?: number;

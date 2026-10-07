@@ -520,6 +520,7 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
                 <div
                   dangerouslySetInnerHTML={{ __html: post.noiDungHtml }}
                   className="space-y-4"
+                  suppressHydrationWarning
                 />
               ) : (
                 <p className="text-slate-500 italic">Nội dung bài viết đang được cập nhật.</p>

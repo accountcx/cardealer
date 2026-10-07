@@ -6,7 +6,7 @@
 // 3. Tích hợp thanh Action Controls chuẩn UI: Di chuyển lên, Di chuyển xuống, Xóa khối với @cardealer/ui.
 
 import React from 'react';
-import { MoveUp, MoveDown, Trash2 } from 'lucide-react';
+import { MoveUp, MoveDown, Trash2, Sparkles } from 'lucide-react';
 import { Button, cn } from '@cardealer/ui';
 import type { EditorBlock } from '../types';
 import { CALLOUT_THEMES } from '../constants';
@@ -18,6 +18,8 @@ export interface BlockItemWrapperProps {
   onMoveUp: () => void;
   onMoveDown: () => void;
   onRemove: () => void;
+  onAiGenerate?: () => void;
+  isAiGenerating?: boolean;
   children: React.ReactNode;
 }
 
@@ -28,6 +30,8 @@ export function BlockItemWrapper({
   onMoveUp,
   onMoveDown,
   onRemove,
+  onAiGenerate,
+  isAiGenerating,
   children,
 }: BlockItemWrapperProps) {
   const calloutTheme =
@@ -74,6 +78,21 @@ export function BlockItemWrapper({
         </span>
 
         <div className="flex items-center gap-1">
+          {onAiGenerate && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onAiGenerate}
+              disabled={isAiGenerating}
+              isLoading={isAiGenerating}
+              className="h-7 px-2 text-[11px] font-medium text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 flex items-center gap-1 border border-amber-500/30 rounded-md transition-colors mr-1 cursor-pointer"
+              title="Dùng AI viết/điền dữ liệu chuẩn cho khối này"
+            >
+              <Sparkles size={12} className="text-amber-400 shrink-0" />
+              <span>AI Điền Khối Này</span>
+            </Button>
+          )}
           <Button
             type="button"
             variant="ghost"

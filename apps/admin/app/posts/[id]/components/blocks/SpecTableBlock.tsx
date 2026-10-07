@@ -92,8 +92,8 @@ export function SpecTableBlock({ block, onUpdate }: SpecTableBlockProps) {
         <Input
           value={block.title || ''}
           onChange={(e) => onUpdate({ title: e.target.value })}
-          placeholder="Ví dụ: Bảng So Sánh Thông Số Kỹ Thuật Giữa Các Bản..."
-          className="h-9 bg-slate-950 border-white/10 text-slate-100 text-xs font-semibold flex-1"
+          placeholder="Để trống nếu phía trên đã có thẻ H2 (tùy chọn)..."
+          className="h-9 bg-slate-950 border-white/10 text-slate-100 text-xs font-semibold flex-1 placeholder:text-slate-500"
         />
       </div>
 

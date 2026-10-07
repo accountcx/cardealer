@@ -73,7 +73,7 @@ export function serializeTiptapDoc(blocks: EditorBlock[]): TiptapDoc {
         return {
           type: 'priceTableBlock',
           attrs: {
-            title: b.title || 'Bảng Giá Xe Hyundai Mới Nhất',
+            title: typeof b.title === 'string' ? b.title : '',
             prices: b.prices || [
               { version: 'Hyundai Accent 1.5 AT', listedPrice: 489000000, discount: 30000000, rollingPrice: 512000000 },
               { version: 'Hyundai Creta 1.5 Cao Cấp', listedPrice: 699000000, discount: 45000000, rollingPrice: 735000000 },
@@ -112,7 +112,7 @@ export function serializeTiptapDoc(blocks: EditorBlock[]): TiptapDoc {
         return {
           type: 'specComparisonBlock',
           attrs: {
-            title: b.title || 'Bảng So Sánh Thông Số Kỹ Thuật',
+            title: typeof b.title === 'string' ? b.title : '',
             versions: b.specVersions || ['Bản Tiêu Chuẩn', 'Bản Đặc Biệt'],
             rows: b.specRows || [],
           },
@@ -220,7 +220,7 @@ export function deserializeTiptapDoc(doc: TiptapDoc): EditorBlock[] {
       return {
         id,
         type: 'priceTable',
-        title: (node.attrs?.title as string) || 'Bảng Giá Xe Hyundai Mới Nhất',
+        title: typeof node.attrs?.title === 'string' ? node.attrs.title : '',
         prices: (node.attrs?.prices as PriceVersionItem[]) || [],
       };
     }
@@ -268,7 +268,7 @@ export function deserializeTiptapDoc(doc: TiptapDoc): EditorBlock[] {
       return {
         id,
         type: 'specTable',
-        title: (node.attrs?.title as string) || 'Bảng So Sánh Thông Số Kỹ Thuật',
+        title: typeof node.attrs?.title === 'string' ? node.attrs.title : '',
         specVersions: (node.attrs?.versions as string[]) || ['Bản Tiêu Chuẩn', 'Bản Đặc Biệt'],
         specRows: (node.attrs?.rows as any[]) || [],
       };

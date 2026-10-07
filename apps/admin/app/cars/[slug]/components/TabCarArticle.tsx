@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Button, Card, Input, Textarea, Skeleton } from '@cardealer/ui';
 import { catalogService, type CarSummary } from '../../../../services/catalog.service';
+import { aiService } from '../../../../services/ai.service';
 import { uploadSingleMedia } from '../../../../services/media.service';
 import { calculateSeoScore, type SeoAnalysisResult } from '@cardealer/core';
 import type { FullArticleResult, OutlineItem, FaqItem, SeoOptimizationResult } from '@cardealer/types';
@@ -73,6 +74,7 @@ export function TabCarArticle({ carSlug, carName }: TabCarArticleProps) {
   const [mediaPickerTarget, setMediaPickerTarget] = useState<MediaPickerTarget>(null);
   const [uploadingSingleBlockId, setUploadingSingleBlockId] = useState<string | null>(null);
   const [uploadingGalleryBlockId, setUploadingGalleryBlockId] = useState<string | null>(null);
+  const [generatingBlockId, setGeneratingBlockId] = useState<string | null>(null);
 
   // Load article data
   useEffect(() => {
@@ -208,6 +210,46 @@ export function TabCarArticle({ carSlug, carName }: TabCarArticleProps) {
       copy[targetIndex] = temp;
       return copy;
     });
+  };
+
+  // AI Generator cho từng khối nội dung riêng biệt
+  const handleAiGenerateForBlock = async (block: EditorBlock) => {
+    try {
+      setGeneratingBlockId(block.id);
+      const blockIndex = blocks.findIndex((b) => b.id === block.id);
+      let surroundingContext = '';
+      for (let i = blockIndex - 1; i >= 0; i--) {
+        if (blocks[i].type === 'heading') {
+          surroundingContext = `Thuộc phần tiêu đề: "${blocks[i].content}"`;
+          break;
+        }
+      }
+
+      const res = await aiService.generate({
+        action: 'generate_single_block',
+        prompt: block.type,
+        carModel: carName,
+        location: 'Nghệ An & Hà Tĩnh',
+        keyword: focusKeyword || `giá xe ${carName.toLowerCase()}`,
+        context: surroundingContext || block.content || block.title || tieuDe,
+      });
+
+      if (res && res.blocks && res.blocks[0]) {
+        const rawAiBlock = res.blocks[0];
+        const converted = convertFullArticleBlocksToEditorBlocks([rawAiBlock], availableCars, tieuDe || carName);
+        if (converted[0]) {
+          updateBlock(block.id, {
+            ...converted[0],
+            id: block.id,
+            type: block.type,
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Lỗi khi sinh nội dung AI cho khối:', err);
+    } finally {
+      setGeneratingBlockId(null);
+    }
   };
 
   // Image Upload Handlers
@@ -506,6 +548,8 @@ export function TabCarArticle({ carSlug, carName }: TabCarArticleProps) {
                   onMoveUp={() => moveBlock(idx, 'up')}
                   onMoveDown={() => moveBlock(idx, 'down')}
                   onRemove={() => removeBlock(block.id)}
+                  onAiGenerate={() => handleAiGenerateForBlock(block)}
+                  isAiGenerating={generatingBlockId === block.id}
                 >
                   {block.type === 'heading' && (
                     <HeadingBlock block={block} onUpdate={(upd) => updateBlock(block.id, upd)} />

@@ -179,7 +179,8 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
           }
         }
         if (node.type === 'specTable' || node.type === 'specComparisonBlock') {
-          const title = node.attrs?.title || 'Bảng So Sánh Thông Số Kỹ Thuật';
+          const rawTitle = typeof node.attrs?.title === 'string' ? node.attrs.title.trim() : '';
+          const title = rawTitle;
           const versions = (node.attrs?.versions as string[]) || [];
           const rows = (node.attrs?.rows as Array<{ specName: string; values: string[] }>) || [];
           if (!versions.length || !rows.length) return '';
@@ -203,7 +204,7 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
 
           return `
             <div class="my-8 not-prose">
-              <h3 class="text-xl font-bold text-slate-900 mb-3 flex items-center gap-2">${title}</h3>
+              ${title ? `<h3 class="text-xl font-bold text-slate-900 mb-3 flex items-center gap-2">${title}</h3>` : ''}
               <div class="overflow-x-auto rounded-2xl border border-slate-200/90 shadow-md bg-white scrollbar-thin">
                 <table class="w-full text-left text-sm border-collapse">
                   <thead>
@@ -224,7 +225,8 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
           const customUrl = node.attrs?.customUrl || '';
           const customPhone = ((node.attrs?.phoneNumber as string) || '').trim();
           const targetHotline = (customPhone ? customPhone.replace(/\D/g, '') : '') || defaultHotline;
-          const targetZalo = (customPhone ? customPhone.replace(/\D/g, '') : '') || defaultZalo;
+          const rawZalo = (customPhone ? customPhone.replace(/\D/g, '') : '') || defaultZalo;
+          const targetZalo = rawZalo.startsWith('http') ? rawZalo : `https://zalo.me/${rawZalo}`;
           const subtext = node.attrs?.subtext || '';
           const variant = node.attrs?.variant || 'red';
 
@@ -235,11 +237,11 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
           if (actionType === 'hotline') {
             href = `tel:${targetHotline}`;
           } else if (actionType === 'zalo') {
-            href = `https://zalo.me/${targetZalo}`;
+            href = targetZalo;
             targetAttr = 'target="_blank" rel="noopener noreferrer"';
           } else if (actionType === 'quoteForm') {
             href = '#lead-form';
-            onClickAttr = 'onclick="document.getElementById(\'lead-form\')?.scrollIntoView({behavior:\'smooth\'})"';
+            onClickAttr = 'onclick="var f=document.getElementById(\'lead-form\');if(f)f.scrollIntoView({behavior:\'smooth\'});"';
           } else if (actionType === 'customLink') {
             href = customUrl || '#';
             targetAttr = 'target="_blank" rel="noopener noreferrer"';
@@ -421,7 +423,8 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
             </div>`;
         }
         if (node.type === 'priceTableBlock') {
-          const title = node.attrs?.title || 'Bảng Giá Xe Hyundai Mới Nhất';
+          const rawTitle = typeof node.attrs?.title === 'string' ? node.attrs.title.trim() : '';
+          const title = rawTitle;
           const prices = (node.attrs?.prices as any[]) || [];
           let tableHtml = '';
           if (Array.isArray(prices) && prices.length > 0) {
@@ -429,14 +432,15 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
               .map((p) => {
                 const version = p.version || p.name || 'Phiên bản';
                 const listed = Number(p.listedPrice || p.price || 0);
-                const listedStr = listed > 0 ? `${listed.toLocaleString('vi-VN')}&nbsp;₫` : 'Liên hệ';
+                const listedStr = listed > 0 ? `${listed.toLocaleString('vi-VN')} ₫` : 'Liên hệ';
                 const disc = Number(p.discount || 0);
                 const discStr = disc > 0
-                  ? `-${disc.toLocaleString('vi-VN')}&nbsp;₫`
+                  ? `-${disc.toLocaleString('vi-VN')} ₫`
                   : '<span class="text-slate-400 font-normal">Liên hệ</span>';
                 const rolling = Number(p.rollingPrice || p.onRoadPriceEstimate || 0);
-                const rollingStr = rolling > 0 ? `${rolling.toLocaleString('vi-VN')}&nbsp;₫` : 'Liên hệ';
+                const rollingStr = rolling > 0 ? `${rolling.toLocaleString('vi-VN')} ₫` : 'Liên hệ';
                 const cleanVersionEscaped = version.replace(/'/g, "\\'");
+                const targetZaloUrl = defaultZalo.startsWith('http') ? defaultZalo : `https://zalo.me/${defaultZalo}`;
 
                 return `
                   <tr class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors">
@@ -455,21 +459,7 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
                     <td class="py-3.5 px-4 text-center whitespace-nowrap align-middle">
                       <button
                         type="button"
-                        onclick="
-                          const form = document.getElementById('lead-form') || document.querySelector('[data-role=\\'lead-form\\']') || document.querySelector('form');
-                          if (form) {
-                            form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            const inp = form.querySelector('input[type=\\'tel\\'], input[name=\\'phone\\'], input');
-                            if (inp) {
-                              setTimeout(() => {
-                                inp.focus();
-                                inp.setAttribute('placeholder', 'Nhận báo giá ${cleanVersionEscaped}...');
-                              }, 400);
-                            }
-                          } else {
-                            window.open('https://zalo.me/${defaultZalo}', '_blank');
-                          }
-                        "
+                        onclick="var f=document.getElementById('lead-form')||document.querySelector('[data-role=\\'lead-form\\']')||document.querySelector('form');if(f){f.scrollIntoView({behavior:'smooth',block:'center'});var i=f.querySelector('input[type=\\'tel\\'],input[name=\\'phone\\'],input');if(i){setTimeout(function(){i.focus();i.setAttribute('placeholder','Nhận báo giá ${cleanVersionEscaped}...');},400);}}else{window.open('${targetZaloUrl}','_blank');}"
                         class="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 active:scale-95 rounded-lg shadow-xs hover:shadow transition-all cursor-pointer whitespace-nowrap"
                         title="Nhận báo giá lăn bánh chi tiết cho ${cleanVersionEscaped}"
                       >
@@ -497,8 +487,8 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
               </div>`;
           }
 
-          return `
-            <div class="my-8 not-prose ignore-toc p-4 sm:p-6 rounded-2xl border border-blue-200/80 bg-blue-50/40 shadow-xs" data-toc="ignore">
+          const headerHtml = title
+            ? `
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
                 <h3 class="text-lg sm:text-xl font-bold text-slate-900 flex items-center gap-2">
                   ${title}
@@ -506,7 +496,12 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
                 <span class="text-xs text-blue-700 font-semibold flex items-center gap-1">
                   <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Báo giá cập nhật mới nhất
                 </span>
-              </div>
+              </div>`
+            : '';
+
+          return `
+            <div class="my-8 not-prose ignore-toc p-4 sm:p-6 rounded-2xl border border-blue-200/80 bg-blue-50/40 shadow-xs" data-toc="ignore">
+              ${headerHtml}
               ${tableHtml}
               <p class="text-xs text-slate-500 mt-2">* Giá lăn bánh tạm tính đã bao gồm VAT, lệ phí trước bạ, biển số và phí đường bộ. Giá thực tế có thể giảm sâu hơn tùy chính sách ưu đãi tháng.</p>
             </div>`;

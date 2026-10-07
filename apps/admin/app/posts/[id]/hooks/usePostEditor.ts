@@ -106,7 +106,7 @@ export function convertFullArticleBlocksToEditorBlocks(
       return {
         id,
         type: 'specTable',
-        title: b.title || 'Bảng So Sánh Thông Số Kỹ Thuật Chi Tiết',
+        title: typeof b.title === 'string' ? b.title : '',
         specVersions:
           b.specVersions && b.specVersions.length > 0
             ? b.specVersions
@@ -118,7 +118,7 @@ export function convertFullArticleBlocksToEditorBlocks(
       return {
         id,
         type: 'priceTable',
-        title: b.title || 'Bảng Giá Niêm Yết & Dự Toán Lăn Bánh',
+        title: typeof b.title === 'string' ? b.title : '',
         carSlug: b.carSlug || '',
         prices: b.prices || [],
       };

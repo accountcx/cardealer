@@ -60,28 +60,29 @@ export function PriceTableBlock({
     return `${amount.toLocaleString('vi-VN')}\u00A0₫`;
   }, []);
 
-  const defaultHeadline = carName ? `Bảng Giá Xe ${carName} Mới Nhất` : 'Bảng Giá Niêm Yết & Lăn Bánh';
-  const displayHeadline = headline || defaultHeadline;
+  const displayHeadline = headline !== undefined ? (headline || '') : (carName ? `Bảng Giá Xe ${carName} Mới Nhất` : '');
 
   return (
     <div className={cn('not-prose my-8 space-y-3 font-sans', className)}>
-      {/* Tiêu đề bảng giá */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#0072CE]">
-              Hyundai Vinh
-            </span>
-            <span className="text-slate-600">•</span>
-            <Badge variant="published" size="sm">
-              Cập nhật mới nhất
-            </Badge>
+      {/* Tiêu đề bảng giá (chỉ hiển thị nếu headline có nội dung) */}
+      {displayHeadline ? (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#0072CE]">
+                Hyundai Vinh
+              </span>
+              <span className="text-slate-600">•</span>
+              <Badge variant="published" size="sm">
+                Cập nhật mới nhất
+              </Badge>
+            </div>
+            <h3 className="text-lg sm:text-xl font-bold tracking-tight text-white">
+              {displayHeadline}
+            </h3>
           </div>
-          <h3 className="text-lg sm:text-xl font-bold tracking-tight text-white">
-            {displayHeadline}
-          </h3>
         </div>
-      </div>
+      ) : null}
 
       {/* Khung chứa bảng dữ liệu (Tái sử dụng Table Primitive) */}
       <div className="rounded-xl border border-slate-700/60 bg-slate-900/40 backdrop-blur-xs overflow-hidden shadow-sm">

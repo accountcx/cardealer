@@ -626,15 +626,17 @@ function PreviewContent() {
 
                 // Spec Comparison Table Block
                 if (node.type === 'specComparisonBlock' || node.type === 'specTable') {
-                  const title = (node.attrs?.title as string) || 'Bảng So Sánh Thông Số Kỹ Thuật';
+                  const title = typeof node.attrs?.title === 'string' ? node.attrs.title : '';
                   const versions = (node.attrs?.versions as string[]) || (node.attrs?.specVersions as string[]) || ['Bản Tiêu Chuẩn', 'Bản Đặc Biệt'];
                   const rows = (node.attrs?.rows as Array<{ name: string; values: string[] }>) || (node.attrs?.specRows as any[]) || [];
                   return (
                     <div key={idx} className="my-8 rounded-2xl bg-slate-900/80 border border-white/10 overflow-hidden shadow-xl p-5 space-y-4">
-                      <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-cyan-400" />
-                        {title}
-                      </h3>
+                      {title ? (
+                        <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                          {title}
+                        </h3>
+                      ) : null}
                       <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs border-collapse">
                           <thead>
@@ -807,10 +809,11 @@ function PreviewContent() {
 
                 // Price Table Block
                 if (node.type === 'priceTableBlock' || node.type === 'priceTable') {
+                  const title = typeof node.attrs?.title === 'string' ? node.attrs.title : '';
                   return (
                     <PriceTableBlock
                       key={idx}
-                      headline={(node.attrs?.title as string) || 'Bảng Giá Xe Hyundai Mới Nhất'}
+                      headline={title}
                       showNote={true}
                     />
                   );

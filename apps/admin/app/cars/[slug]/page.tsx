@@ -3,15 +3,19 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Save, Info, Sparkles, Layers, Palette, Check, AlertCircle, RefreshCw, BookOpen } from 'lucide-react';
+import { ArrowLeft, Save, Info, Sparkles, Layers, Palette, Check, AlertCircle, RefreshCw, BookOpen, CheckCircle2 } from 'lucide-react';
 import { Button, Card, Tabs, TabItem, Skeleton } from '@cardealer/ui';
 import { TabGeneralInfo } from './components/TabGeneralInfo';
 import { TabFeatures, HighlightFeatureItem } from './components/TabFeatures';
 import { TabVersions, VersionItem } from './components/TabVersions';
 import { TabColors, VersionColorConfig } from './components/TabColors';
 import { TabCarArticle } from './components/TabCarArticle';
+import { CarAiGeneratorModal } from './components/CarAiGeneratorModal';
 import { catalogService } from '../../../services/catalog.service';
 import { colorService } from '../../../services/color.service';
+import { serializeTiptapDoc } from '../../posts/[id]/ast';
+import { convertFullArticleBlocksToEditorBlocks } from '../../posts/[id]/hooks/usePostEditor';
+import type { FullArticleResult } from '@cardealer/types';
 
 function toSlug(text: string): string {
   return text
@@ -40,6 +44,45 @@ export default function CarEditPage() {
   const [loading, setLoading] = useState(slug !== 'new');
   const [pageError, setPageError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [aiSuccessMessage, setAiSuccessMessage] = useState<string | null>(null);
+
+  const handleApplyAiContent = async (data: {
+    moTaChung: string;
+    promotionSummary: string;
+    traTruocTu?: number;
+    highlightFeatures: Array<{ icon: string; title: string; value: string }>;
+    article?: FullArticleResult;
+    applyArticle: boolean;
+  }) => {
+    if (data.moTaChung) setMoTaChung(data.moTaChung);
+    if (data.promotionSummary) setPromotionSummary(data.promotionSummary);
+    if (data.traTruocTu !== undefined) setTraTruocTu(String(data.traTruocTu));
+    if (data.highlightFeatures && data.highlightFeatures.length > 0) {
+      setFeatures(data.highlightFeatures);
+    }
+
+    if (data.applyArticle && data.article && slug !== 'new') {
+      try {
+        const editorBlocks = convertFullArticleBlocksToEditorBlocks(data.article.blocks);
+        const tiptapDoc = serializeTiptapDoc(editorBlocks);
+        await catalogService.saveCarArticle(carSlug || slug, {
+          tieuDe: data.article.title,
+          tomTat: data.article.summary,
+          noiDung: tiptapDoc,
+          status: 'published',
+          focusKeyword: data.article.focusKeyword,
+          metaTitle: data.article.metaTitle,
+          metaDescription: data.article.metaDescription,
+        });
+      } catch (err) {
+        console.error('Failed to auto-save AI article:', err);
+      }
+    }
+
+    setAiSuccessMessage('Đã điền thành công toàn bộ nội dung AI vào biểu mẫu!');
+    setTimeout(() => setAiSuccessMessage(null), 4000);
+  };
 
   // Form State: Tab 1
   const [tenXe, setTenXe] = useState(slug === 'new' ? '' : '');
@@ -286,18 +329,37 @@ export default function CarEditPage() {
           </div>
         </div>
 
-        <Button
-          variant={saved ? 'success' : 'accent'}
-          glow={!saved}
-          onClick={handleSave}
-          isLoading={saving}
-          leftIcon={saved ? <Check size={16} /> : <Save size={16} />}
-        >
-          {saved ? 'Đã Lưu Thay Đổi!' : 'Lưu Thay Đổi'}
-        </Button>
+        <div className="flex items-center gap-2.5">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsAiModalOpen(true)}
+            leftIcon={<Sparkles size={16} className="text-amber-400" />}
+            className="border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 hover:text-amber-200 hover:border-amber-500/60 shadow-xs cursor-pointer font-medium"
+          >
+            ✨ AI Điền Toàn Bộ Dòng Xe
+          </Button>
+
+          <Button
+            variant={saved ? 'success' : 'accent'}
+            glow={!saved}
+            onClick={handleSave}
+            isLoading={saving}
+            leftIcon={saved ? <Check size={16} /> : <Save size={16} />}
+          >
+            {saved ? 'Đã Lưu Thay Đổi!' : 'Lưu Thay Đổi'}
+          </Button>
+        </div>
       </div>
 
-      {/* Page / Save Error Notifications */}
+      {/* Success / Error Notifications */}
+      {aiSuccessMessage && (
+        <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 flex items-center gap-2.5 text-sm shadow-lg animate-in fade-in-50">
+          <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
+          <span><strong className="font-bold text-emerald-200">Thành công:</strong> {aiSuccessMessage}</span>
+        </div>
+      )}
+
       {saveError && (
         <div className="p-4 rounded-xl bg-red-950/40 border border-red-500/40 text-red-300 flex items-center gap-2.5 text-sm shadow-lg">
           <AlertCircle size={18} className="text-red-400 shrink-0" />
@@ -403,7 +465,13 @@ export default function CarEditPage() {
                 setIsFeatured={setIsFeatured}
               />
             )}
-            {activeTab === 'features' && <TabFeatures features={features} setFeatures={setFeatures} />}
+            {activeTab === 'features' && (
+              <TabFeatures
+                features={features}
+                setFeatures={setFeatures}
+                carName={tenXe || slug}
+              />
+            )}
             {activeTab === 'versions' && <TabVersions versions={versions} setVersions={setVersions} />}
             {activeTab === 'colors' && (
               <TabColors
@@ -421,6 +489,16 @@ export default function CarEditPage() {
           </>
         )}
       </Card>
+
+      {/* AI Điền Toàn Bộ Dòng Xe Modal */}
+      <CarAiGeneratorModal
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+        carName={tenXe || slug}
+        carSlug={carSlug || slug}
+        isNewCar={slug === 'new'}
+        onApply={handleApplyAiContent}
+      />
     </div>
   );
 }

@@ -122,16 +122,7 @@ export function PriceTableBlock({ block, availableCars, onUpdate }: PriceTableBl
       rollingPrice: opt.rollingPrice,
     }));
 
-    const selectedCar = availableCars.find((c) => c.id === currentCarFilter);
-    const updatedTitle =
-      !block.title || block.title === 'Bảng Giá Xe Hyundai Mới Nhất'
-        ? selectedCar
-          ? `Bảng Giá Xe ${selectedCar.tenXe} & Dự Toán Lăn Bánh`
-          : 'Bảng Giá & Chi Phí Lăn Bánh Các Dòng Xe Hyundai'
-        : block.title;
-
     onUpdate({
-      title: updatedTitle,
       prices: newPrices,
     });
   };
@@ -147,8 +138,8 @@ export function PriceTableBlock({ block, availableCars, onUpdate }: PriceTableBl
           <Input
             value={block.title || ''}
             onChange={(e) => onUpdate({ title: e.target.value })}
-            placeholder="Tiêu đề bảng giá (e.g. Bảng Giá Xe Hyundai Mới Nhất Tại TP. Vinh)..."
-            className="h-8 bg-slate-900 border-white/10 text-slate-100 text-xs font-bold flex-1 placeholder:text-slate-600"
+            placeholder="Để trống nếu phía trên đã có thẻ H2 (tùy chọn)..."
+            className="h-8 bg-slate-900 border-white/10 text-slate-100 text-xs font-bold flex-1 placeholder:text-slate-500"
           />
         </div>
 
