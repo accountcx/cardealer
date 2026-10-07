@@ -120,427 +120,7 @@ function fallbackTextToFullArticle(text: string, titleHint: string, keywordHint:
   };
 }
 
-// 🛠️ Fallback sinh nội dung xe chất lượng cao khi chưa có OpenAI API Key hoặc khi OpenAI gặp sự cố
-function generateFallbackCarContent(
-  carName: string,
-  location: string = 'Nghệ An & Hà Tĩnh',
-  note: string = ''
-): CarFullContentResult {
-  const normalized = carName.toLowerCase();
 
-  let segmentName = 'SUV Đô Thị';
-  let traTruocTu = 120000000;
-  let features = [
-    { icon: 'engine', title: 'ĐỘNG CƠ', value: 'Smartstream G1.5 Mới' },
-    { icon: 'transmission', title: 'HỘP SỐ', value: 'Vô Cấp IVT Tự Động' },
-    { icon: 'power', title: 'CÔNG SUẤT', value: '115 Mã Lực Cực Đại' },
-    { icon: 'seat', title: 'CHỖ NGỒI', value: '5 Chỗ Ngồi Rộng Rãi' },
-    { icon: 'fuel', title: 'TIẾT KIỆM', value: '6.1L / 100km Hỗn Hợp' },
-    { icon: 'safety', title: 'AN TOÀN', value: 'Hyundai SmartSense' },
-  ];
-  let moTa = `Bảng giá xe ${carName} lăn bánh mới nhất tại Đại lý 3S chính hãng khu vực ${location}. Thiết kế thể thao thời thượng, trang bị công nghệ an toàn SmartSense tiên tiến cùng khả năng vận hành êm ái, bền bỉ và tiết kiệm nhiên liệu tối ưu.`;
-  let promo = `Ưu đãi 50% lệ phí trước bạ, tặng gói phụ kiện chính hãng cao cấp và bảo hành chính hãng 5 năm hoặc 100.000 km. Hỗ trợ mua xe trả góp lãi suất ưu đãi chỉ từ 6.9%/năm, giao xe ngay tận nhà.`;
-
-  if (normalized.includes('creta')) {
-    segmentName = 'B-SUV Đô Thị';
-    traTruocTu = 119000000;
-    features = [
-      { icon: 'engine', title: 'ĐỘNG CƠ', value: 'Smartstream G1.5 Mới' },
-      { icon: 'transmission', title: 'HỘP SỐ', value: 'Vô Cấp Thông Minh iVT' },
-      { icon: 'power', title: 'CÔNG SUẤT', value: '115 Mã Lực & 144 Nm' },
-      { icon: 'seat', title: 'CHỖ NGỒI', value: '5 Chỗ Rộng Nhất Phân Khúc' },
-      { icon: 'fuel', title: 'NHIÊN LIỆU', value: '6.1L / 100km Hỗn Hợp' },
-      { icon: 'safety', title: 'AN TOÀN', value: 'Gói Hyundai SmartSense' },
-    ];
-    moTa = `Hyundai Creta là mẫu SUV đô thị cỡ B ăn khách hàng đầu tại Việt Nam, ghi điểm với ngôn ngữ thiết kế Sensuous Sportiness cá tính, không gian nội thất rộng rãi cùng gói an toàn chủ động Hyundai SmartSense tiên tiến. Mẫu xe mang đến sự cân bằng hoàn hảo giữa khả năng di chuyển linh hoạt trong phố và độ bền bỉ, tiết kiệm trên đường dài.`;
-    promo = `Ưu đãi 50% lệ phí trước bạ, tặng camera hành trình cao cấp, dán phim cách nhiệt chính hãng và bảo hành 5 năm hoặc 100.000 km. Hỗ trợ vay trả góp 85% giá trị xe, nhận xe ngay trong ngày.`;
-  } else if (normalized.includes('accent')) {
-    segmentName = 'Sedan Hạng B';
-    traTruocTu = 89000000;
-    features = [
-      { icon: 'engine', title: 'ĐỘNG CƠ', value: 'Smartstream G1.5 Mới' },
-      { icon: 'transmission', title: 'HỘP SỐ', value: '6 MT / iVT Tự Động' },
-      { icon: 'power', title: 'CÔNG SUẤT', value: '115 Mã Lực Cực Đại' },
-      { icon: 'seat', title: 'CHỖ NGỒI', value: '5 Chỗ Rộng & Cốp Mở Điện' },
-      { icon: 'fuel', title: 'NHIÊN LIỆU', value: '5.4L / 100km Tiết Kiệm' },
-      { icon: 'safety', title: 'AN TOÀN', value: 'Hyundai SmartSense & 6 Túi Khí' },
-    ];
-    moTa = `Hyundai Accent thế hệ hoàn toàn mới định hình lại phân khúc sedan hạng B với diện mạo thể thao lai coupe ấn tượng, dải đèn LED Horizon tương lai, khoang nội thất công nghệ cao và động cơ Smartstream 1.5L bền bỉ, tiết kiệm nhiên liệu tối ưu.`;
-    promo = `Giảm giá tiền mặt trực tiếp, tặng bảo hiểm thân vỏ và gói phụ kiện cao cấp chính hãng. Hỗ trợ duyệt hồ sơ trả góp cấp tốc trong 15 phút, giải ngân nhận xe ngay.`;
-  } else if (normalized.includes('tucson')) {
-    segmentName = 'C-SUV Thể Thao';
-    traTruocTu = 155000000;
-    features = [
-      { icon: 'engine', title: 'ĐỘNG CƠ', value: 'Smartstream 2.0 / 1.6T / 2.0D' },
-      { icon: 'transmission', title: 'HỘP SỐ', value: '8 AT / 7 DCT Ly Hợp Kép' },
-      { icon: 'power', title: 'CÔNG SUẤT', value: 'Lên Đến 180 Mã Lực' },
-      { icon: 'seat', title: 'CHỖ NGỒI', value: '5 Chỗ Rộng & Cốp Điện 539L' },
-      { icon: 'safety', title: 'DẪN ĐỘNG', value: 'Dẫn Động 4 Bánh HTRAC' },
-      { icon: 'screen', title: 'TIỆN NGHI', value: 'Màn Hình Đôi 10.25 Inch & Loa Bose' },
-    ];
-    moTa = `Hyundai Tucson sở hữu phong cách SUV tiên phong với đèn định vị ẩn Parametric Jewel độc bản, khung gầm thế hệ thứ 3 N3 Platform gia cường và hàng loạt công nghệ lái xe thông minh bậc nhất phân khúc C-SUV tại Việt Nam.`;
-    promo = `Hỗ trợ lệ phí trước bạ, tặng gói phụ kiện cao cấp chính hãng và thẻ dịch vụ bảo dưỡng định kỳ. Showroom sẵn xe giao ngay đủ màu, hỗ trợ lái thử tận nhà.`;
-  } else if (normalized.includes('santa fe') || normalized.includes('santafe')) {
-    segmentName = 'D-SUV Đẳng Cấp';
-    traTruocTu = 210000000;
-    features = [
-      { icon: 'engine', title: 'ĐỘNG CƠ', value: 'Smartstream G2.5 / 2.5 Turbo' },
-      { icon: 'transmission', title: 'HỘP SỐ', value: 'Tự Động 8 Cấp Mượt Mà' },
-      { icon: 'power', title: 'CÔNG SUẤT', value: 'Lên Đến 194 - 281 Mã Lực' },
-      { icon: 'seat', title: 'CHỖ NGỒI', value: '7 Chỗ Đẳng Cấp / Ghế Cơ Trưởng' },
-      { icon: 'safety', title: 'DẪN ĐỘNG', value: 'HTRAC Đa Địa Hình (Snow, Sand, Mud)' },
-      { icon: 'screen', title: 'CÔNG NGHỆ', value: 'Màn Hình Cong Panoramic Siêu Lớn' },
-    ];
-    moTa = `Hyundai Santa Fe thế hệ hoàn toàn mới lột xác với ngôn ngữ thiết kế khối hộp Boxy việt dã sang trọng, không gian 7 chỗ đẳng cấp thương gia và hệ truyền động Smartstream mạnh mẽ, xứng danh biểu tượng SUV đỉnh cao.`;
-    promo = `Ưu đãi đặc quyền cho khách hàng đặt cọc: Tặng gói phủ Ceramic bảo vệ sơn cao cấp, phim cách nhiệt Mỹ và bảo dưỡng miễn phí. Hỗ trợ giao xe tận nhà.`;
-  } else if (normalized.includes('elantra')) {
-    segmentName = 'Sedan Hạng C';
-    traTruocTu = 110000000;
-    features = [
-      { icon: 'engine', title: 'ĐỘNG CƠ', value: 'Smartstream 1.6 / 2.0 / 1.6 Turbo' },
-      { icon: 'transmission', title: 'HỘP SỐ', value: '6 AT / 7 DCT Thể Thao' },
-      { icon: 'power', title: 'CÔNG SUẤT', value: 'Lên Đến 204 Mã Lực (N Line)' },
-      { icon: 'seat', title: 'CHỖ NGỒI', value: '5 Chỗ Thiết Kế Buồng Lái Phi Cơ' },
-      { icon: 'design', title: 'THIẾT KẾ', value: 'Sensuous Sportiness 4-Door Coupe' },
-      { icon: 'safety', title: 'AN TOÀN', value: 'Hyundai SmartSense Thế Hệ Mới' },
-    ];
-    moTa = `Hyundai Elantra mang đậm phong cách thiết kế 4-door Coupe thể thao quyến rũ, buồng lái hướng về người lái như buồng lái máy bay phản lực cùng khối động cơ Smartstream Turbo đầy phấn khích trên mọi cung đường.`;
-    promo = `Giảm giá tiền mặt trực tiếp, tặng bảo hiểm vật chất và gói độ thể thao chính hãng. Lãi suất vay trả góp cố định ưu đãi.`;
-  } else if (normalized.includes('custin')) {
-    segmentName = 'MPV Cỡ Trung';
-    traTruocTu = 160000000;
-    features = [
-      { icon: 'engine', title: 'ĐỘNG CƠ', value: 'Smartstream 1.5T / 2.0T-GDi' },
-      { icon: 'transmission', title: 'HỘP SỐ', value: 'Tự Động 8 Cấp (8AT)' },
-      { icon: 'power', title: 'CÔNG SUẤT', value: 'Lên Đến 236 Mã Lực' },
-      { icon: 'seat', title: 'CHỖ NGỒI', value: '7 Chỗ (Hàng Ghế Captain Hạng Nhất)' },
-      { icon: 'design', title: 'CỬA LÙA', value: 'Cửa Trượt Điện Tự Động 2 Bên' },
-      { icon: 'safety', title: 'AN TOÀN', value: 'Hyundai SmartSense Chủ Động' },
-    ];
-    moTa = `Hyundai Custin là dòng MPV cỡ trung cao cấp hàng đầu dành cho gia đình và doanh nghiệp, sở hữu hàng ghế thương gia Captain thư giãn chuẩn không trọng lực, cửa trượt điện thông minh 2 bên và không gian nội thất rộng rãi tột bậc.`;
-    promo = `Tặng gói bảo dưỡng miễn phí 2 năm, phủ gầm chống rỉ sét và phim cách nhiệt chính hãng. Hỗ trợ làm thủ tục biển số nhanh chóng.`;
-  } else if (normalized.includes('stargazer')) {
-    segmentName = 'MPV Gia Đình';
-    traTruocTu = 95000000;
-    features = [
-      { icon: 'engine', title: 'ĐỘNG CƠ', value: 'Smartstream G1.5 Mới' },
-      { icon: 'transmission', title: 'HỘP SỐ', value: 'Vô Cấp Thông Minh iVT' },
-      { icon: 'power', title: 'CÔNG SUẤT', value: '115 Mã Lực Bền Bỉ' },
-      { icon: 'seat', title: 'CHỖ NGỒI', value: '6/7 Chỗ Linh Hoạt Tiện Dụng' },
-      { icon: 'fuel', title: 'NHIÊN LIỆU', value: '5.9L / 100km Tiết Kiệm' },
-      { icon: 'safety', title: 'AN TOÀN', value: 'Hệ Thống SmartSense Đầy Đủ' },
-    ];
-    moTa = `Hyundai Stargazer mang thiết kế tương lai One Curve phi thuyền, khoang cabin thực dụng với 31 vị trí để đồ thông minh, đáp ứng hoàn hảo nhu cầu di chuyển của gia đình đông thành viên cũng như kinh doanh dịch vụ.`;
-    promo = `Ưu đãi giá sốc lên đến hàng chục triệu đồng, tặng phụ kiện bọc da cao cấp và thảm lót sàn chính hãng. Nhận xe chỉ với từ 95 triệu trả trước.`;
-  } else if (normalized.includes('i10') || normalized.includes('grand')) {
-    segmentName = 'Hatchback / Sedan Hạng A';
-    traTruocTu = 65000000;
-    features = [
-      { icon: 'engine', title: 'ĐỘNG CƠ', value: 'Kappa 1.2L Bền Bỉ' },
-      { icon: 'transmission', title: 'HỘP SỐ', value: '4 AT / 5 MT Tiết Kiệm' },
-      { icon: 'power', title: 'CÔNG SUẤT', value: '83 Mã Lực Linh Hoạt' },
-      { icon: 'seat', title: 'CHỖ NGỒI', value: '5 Chỗ Rộng Nhất Phân Khúc A' },
-      { icon: 'fuel', title: 'NHIÊN LIỆU', value: '5.2L / 100km Tiết Kiệm Xăng' },
-      { icon: 'sensor', title: 'TIỆN ÍCH', value: 'Màn Hình 8 Inch & Cảm Biến Áp Suất Lốp' },
-    ];
-    moTa = `Hyundai Grand i10 tiếp tục khẳng định vị thế ông vua phân khúc xe đô thị cỡ nhỏ hạng A với kích thước vượt trội, khung gầm đầm chắc, chi phí vận hành siêu tiết kiệm và dịch vụ phụ tùng chính hãng phổ biến toàn quốc.`;
-    promo = `Giảm giá đặc biệt cho khách hàng mua xe chạy dịch vụ hoặc gia đình, tặng bảo hiểm thân vỏ và hỗ trợ đăng ký biển số trong ngày.`;
-  } else if (normalized.includes('venue')) {
-    segmentName = 'A-SUV Đô Thị';
-    traTruocTu = 98000000;
-    features = [
-      { icon: 'engine', title: 'ĐỘNG CƠ', value: '1.0 Turbo GDi Khỏe Khoắn' },
-      { icon: 'transmission', title: 'HỘP SỐ', value: 'Ly Hợp Kép 7 Cấp (7DCT)' },
-      { icon: 'power', title: 'CÔNG SUẤT', value: '120 Mã Lực Vượt Trội' },
-      { icon: 'seat', title: 'CHỖ NGỒI', value: '5 Chỗ Trẻ Trung Cá Tính' },
-      { icon: 'fuel', title: 'NHIÊN LIỆU', value: '5.6L / 100km Linh Hoạt' },
-      { icon: 'safety', title: 'AN TOÀN', value: 'Phanh Đĩa 4 Bánh & 6 Túi Khí' },
-    ];
-    moTa = `Hyundai Venue là tân binh A-SUV đậm chất thể thao, nổi bật với mặt ca-lăng thác nước mạ crom cỡ lớn, động cơ 1.0L Turbo mạnh mẽ hàng đầu phân khúc kết hợp hộp số 7DCT mượt mà, sẵn sàng chinh phục mọi cung phố hiện đại.`;
-    promo = `Hỗ trợ phí trước bạ, tặng camera 360 độ và dán phim cách nhiệt cao cấp. Hỗ trợ vay mua xe không cần chứng minh thu nhập.`;
-  } else if (normalized.includes('palisade')) {
-    segmentName = 'E-SUV Flagship';
-    traTruocTu = 280000000;
-    features = [
-      { icon: 'engine', title: 'ĐỘNG CƠ', value: 'Dầu R 2.2L CRDi Mạnh Mẽ' },
-      { icon: 'transmission', title: 'HỘP SỐ', value: 'Tự Động 8 Cấp Núm Xoay' },
-      { icon: 'power', title: 'CÔNG SUẤT', value: '200 Mã Lực & 440 Nm Mô-men' },
-      { icon: 'seat', title: 'CHỖ NGỒI', value: '6/7 Chỗ Da Nappa Thương Gia' },
-      { icon: 'safety', title: 'DẪN ĐỘNG', value: 'HTRAC Đa Địa Hình Thông Minh' },
-      { icon: 'screen', title: 'TIỆN NGHI', value: '12 Loa Infinity & Cửa Sổ Trời Đôi' },
-    ];
-    moTa = `Hyundai Palisade là mẫu SUV đầu bảng cao cấp nhất của Hyundai, biểu tượng quyền uy và vị thế lãnh đạo với thiết kế đồ sộ, nội thất bọc da Nappa xa hoa cùng hệ thống âm thanh vòm Infinity đỉnh cao.`;
-    promo = `Gói quà tặng VIP dành riêng cho chủ nhân Palisade: Thẻ thành viên VIP bảo dưỡng trọn đời, phủ Ceramic toàn xe và bảo hiểm vật chất cao cấp 2 năm.`;
-  }
-
-  if (note && note.trim().length > 3) {
-    promo = `${promo} (${note.trim()})`;
-  }
-
-  const focusKeyword = `giá xe ${carName.toLowerCase()}`;
-  const articleTitle = `Đánh Giá Xe ${carName}: Bảng Giá Lăn Bánh, Thông Số & Ưu Đãi Mới Nhất Tại ${location}`;
-  const articleSummary = `Tổng hợp chi tiết đánh giá xe ${carName} mới nhất tại ${location}. Cập nhật bảng giá niêm yết, dự toán lăn bánh từng phiên bản, ưu đãi tiền mặt và tư vấn mua xe trả góp lãi suất tốt nhất.`;
-
-  const articleBlocks: FullArticleBlock[] = [
-    {
-      type: 'paragraph',
-      content: `Dòng xe ${carName} tại thị trường ${location} hiện đang là tâm điểm chú ý của đông đảo khách hàng nhờ sự kết hợp lý tưởng giữa giá bán cạnh tranh, thiết kế trẻ trung hiện đại và hàng loạt công nghệ an toàn cao cấp trong phân khúc ${segmentName}.`,
-    },
-    {
-      type: 'heading',
-      level: 2,
-      content: `1. Giá Xe ${carName} Và Dự Toán Chi Phí Lăn Bánh Tại ${location}`,
-    },
-    {
-      type: 'paragraph',
-      content: `Để khách hàng dễ dàng cân đối ngân sách sở hữu mẫu xe ${carName}, Đại lý xin gửi tới quý khách bảng giá niêm yết chính hãng và dự toán chi phí lăn bánh sơ bộ tại khu vực ${location}:`,
-    },
-    {
-      type: 'priceTable',
-      title: `Bảng Giá Xe ${carName} & Chi Phí Lăn Bánh Tham Khảo`,
-      prices: [
-        { version: `${carName} Bản Tiêu Chuẩn`, listedPrice: traTruocTu * 4, discount: 20000000, rollingPrice: Math.round(traTruocTu * 4 * 1.08) },
-        { version: `${carName} Bản Đặc Biệt`, listedPrice: Math.round(traTruocTu * 4.6), discount: 25000000, rollingPrice: Math.round(traTruocTu * 4.6 * 1.08) },
-        { version: `${carName} Bản Cao Cấp`, listedPrice: Math.round(traTruocTu * 5.2), discount: 30000000, rollingPrice: Math.round(traTruocTu * 5.2 * 1.08) },
-      ],
-    },
-    {
-      type: 'callout',
-      calloutType: 'info',
-      title: 'Chính sách ưu đãi và hỗ trợ trả góp đặc quyền',
-      content: `${promo} Showroom cam kết mang đến mức giá lăn bánh cạnh tranh nhất khu vực ${location} cùng thủ tục bàn giao xe nhanh chóng.`,
-    },
-    {
-      type: 'heading',
-      level: 2,
-      content: `2. Thiết Kế Ngoại Thất Và Không Gian Nội Thất Xe ${carName}`,
-    },
-    {
-      type: 'paragraph',
-      content: `${moTa} Bước vào bên trong khoang cabin, người lái và hành khách sẽ ngay lập tức cảm nhận được sự tinh tế với ghế ngồi bọc da cao cấp, hệ thống điều hòa tự động làm mát sâu và màn hình giải trí đa phương tiện kích thước lớn hỗ trợ kết nối thông minh.`,
-    },
-    {
-      type: 'heading',
-      level: 2,
-      content: `3. Thông Số Kỹ Thuật Nổi Bật Của Dòng Xe ${carName}`,
-    },
-    {
-      type: 'specTable',
-      title: `Bảng Thông Số Kỹ Thuật Xe ${carName}`,
-      specVersions: ['Bản Tiêu Chuẩn', 'Bản Đặc Biệt', 'Bản Cao Cấp'],
-      specRows: [
-        { specName: 'Động cơ', values: [features[0].value, features[0].value, features[0].value] },
-        { specName: 'Hộp số', values: [features[1].value, features[1].value, features[1].value] },
-        { specName: 'Công suất tối đa', values: [features[2].value, features[2].value, features[2].value] },
-        { specName: 'Số chỗ ngồi', values: [features[3].value, features[3].value, features[3].value] },
-        { specName: 'Mức tiêu hao nhiên liệu', values: [features[4].value, features[4].value, features[4].value] },
-        { specName: 'Gói an toàn chủ động', values: ['Tiêu chuẩn', 'Nâng cao', features[5].value] },
-      ],
-    },
-    {
-      type: 'heading',
-      level: 2,
-      content: `4. Đánh Giá Ưu Điểm Và Nhược Điểm Thực Tế Của ${carName}`,
-    },
-    {
-      type: 'prosCons',
-      title: `Ưu & Nhược Điểm Xe ${carName}`,
-      pros: [
-        'Thiết kế bắt mắt, phong cách thể thao hiện đại dẫn đầu xu hướng',
-        'Trang bị tiện nghi và màn hình giải trí vượt trội trong tầm giá',
-        'Hệ thống an toàn chủ động thông minh mang lại sự an tâm tối đa',
-        'Chi phí bảo dưỡng hợp lý, phụ tùng chính hãng dễ dàng thay thế',
-      ],
-      cons: [
-        'Các phiên bản màu ngoại thất hot có thể phải chờ đợi theo đợt giao xe từ nhà máy',
-      ],
-    },
-    {
-      type: 'faq',
-      title: `Câu Hỏi Thường Gặp Về Xe ${carName}`,
-      faqs: [
-        {
-          question: `Mua xe ${carName} trả góp cần trả trước bao nhiêu tại ${location}?`,
-          answer: `Quý khách chỉ cần chuẩn bị số tiền trả trước từ ${traTruocTu.toLocaleString('vi-VN')} VNĐ (tương đương 15-20% giá trị xe), ngân hàng đối tác hỗ trợ vay tới 80-85% với thủ tục đơn giản, giải ngân nhanh.`,
-        },
-        {
-          question: `Thời gian bảo hành chính hãng xe ${carName} là bao lâu?`,
-          answer: `Mọi dòng xe Hyundai được bảo hành chính hãng 5 năm hoặc 100.000 km tùy điều kiện nào đến trước tại tất cả các Đại lý ủy quyền trên toàn quốc.`,
-        },
-        {
-          question: `Showroom tại ${location} có sẵn xe ${carName} giao ngay không?`,
-          answer: `Đại lý luôn có sẵn xe đủ màu sắc và các phiên bản trong kho, hỗ trợ hoàn tất thủ tục đăng ký, đăng kiểm và bàn giao xe tận nơi cho khách hàng.`,
-        },
-      ],
-    },
-    {
-      type: 'leadForm',
-      formHeadline: `Đăng Ký Nhận Báo Giá Lăn Bánh & Lái Thử ${carName}`,
-      formSubheadline: `Điền thông tin bên dưới để chuyên viên tư vấn gửi bảng tính chi tiết các khoản phí và ưu đãi đặc quyền trong 5 phút.`,
-      formButtonText: 'Gửi Yêu Cầu Báo Giá',
-      carName,
-    },
-    {
-      type: 'ctaButton',
-      ctaButtonText: `Hotline Tư Vấn Báo Giá Xe ${carName}`,
-      ctaActionType: 'hotline',
-      ctaVariant: 'red',
-      ctaSubtext: `Hỗ trợ 24/7 - Lái thử tận nhà miễn phí tại ${location}`,
-    },
-  ];
-
-  return {
-    moTaChung: moTa,
-    promotionSummary: promo,
-    traTruocTu,
-    highlightFeatures: features,
-    article: {
-      title: articleTitle,
-      summary: articleSummary,
-      focusKeyword,
-      metaTitle: `${articleTitle.slice(0, 55)} | Giá Tốt Nhất`,
-      metaDescription: articleSummary.slice(0, 155),
-      suggestedKeywords: [
-        focusKeyword,
-        `dự toán lăn bánh ${carName.toLowerCase()}`,
-        `thông số kỹ thuật ${carName.toLowerCase()}`,
-        `ưu đãi ${carName.toLowerCase()}`,
-      ],
-      blocks: articleBlocks,
-    },
-  };
-}
-
-// 🛠️ Fallback sinh nội dung chuẩn cho 1 block đơn lẻ
-function generateFallbackSingleBlock(
-  blockType: string,
-  carName: string,
-  location: string = 'Nghệ An & Hà Tĩnh',
-  context?: string
-): FullArticleBlock {
-  const carContent = generateFallbackCarContent(carName, location);
-
-  switch (blockType) {
-    case 'heading':
-      return {
-        type: 'heading',
-        level: 2,
-        content: `Đánh Giá Chi Tiết Dòng Xe ${carName} Tại ${location}`,
-      };
-
-    case 'paragraph':
-      return {
-        type: 'paragraph',
-        content: `${carContent.moTaChung} Mẫu xe hiện đang được trưng bày đầy đủ các phiên bản tại showroom ủy quyền chính hãng tại ${location}, hỗ trợ đăng ký lái thử trải nghiệm thực tế và giao xe tận nhà.`,
-      };
-
-    case 'prosCons': {
-      const prosConsBlock = carContent.article?.blocks.find((b) => b.type === 'prosCons');
-      return (
-        prosConsBlock || {
-          type: 'prosCons',
-          title: `Ưu Điểm & Nhược Điểm Xe ${carName}`,
-          pros: [
-            'Thiết kế thể thao, hiện đại và cuốn hút',
-            'Trang bị tiện nghi và an toàn thông minh hàng đầu phân khúc',
-            'Tiết kiệm nhiên liệu, vận hành êm ái bền bỉ',
-            'Chi phí bảo dưỡng hợp lý, sẵn phụ tùng thay thế',
-          ],
-          cons: ['Các màu sắc đặc biệt có thể cần đặt trước theo đợt xe từ nhà máy'],
-        }
-      );
-    }
-
-    case 'specTable': {
-      const specBlock = carContent.article?.blocks.find((b) => b.type === 'specTable');
-      return (
-        specBlock || {
-          type: 'specTable',
-          title: `Bảng Thông Số Kỹ Thuật Xe ${carName}`,
-          specVersions: ['Bản Tiêu Chuẩn', 'Bản Đặc Biệt', 'Bản Cao Cấp'],
-          specRows: [
-            { specName: 'Động cơ', values: [carContent.highlightFeatures[0]?.value || 'Smartstream 1.5L', carContent.highlightFeatures[0]?.value || 'Smartstream 1.5L', carContent.highlightFeatures[0]?.value || 'Smartstream 1.5L'] },
-            { specName: 'Hộp số', values: [carContent.highlightFeatures[1]?.value || 'IVT Tự Động', carContent.highlightFeatures[1]?.value || 'IVT Tự Động', carContent.highlightFeatures[1]?.value || 'IVT Tự Động'] },
-            { specName: 'Công suất', values: [carContent.highlightFeatures[2]?.value || '115 Mã Lực', carContent.highlightFeatures[2]?.value || '115 Mã Lực', carContent.highlightFeatures[2]?.value || '115 Mã Lực'] },
-            { specName: 'Số chỗ ngồi', values: [carContent.highlightFeatures[3]?.value || '5 Chỗ', carContent.highlightFeatures[3]?.value || '5 Chỗ', carContent.highlightFeatures[3]?.value || '5 Chỗ'] },
-            { specName: 'Tiêu hao nhiên liệu', values: [carContent.highlightFeatures[4]?.value || '6.1L/100km', carContent.highlightFeatures[4]?.value || '6.1L/100km', carContent.highlightFeatures[4]?.value || '6.1L/100km'] },
-            { specName: 'Gói an toàn SmartSense', values: ['Cơ bản', 'Nâng cao', 'Đầy đủ tính năng'] },
-          ],
-        }
-      );
-    }
-
-    case 'priceTable': {
-      const priceBlock = carContent.article?.blocks.find((b) => b.type === 'priceTable');
-      return (
-        priceBlock || {
-          type: 'priceTable',
-          title: `Bảng Giá Xe ${carName} & Dự Toán Lăn Bánh Tham Khảo`,
-          prices: [
-            { version: `${carName} Tiêu Chuẩn`, listedPrice: (carContent.traTruocTu || 120000000) * 4, discount: 20000000, rollingPrice: Math.round((carContent.traTruocTu || 120000000) * 4 * 1.08) },
-            { version: `${carName} Đặc Biệt`, listedPrice: Math.round((carContent.traTruocTu || 120000000) * 4.6), discount: 25000000, rollingPrice: Math.round((carContent.traTruocTu || 120000000) * 4.6 * 1.08) },
-            { version: `${carName} Cao Cấp`, listedPrice: Math.round((carContent.traTruocTu || 120000000) * 5.2), discount: 30000000, rollingPrice: Math.round((carContent.traTruocTu || 120000000) * 5.2 * 1.08) },
-          ],
-        }
-      );
-    }
-
-    case 'faq': {
-      const faqBlock = carContent.article?.blocks.find((b) => b.type === 'faq');
-      return (
-        faqBlock || {
-          type: 'faq',
-          title: `Câu Hỏi Thường Gặp Về Xe ${carName}`,
-          faqs: [
-            { question: `Mua xe ${carName} trả góp cần chuẩn bị số tiền bao nhiêu?`, answer: `Chỉ cần trả trước từ ${(carContent.traTruocTu || 120000000).toLocaleString('vi-VN')} VNĐ, ngân hàng hỗ trợ duyệt vay tới 85% giá trị xe.` },
-            { question: `Chế độ bảo hành xe ${carName} tại ${location} như thế nào?`, answer: `Xe được bảo hành chính hãng 5 năm hoặc 100.000 km trên toàn hệ thống đại lý Hyundai.` },
-            { question: `Showroom có hỗ trợ lái thử tận nhà không?`, answer: `Đại lý hỗ trợ lái thử xe tận nơi hoàn toàn miễn phí tại ${location}, đăng ký nhanh qua hotline.` },
-          ],
-        }
-      );
-    }
-
-    case 'callout':
-      return {
-        type: 'callout',
-        calloutType: 'info',
-        title: `Chính Sách Ưu Đãi Độc Quyền Cho Xe ${carName}`,
-        content: `${carContent.promotionSummary} Quý khách vui lòng liên hệ sớm để nhận quà tặng phụ kiện chính hãng và hỗ trợ hồ sơ bấm biển lấy xe ngay.`,
-      };
-
-    case 'ctaButton':
-      return {
-        type: 'ctaButton',
-        ctaButtonText: `Nhận Báo Giá Lăn Bánh & Ưu Đãi Xe ${carName}`,
-        ctaActionType: 'hotline',
-        ctaVariant: 'red',
-        ctaSubtext: `Tư vấn 24/7 - Hỗ trợ đăng ký lái thử tận nhà tại ${location}`,
-      };
-
-    case 'leadForm':
-      return {
-        type: 'leadForm',
-        formHeadline: `Đăng Ký Nhận Báo Giá Chi Tiết Xe ${carName}`,
-        formSubheadline: `Chuyên viên tư vấn chính hãng sẽ liên hệ gửi bảng tính chi phí lăn bánh chính xác và quà tặng trong 5 phút.`,
-        formButtonText: 'Gửi Yêu Cầu Báo Giá',
-        carName,
-      };
-
-    case 'singleImage':
-      return {
-        type: 'singleImage',
-        imageUrl: '',
-        imageAlt: `Hình ảnh xe ${carName} chính hãng tại showroom ${location}`,
-        caption: `Thiết kế thể thao thời thượng và nổi bật của dòng xe ${carName}`,
-      };
-
-    default:
-      return {
-        type: blockType,
-        content: `${carContent.moTaChung}`,
-      };
-  }
-}
 
 // 🧠 Mental Model: Router API Trợ Lý AI Viết Bài & Tối Ưu SEO (@cardealer/api)
 // Chiến lược "Cyborg Content Engine & Real-Time SEO Alignment":
@@ -614,35 +194,9 @@ export async function handleAdminAiRoutes(
 
     const siteSettings = siteSettingsRow ? SiteSettingsSchema.parse(siteSettingsRow.data) : SiteSettingsSchema.parse({});
     const apiKey = siteSettings.openaiApiKey?.trim() || process.env.OPENAI_API_KEY?.trim();
-    const model = siteSettings.openaiModel?.trim() || 'gpt-4o-mini';
+    let model = siteSettings.openaiModel?.trim() || 'gpt-4o-mini';
 
     if (!apiKey) {
-      if (action === 'generate_car_content') {
-        const fallbackCarContent = generateFallbackCarContent(targetCar, targetLocation, prompt);
-        sendJson(200, {
-          success: true,
-          data: {
-            action: 'generate_car_content',
-            model: 'local-automotive-ai',
-            carContent: fallbackCarContent,
-          },
-        });
-        return true;
-      }
-
-      if (action === 'generate_single_block') {
-        const fallbackBlock = generateFallbackSingleBlock(prompt, targetCar, targetLocation, context);
-        sendJson(200, {
-          success: true,
-          data: {
-            action: 'generate_single_block',
-            model: 'local-automotive-ai',
-            blocks: [fallbackBlock],
-          },
-        });
-        return true;
-      }
-
       sendJson(400, {
         success: false,
         error: {
@@ -688,7 +242,7 @@ BÀI VIẾT BẮT BUỘC PHẢI ĐẠT ĐIỂM TỐI ĐA (100/100 ĐIỂM) TRÊN
    - Chèn ít nhất 2 khối liên kết nội bộ hướng tới xe trong showroom (ví dụ: khối "relatedCar" có carSlug, khối "priceTable" có carSlug, hoặc liên kết nội bộ /xe/[slug]).
 8. META DESCRIPTION: Độ dài chuẩn từ 120 đến 155 ký tự. BẮT BUỘC chứa chính xác từ khóa chính và có lời kêu gọi hành động CTA rõ ràng (ví dụ: "Xem ngay báo giá lăn bánh...", "Liên hệ hotline nhận ưu đãi...").
 9. META TITLE: Độ dài từ 45 đến 60 ký tự, chứa từ khóa chính ở đầu, chuẩn hiển thị Google Search.
-10. CHỐNG ĂN THỊT TỪ KHÓA (Cannibalization Guard): Dùng từ khóa dạng Long-Tail chuyên biệt (kèm địa danh hoặc ý định tìm kiếm cụ thể), tránh đặt từ khóa cộc lốc trùng với tên xe gốc.
+10. TRÁNH TRÙNG LẶP TỪ KHÓA (Keyword Cannibalization Guard): Dùng từ khóa dạng Long-Tail chuyên biệt (kèm địa danh hoặc ý định tìm kiếm cụ thể), tránh đặt từ khóa cộc lốc trùng với tên xe gốc.
 
 PHÂN BỔ LINH HOẠT 14 CONTENT BLOCK TINH HOA:
 - paragraph: Đoạn văn phân tích chuyên sâu, mạch lạc (2-4 câu/đoạn).
@@ -1073,24 +627,43 @@ TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON:
       model.startsWith('o1') ||
       model.startsWith('o3') ||
       model.startsWith('o4') ||
-      model.includes('reasoning');
+      model.includes('reasoning') ||
+      model.includes('luna') ||
+      model.startsWith('gpt-6') ||
+      model.startsWith('gpt-5');
 
     const systemRole = isReasoningModel ? 'developer' : 'system';
 
-    const buildPayload = (includeTemperature = true) => {
+    const buildPayload = (includeTemperature = true, useMaxTokens = false) => {
+      // Với các reasoning & frontier model (o1, o3-mini, gpt-6-luna), completion_tokens bao gồm cả reasoning_tokens nên cần tokenLimit lớn hơn
+      const tokenLimit = isReasoningModel
+        ? Math.max(maxTokens || defaultTokenLimit, 16000)
+        : (maxTokens || defaultTokenLimit);
+
       const payload: Record<string, unknown> = {
         model: model || 'gpt-4o-mini',
         messages: [
           { role: systemRole, content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        max_completion_tokens: maxTokens || defaultTokenLimit,
         ...(responseFormat ? { response_format: responseFormat } : {}),
       };
+
+      if (useMaxTokens) {
+        payload.max_tokens = tokenLimit;
+      } else {
+        payload.max_completion_tokens = tokenLimit;
+      }
 
       if (!isReasoningModel && includeTemperature) {
         payload.temperature = 0.7;
       }
+
+      // Giảm reasoning_effort cho o3-mini / o1 / luna để không bị cạn token vào phần suy nghĩ
+      if (isReasoningModel && (model.startsWith('o3') || model === 'o1' || model.includes('luna'))) {
+        payload.reasoning_effort = 'low';
+      }
+
       return payload;
     };
 
@@ -1104,28 +677,58 @@ TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON:
       body: JSON.stringify(buildPayload(true)),
     });
 
-    // Nếu lỗi liên quan đến temperature hoặc response_format không được hỗ trợ, thử lại tự động
+    // Nếu lỗi liên quan đến tham số không tương thích hoặc model không tồn tại
     if (!openaiRes.ok) {
       const firstErrText = await openaiRes.text();
-      if (
-        firstErrText.includes('temperature') ||
-        firstErrText.includes('unsupported_parameter') ||
-        firstErrText.includes('response_format')
-      ) {
+      console.warn(`[AI API] Lần gọi OpenAI đầu tiên thất bại (${openaiRes.status}):`, firstErrText);
+
+      // Nếu model không tồn tại trên OpenAI (hoặc nhập sai tên), tự động chuyển sang gpt-4o-mini
+      if (firstErrText.includes('model_not_found') || firstErrText.includes('does not exist')) {
+        console.warn(`[AI API] Model "${model}" không tồn tại trên OpenAI, tự động thử lại với gpt-4o-mini...`);
+        model = 'gpt-4o-mini';
         openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${apiKey}` as string,
           },
-          body: JSON.stringify({
-            model: model || 'gpt-4o-mini',
-            messages: [
-              { role: systemRole, content: systemPrompt },
+          body: JSON.stringify(buildPayload(true)),
+        });
+      } else if (
+        firstErrText.includes('temperature') ||
+        firstErrText.includes('unsupported_parameter') ||
+        firstErrText.includes('response_format') ||
+        firstErrText.includes('max_completion_tokens') ||
+        firstErrText.includes('reasoning_effort') ||
+        firstErrText.includes('developer')
+      ) {
+        const useMaxTokensFallback = firstErrText.includes('max_completion_tokens');
+        const fallbackMessages = firstErrText.includes('developer')
+          ? [{ role: 'user', content: `${systemPrompt}\n\n${userPrompt}` }]
+          : [
+              { role: isReasoningModel ? 'developer' : 'system', content: systemPrompt },
               { role: 'user', content: userPrompt },
-            ],
-            max_completion_tokens: maxTokens || defaultTokenLimit,
-          }),
+            ];
+
+        const fallbackPayload: Record<string, unknown> = {
+          model: model || 'gpt-4o-mini',
+          messages: fallbackMessages,
+        };
+
+        const tokenLimit = maxTokens || defaultTokenLimit;
+        if (useMaxTokensFallback) {
+          fallbackPayload.max_tokens = tokenLimit;
+        } else {
+          fallbackPayload.max_completion_tokens = tokenLimit;
+        }
+
+        openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}` as string,
+          },
+          body: JSON.stringify(fallbackPayload),
         });
       } else {
         let errJson: any;
@@ -1133,31 +736,6 @@ TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON:
           errJson = JSON.parse(firstErrText);
         } catch {
           errJson = null;
-        }
-        if (action === 'generate_car_content') {
-          const fallbackCarContent = generateFallbackCarContent(targetCar, targetLocation, prompt);
-          sendJson(200, {
-            success: true,
-            data: {
-              action: 'generate_car_content',
-              model: 'local-automotive-ai',
-              carContent: fallbackCarContent,
-            },
-          });
-          return true;
-        }
-
-        if (action === 'generate_single_block') {
-          const fallbackBlock = generateFallbackSingleBlock(prompt, targetCar, targetLocation, context);
-          sendJson(200, {
-            success: true,
-            data: {
-              action: 'generate_single_block',
-              model: 'local-automotive-ai',
-              blocks: [fallbackBlock],
-            },
-          });
-          return true;
         }
 
         const openAiErrMsg = errJson?.error?.message || `OpenAI API Error (${openaiRes.status}): ${firstErrText.slice(0, 200)}`;
@@ -1173,32 +751,6 @@ TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON:
     }
 
     if (!openaiRes.ok) {
-      if (action === 'generate_car_content') {
-        const fallbackCarContent = generateFallbackCarContent(targetCar, targetLocation, prompt);
-        sendJson(200, {
-          success: true,
-          data: {
-            action: 'generate_car_content',
-            model: 'local-automotive-ai',
-            carContent: fallbackCarContent,
-          },
-        });
-        return true;
-      }
-
-      if (action === 'generate_single_block') {
-        const fallbackBlock = generateFallbackSingleBlock(prompt, targetCar, targetLocation, context);
-        sendJson(200, {
-          success: true,
-          data: {
-            action: 'generate_single_block',
-            model: 'local-automotive-ai',
-            blocks: [fallbackBlock],
-          },
-        });
-        return true;
-      }
-
       const errText = await openaiRes.text();
       let errJson: any;
       try {
@@ -1218,40 +770,61 @@ TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON:
     }
 
     const openaiData = (await openaiRes.json()) as any;
-    const aiContent = openaiData.choices?.[0]?.message?.content || '';
+    const choice = openaiData.choices?.[0];
+    let aiContent = '';
+    if (typeof choice?.message?.content === 'string') {
+      aiContent = choice.message.content;
+    } else if (Array.isArray(choice?.message?.content)) {
+      aiContent = choice.message.content
+        .map((part: any) => (typeof part === 'string' ? part : part?.text || ''))
+        .join('');
+    } else if (choice?.message?.text) {
+      aiContent = String(choice.message.text);
+    } else if (choice?.text) {
+      aiContent = String(choice.text);
+    }
 
-    if (!aiContent.trim()) {
-      if (action === 'generate_car_content') {
-        const fallbackCarContent = generateFallbackCarContent(targetCar, targetLocation, prompt);
-        sendJson(200, {
-          success: true,
-          data: {
-            action: 'generate_car_content',
-            model: 'local-automotive-ai',
-            carContent: fallbackCarContent,
-          },
-        });
-        return true;
-      }
+    console.log('[AI API Success Response]', {
+      model,
+      choicesCount: openaiData.choices?.length,
+      finishReason: choice?.finish_reason,
+      contentLength: aiContent.length,
+      refusal: choice?.message?.refusal,
+      usage: openaiData.usage,
+    });
 
-      if (action === 'generate_single_block') {
-        const fallbackBlock = generateFallbackSingleBlock(prompt, targetCar, targetLocation, context);
-        sendJson(200, {
-          success: true,
-          data: {
-            action: 'generate_single_block',
-            model: 'local-automotive-ai',
-            blocks: [fallbackBlock],
-          },
-        });
-        return true;
+    if (!aiContent || !aiContent.trim()) {
+      const refusal = choice?.message?.refusal;
+      const finishReason = choice?.finish_reason;
+      console.error('[AI API Empty Response Detail]', {
+        model,
+        finishReason,
+        refusal,
+        choice,
+        usage: openaiData.usage,
+      });
+
+      let errMessage = 'Mô hình AI không trả về nội dung.';
+      if (refusal) {
+        errMessage = `Mô hình AI (${model}) từ chối tạo nội dung: "${refusal}"`;
+      } else if (finishReason === 'length') {
+        const reasoningTokens = openaiData.usage?.completion_tokens_details?.reasoning_tokens;
+        errMessage = `Mô hình AI (${model}) đã đạt giới hạn token trước khi hoàn tất nội dung (finish_reason: length${
+          reasoningTokens ? `, reasoning_tokens: ${reasoningTokens}` : ''
+        }). Hãy thử đổi model sang gpt-4o-mini hoặc gpt-4o trong Cài đặt hệ thống.`;
+      } else if (finishReason === 'content_filter') {
+        errMessage = `Nội dung bị bộ lọc an toàn của OpenAI chặn (content_filter). Vui lòng điều chỉnh từ khóa hoặc yêu cầu.`;
+      } else if (!choice) {
+        errMessage = `OpenAI không trả về kết quả lựa chọn nào (choices rỗng). Model: ${model}.`;
+      } else {
+        errMessage = `Mô hình AI (${model}) trả về nội dung rỗng (finish_reason: ${finishReason || 'unknown'}).`;
       }
 
       sendJson(500, {
         success: false,
         error: {
           code: 'EMPTY_AI_RESPONSE',
-          message: 'Mô hình AI không trả về nội dung. Vui lòng thử lại với từ khóa hoặc yêu cầu cụ thể hơn.',
+          message: errMessage,
         },
       });
       return true;
@@ -1453,7 +1026,14 @@ TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON:
             } : undefined,
           };
         } else {
-          carContentObj = generateFallbackCarContent(targetCar, targetLocation, prompt);
+          sendJson(500, {
+            success: false,
+            error: {
+              code: 'INVALID_AI_CONTENT',
+              message: 'Nội dung trả về từ AI không đúng cấu trúc yêu cầu. Vui lòng thử lại.',
+            },
+          });
+          return true;
         }
         resultData.carContent = carContentObj;
         resultData.text = carContentObj.moTaChung;
@@ -1463,7 +1043,14 @@ TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON:
         if (parsedJson && (parsedJson.block || (Array.isArray(parsedJson.blocks) && parsedJson.blocks[0]))) {
           blockObj = (parsedJson.block || parsedJson.blocks[0]) as FullArticleBlock;
         } else {
-          blockObj = generateFallbackSingleBlock(prompt, targetCar, targetLocation, context);
+          sendJson(500, {
+            success: false,
+            error: {
+              code: 'INVALID_AI_BLOCK',
+              message: 'AI không thể tạo cấu trúc khối nội dung theo định dạng JSON yêu cầu. Vui lòng thử lại.',
+            },
+          });
+          return true;
         }
 
         if (availableCars && availableCars.length > 0 && blockObj.type === 'relatedCar') {
@@ -1493,6 +1080,15 @@ TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON:
             metaDescription: String(parsedJson.metaDescription || ''),
             suggestedKeywords: Array.isArray(parsedJson.suggestedKeywords) ? parsedJson.suggestedKeywords : [],
           } as SeoOptimizationResult;
+        } else {
+          sendJson(500, {
+            success: false,
+            error: {
+              code: 'INVALID_AI_SEO',
+              message: 'AI không thể tạo dữ liệu tối ưu SEO theo định dạng JSON yêu cầu. Vui lòng thử lại.',
+            },
+          });
+          return true;
         }
       } else {
         resultData.text = aiContent;

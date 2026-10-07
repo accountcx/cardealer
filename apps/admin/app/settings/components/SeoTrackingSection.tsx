@@ -25,15 +25,17 @@ export interface SeoTrackingSectionProps {
 }
 
 const PRESET_MODELS = [
-  'gpt-4o-mini',
-  'gpt-4o',
+  'gpt-luna-6',
+  'gpt-6-luna',
   'gpt-5.6-luna',
   'gpt-6',
   'gpt-5',
-  'gpt-4.5-preview',
+  'gpt-4o-mini',
+  'gpt-4o',
   'o3-mini',
-  'o1-mini',
   'o1',
+  'o1-mini',
+  'gpt-4.5-preview',
   'gpt-4-turbo',
   'gpt-3.5-turbo',
 ];
@@ -197,7 +199,7 @@ export const SeoTrackingSection: React.FC<SeoTrackingSectionProps> = ({ initialD
               <Input
                 value={formData.openaiModel || ''}
                 onChange={(e) => handleChange('openaiModel', e.target.value)}
-                placeholder="VD: gpt-5.6-luna, gpt-6, custom-model..."
+                placeholder="VD: gpt-4o, gpt-4o-mini, o3-mini..."
                 className="h-10 bg-slate-950/80 border-cyan-500/50 text-white font-mono text-xs focus:ring-2 focus:ring-cyan-500"
               />
             ) : (
@@ -206,20 +208,22 @@ export const SeoTrackingSection: React.FC<SeoTrackingSectionProps> = ({ initialD
                 onChange={(e) => handleModelSelect(e.target.value)}
                 className="w-full h-10 rounded-xl bg-slate-950/80 border border-slate-700 px-3 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 font-medium"
               >
-                <optgroup label="🚀 Mô Hình Thế Hệ Mới & Đột Phá (Frontier & Next-Gen)">
-                  <option value="gpt-6">GPT-6 (Next-Gen Autonomous Frontier AI)</option>
+                <optgroup label="🚀 Dòng Thế Hệ Mới (Frontier & Next-Gen)">
+                  <option value="gpt-luna-6">GPT-Luna-6 (Mô hình Frontier Luna v6)</option>
+                  <option value="gpt-6-luna">GPT-6 Luna (Mô hình Frontier & Siêu tốc độ thế hệ mới)</option>
                   <option value="gpt-5.6-luna">GPT-5.6 Luna (Mô hình sáng tạo & tốc độ cao thế hệ mới)</option>
+                  <option value="gpt-6">GPT-6 (Next-Gen Autonomous Frontier AI)</option>
                   <option value="gpt-5">GPT-5 (Mô hình đa nhiệm toàn năng thế hệ 5)</option>
-                  <option value="gpt-4.5-preview">GPT-4.5 Preview (Mô hình tri thức sâu & ngữ cảnh khổng lồ)</option>
                 </optgroup>
-                <optgroup label="⚡ Dòng GPT-4o Tiêu Chuẩn (Khuyên dùng cho Content & SEO)">
-                  <option value="gpt-4o-mini">GPT-4o Mini (Khuyên dùng: Siêu nhanh, Tiết kiệm, Chuẩn SEO)</option>
-                  <option value="gpt-4o">GPT-4o (Flagship Omni: Văn phong mượt mà & Sáng tạo)</option>
+                <optgroup label="⚡ Dòng GPT-4o Khuyên Dùng (Nhanh & Chuẩn SEO)">
+                  <option value="gpt-4o-mini">GPT-4o Mini (Khuyên dùng: Siêu nhanh, Tiết kiệm chi phí, Chuẩn SEO 100%)</option>
+                  <option value="gpt-4o">GPT-4o (Flagship: Văn phong mượt mà, phân tích sâu sắc nhất)</option>
+                  <option value="gpt-4.5-preview">GPT-4.5 Preview (Mô hình nghiên cứu chuyên sâu)</option>
                 </optgroup>
-                <optgroup label="🧠 Dòng Tư Duy Sâu (Reasoning - O Series)">
-                  <option value="o3-mini">o3-mini (Mới nhất: Lập luận toán & thông số kỹ thuật xe sâu sắc)</option>
-                  <option value="o1-mini">o1-mini (Lập luận tư duy nhanh, so sánh cấu hình)</option>
-                  <option value="o1">o1 (Mô hình tư duy chuyên sâu cao cấp nhất)</option>
+                <optgroup label="🧠 Dòng Tư Duy Lập Luận (Reasoning - O Series)">
+                  <option value="o3-mini">o3-mini (Lập luận toán & phân tích thông số xe chuyên sâu)</option>
+                  <option value="o1">o1 (Tư duy chuyên sâu đa chiều)</option>
+                  <option value="o1-mini">o1-mini (Tư duy nhanh gọn)</option>
                 </optgroup>
                 <optgroup label="📦 Dòng Tiền Nhiệm (Legacy)">
                   <option value="gpt-4-turbo">GPT-4 Turbo</option>
