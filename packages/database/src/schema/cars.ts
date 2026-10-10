@@ -13,7 +13,7 @@ export const cars = pgTable('cars', {
   segment: carSegmentEnum('segment').default('suv').notNull(),
   taxRate: decimal('tax_rate', { precision: 4, scale: 2 }).default('0.10').notNull(),
   traTruocTu: bigint('tra_truoc_tu', { mode: 'number' }),
-  promotionSummary: varchar('promotion_summary', { length: 255 }),
+  promotionSummary: text('promotion_summary'),
   fuelType: varchar('fuel_type', { length: 50 }),
   highlightFeatures: jsonb('highlight_features').$type<HighlightFeature[]>(),
   moTaChung: text('mo_ta_chung'),

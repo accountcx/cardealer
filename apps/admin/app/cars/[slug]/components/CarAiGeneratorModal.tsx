@@ -98,6 +98,7 @@ export function CarAiGeneratorModal({
         action: 'generate_car_content',
         prompt: inputPrompt.trim() || `Tạo nội dung tiếp thị cho dòng xe ${targetName}`,
         carModel: targetName,
+        carSlug: carSlug,
         location: inputLocation.trim() || 'Nghệ An & Hà Tĩnh',
         keyword: `giá xe ${targetName.toLowerCase()}`,
       });

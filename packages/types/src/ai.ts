@@ -35,6 +35,7 @@ export const AiGenerateRequestSchema = z.object({
   context: z.string().optional(),
   keyword: z.string().optional(),
   carModel: z.string().optional(),
+  carSlug: z.string().optional(),
   location: z.string().optional(),
   availableCars: z.array(AiCarSummarySchema).optional(),
   maxTokens: z.number().int().positive().optional(),
@@ -125,6 +126,7 @@ export interface FullArticleResult {
   metaTitle: string;
   metaDescription: string;
   suggestedKeywords: string[];
+  outline?: OutlineItem[];
   blocks: FullArticleBlock[];
   htmlContent?: string;
 }

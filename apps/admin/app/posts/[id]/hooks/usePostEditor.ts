@@ -103,15 +103,29 @@ export function convertFullArticleBlocksToEditorBlocks(
       };
     }
     if (b.type === 'specTable') {
+      const specVersions =
+        b.specVersions && b.specVersions.length > 0
+          ? b.specVersions
+          : ['Bản Tiêu Chuẩn', 'Bản Đặc Biệt', 'Bản Cao Cấp'];
+      const rawRows = Array.isArray(b.specRows) ? b.specRows : [];
+      const specRows = rawRows.map((r: unknown) => {
+        const rowObj = (r && typeof r === 'object' ? r : {}) as Record<string, unknown>;
+        const rawVals = Array.isArray(rowObj.values) ? rowObj.values : undefined;
+        return {
+          specName: String(rowObj.specName || rowObj.name || ''),
+          values: rawVals
+            ? rawVals.map((v: unknown) => (v !== null && v !== undefined ? String(v) : ''))
+            : typeof rowObj.value === 'string'
+            ? [rowObj.value]
+            : Array(specVersions.length).fill(''),
+        };
+      });
       return {
         id,
         type: 'specTable',
         title: typeof b.title === 'string' ? b.title : '',
-        specVersions:
-          b.specVersions && b.specVersions.length > 0
-            ? b.specVersions
-            : ['Bản Tiêu Chuẩn', 'Bản Đặc Biệt', 'Bản Cao Cấp'],
-        specRows: b.specRows && b.specRows.length > 0 ? b.specRows : [],
+        specVersions,
+        specRows,
       };
     }
     if (b.type === 'priceTable') {

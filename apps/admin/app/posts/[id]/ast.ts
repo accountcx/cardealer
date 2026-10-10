@@ -265,12 +265,29 @@ export function deserializeTiptapDoc(doc: TiptapDoc): EditorBlock[] {
       };
     }
     if (node.type === 'specComparisonBlock' || node.type === 'specTable') {
+      const specVersions =
+        (node.attrs?.versions as string[]) ||
+        (node.attrs?.specVersions as string[]) ||
+        ['Bản Tiêu Chuẩn', 'Bản Đặc Biệt'];
+      const rawRows = (Array.isArray(node.attrs?.rows) ? node.attrs?.rows : Array.isArray(node.attrs?.specRows) ? node.attrs?.specRows : []) as unknown[];
+      const specRows = rawRows.map((r: unknown) => {
+        const rowObj = (r && typeof r === 'object' ? r : {}) as Record<string, unknown>;
+        const rawVals = Array.isArray(rowObj.values) ? rowObj.values : undefined;
+        return {
+          specName: String(rowObj.specName || rowObj.name || ''),
+          values: rawVals
+            ? rawVals.map((v: unknown) => (v !== null && v !== undefined ? String(v) : ''))
+            : typeof rowObj.value === 'string'
+            ? [rowObj.value]
+            : Array(specVersions.length).fill(''),
+        };
+      });
       return {
         id,
         type: 'specTable',
         title: typeof node.attrs?.title === 'string' ? node.attrs.title : '',
-        specVersions: (node.attrs?.versions as string[]) || ['Bản Tiêu Chuẩn', 'Bản Đặc Biệt'],
-        specRows: (node.attrs?.rows as any[]) || [],
+        specVersions,
+        specRows,
       };
     }
     if (node.type === 'ctaButtonBlock' || node.type === 'ctaButton') {

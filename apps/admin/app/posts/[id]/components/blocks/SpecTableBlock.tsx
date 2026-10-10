@@ -15,15 +15,32 @@ export interface SpecTableBlockProps {
 }
 
 export function SpecTableBlock({ block, onUpdate }: SpecTableBlockProps) {
-  const specVersions = block.specVersions || [];
-  const specRows = block.specRows || [];
+  const specVersions = block.specVersions && block.specVersions.length > 0
+    ? block.specVersions
+    : ['Bản Tiêu Chuẩn', 'Bản Đặc Biệt'];
+  const rawRows = block.specRows || [];
+  const specRows = rawRows.map((r) => {
+    const rawRecord = r as Record<string, unknown> | undefined;
+    const specName = typeof rawRecord?.specName === 'string'
+      ? rawRecord.specName
+      : typeof rawRecord?.name === 'string'
+      ? rawRecord.name
+      : '';
+    let values: string[] = [];
+    if (Array.isArray(rawRecord?.values)) {
+      values = rawRecord.values.map((v) => (v !== null && v !== undefined ? String(v) : ''));
+    } else if (typeof rawRecord?.value === 'string') {
+      values = [rawRecord.value];
+    }
+    return { specName, values };
+  });
 
   const handleAddColumn = () => {
     const newVerIndex = specVersions.length + 1;
     const nextVersions = [...specVersions, `Phiên bản #${newVerIndex}`];
     const nextRows = specRows.map((r) => ({
       ...r,
-      values: [...r.values, ''],
+      values: [...(r.values || []), ''],
     }));
     onUpdate({ specVersions: nextVersions, specRows: nextRows });
   };
@@ -32,7 +49,7 @@ export function SpecTableBlock({ block, onUpdate }: SpecTableBlockProps) {
     const nextVersions = [...specVersions];
     nextVersions.splice(vIdx, 1);
     const nextRows = specRows.map((r) => {
-      const nextVals = [...r.values];
+      const nextVals = [...(r.values || [])];
       nextVals.splice(vIdx, 1);
       return { ...r, values: nextVals };
     });
@@ -53,8 +70,7 @@ export function SpecTableBlock({ block, onUpdate }: SpecTableBlockProps) {
   };
 
   const handleRemoveRow = (rIdx: number) => {
-    const nextRows = [...specRows];
-    nextRows.splice(rIdx, 1);
+    const nextRows = specRows.filter((_, idx) => idx !== rIdx);
     onUpdate({ specRows: nextRows });
   };
 
@@ -69,16 +85,20 @@ export function SpecTableBlock({ block, onUpdate }: SpecTableBlockProps) {
   };
 
   const handleUpdateRowName = (rIdx: number, value: string) => {
-    const nextRows = [...specRows];
-    nextRows[rIdx] = { ...nextRows[rIdx], specName: value };
+    const nextRows = specRows.map((r, idx) => (idx === rIdx ? { ...r, specName: value } : r));
     onUpdate({ specRows: nextRows });
   };
 
   const handleUpdateCellValue = (rIdx: number, vIdx: number, value: string) => {
-    const nextRows = [...specRows];
-    const nextVals = [...nextRows[rIdx].values];
-    nextVals[vIdx] = value;
-    nextRows[rIdx] = { ...nextRows[rIdx], values: nextVals };
+    const nextRows = specRows.map((r, idx) => {
+      if (idx !== rIdx) return r;
+      const nextVals = [...(r.values || [])];
+      while (nextVals.length <= vIdx) {
+        nextVals.push('');
+      }
+      nextVals[vIdx] = value;
+      return { ...r, values: nextVals };
+    });
     onUpdate({ specRows: nextRows });
   };
 
@@ -211,7 +231,7 @@ export function SpecTableBlock({ block, onUpdate }: SpecTableBlockProps) {
                   <td key={vIdx} className="py-2 px-2.5 border-r border-white/5">
                     <input
                       type="text"
-                      value={row.values[vIdx] || ''}
+                      value={row.values?.[vIdx] ?? ''}
                       onChange={(e) => handleUpdateCellValue(rIdx, vIdx, e.target.value)}
                       placeholder="-"
                       className="w-full bg-slate-900/80 border border-white/10 rounded px-2.5 py-1.5 text-xs text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-amber-400 focus:bg-slate-800 transition-colors"
