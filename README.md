@@ -152,6 +152,225 @@ Truy cập các cổng dịch vụ cục bộ:
 
 ---
 
+## 🚀 Hướng Dẫn Triển Khai Production Riêng Cho Backend (Deploy Backend / API Service)
+
+Dịch vụ Backend (`apps/api` - `@cardealer/api`) là một REST API server độc lập chịu trách nhiệm:
+- Xử lý xác thực người dùng & phân quyền RBAC (`/api/auth`).
+- Quản lý kho xe, phiên bản, giá lăn bánh, màu sắc (`/api/cars`, `/api/admin/cars`).
+- Thu nhận Lead & đồng bộ thông báo (`/api/leads`).
+- Quản lý bài viết, cấu hình hệ thống & Trợ lý AI SEO (`/api/posts`, `/api/admin/ai`).
+- Cung cấp Endpoint Healthcheck kiểm tra kết nối DB: `GET /api/health`.
+
+Backend phụ thuộc vào các shared package nội bộ trong monorepo: `@cardealer/database`, `@cardealer/core`, `@cardealer/types`, `@cardealer/env`. Dưới đây là các phương thức triển khai Production độc lập:
+
+---
+
+### 1. Chuẩn Bị Biến Môi Trường (Production Environment Variables)
+
+Tạo file `.env` trên server/container với các cấu hình tối thiểu:
+
+```env
+# Môi trường chạy
+NODE_ENV=production
+
+# Cổng lắng nghe của API
+API_PORT=4000
+
+# Kết nối Cơ sở dữ liệu PostgreSQL 16
+DATABASE_URL="postgresql://username:password@your-db-host:5432/cardealer_prod?schema=public&sslmode=prefer"
+
+# Khóa bí mật JWT & API
+API_SECRET_KEY="khoa-bao-mat-ngau-nhien-it-nhat-32-ky-tu"
+JWT_SECRET="khoa-jwt-bao-mat-cho-auth-token"
+
+# Cấu hình CORS (Cho phép Storefront Web & Admin Portal gọi tới)
+CORS_ORIGIN="https://xehyundaivinh.com,https://admin.xehyundaivinh.com"
+
+# Cloudinary Media Storage (Upload ảnh đại diện xe, thư viện ảnh)
+CLOUDINARY_CLOUD_NAME="your_cloud_name"
+CLOUDINARY_API_KEY="your_api_key"
+CLOUDINARY_API_SECRET="your_api_secret"
+CLOUDINARY_FOLDER="cardealer_prod"
+
+# AI Engine (OpenAI API - có thể nhập tại đây hoặc qua trang Cài Đặt Admin)
+OPENAI_API_KEY="sk-proj-..."
+```
+
+---
+
+### 2. Phương Án 1: Triển Khai Bằng Docker (Khuyến nghị cho Coolify / Portainer / VPS / Cloud)
+
+Dockerfile riêng cho Backend đã được cấu hình sẵn tại `docker/Dockerfile.api`, tận dụng **Turborepo Prune** để tự động bóc tách chỉ các gói cần thiết, giữ image siêu nhẹ (< 150MB):
+
+#### Bước 1: Build Docker Image
+Chạy lệnh từ thư mục gốc của monorepo:
+```bash
+docker build -f docker/Dockerfile.api -t cardealer-api:latest .
+```
+
+#### Bước 2: Chạy Container độc lập
+```bash
+docker run -d \
+  --name cardealer-api \
+  --restart unless-stopped \
+  -p 4000:4000 \
+  --env-file .env \
+  cardealer-api:latest
+```
+
+#### Bước 3: Hoặc chạy bằng Docker Compose
+Nếu muốn chạy chung với PostgreSQL trên cùng server, tạo file `docker-compose.api.yml`:
+```yaml
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: cardealer-api
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: cardealer-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cardealer
+      POSTGRES_PASSWORD: your_strong_password
+      POSTGRES_DB: cardealer_prod
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cardealer"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_prod_data:
+```
+Khởi chạy:
+```bash
+docker compose -f docker-compose.api.yml up -d
+```
+
+---
+
+### 3. Phương Án 2: Triển Khai Trực Tiếp Trên VPS (Ubuntu / Debian) với PM2
+
+Nếu bạn thuê VPS (DigitalOcean, Linode, Hetzner, Vietnix, v.v.) và muốn chạy trực tiếp không qua Docker:
+
+#### Bước 1: Cài đặt môi trường trên VPS
+```bash
+# Cài đặt Node.js 24 LTS
+curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Cài đặt pnpm và PM2
+sudo npm install -g pnpm@10.5.2 pm2
+```
+
+#### Bước 2: Clone source code & cài đặt dependencies
+```bash
+git clone https://github.com/your-org/cardealer.git /var/www/cardealer
+cd /var/www/cardealer
+
+# Cài đặt biến môi trường
+cp .env.example .env
+nano .env  # Điền DATABASE_URL, API_PORT=4000, JWT_SECRET...
+
+# Cài đặt toàn bộ dependencies monorepo
+pnpm install --frozen-lockfile
+```
+
+#### Bước 3: Đồng bộ Database Schema (Migration)
+```bash
+# Đẩy schema lên database PostgreSQL production
+pnpm db:push
+# Hoặc chạy migration nếu có:
+pnpm db:migrate
+
+# (Tùy chọn) Khởi tạo dữ liệu seed ban đầu nếu DB mới tinh:
+pnpm --filter @cardealer/database exec tsx src/scripts/seed.ts
+```
+
+#### Bước 4: Khởi chạy và quản lý bằng PM2
+```bash
+# Khởi chạy service API
+pm2 start "pnpm --filter @cardealer/api start" --name "cardealer-api"
+
+# Lưu trạng thái PM2 và kích hoạt tự khởi động khi reboot OS
+pm2 save
+pm2 startup
+```
+
+#### Bước 5: Cấu hình Nginx Reverse Proxy & SSL (HTTPS)
+Tạo file cấu hình Nginx `/etc/nginx/sites-available/api.xehyundaivinh.com`:
+```nginx
+server {
+    server_name api.xehyundaivinh.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:4000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+Kích hoạt và cài chứng chỉ SSL miễn phí:
+```bash
+sudo ln -s /etc/nginx/sites-available/api.xehyundaivinh.com /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot --nginx -d api.xehyundaivinh.com
+```
+
+---
+
+### 4. Phương Án 3: Triển Khai Lên Nền Tảng PaaS (Railway / Render / Coolify)
+
+Nếu bạn sử dụng các nền tảng PaaS (Platform-as-a-Service):
+
+| Nền tảng | Cấu hình Root Directory | Build Command | Start Command |
+| :--- | :--- | :--- | :--- |
+| **Railway** | `/` (Monorepo root) | `pnpm install` | `pnpm --filter @cardealer/api start` |
+| **Render** | `/` (Monorepo root) | `pnpm install` | `pnpm --filter @cardealer/api start` |
+| **Coolify** | `/` (Monorepo root) | Chọn Dockerfile: `docker/Dockerfile.api` | Tự động theo Dockerfile |
+
+---
+
+### 5. Kiểm Tra & Giám Sát Sau Triển Khai (Post-Deployment Verification)
+
+Sau khi deploy xong, hãy kiểm tra các bước sau:
+
+1. **Kiểm tra Healthcheck:**
+   ```bash
+   curl http://your-server-ip:4000/api/health
+   # Phản hồi chuẩn:
+   # {"status":"ok","service":"cardealer-api","database":"connected","timestamp":"..."}
+   ```
+2. **Xem logs theo thời gian thực:**
+   - Docker: `docker logs -f cardealer-api`
+   - PM2: `pm2 logs cardealer-api`
+3. **Cập nhật phiên bản mới (CI/CD Update):**
+   - VPS/PM2: `git pull && pnpm install --frozen-lockfile && pnpm db:push && pm2 restart cardealer-api`
+   - Docker: `git pull && docker build -f docker/Dockerfile.api -t cardealer-api:latest . && docker restart cardealer-api`
+
+---
+
 ## ➕ Hướng Dẫn Mở Rộng Codebase (Extending the Monorepo)
 
 ### 1. Thêm một Package nội bộ mới

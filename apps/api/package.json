@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
-    "start": "node dist/server.js",
+    "build": "tsc --noEmit",
+    "start": "tsx src/server.ts",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
@@ -17,14 +17,14 @@
     "busboy": "^1.6.0",
     "cloudinary": "^2.11.0",
     "drizzle-orm": "^0.45.2",
-    "jsonwebtoken": "^9.0.3"
+    "jsonwebtoken": "^9.0.3",
+    "tsx": "^4.23.13"
   },
   "devDependencies": {
     "@cardealer/config-typescript": "workspace:*",
     "@types/busboy": "^1.5.4",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.6.1",
-    "tsx": "^4.23.13",
     "typescript": "^7.0.2"
   }
 }
