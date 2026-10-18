@@ -16,6 +16,7 @@ export type PermissionAction =
   | 'posts:write'
   | 'leads:read'
   | 'leads:write'
+  | 'leads:delete'
   | 'system:read'
   | 'system:write'
   | 'media:read'
@@ -39,6 +40,7 @@ export const ROLE_PERMISSIONS: Record<Role, readonly PermissionAction[]> = {
     'posts:write',
     'leads:read',
     'leads:write',
+    'leads:delete',
     'system:read',
     'system:write',
     'media:read',
@@ -57,6 +59,7 @@ export const ROLE_PERMISSIONS: Record<Role, readonly PermissionAction[]> = {
     'posts:write',
     'leads:read',
     'leads:write',
+    'leads:delete',
     'system:read',
     'media:read',
     'media:write',

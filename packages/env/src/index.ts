@@ -16,6 +16,17 @@ const serverEnvSchema = z.object({
   CLOUDINARY_API_KEY: z.string().optional(),
   CLOUDINARY_API_SECRET: z.string().optional(),
   CLOUDINARY_FOLDER: z.string().default('cloudinary'),
+  // 🧠 Mental Model: Cấu hình Resend Email Service gửi thông báo Lead tức thì
+  RESEND_API_KEY: z.string().optional(),
+  RESEND_FROM: z.string().optional(),
+  // 🧠 Mental Model: Cấu hình SMTP Mailer fallback gửi thông báo Lead
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().optional(),
+  SMTP_SECURE: z.coerce.boolean().optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().optional(),
+  LEAD_NOTIFICATION_EMAIL: z.string().optional(),
 });
 
 const clientEnvSchema = z.object({

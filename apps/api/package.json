@@ -18,6 +18,8 @@
     "cloudinary": "^2.11.0",
     "drizzle-orm": "^0.45.2",
     "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^10.1.6",
+    "resend": "^6.34.1",
     "tsx": "^4.23.13"
   },
   "devDependencies": {
@@ -25,6 +27,7 @@
     "@types/busboy": "^1.5.4",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.6.1",
+    "@types/nodemailer": "^8.0.2",
     "typescript": "^7.0.2"
   }
 }

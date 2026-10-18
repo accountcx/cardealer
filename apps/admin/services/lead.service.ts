@@ -57,4 +57,11 @@ export const leadService = {
       body: JSON.stringify({ status, notes }),
     });
   },
+
+  /**
+   * Xóa một lead khỏi hệ thống CRM
+   */
+  deleteLead: async (id: string): Promise<{ id: string; message: string }> => {
+    return apiClient.delete<{ id: string; message: string }>(`/api/admin/leads/${id}`);
+  },
 };

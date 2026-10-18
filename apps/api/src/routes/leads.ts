@@ -2,6 +2,7 @@ import { IncomingMessage, ServerResponse } from 'node:http';
 import { db, schema } from '@cardealer/database';
 import { CreateLeadSchema } from '@cardealer/types';
 import { eq, and, gt, desc } from 'drizzle-orm';
+import { emailService } from '../services/email/email.service';
 
 // 🧠 Mental Model: Public Lead Ingestion Router (POST /api/leads).
 // 1. Rate Limiting (R1): In-memory Map theo IP, giới hạn tối đa 5 requests / 60 giây. Vượt ngưỡng trả về HTTP 429.
@@ -141,6 +142,25 @@ export async function handleLeadRoutes(
           metadata: metadataToSave,
         })
         .returning();
+
+      // 6. Kích hoạt gửi email thông báo bất đồng bộ không chặn (Non-blocking & An toàn tuyệt đối)
+      emailService
+        .sendLeadNotification({
+          id: newLead.id,
+          fullName: newLead.fullName,
+          phone: newLead.phone,
+          province: newLead.province,
+          carModel: (validated.carModel || validated.carInterest || '') as string,
+          carVersion: (validated.carVersion || '') as string,
+          estimatedTotal: newLead.estimatedTotal,
+          leadType: validated.leadType,
+          preferredTime: (validated.preferredTime || validated.preferredContactTime || '') as string,
+          notes: newLead.notes,
+          createdAt: newLead.createdAt,
+        })
+        .catch((emailErr) => {
+          console.error('[Lead Email Hook Error]:', emailErr);
+        });
 
       sendJson(201, {
         success: true,

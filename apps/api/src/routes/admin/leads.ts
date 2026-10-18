@@ -234,5 +234,81 @@ export async function handleAdminLeadRoutes(
     }
   }
 
+  // 4. DELETE /api/admin/leads/:id: Xóa một lead khỏi hệ thống CRM (RBAC leads:delete)
+  if (pathname.startsWith('/api/admin/leads/') && req.method === 'DELETE') {
+    const auth = await authenticateAdmin(req);
+    if (auth.error) {
+      sendJson(auth.error.statusCode, { success: false, error: auth.error });
+      return true;
+    }
+    const currentUser = auth.user!;
+
+    if (!checkPermission(currentUser.role, 'leads:delete')) {
+      sendJson(403, {
+        success: false,
+        error: { code: 'FORBIDDEN', message: 'Bạn không có quyền xóa yêu cầu này' },
+      });
+      return true;
+    }
+
+    const leadId = pathname.replace('/api/admin/leads/', '').trim();
+    if (!leadId) {
+      sendJson(400, {
+        success: false,
+        error: { code: 'BAD_REQUEST', message: 'Thiếu ID yêu cầu cần xóa' },
+      });
+      return true;
+    }
+
+    try {
+      const existingLead = await db.query.leads.findFirst({
+        where: eq(schema.leads.id, leadId),
+      });
+
+      if (!existingLead) {
+        sendJson(404, {
+          success: false,
+          error: { code: 'NOT_FOUND', message: 'Không tìm thấy yêu cầu báo giá cần xóa' },
+        });
+        return true;
+      }
+
+      // Xóa bản ghi lead
+      await db.delete(schema.leads).where(eq(schema.leads.id, leadId));
+
+      // Ghi nhật ký kiểm toán (Audit Trail)
+      try {
+        await db.insert(schema.auditLogs).values({
+          userId: currentUser.id,
+          action: 'DELETE',
+          resource: 'leads',
+          resourceId: leadId,
+          details: {
+            deletedFullName: existingLead.fullName,
+            deletedPhone: existingLead.phone,
+            deletedProvince: existingLead.province,
+            deletedStatus: existingLead.status,
+          },
+          ipAddress: (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress || '127.0.0.1',
+        });
+      } catch (auditErr) {
+        console.error('[Audit Log] Không thể ghi nhật ký xóa lead:', auditErr);
+      }
+
+      sendJson(200, {
+        success: true,
+        data: {
+          id: leadId,
+          message: 'Đã xóa yêu cầu báo giá thành công',
+        },
+      });
+      return true;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi khi xóa lead';
+      sendJson(500, { success: false, error: { code: 'SERVER_ERROR', message: msg } });
+      return true;
+    }
+  }
+
   return false;
 }

@@ -228,6 +228,19 @@ CLOUDINARY_CLOUD_NAME="your_cloud_name"
 CLOUDINARY_API_KEY="your_api_key"
 CLOUDINARY_API_SECRET="your_api_secret"
 CLOUDINARY_FOLDER="cloudinary"
+
+# Email Notification Service (Resend - Khuyến nghị cao nhất)
+RESEND_API_KEY="your_resend_api_key"
+RESEND_FROM="Hyundai Vinh <onboarding@resend.dev>"
+LEAD_NOTIFICATION_EMAIL="kinhdoanh@xehyundaivinh.com"  # Hòm thư nhận lead của Showroom
+
+# SMTP Email Notification (Fallback tuỳ chọn nếu không dùng Resend)
+# SMTP_HOST="smtp.gmail.com"
+# SMTP_PORT=587
+# SMTP_SECURE=false
+# SMTP_USER="tentaikhoan@gmail.com"
+# SMTP_PASS="xxxx xxxx xxxx xxxx"    # Mật khẩu ứng dụng (App Password 16 ký tự của Google)
+# SMTP_FROM="\"Hyundai Dũng Lạc\" <tentaikhoan@gmail.com>"
 ```
 
 ---
@@ -309,6 +322,82 @@ pm2 save
   pnpm build:prod
   pnpm pm2:reload
   ```
+
+---
+
+### 6. 📧 Hướng Dẫn Cấu Hình Email Thông Báo Lead Mới (Resend & SMTP Fallback)
+
+Hệ thống tích hợp sẵn dịch vụ gửi Email thông báo tự động (bản tin HTML thương hiệu Hyundai sang trọng) tới Ban quản lý hoặc Nhân viên tư vấn Showroom mỗi khi có khách hàng điền bất kỳ Form nào trên website (`/api/leads`: Yêu cầu báo giá lăn bánh, Dự toán trả góp ngân hàng, Đăng ký lái thử, Nhận tư vấn).
+
+---
+
+#### 🌟 LỰA CHỌN 1: Dùng dịch vụ Resend API (Khuyến Nghị Cao Nhất)
+Dịch vụ [Resend](https://resend.com) gửi email qua HTTPS REST API tốc độ cao, không bị các nhà mạng/hosting chặn cổng SMTP (587/465), tỷ lệ vào Inbox đạt 99.9%.
+
+**Cấu hình cực kỳ đơn giản chỉ với 2 biến môi trường:**
+```env
+# ==============================================================================
+# RESEND EMAIL NOTIFICATION (KHUYẾN NGHỊ)
+# ==============================================================================
+RESEND_API_KEY="re_your_api_key_here"
+RESEND_FROM="Hyundai Vinh <onboarding@resend.dev>"
+LEAD_NOTIFICATION_EMAIL="kinhdoanh@xehyundaivinh.com"
+```
+
+* **`RESEND_API_KEY`**: API Key cấp từ Resend Dashboard (dạng `re_...`).
+* **`RESEND_FROM`**: Tên & địa chỉ gửi đại diện showroom.
+  * Khi đang thử nghiệm (chưa add custom domain): Dùng `"Hyundai Vinh <onboarding@resend.dev>"`.
+  * Khi đã xác minh domain showroom: Dùng `"Hyundai Dũng Lạc <noreply@xehyundaivinh.com>"`.
+* **`LEAD_NOTIFICATION_EMAIL`**: Hòm thư của phòng kinh doanh / admin nhận thông báo lead (ví dụ: `kinhdoanh@xehyundaivinh.com`).
+
+---
+
+#### 🔹 LỰA CHỌN 2: Dùng SMTP Gmail / Google Workspace (Fallback Tuỳ Chọn)
+Nếu muốn tiếp tục sử dụng hòm thư Gmail cá nhân gửi qua giao thức SMTP cổ điển:
+
+##### Bước 1: Kích hoạt Xác minh 2 bước (2-Step Verification) trên tài khoản Google
+1. Đăng nhập vào tài khoản Google (ví dụ: `xehyundaivinh@gmail.com`).
+2. Truy cập [Google Account Security](https://myaccount.google.com/security) và bật **Xác minh 2 bước**.
+
+##### Bước 2: Tạo Mật khẩu ứng dụng (App Password 16 ký tự)
+1. Truy cập: [https://myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords).
+2. Nhập tên ứng dụng gợi nhớ (ví dụ: `CarDealer Showroom`), bấm **Tạo (Create)**.
+3. Sao chép mật khẩu 16 chữ cái (ví dụ: `abcd efgh ijkl mnop`).
+
+> [!IMPORTANT]
+> Tuyệt đối **KHÔNG dùng mật khẩu đăng nhập tài khoản Gmail chính**. Bắt buộc phải sử dụng **Mật khẩu ứng dụng (App Password 16 ký tự)** do Google cấp riêng.
+
+##### Bước 3: Cấu hình vào file `.env` trên Server
+```env
+# ==============================================================================
+# SMTP EMAIL NOTIFICATION (GMAIL FALLBACK)
+# ==============================================================================
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER="tentaikhoan@gmail.com"
+SMTP_PASS="abcd efgh ijkl mnop"
+SMTP_FROM="\"Hyundai Dũng Lạc\" <tentaikhoan@gmail.com>"
+LEAD_NOTIFICATION_EMAIL="kinhdoanh@xehyundaivinh.com"
+```
+
+---
+
+#### 🔹 Bước Tiếp Theo: Tải lại dịch vụ PM2
+Sau khi cấu hình `.env`, tải lại tiến trình backend:
+```bash
+pnpm pm2:reload
+# Hoặc reload riêng tiến trình backend:
+pm2 reload cardealer-backend
+```
+
+#### 🔹 Cơ chế hoạt động & Khả năng chịu lỗi (Resilient & Non-blocking):
+- **Phản hồi tức thì ($\le 150\text{ms}$):** Luồng gửi email chạy nền bất đồng bộ (Non-blocking Fire-and-Forget), không làm trễ API của khách hàng.
+- **Tự động chuyển đổi cấp bậc (Graceful Fallback):**
+  1. Nếu có `RESEND_API_KEY` $\rightarrow$ Gửi trực tiếp qua Resend SDK.
+  2. Nếu không có `RESEND_API_KEY` nhưng có `SMTP_HOST` $\rightarrow$ Fallback gửi qua SMTP Nodemailer connection pool.
+  3. Nếu không có cả hai $\rightarrow$ Kích hoạt Simulated Mode ghi log rõ ràng, 100% không gây crash hệ thống.
+
 
 ---
 

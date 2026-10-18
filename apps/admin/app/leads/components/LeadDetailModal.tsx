@@ -19,6 +19,7 @@ import {
   FileText,
   DollarSign,
   Save,
+  Trash2,
 } from 'lucide-react';
 import { Button, Badge, Select, Textarea, Label } from '@cardealer/ui';
 import type { LeadStatus } from '@cardealer/types';
@@ -45,15 +46,19 @@ interface LeadDetailModalProps {
     };
   } | null;
   canEdit?: boolean;
+  canDelete?: boolean;
   onClose: () => void;
   onUpdateStatus: (id: string, newStatus: LeadStatus, newNotes?: string) => Promise<void>;
+  onDelete?: (lead: NonNullable<LeadDetailModalProps['lead']>) => void;
 }
 
 export function LeadDetailModal({
   lead,
   canEdit = true,
+  canDelete = false,
   onClose,
   onUpdateStatus,
+  onDelete,
 }: LeadDetailModalProps) {
   const [selectedStatus, setSelectedStatus] = useState<LeadStatus>(lead?.status || 'new');
   const [newNote, setNewNote] = useState('');
@@ -100,15 +105,30 @@ export function LeadDetailModal({
             </span>
             <h2 className="text-xl font-extrabold text-white mt-0.5">{lead.fullName}</h2>
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition cursor-pointer"
-          >
-            <X size={16} />
-          </Button>
+          <div className="flex items-center gap-2">
+            {canDelete && onDelete && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => onDelete(lead)}
+                title="Xóa yêu cầu báo giá này"
+                className="h-8 px-2.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:text-rose-300 flex items-center gap-1.5 text-xs font-semibold cursor-pointer transition"
+              >
+                <Trash2 size={14} />
+                <span>Xóa yêu cầu</span>
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition cursor-pointer"
+            >
+              <X size={16} />
+            </Button>
+          </div>
         </div>
 
         {/* Body Content */}

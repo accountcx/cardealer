@@ -28,6 +28,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ExternalLink,
+  Trash2,
 } from 'lucide-react';
 import { Button, Input, Badge, Select } from '@cardealer/ui';
 import { leadService, type LeadListResponse } from '../../services/lead.service';
@@ -62,6 +63,10 @@ export default function LeadsManagementPage() {
   // Modal Chi Tiết
   const [selectedLead, setSelectedLead] = useState<LeadListResponse['items'][number] | null>(null);
   const [copiedPhoneId, setCopiedPhoneId] = useState<string | null>(null);
+
+  // Modal Xác Nhận Xóa Lead
+  const [leadToDelete, setLeadToDelete] = useState<LeadListResponse['items'][number] | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Debounce search query
   useEffect(() => {
@@ -161,6 +166,36 @@ export default function LeadsManagementPage() {
     await leadService.updateLeadStatus(id, newStatus, newNotes);
     showToast('success', 'Đã lưu', 'Đã lưu trạng thái và ghi chú tư vấn thành công.');
     fetchLeads();
+  };
+
+  // Xóa Lead khỏi hệ thống CRM
+  const handleDeleteLead = async () => {
+    if (!leadToDelete) return;
+    try {
+      setIsDeleting(true);
+      await leadService.deleteLead(leadToDelete.id);
+      setData((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          items: prev.items.filter((item) => item.id !== leadToDelete.id),
+          pagination: {
+            ...prev.pagination,
+            total: Math.max(0, prev.pagination.total - 1),
+          },
+        };
+      });
+      showToast('success', 'Thành Công', `Đã xóa yêu cầu của khách hàng ${leadToDelete.fullName}`);
+      if (selectedLead?.id === leadToDelete.id) {
+        setSelectedLead(null);
+      }
+      setLeadToDelete(null);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Không thể xóa yêu cầu báo giá';
+      showToast('error', 'Lỗi', msg);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // Thống kê đếm số lượng cho KPI Cards
@@ -592,6 +627,23 @@ export default function LeadsManagementPage() {
                           >
                             <Eye size={14} />
                           </Button>
+
+                          {/* Nút Xóa Yêu Cầu (RBAC leads:delete) */}
+                          {can('leads:delete') && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setLeadToDelete(lead);
+                              }}
+                              title="Xóa yêu cầu báo giá này"
+                              className="h-7 w-7 p-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 hover:text-rose-300 transition cursor-pointer"
+                            >
+                              <Trash2 size={14} />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -645,9 +697,57 @@ export default function LeadsManagementPage() {
         <LeadDetailModal
           lead={selectedLead}
           canEdit={can('leads:write')}
+          canDelete={can('leads:delete')}
           onClose={() => setSelectedLead(null)}
           onUpdateStatus={handleModalUpdate}
+          onDelete={(lead) => setLeadToDelete(lead as any)}
         />
+      )}
+
+      {/* 9. Modal Xác Nhận Xóa Yêu Cầu Báo Giá (US-01) */}
+      {leadToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-slate-900 border border-rose-500/30 rounded-2xl shadow-2xl p-6 text-slate-100 space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 text-rose-400">
+              <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20">
+                <Trash2 size={24} />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">Xác Nhận Xóa Yêu Cầu</h3>
+                <p className="text-xs text-slate-400">Hành động này không thể hoàn tác</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Bạn có chắc chắn muốn xóa vĩnh viễn yêu cầu của khách hàng{' '}
+              <span className="font-bold text-white">{leadToDelete.fullName}</span> (SĐT:{' '}
+              <span className="font-mono text-sky-400">{leadToDelete.phone}</span>)? Thao tác này sẽ xóa dữ liệu khỏi hệ thống CRM và được lưu vào nhật ký kiểm toán.
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-white/10">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={isDeleting}
+                onClick={() => setLeadToDelete(null)}
+                className="text-xs text-slate-300 hover:text-white"
+              >
+                Hủy Bỏ
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                disabled={isDeleting}
+                onClick={handleDeleteLead}
+                className="text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1.5 px-4 py-2"
+              >
+                {isDeleting ? 'Đang xóa...' : 'Xác Nhận Xóa'}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
