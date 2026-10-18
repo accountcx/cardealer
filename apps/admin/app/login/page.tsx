@@ -44,9 +44,9 @@ export default function LoginPage() {
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: 'admin@xehyundaivinh.com',
-      password: 'AdminPassword123!',
-      remember: true,
+      email: '',
+      password: '',
+      remember: false,
     },
     mode: 'onSubmit',
   });
@@ -65,7 +65,13 @@ export default function LoginPage() {
         // Đồng bộ dữ liệu người dùng vào AuthContext ngay lập tức
         await refreshUser();
         const searchParams = new URLSearchParams(window.location.search);
-        const redirectUrl = searchParams.get('redirect') || '/cars';
+        const rawRedirect = searchParams.get('redirect');
+        const isValidRedirect =
+          rawRedirect &&
+          rawRedirect.startsWith('/') &&
+          !rawRedirect.startsWith('//') &&
+          !rawRedirect.includes('\\');
+        const redirectUrl = isValidRedirect ? rawRedirect : '/cars';
         setTimeout(() => {
           router.push(redirectUrl);
         }, 500);

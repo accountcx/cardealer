@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronRight } from 'lucide-react';
 import type { NavLink } from '@cardealer/types';
+import { sanitizeJsonLd } from '@cardealer/core';
 import { useNavigationLinks } from '../../context/NavigationContext';
 
 export interface BreadcrumbItem {
@@ -113,10 +114,10 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
 
   return (
     <>
-      {/* SEO Schema BreadcrumbList */}
+      {/* SEO Schema BreadcrumbList (M-07 Sanitization) */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: sanitizeJsonLd(jsonLd) }}
       />
 
       {/* Breadcrumb Navigation thuần túy: Không viền, không nền, căn trái */}

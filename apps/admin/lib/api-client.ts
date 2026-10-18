@@ -1,4 +1,4 @@
-import { clientEnv } from '@cardealer/env';
+import { clientEnv, getServerApiUrl } from '@cardealer/env';
 
 export interface ApiErrorResponse {
   success: false;
@@ -34,8 +34,10 @@ interface RequestOptions extends Omit<RequestInit, 'body'> {
   params?: Record<string, string | number | boolean | undefined>;
 }
 
-// 🧠 Mental Model: Centralized HTTP Client thuần fetch với baseURL từ clientEnv, credentials và Interceptor bắt lỗi 401 toàn cục.
-// Hỗ trợ tự động cả JSON Payload và FormData (tải tệp) mà không cần dùng đến XMLHttpRequest hay thư viện ngoài.
+// 🧠 Mental Model: Centralized HTTP Client cho Admin CMS (apps/admin).
+// 1. Client-side (trình duyệt): Gọi qua relative URL (/api/...) để đi qua Next.js Rewrites trên cùng domain (cms.xehyundaivinh.com),
+//    đảm bảo HttpOnly cookie `admin_token` được gắn trực tiếp vào domain CMS (tương thích 100% với Next.js Middleware) và không dính CORS.
+// 2. Server-side (SSR): Tự động phân giải qua getServerApiUrl() (http://127.0.0.1:4000).
 class HttpClient {
   private readonly baseUrl: string;
 
@@ -44,15 +46,37 @@ class HttpClient {
     this.baseUrl = baseUrl.replace(/\/+$/, '');
   }
 
+  private resolveBaseUrl(): string {
+    if (typeof window !== 'undefined') {
+      return '';
+    }
+    return getServerApiUrl() || this.baseUrl;
+  }
+
   private buildUrl(endpoint: string, params?: Record<string, string | number | boolean | undefined>): string {
     let cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const base = this.resolveBaseUrl();
+
+    if (!base) {
+      if (!params || Object.keys(params).length === 0) {
+        return cleanEndpoint;
+      }
+      const searchParams = new URLSearchParams();
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          searchParams.append(key, String(value));
+        }
+      });
+      const qs = searchParams.toString();
+      return qs ? `${cleanEndpoint}?${qs}` : cleanEndpoint;
+    }
 
     // Khử trùng lặp tiền tố /api nếu baseUrl đã có /api và endpoint cũng truyền /api
-    if (this.baseUrl.endsWith('/api') && cleanEndpoint.startsWith('/api/')) {
+    if (base.endsWith('/api') && cleanEndpoint.startsWith('/api/')) {
       cleanEndpoint = cleanEndpoint.replace(/^\/api/, '');
     }
 
-    const url = new URL(`${this.baseUrl}${cleanEndpoint}`);
+    const url = new URL(`${base}${cleanEndpoint}`);
 
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
@@ -67,7 +91,16 @@ class HttpClient {
 
   private handleUnauthorized(): void {
     if (typeof window !== 'undefined') {
-      // 🧠 Xóa cookie token để chống vòng lặp chuyển hướng giữa Client và Next.js Server Middleware
+      // 🧠 Gọi API logout để xóa HttpOnly cookie từ response header của server,
+      // triệt tiêu vòng lặp chuyển hướng giữa Client và Next.js Server Middleware (M-01)
+      try {
+        fetch(this.buildUrl('/api/auth/logout'), {
+          method: 'POST',
+          credentials: 'include',
+        }).catch(() => {});
+      } catch {
+        // Ignored
+      }
       document.cookie = 'admin_token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       if (!window.location.pathname.startsWith('/login')) {
         window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;

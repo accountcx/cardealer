@@ -51,6 +51,17 @@ export async function handleAuthRoutes(
         return true;
       }
 
+      if (user.status === 'pending') {
+        sendJson(403, {
+          success: false,
+          error: {
+            code: 'ACCOUNT_PENDING',
+            message: 'Tài khoản đang chờ quản trị viên kích hoạt.',
+          },
+        });
+        return true;
+      }
+
       const clientIp = getClientIp(req);
       const now = new Date();
 
@@ -81,6 +92,9 @@ export async function handleAuthRoutes(
         userAgent: req.headers['user-agent'],
       });
 
+      const isProd = process.env.NODE_ENV === 'production';
+      const secureAttr = isProd ? '; Secure' : '';
+
       sendJson(
         200,
         {
@@ -98,7 +112,7 @@ export async function handleAuthRoutes(
           },
         },
         {
-          'Set-Cookie': `admin_token=${jwtToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800`,
+          'Set-Cookie': `admin_token=${jwtToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800${secureAttr}`,
         }
       );
       return true;
@@ -149,6 +163,14 @@ export async function handleAuthRoutes(
         return true;
       }
 
+      if (user.status === 'pending') {
+        sendJson(403, {
+          success: false,
+          error: { code: 'ACCOUNT_PENDING', message: 'Tài khoản đang chờ quản trị viên kích hoạt' },
+        });
+        return true;
+      }
+
       // Kiểm tra thu hồi token tức thì (R4)
       const clientTokenVersion = payload.tokenVersion ?? 1;
       const dbTokenVersion = user.tokenVersion ?? 1;
@@ -186,11 +208,14 @@ export async function handleAuthRoutes(
 
   // 3. POST /api/auth/logout
   if (url.pathname === '/api/auth/logout' && req.method === 'POST') {
+    const isProd = process.env.NODE_ENV === 'production';
+    const secureAttr = isProd ? '; Secure' : '';
+
     sendJson(
       200,
       { success: true, message: 'Đăng xuất thành công' },
       {
-        'Set-Cookie': 'admin_token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
+        'Set-Cookie': `admin_token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secureAttr}`,
       }
     );
     return true;

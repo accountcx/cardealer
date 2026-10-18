@@ -144,6 +144,12 @@ Truy cập các cổng dịch vụ cục bộ:
 | :--- | :--- |
 | `pnpm dev` | Chạy dev server song song cho tất cả các apps với Turborepo |
 | `pnpm build` | Build production toàn bộ workspace theo đúng thứ tự phụ thuộc |
+| `pnpm build:prod` | Build production toàn bộ workspace gắn cứng `API_PORT=4000` & `INTERNAL_API_URL=http://127.0.0.1:4000` |
+| `pnpm pm2:start` | Khởi chạy hoặc reload toàn bộ 3 dịch vụ Production qua `ecosystem.config.cjs` và lưu danh sách PM2 |
+| `pnpm pm2:reload` | Zero-downtime reload toàn bộ tiến trình PM2 sau khi build code mới |
+| `pnpm pm2:stop` | Dừng toàn bộ 3 tiến trình Production trên PM2 |
+| `pnpm pm2:logs` | Xem log thời gian thực của toàn bộ dịch vụ trên PM2 |
+| `pnpm db:push` | Đồng bộ trực tiếp Drizzle Schema lên PostgreSQL Database |
 | `pnpm test` | Chạy bộ kiểm thử tự động với Vitest (`packages/core`) |
 | `pnpm check-types` | Kiểm tra tính đúng đắn của kiểu dữ liệu TypeScript toàn repo |
 | `pnpm lint` | Quét và kiểm tra lỗi cú pháp/quy chuẩn code với ESLint |
@@ -152,7 +158,161 @@ Truy cập các cổng dịch vụ cục bộ:
 
 ---
 
-## 🚀 Hướng Dẫn Triển Khai Production Riêng Cho Backend (Deploy Backend / API Service)
+## 🚀 Hướng Dẫn Cài Đặt & Vận Hành Production Với PM2 (Zero-Reconfig Nginx)
+
+Hệ thống được trang bị sẵn cấu hình **[`ecosystem.config.cjs`](./ecosystem.config.cjs)** và script tự động hóa **[`start-prod-pm2.sh`](./start-prod-pm2.sh)** để khớp **100% với cấu hình Nginx hiện hữu** của bạn (`xehyundaivinh.com` và `cms.xehyundaivinh.com`) mà **không cần sửa bất kỳ dòng nào trong file Nginx**:
+
+| Domain / Luồng Nginx hiện tại | Tên PM2 Process | Ứng dụng Monorepo | Port Production | Cơ chế định tuyến API & Cookie |
+| :--- | :--- | :--- | :---: | :--- |
+| **`https://xehyundaivinh.com`**<br/>`proxy_pass http://localhost:3001` | `cardealer-frontend` | `apps/web` *(Storefront)* | **`3001`** | Next.js Rewrites tự động chuyển tiếp `/api/:path*` $\rightarrow$ `http://127.0.0.1:4000/api/:path*` |
+| **`https://cms.xehyundaivinh.com`**<br/>`proxy_pass http://localhost:3000` | `cardealer-admin` | `apps/admin` *(Admin CMS)* | **`3000`** | Next.js Rewrites tự động chuyển tiếp `/api/:path*` $\rightarrow$ `http://127.0.0.1:4000/api/:path*` (Giữ nguyên `HttpOnly` cookie `admin_token` trên domain `cms.xehyundaivinh.com`) |
+| **Internal REST API**<br/>*(Nội bộ localhost)* | `cardealer-backend` | `apps/api` *(REST API)* | **`4000`** | Phục vụ cả SSR và `/api/*` rewrites từ cổng `3001` & `3000` (Không cần mở port ra ngoài hay khai báo thêm trên Nginx) |
+| **PostgreSQL 16**<br/>*(Docker Container)* | `cardealer-postgres` *(Docker)* | Database | `5432/tcp` | Giữ nguyên container `cardealer-postgres` đang chạy (Tự động phân giải IP Docker Bridge) |
+
+> [!TIP]
+> - **Tại sao không cần sửa Nginx?** Trong cấu hình Nginx của bạn, `xehyundaivinh.com` trỏ vào `localhost:3001` và `cms.xehyundaivinh.com` trỏ vào `localhost:3000` (có sẵn `client_max_body_size 20m;` phục vụ upload ảnh CMS). Cả `apps/web` (port `3001`) và `apps/admin` (port `3000`) đều đã cấu hình Next.js `rewrites()` để tự động proxy mọi request `/api/*` về `cardealer-backend` đang chạy ngầm ở `127.0.0.1:4000`.
+> - **Tự động kết nối Docker PostgreSQL (`5432/tcp`):** Container `cardealer-postgres` trên server chỉ mở port nội bộ Docker (`5432/tcp`). Tệp [`ecosystem.config.cjs`](./ecosystem.config.cjs) tự động chạy `docker inspect` để lấy IP Bridge của container `cardealer-postgres` và nạp vào `DATABASE_URL` khi khởi chạy PM2.
+
+---
+
+### 1. Yêu Cầu Môi Trường Trên Server (Prerequisites)
+
+Đảm bảo máy chủ Linux (Ubuntu/Debian/CentOS) đã cài đặt **Node.js >= 24**, **pnpm** và **PM2**:
+
+```bash
+# 1. Cài đặt Node.js v24 qua NVM (hoặc NodeSource)
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+source ~/.bashrc
+nvm install 24
+nvm use 24
+
+# 2. Cài đặt pnpm và PM2 toàn cục
+npm install -g pnpm@10.5.2 pm2
+```
+
+---
+
+### 2. Thiết Lập File `.env` Production
+
+Tại thư mục gốc của dự án trên server, tạo file `.env`:
+
+```bash
+cp .env.example .env
+nano .env
+```
+
+Cấu hình chuẩn cho hệ thống `xehyundaivinh.com` & `cms.xehyundaivinh.com`:
+
+```env
+NODE_ENV=production
+
+# Database PostgreSQL (ecosystem.config.cjs sẽ tự động dò IP container cardealer-postgres nếu cổng 5432 chưa map ra host)
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/cardealer_dev?schema=public"
+
+# Internal Backend API (Chạy cổng 4000 nội bộ, được proxy tự động từ cổng 3000 & 3001)
+API_PORT=4000
+API_HOST="http://127.0.0.1:4000"
+INTERNAL_API_URL="http://127.0.0.1:4000"
+
+# BẮT BUỘC: Khóa bí mật JWT tối thiểu 32 ký tự trên môi trường Production
+API_SECRET_KEY="thay-bang-chuoi-bi-mat-ngau-nhien-dai-it-nhat-32-ky-tu"
+
+# URL công khai của Website & Admin CMS (Khớp với Nginx)
+NEXT_PUBLIC_SITE_URL="https://xehyundaivinh.com"
+NEXT_PUBLIC_API_URL="https://xehyundaivinh.com/api"
+NEXT_PUBLIC_ADMIN_URL="https://cms.xehyundaivinh.com"
+ALLOWED_ORIGINS="https://xehyundaivinh.com,https://www.xehyundaivinh.com,https://cms.xehyundaivinh.com,http://localhost:3000,http://localhost:3001"
+
+# Cloudinary Media Storage (Phía Server)
+CLOUDINARY_CLOUD_NAME="your_cloud_name"
+CLOUDINARY_API_KEY="your_api_key"
+CLOUDINARY_API_SECRET="your_api_secret"
+CLOUDINARY_FOLDER="cloudinary"
+```
+
+---
+
+### 3. Triển Khai Nhanh Chỉ Với 1 Lệnh (One-Command Deploy)
+
+Từ thư mục gốc dự án trên server, chạy trực tiếp script:
+
+```bash
+./start-prod-pm2.sh
+```
+
+**Quy trình tự động của `start-prod-pm2.sh`:**
+1. Kích hoạt **Node.js v24** (nếu cài qua NVM) và cài đặt **PM2** nếu chưa có.
+2. Chạy `pnpm install` và build toàn bộ Monorepo (`API_PORT=4000 INTERNAL_API_URL=http://127.0.0.1:4000 pnpm build`) trước khi dừng dịch vụ cũ để giảm downtime tối đa.
+3. Tự động tắt auto-restart (`docker update --restart=no`) và dừng 2 container cũ `cardealer-frontend` (cổng `3001`), `cardealer-backend` (cổng `3000`) — **giữ nguyên `cardealer-postgres`**.
+4. Khởi chạy cả 3 tiến trình `cardealer-frontend` (`3001`), `cardealer-admin` (`3000`), `cardealer-backend` (`4000`) bằng PM2 và lưu cấu hình `pm2 save`.
+
+---
+
+### 4. Hoặc Triển Khai Thủ Công Từng Bước (Step-by-Step)
+
+```bash
+# Bước 1: Cài đặt dependencies
+pnpm install --frozen-lockfile
+
+# Bước 2: Đồng bộ cấu trúc bảng Database (nếu có cập nhật schema mới)
+pnpm db:push
+
+# Bước 3: Build toàn bộ ứng dụng với cổng Internal API = 4000
+pnpm build:prod
+
+# Bước 4: Tắt auto-restart và dừng 2 container Frontend & Backend cũ (Giữ nguyên cardealer-postgres)
+docker update --restart=no cardealer-frontend cardealer-backend
+docker stop cardealer-frontend cardealer-backend
+
+# Bước 5: Khởi chạy PM2 theo ecosystem.config.cjs
+pnpm pm2:start
+
+# Bước 6: Đăng ký PM2 tự động bật lại khi reboot server
+pm2 startup
+pm2 save
+```
+
+---
+
+### 5. Quản Trị, Theo Dõi Log & Cập Nhật Code Mới (Day-2 Operations)
+
+* **Kiểm tra trạng thái các tiến trình:**
+  ```bash
+  pm2 status
+  ```
+* **Kiểm tra Healthcheck trực tiếp:**
+  ```bash
+  # Kiểm tra Internal API (Port 4000)
+  curl http://127.0.0.1:4000/api/health
+
+  # Kiểm tra Storefront xehyundaivinh.com (Port 3001) & API Rewrite
+  curl -I http://127.0.0.1:3001
+  curl http://127.0.0.1:3001/api/health
+
+  # Kiểm tra Admin CMS cms.xehyundaivinh.com (Port 3000) & API Rewrite
+  curl -I http://127.0.0.1:3000/login
+  curl http://127.0.0.1:3000/api/health
+  ```
+* **Xem log thời gian thực (Realtime Logs):**
+  ```bash
+  pnpm pm2:logs
+  # Hoặc xem riêng từng dịch vụ (log file lưu tại thư mục ./logs/):
+  pm2 logs cardealer-frontend
+  pm2 logs cardealer-admin
+  pm2 logs cardealer-backend
+  ```
+* **Quy trình cập nhật khi pull code mới từ Git:**
+  ```bash
+  git pull
+  pnpm install
+  pnpm db:push
+  pnpm build:prod
+  pnpm pm2:reload
+  ```
+
+---
+
+## 🐳 Hướng Dẫn Triển Khai Production Thay Thế Bằng Docker (Tuỳ Chọn)
 
 Dịch vụ Backend (`apps/api` - `@cardealer/api`) là một REST API server độc lập chịu trách nhiệm:
 - Xử lý xác thực người dùng & phân quyền RBAC (`/api/auth`).
@@ -264,7 +424,7 @@ docker compose -f docker-compose.api.yml up -d
 
 ---
 
-### 3. Phương Án 2: Triển Khai Trực Tiếp Trên VPS (Ubuntu / Debian) với PM2
+### 3. Phương Án 2: Triển Khai Trực Tiếp Riêng Lẻ Trên VPS (Ubuntu / Debian) với PM2
 
 Nếu bạn thuê VPS (DigitalOcean, Linode, Hetzner, Vietnix, v.v.) và muốn chạy trực tiếp không qua Docker:
 
@@ -304,8 +464,9 @@ pnpm --filter @cardealer/database exec tsx src/scripts/seed.ts
 
 #### Bước 4: Khởi chạy và quản lý bằng PM2
 ```bash
-# Khởi chạy service API
-pm2 start "pnpm --filter @cardealer/api start" --name "cardealer-api"
+# Khởi chạy toàn bộ hệ thống qua ecosystem.config.cjs
+pnpm build:prod
+pnpm pm2:start
 
 # Lưu trạng thái PM2 và kích hoạt tự khởi động khi reboot OS
 pm2 save
@@ -358,15 +519,15 @@ Sau khi deploy xong, hãy kiểm tra các bước sau:
 
 1. **Kiểm tra Healthcheck:**
    ```bash
-   curl http://your-server-ip:4000/api/health
+   curl http://your-server-ip:3000/api/health
    # Phản hồi chuẩn:
    # {"status":"ok","service":"cardealer-api","database":"connected","timestamp":"..."}
    ```
 2. **Xem logs theo thời gian thực:**
    - Docker: `docker logs -f cardealer-api`
-   - PM2: `pm2 logs cardealer-api`
+   - PM2: `pnpm pm2:logs`
 3. **Cập nhật phiên bản mới (CI/CD Update):**
-   - VPS/PM2: `git pull && pnpm install --frozen-lockfile && pnpm db:push && pm2 restart cardealer-api`
+   - VPS/PM2: `git pull && pnpm install --frozen-lockfile && pnpm db:push && pnpm build:prod && pnpm pm2:reload`
    - Docker: `git pull && docker build -f docker/Dockerfile.api -t cardealer-api:latest . && docker restart cardealer-api`
 
 ---

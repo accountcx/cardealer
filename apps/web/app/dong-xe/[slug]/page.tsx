@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ShieldCheck, Sparkles, ChevronRight, Car, PhoneCall, RefreshCcw } from 'lucide-react';
 import type { CarCatalogItem } from '@cardealer/types';
+import { sanitizeJsonLd } from '@cardealer/core';
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { getCatalogCars } from '@/services/cars.service';
 import { getStorefrontSettings } from '@/services/settings.service';
@@ -175,16 +176,16 @@ export default async function SegmentPage({ params }: SegmentPageProps) {
 
   return (
     <main className="min-h-screen bg-slate-50 pt-4 sm:pt-6 pb-16 sm:pb-20">
-      {/* Schema JSON-LD Breadcrumbs cho Google Search */}
+      {/* Schema JSON-LD Breadcrumbs cho Google Search (M-07 Sanitization) */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: sanitizeJsonLd(breadcrumbJsonLd) }}
       />
 
-      {/* Schema JSON-LD Danh mục xe cho Google Merchant & Search */}
+      {/* Schema JSON-LD Danh mục xe cho Google Merchant & Search (M-07 Sanitization) */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: sanitizeJsonLd(itemListJsonLd) }}
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8">

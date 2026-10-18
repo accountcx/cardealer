@@ -42,22 +42,27 @@ export async function handleAdminRoutes(
   if (await handleAdminPageRoutes(req, res, url, readBody, sendJson)) return true;
   if (await handleAdminAiRoutes(req, res, url, readBody, sendJson)) return true;
 
-  const cookies = parseCookies(req.headers.cookie);
-  const token = cookies['admin_token'] || req.headers.authorization?.replace('Bearer ', '');
-
-  // Middleware guard cho mọi route /api/admin/*
+  // Middleware guard Zero-Trust cho mọi route /api/admin/* còn lại
+  // Xác thực token, kiểm tra trạng thái active và tokenVersion revocation trong DB
+  let authUser: import('@cardealer/database').UserRow;
   if (url.pathname.startsWith('/api/admin')) {
-    if (!token || !verifyToken(token)) {
-      sendJson(401, {
+    const auth = await authenticateAdmin(req);
+    if (auth.error || !auth.user) {
+      sendJson(auth.error?.statusCode || 401, {
         success: false,
-        error: { code: 'UNAUTHORIZED', message: 'Bạn không có quyền truy cập khu vực quản trị' },
+        error: auth.error || { code: 'UNAUTHORIZED', message: 'Bạn không có quyền truy cập khu vực quản trị' },
       });
       return true;
     }
+    authUser = auth.user;
   }
 
   // 1. GET /api/admin/cars (Danh sách xe quản trị đầy đủ mọi trạng thái: draft, published, archived)
   if (url.pathname === '/api/admin/cars' && req.method === 'GET') {
+    if (!checkPermission(authUser!.role, 'cars:read')) {
+      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền xem danh sách dòng xe' } });
+      return true;
+    }
     const segment = url.searchParams.get('segment');
     try {
       const dbCars = await db.query.cars.findMany({
@@ -119,6 +124,10 @@ export async function handleAdminRoutes(
 
   // 2. GET /api/admin/cars/:slug (Chi tiết xe quản trị kèm toàn bộ phiên bản và màu sắc)
   if (url.pathname.startsWith('/api/admin/cars/') && !url.pathname.endsWith('/version-colors') && !url.pathname.endsWith('/article') && req.method === 'GET') {
+    if (!checkPermission(authUser!.role, 'cars:read')) {
+      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền xem chi tiết dòng xe' } });
+      return true;
+    }
     const slugOrId = url.pathname.replace('/api/admin/cars/', '');
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
     try {
@@ -149,8 +158,12 @@ export async function handleAdminRoutes(
     }
   }
 
-  // 3. POST /api/admin/cars (Tạo mới dòng xe kèm phiên bản)
+  // 3. POST /api/admin/cars (Tạo mới dòng xe kèm phiên bản với giao dịch Transaction Atomic)
   if (url.pathname === '/api/admin/cars' && req.method === 'POST') {
+    if (!checkPermission(authUser!.role, 'cars:write')) {
+      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền tạo dòng xe mới' } });
+      return true;
+    }
     const body = await readBody();
     try {
       const tenXe = String(body.tenXe || '').trim();
@@ -162,48 +175,52 @@ export async function handleAdminRoutes(
       const slug = String(body.slug || '').trim() || tenXe.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       const anhDaiDienUrl = String(body.anhDaiDienUrl || `/images/cars/${slug}.webp`);
 
-      const [inserted] = await db.insert(schema.cars).values({
-        tenXe,
-        slug,
-        anhDaiDienUrl,
-        catalogFileUrl: body.catalogFileUrl ? String(body.catalogFileUrl) : null,
-        segment: (body.segment as 'sedan' | 'suv' | 'mpv' | 'hatchback' | 'ev') || 'suv',
-        taxRate: body.taxRate ? String(body.taxRate) : '0.10',
-        traTruocTu: body.traTruocTu ? Number(body.traTruocTu) : null,
-        promotionSummary: body.promotionSummary ? String(body.promotionSummary) : null,
-        fuelType: body.fuelType ? String(body.fuelType) : null,
-        highlightFeatures: Array.isArray(body.highlightFeatures) ? body.highlightFeatures : [],
-        moTaChung: body.moTaChung ? String(body.moTaChung) : null,
-        isFeatured: Boolean(body.isFeatured),
-        status: (body.status as 'draft' | 'published' | 'archived') || 'draft',
-        sortOrder: body.sortOrder ? Number(body.sortOrder) : 0,
-      }).returning();
+      const inserted = await db.transaction(async (tx) => {
+        const [newCar] = await tx.insert(schema.cars).values({
+          tenXe,
+          slug,
+          anhDaiDienUrl,
+          catalogFileUrl: body.catalogFileUrl ? String(body.catalogFileUrl) : null,
+          segment: (body.segment as 'sedan' | 'suv' | 'mpv' | 'hatchback' | 'ev') || 'suv',
+          taxRate: body.taxRate ? String(body.taxRate) : '0.10',
+          traTruocTu: body.traTruocTu ? Number(body.traTruocTu) : null,
+          promotionSummary: body.promotionSummary ? String(body.promotionSummary) : null,
+          fuelType: body.fuelType ? String(body.fuelType) : null,
+          highlightFeatures: Array.isArray(body.highlightFeatures) ? body.highlightFeatures : [],
+          moTaChung: body.moTaChung ? String(body.moTaChung) : null,
+          isFeatured: Boolean(body.isFeatured),
+          status: (body.status as 'draft' | 'published' | 'archived') || 'draft',
+          sortOrder: body.sortOrder ? Number(body.sortOrder) : 0,
+        }).returning();
 
-      // Nếu có phiên bản gửi kèm khi tạo dòng xe
-      if (Array.isArray(body.versions) && body.versions.length > 0) {
-        for (const [idx, v] of body.versions.entries()) {
-          const vName = String(v.tenPhienBan || `Phiên bản ${idx + 1}`).trim();
-          const vSlug = String(v.slug || vName).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-          const isUuid = v.id && typeof v.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v.id);
-          const versionGallery = Array.isArray(v.boSuuTapAnh) && v.boSuuTapAnh.length > 0
-            ? v.boSuuTapAnh
-            : (Array.isArray(body.galleryImages) ? body.galleryImages : (Array.isArray(body.boSuuTapAnh) ? body.boSuuTapAnh : []));
-          await db.insert(schema.carVersions).values({
-            ...(isUuid ? { id: v.id } : {}),
-            carId: inserted.id,
-            tenPhienBan: vName,
-            slug: vSlug,
-            giaNiemYet: Number(v.giaNiemYet || 0),
-            giaKhuyenMai: v.giaKhuyenMai ? Number(v.giaKhuyenMai) : null,
-            seatCount: Number(v.seatCount || 5),
-            dongCo: v.dongCo ? String(v.dongCo) : null,
-            hopSo: v.hopSo ? String(v.hopSo) : null,
-            danDong: v.danDong ? String(v.danDong) : null,
-            boSuuTapAnh: versionGallery,
-            sortOrder: idx + 1,
-          }).onConflictDoNothing();
+        // Nếu có phiên bản gửi kèm khi tạo dòng xe
+        if (Array.isArray(body.versions) && body.versions.length > 0) {
+          for (const [idx, v] of body.versions.entries()) {
+            const vName = String(v.tenPhienBan || `Phiên bản ${idx + 1}`).trim();
+            const vSlug = String(v.slug || vName).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+            const isUuid = v.id && typeof v.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v.id);
+            const versionGallery = Array.isArray(v.boSuuTapAnh) && v.boSuuTapAnh.length > 0
+              ? v.boSuuTapAnh
+              : (Array.isArray(body.galleryImages) ? body.galleryImages : (Array.isArray(body.boSuuTapAnh) ? body.boSuuTapAnh : []));
+            await tx.insert(schema.carVersions).values({
+              ...(isUuid ? { id: v.id } : {}),
+              carId: newCar.id,
+              tenPhienBan: vName,
+              slug: vSlug,
+              giaNiemYet: Number(v.giaNiemYet || 0),
+              giaKhuyenMai: v.giaKhuyenMai ? Number(v.giaKhuyenMai) : null,
+              seatCount: Number(v.seatCount || 5),
+              dongCo: v.dongCo ? String(v.dongCo) : null,
+              hopSo: v.hopSo ? String(v.hopSo) : null,
+              danDong: v.danDong ? String(v.danDong) : null,
+              boSuuTapAnh: versionGallery,
+              sortOrder: idx + 1,
+            }).onConflictDoNothing();
+          }
         }
-      }
+
+        return newCar;
+      });
 
       sendJson(201, { success: true, data: inserted });
       return true;
@@ -214,13 +231,17 @@ export async function handleAdminRoutes(
     }
   }
 
-  // 4. PUT /api/admin/cars/:slugOrId (Cập nhật thông tin dòng xe và các phiên bản)
+  // 4. PUT /api/admin/cars/:slugOrId (Cập nhật thông tin dòng xe và các phiên bản với Transaction Atomic)
   if (
     url.pathname.startsWith('/api/admin/cars/') &&
     !url.pathname.endsWith('/version-colors') &&
     !url.pathname.endsWith('/article') &&
     req.method === 'PUT'
   ) {
+    if (!checkPermission(authUser!.role, 'cars:write')) {
+      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền cập nhật dòng xe' } });
+      return true;
+    }
     const slugOrId = url.pathname.replace('/api/admin/cars/', '');
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
     const body = await readBody();
@@ -252,35 +273,51 @@ export async function handleAdminRoutes(
       if (body.status !== undefined) updateData.status = body.status as any;
       if (body.sortOrder !== undefined) updateData.sortOrder = Number(body.sortOrder);
 
-      const [updated] = await db
-        .update(schema.cars)
-        .set(updateData)
-        .where(eq(schema.cars.id, existing.id))
-        .returning();
+      const updated = await db.transaction(async (tx) => {
+        const [resCar] = await tx
+          .update(schema.cars)
+          .set(updateData)
+          .where(eq(schema.cars.id, existing.id))
+          .returning();
 
-      // Cập nhật hoặc bổ sung các phiên bản
-      if (Array.isArray(body.versions)) {
-        const existingVersions = await db.query.carVersions.findMany({
-          where: eq(schema.carVersions.carId, existing.id),
-        });
-        const existingVersionIds = new Set(existingVersions.map((v) => v.id));
+        // Cập nhật hoặc bổ sung các phiên bản
+        if (Array.isArray(body.versions)) {
+          const existingVersions = await tx.select().from(schema.carVersions).where(eq(schema.carVersions.carId, existing.id));
+          const existingVersionIds = new Set(existingVersions.map((v) => v.id));
 
-        for (const [idx, v] of body.versions.entries()) {
-          const vName = String(v.tenPhienBan || '').trim();
-          const vSlug = String(v.slug || vName).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-          const isUuid = v.id && typeof v.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v.id);
-          const isExisting = isUuid && existingVersionIds.has(v.id);
+          for (const [idx, v] of body.versions.entries()) {
+            const vName = String(v.tenPhienBan || '').trim();
+            const vSlug = String(v.slug || vName).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+            const isUuid = v.id && typeof v.id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v.id);
+            const isExisting = isUuid && existingVersionIds.has(v.id);
 
-          const versionGallery = Array.isArray(v.boSuuTapAnh) && v.boSuuTapAnh.length > 0
-            ? v.boSuuTapAnh
-            : (Array.isArray(body.galleryImages) ? body.galleryImages : (Array.isArray(body.boSuuTapAnh) ? body.boSuuTapAnh : undefined));
+            const versionGallery = Array.isArray(v.boSuuTapAnh) && v.boSuuTapAnh.length > 0
+              ? v.boSuuTapAnh
+              : (Array.isArray(body.galleryImages) ? body.galleryImages : (Array.isArray(body.boSuuTapAnh) ? body.boSuuTapAnh : undefined));
 
-          if (isExisting) {
-            await db
-              .update(schema.carVersions)
-              .set({
-                tenPhienBan: vName,
-                slug: vSlug,
+            if (isExisting) {
+              await tx
+                .update(schema.carVersions)
+                .set({
+                  tenPhienBan: vName,
+                  slug: vSlug,
+                  giaNiemYet: Number(v.giaNiemYet || 0),
+                  giaKhuyenMai: v.giaKhuyenMai ? Number(v.giaKhuyenMai) : null,
+                  seatCount: Number(v.seatCount || 5),
+                  dongCo: v.dongCo ? String(v.dongCo) : null,
+                  hopSo: v.hopSo ? String(v.hopSo) : null,
+                  danDong: v.danDong ? String(v.danDong) : null,
+                  ...(versionGallery !== undefined ? { boSuuTapAnh: versionGallery } : {}),
+                  sortOrder: idx + 1,
+                  updatedAt: new Date(),
+                })
+                .where(eq(schema.carVersions.id, v.id));
+            } else {
+              await tx.insert(schema.carVersions).values({
+                ...(isUuid ? { id: v.id } : {}),
+                carId: existing.id,
+                tenPhienBan: vName || `Phiên bản ${idx + 1}`,
+                slug: vSlug || `ver-${Date.now()}-${idx}`,
                 giaNiemYet: Number(v.giaNiemYet || 0),
                 giaKhuyenMai: v.giaKhuyenMai ? Number(v.giaKhuyenMai) : null,
                 seatCount: Number(v.seatCount || 5),
@@ -289,40 +326,26 @@ export async function handleAdminRoutes(
                 danDong: v.danDong ? String(v.danDong) : null,
                 ...(versionGallery !== undefined ? { boSuuTapAnh: versionGallery } : {}),
                 sortOrder: idx + 1,
-                updatedAt: new Date(),
-              })
-              .where(eq(schema.carVersions.id, v.id));
-          } else {
-            await db.insert(schema.carVersions).values({
-              ...(isUuid ? { id: v.id } : {}),
-              carId: existing.id,
-              tenPhienBan: vName || `Phiên bản ${idx + 1}`,
-              slug: vSlug || `ver-${Date.now()}-${idx}`,
-              giaNiemYet: Number(v.giaNiemYet || 0),
-              giaKhuyenMai: v.giaKhuyenMai ? Number(v.giaKhuyenMai) : null,
-              seatCount: Number(v.seatCount || 5),
-              dongCo: v.dongCo ? String(v.dongCo) : null,
-              hopSo: v.hopSo ? String(v.hopSo) : null,
-              danDong: v.danDong ? String(v.danDong) : null,
-              ...(versionGallery !== undefined ? { boSuuTapAnh: versionGallery } : {}),
-              sortOrder: idx + 1,
-            }).onConflictDoNothing();
+              }).onConflictDoNothing();
+            }
+          }
+
+          // Xóa các phiên bản không còn nằm trong danh sách gửi lên
+          const incomingVersionIds = new Set(
+            body.versions
+              .map((v: any) => v.id)
+              .filter((id: any): id is string => typeof id === 'string' && existingVersionIds.has(id))
+          );
+          const toDeleteVersionIds = existingVersions
+            .map((v) => v.id)
+            .filter((id) => !incomingVersionIds.has(id));
+          if (toDeleteVersionIds.length > 0) {
+            await tx.delete(schema.carVersions).where(inArray(schema.carVersions.id, toDeleteVersionIds));
           }
         }
 
-        // Xóa các phiên bản không còn nằm trong danh sách gửi lên
-        const incomingVersionIds = new Set(
-          body.versions
-            .map((v: any) => v.id)
-            .filter((id: any): id is string => typeof id === 'string' && existingVersionIds.has(id))
-        );
-        const toDeleteVersionIds = existingVersions
-          .map((v) => v.id)
-          .filter((id) => !incomingVersionIds.has(id));
-        if (toDeleteVersionIds.length > 0) {
-          await db.delete(schema.carVersions).where(inArray(schema.carVersions.id, toDeleteVersionIds));
-        }
-      }
+        return resCar;
+      });
 
       sendJson(200, { success: true, data: updated });
       return true;
@@ -335,6 +358,10 @@ export async function handleAdminRoutes(
 
   // 5. DELETE /api/admin/cars/:id
   if (url.pathname.startsWith('/api/admin/cars/') && req.method === 'DELETE') {
+    if (!checkPermission(authUser!.role, 'cars:write')) {
+      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền xóa dòng xe' } });
+      return true;
+    }
     const id = url.pathname.replace('/api/admin/cars/', '');
     try {
       await db.delete(schema.cars).where(eq(schema.cars.id, id));
@@ -349,6 +376,10 @@ export async function handleAdminRoutes(
 
   // 4.5. GET /api/admin/cars/:slugOrId/article (Lấy bài viết dòng xe)
   if (url.pathname.startsWith('/api/admin/cars/') && url.pathname.endsWith('/article') && req.method === 'GET') {
+    if (!checkPermission(authUser!.role, 'cars:read')) {
+      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền xem bài viết dòng xe' } });
+      return true;
+    }
     const slugOrId = url.pathname.replace('/api/admin/cars/', '').replace('/article', '');
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
     try {
@@ -387,6 +418,10 @@ export async function handleAdminRoutes(
 
   // 4.6. PUT /api/admin/cars/:slugOrId/article (Cập nhật hoặc tạo mới bài viết dòng xe)
   if (url.pathname.startsWith('/api/admin/cars/') && url.pathname.endsWith('/article') && req.method === 'PUT') {
+    if (!checkPermission(authUser!.role, 'cars:write')) {
+      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền cập nhật bài viết dòng xe' } });
+      return true;
+    }
     const slugOrId = url.pathname.replace('/api/admin/cars/', '').replace('/article', '');
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
     const body = await readBody();
@@ -500,6 +535,10 @@ export async function handleAdminRoutes(
 
   // 5. GET /api/admin/colors (Lấy danh mục bảng màu Master cho quản trị)
   if (url.pathname === '/api/admin/colors' && req.method === 'GET') {
+    if (!checkPermission(authUser!.role, 'cars:read')) {
+      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền xem danh sách màu xe' } });
+      return true;
+    }
     try {
       const colors = await db.query.colors.findMany({
         orderBy: [desc(schema.colors.createdAt)],
@@ -634,11 +673,6 @@ export async function handleAdminRoutes(
       }
 
       const versionIds = car.versions.map((v) => v.id);
-      if (versionIds.length > 0) {
-        // Xóa cấu hình màu cũ của các phiên bản thuộc dòng xe này
-        await db.delete(schema.versionColors).where(inArray(schema.versionColors.versionId, versionIds));
-      }
-
       const validVersionIds = new Set(versionIds);
       const isUuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -652,17 +686,25 @@ export async function handleAdminRoutes(
           isUuidRegex.test(it.colorId)
       );
 
-      // Batch insert cấu hình màu mới
-      if (validItems.length > 0) {
-        await db.insert(schema.versionColors).values(
-          validItems.map((it) => ({
-            versionId: it.versionId,
-            colorId: it.colorId,
-            anhXeTheoMauUrl: it.anhXeTheoMauUrl ? String(it.anhXeTheoMauUrl).trim() : null,
-            isDefault: Boolean(it.isDefault),
-          }))
-        );
-      }
+      // Thực thi đồng bộ trong transaction nguyên tử chống race condition mất dữ liệu (M-03)
+      await db.transaction(async (tx) => {
+        if (versionIds.length > 0) {
+          // Xóa cấu hình màu cũ của các phiên bản thuộc dòng xe này
+          await tx.delete(schema.versionColors).where(inArray(schema.versionColors.versionId, versionIds));
+        }
+
+        // Batch insert cấu hình màu mới
+        if (validItems.length > 0) {
+          await tx.insert(schema.versionColors).values(
+            validItems.map((it) => ({
+              versionId: it.versionId,
+              colorId: it.colorId,
+              anhXeTheoMauUrl: it.anhXeTheoMauUrl ? String(it.anhXeTheoMauUrl).trim() : null,
+              isDefault: Boolean(it.isDefault),
+            }))
+          );
+        }
+      });
 
       sendJson(200, { success: true, savedCount: validItems.length });
       return true;

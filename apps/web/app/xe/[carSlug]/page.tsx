@@ -1,11 +1,12 @@
 import React, { Suspense } from 'react';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Sparkles, ChevronRight } from 'lucide-react';
 import { getCarBySlug, getCatalogCars } from '@/services/cars.service';
 import { SmartCarCard } from '@/app/xe/components/SmartCarCard';
 import { getStorefrontSettings } from '@/services/settings.service';
-import { generateCarJsonLd } from '@cardealer/core';
+import { generateCarJsonLd, sanitizeJsonLd } from '@cardealer/core';
 import { getSiteUrl } from '@cardealer/env';
 import { BulkSettingsSchema, type CarCatalogItem } from '@cardealer/types';
 import { CarDetailView, type ConsultantInfo } from './components/CarDetailView';
@@ -30,8 +31,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
     if (!car || car.status !== 'published') {
       return {
-        title: 'Không tìm thấy dòng xe | Hyundai',
+        title: '404 - Không tìm thấy dòng xe | Hyundai',
         description: 'Dòng xe hiện chưa được phát hành hoặc đã ngừng kinh doanh.',
+        robots: {
+          index: false,
+          follow: false,
+        },
       };
     }
 
@@ -118,13 +123,9 @@ export default async function CarDetailPage({ params, searchParams }: PageProps)
   // Đảm bảo settings luôn có đầy đủ cấu hình theo schema chuẩn
   const safeSettings = settings || BulkSettingsSchema.parse({});
 
-  // 404 Guard: Nếu không tìm thấy xe hoặc xe chưa xuất bản
+  // 404 Guard: Nếu không tìm thấy xe hoặc xe chưa xuất bản -> Trả về mã HTTP 404 thực thể (C-07)
   if (!car || car.status !== 'published') {
-    const hotline =
-      safeSettings.stickyBar.hotline ||
-      safeSettings.floatingSeller.sellerPhone ||
-      safeSettings.contact.hotlineKinhDoanh;
-    return <CarDetailErrorState slug={carSlug} hotline={hotline} />;
+    notFound();
   }
 
   const siteUrl =
@@ -176,10 +177,10 @@ export default async function CarDetailPage({ params, searchParams }: PageProps)
 
   return (
     <>
-      {/* 📊 Schema JSON-LD Đa Tầng cho Google Rich Snippets */}
+      {/* 📊 Schema JSON-LD Đa Tầng cho Google Rich Snippets (M-07 Sanitization) */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: sanitizeJsonLd(schemaJsonLd) }}
       />
 
       {/* 🚗 Trải Nghiệm Tương Tác Chi Tiết Xe */}

@@ -1,5 +1,6 @@
 import type { ContactSettings, SiteSettings } from '@cardealer/types';
 import { getSiteUrl } from '@cardealer/env';
+import { sanitizeJsonLd } from '@cardealer/core';
 
 export interface AutoDealerJsonLdProps {
   contact: ContactSettings;
@@ -63,7 +64,7 @@ export const AutoDealerJsonLd = ({ contact, site }: AutoDealerJsonLdProps) => {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
+      dangerouslySetInnerHTML={{ __html: sanitizeJsonLd(schemaData) }}
     />
   );
 };

@@ -1,5 +1,6 @@
 import type { ContactSettings, SiteSettings, FloatingSellerSettings } from '@cardealer/types';
 import { getSiteUrl } from '@cardealer/env';
+import { sanitizeJsonLd } from '@cardealer/core';
 
 export interface SalerJsonLdProps {
   contact: ContactSettings;
@@ -62,7 +63,7 @@ export const SalerJsonLd = ({ contact, site, floatingSeller }: SalerJsonLdProps)
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
+      dangerouslySetInnerHTML={{ __html: sanitizeJsonLd(schemaData) }}
     />
   );
 };

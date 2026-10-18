@@ -1,5 +1,4 @@
-# Multi-Stage Dockerfile tối ưu hóa với Turborepo Prune
-# Giảm kích thước image từ 1.2GB xuống dưới 120MB
+# Multi-Stage Dockerfile cho Next.js Web App
 
 FROM node:24-alpine AS base
 RUN apk update && apk add --no-cache libc6-compat
@@ -8,7 +7,7 @@ WORKDIR /app
 
 # Stage 1: Prune các packages không cần thiết cho target app
 FROM base AS pruner
-ARG APP_NAME=web
+ARG APP_NAME=@cardealer/web
 COPY . .
 RUN pnpm dlx turbo prune ${APP_NAME} --docker
 
@@ -23,8 +22,8 @@ RUN pnpm install --frozen-lockfile
 COPY --from=pruner /app/out/full/ .
 RUN pnpm turbo run build --filter=${APP_NAME}
 
-# Stage 3: Production Runner siêu nhẹ
-FROM node:24-alpine AS runner
+# Stage 3: Production Runner
+FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -37,4 +36,4 @@ USER nextjs
 EXPOSE 3002
 ENV PORT=3002
 
-CMD ["node", "apps/web/server.js"]
+CMD ["pnpm", "--filter", "@cardealer/web", "start"]

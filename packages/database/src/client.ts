@@ -4,9 +4,8 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema';
 
-// 🧠 Mental Model: Tự động phát hiện và nạp .env từ thư mục gốc Monorepo
+// 🧠 Mental Model: Tự động phát hiện và nạp .env từ thư mục gốc Monorepo (không ghi đè biến đã truyền từ PM2)
 function ensureEnvLoaded() {
-  if (process.env.DATABASE_URL) return;
   let dir = process.cwd();
   for (let i = 0; i < 5; i++) {
     const envFile = path.join(dir, '.env');

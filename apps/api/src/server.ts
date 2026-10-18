@@ -13,12 +13,40 @@ import { handlePublicPageRoutes } from './routes/pages';
 // Áp dụng bảo vệ Logging Sanitization (CWE-117) và Zero Hardcode thông qua biến môi trường API_PORT.
 // Updated relations for posts and categories.
 
+const defaultAllowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:3002',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:3001',
+  'http://127.0.0.1:3002',
+  'https://xehyundaivinh.com',
+  'https://www.xehyundaivinh.com',
+  'https://cms.xehyundaivinh.com',
+];
+
+function isAllowedOrigin(origin?: string): boolean {
+  if (!origin) return false;
+  const envAllowed = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
+    : [];
+  const extra = [process.env.NEXT_PUBLIC_SITE_URL, process.env.NEXT_PUBLIC_ADMIN_URL].filter(
+    Boolean
+  ) as string[];
+  const allowedSet = new Set([...defaultAllowedOrigins, ...envAllowed, ...extra]);
+  return allowedSet.has(origin);
+}
+
 const PORT = Number(process.env.API_PORT) || 4000;
 
 const server = http.createServer(async (req, res) => {
-  // CORS & Security Headers
-  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || 'http://localhost:3002');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  // CORS & Security Headers with strict allowlist check (CWE-346 / CWE-942)
+  const requestOrigin = req.headers.origin;
+  if (requestOrigin && isAllowedOrigin(requestOrigin)) {
+    res.setHeader('Access-Control-Allow-Origin', requestOrigin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Vary', 'Origin');
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
 

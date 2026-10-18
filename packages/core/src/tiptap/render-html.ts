@@ -6,6 +6,29 @@ export interface ConvertTiptapOptions {
   zalo?: string;
 }
 
+// WHY: Ngăn chặn triệt để Stored XSS (CWE-79) khi render Tiptap JSON AST sang HTML string.
+// Ký tự HTML đặc biệt (&, <, >, ", ') bắt buộc phải được escape trước khi nối chuỗi.
+export function escapeHtml(str: unknown): string {
+  if (typeof str !== 'string') return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// WHY: Chặn đứng tấn công Cross-Site Scripting qua pseudo-protocols nguy hiểm: javascript:, data:, vbscript:.
+export function sanitizeSafeUrl(url: unknown, defaultFallback = '#'): string {
+  if (typeof url !== 'string') return defaultFallback;
+  const trimmed = url.trim();
+  if (!trimmed) return defaultFallback;
+  if (/^(?:javascript|data|vbscript):/i.test(trimmed)) {
+    return defaultFallback;
+  }
+  return escapeHtml(trimmed);
+}
+
 /**
  * 🧠 Mental Model: Chuyển đổi Tiptap JSON AST Tree thành Semantic HTML giàu tính trực quan
  * Hỗ trợ 100% các khối nội dung: Headings, Callouts, Media, Galleries, Tables, FAQs, Specs, CTAs...
@@ -25,7 +48,7 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
       .map((node) => {
         if (!node) return '';
         if (node.type === 'text') {
-          let text = node.text || '';
+          let text = escapeHtml(node.text || '');
           if (node.marks && Array.isArray(node.marks)) {
             for (const mark of node.marks) {
               if (mark.type === 'bold') text = `<strong>${text}</strong>`;
@@ -33,7 +56,7 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
               if (mark.type === 'strike') text = `<s>${text}</s>`;
               if (mark.type === 'underline') text = `<u>${text}</u>`;
               if (mark.type === 'link') {
-                const href = mark.attrs?.href || '#';
+                const href = sanitizeSafeUrl(mark.attrs?.href, '#');
                 text = `<a href="${href}" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">${text}</a>`;
               }
             }
@@ -65,9 +88,10 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
           return `<h${level}${idAttr}${tocData} class="${headingClass}${tocClass}">${innerHtml}</h${level}>`;
         }
         if (node.type === 'calloutBlock' || node.type === 'callout') {
-          const type = (node.attrs?.type as string) || 'info';
-          const title = node.attrs?.title || '';
-          const content = node.attrs?.content || innerHtml;
+          const rawType = (node.attrs?.type as string) || 'info';
+          const type = ['info', 'warning', 'success', 'note'].includes(rawType) ? rawType : 'info';
+          const title = escapeHtml(node.attrs?.title || '');
+          const content = node.attrs?.content ? escapeHtml(node.attrs.content) : innerHtml;
 
           let borderClass = 'border-blue-600';
           let bgClass = 'bg-blue-50';
@@ -123,9 +147,10 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
           return `<blockquote class="border-l-4 border-slate-300 pl-4 italic my-4 text-slate-600 whitespace-pre-line">${innerHtml}</blockquote>`;
         }
         if (node.type === 'image' || node.type === 'imageBlock' || node.type === 'singleImage') {
-          const src = node.attrs?.src || node.attrs?.url || '';
-          const alt = node.attrs?.alt || 'Hình ảnh xe Hyundai';
-          const caption = node.attrs?.caption || '';
+          const rawSrc = node.attrs?.src || node.attrs?.url || '';
+          const src = sanitizeSafeUrl(rawSrc, '');
+          const alt = escapeHtml(node.attrs?.alt || 'Hình ảnh xe Hyundai');
+          const caption = escapeHtml(node.attrs?.caption || '');
           return `
             <figure class="my-8 mx-auto max-w-4xl text-center not-prose">
               <div class="overflow-hidden rounded-2xl border border-slate-200/80 shadow-md bg-slate-100 group">
@@ -135,7 +160,7 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
             </figure>`;
         }
         if (node.type === 'imageGallery' || node.type === 'galleryBlock') {
-          const title = node.attrs?.title || 'Bộ Sưu Tập Hình Ảnh Chi Tiết';
+          const title = escapeHtml(node.attrs?.title || 'Bộ Sưu Tập Hình Ảnh Chi Tiết');
           const layout = node.attrs?.layout || node.attrs?.style || 'slider';
           const images = (node.attrs?.images as Array<{ url: string; alt?: string; caption?: string }>) || [];
           if (!images.length) return '';
@@ -145,8 +170,8 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
               .map(
                 (img) => `
               <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs group">
-                <img src="${img.url}" alt="${img.alt || 'Hình ảnh'}" loading="lazy" class="w-full h-48 sm:h-56 object-cover transition-transform duration-300 group-hover:scale-105" />
-                ${img.caption ? `<p class="p-2.5 text-xs text-slate-600 text-center italic bg-slate-50 border-t border-slate-100">${img.caption}</p>` : ''}
+                <img src="${sanitizeSafeUrl(img.url, '')}" alt="${escapeHtml(img.alt || 'Hình ảnh')}" loading="lazy" class="w-full h-48 sm:h-56 object-cover transition-transform duration-300 group-hover:scale-105" />
+                ${img.caption ? `<p class="p-2.5 text-xs text-slate-600 text-center italic bg-slate-50 border-t border-slate-100">${escapeHtml(img.caption)}</p>` : ''}
               </div>`
               )
               .join('');
@@ -161,10 +186,10 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
                 (img, i) => `
               <div class="shrink-0 snap-center w-[85vw] sm:w-[380px] rounded-2xl overflow-hidden border border-slate-200/90 bg-white shadow-sm flex flex-col group">
                 <div class="relative overflow-hidden aspect-[16/10] bg-slate-100">
-                  <img src="${img.url}" alt="${img.alt || 'Hình ảnh'}" loading="lazy" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                  <img src="${sanitizeSafeUrl(img.url, '')}" alt="${escapeHtml(img.alt || 'Hình ảnh')}" loading="lazy" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
                   <span class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md text-white text-[11px] font-mono">${i + 1}/${images.length}</span>
                 </div>
-                ${img.caption ? `<div class="p-3 text-xs text-slate-600 italic bg-white border-t border-slate-100">${img.caption}</div>` : ''}
+                ${img.caption ? `<div class="p-3 text-xs text-slate-600 italic bg-white border-t border-slate-100">${escapeHtml(img.caption)}</div>` : ''}
               </div>`
               )
               .join('');
@@ -180,23 +205,23 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
         }
         if (node.type === 'specTable' || node.type === 'specComparisonBlock') {
           const rawTitle = typeof node.attrs?.title === 'string' ? node.attrs.title.trim() : '';
-          const title = rawTitle;
+          const title = escapeHtml(rawTitle);
           const versions = (node.attrs?.versions as string[]) || [];
           const rows = (node.attrs?.rows as Array<{ specName: string; values: string[] }>) || [];
           if (!versions.length || !rows.length) return '';
 
           const headerCols = versions
-            .map((v) => `<th class="py-3.5 px-4 font-bold text-center text-white bg-[#002C6C] border-l border-blue-900/50 min-w-[160px]">${v}</th>`)
+            .map((v) => `<th class="py-3.5 px-4 font-bold text-center text-white bg-[#002C6C] border-l border-blue-900/50 min-w-[160px]">${escapeHtml(v)}</th>`)
             .join('');
           const bodyRows = rows
             .map((r, idx) => {
               const isEven = idx % 2 === 0;
               const cells = (r.values || [])
-                .map((val) => `<td class="py-3 px-4 text-center text-xs sm:text-sm text-slate-700 border-l border-slate-200">${val || '-'}</td>`)
+                .map((val) => `<td class="py-3 px-4 text-center text-xs sm:text-sm text-slate-700 border-l border-slate-200">${escapeHtml(val || '-')}</td>`)
                 .join('');
               return `
                 <tr class="${isEven ? 'bg-slate-50/70' : 'bg-white'} border-b border-slate-200/80 hover:bg-blue-50/40 transition-colors">
-                  <td class="py-3 px-4 font-semibold text-xs sm:text-sm text-slate-900 min-w-[140px] sticky left-0 ${isEven ? 'bg-slate-50' : 'bg-white'} shadow-[2px_0_5px_rgba(0,0,0,0.03)]">${r.specName}</td>
+                  <td class="py-3 px-4 font-semibold text-xs sm:text-sm text-slate-900 min-w-[140px] sticky left-0 ${isEven ? 'bg-slate-50' : 'bg-white'} shadow-[2px_0_5px_rgba(0,0,0,0.03)]">${escapeHtml(r.specName)}</td>
                   ${cells}
                 </tr>`;
             })
@@ -227,7 +252,7 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
           const targetHotline = (customPhone ? customPhone.replace(/\D/g, '') : '') || defaultHotline;
           const rawZalo = (customPhone ? customPhone.replace(/\D/g, '') : '') || defaultZalo;
           const targetZalo = rawZalo.startsWith('http') ? rawZalo : `https://zalo.me/${rawZalo}`;
-          const subtext = node.attrs?.subtext || '';
+          const subtext = escapeHtml(node.attrs?.subtext || '');
           const variant = node.attrs?.variant || 'red';
 
           let href = '#';
@@ -237,13 +262,13 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
           if (actionType === 'hotline') {
             href = `tel:${targetHotline}`;
           } else if (actionType === 'zalo') {
-            href = targetZalo;
+            href = sanitizeSafeUrl(targetZalo, '#');
             targetAttr = 'target="_blank" rel="noopener noreferrer"';
           } else if (actionType === 'quoteForm') {
             href = '#lead-form';
             onClickAttr = 'onclick="var f=document.getElementById(\'lead-form\');if(f)f.scrollIntoView({behavior:\'smooth\'});"';
           } else if (actionType === 'customLink') {
-            href = customUrl || '#';
+            href = sanitizeSafeUrl(customUrl, '#');
             targetAttr = 'target="_blank" rel="noopener noreferrer"';
           }
 
@@ -254,7 +279,7 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
             btnColor = 'bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white shadow-emerald-500/25';
           }
 
-          const cleanButtonText = buttonText.replace(/^\📞\s*/, '');
+          const cleanButtonText = escapeHtml(buttonText.replace(/^\📞\s*/, ''));
 
           return `
             <div class="my-8 mx-auto max-w-lg text-center not-prose ignore-toc p-5 rounded-2xl bg-slate-50 border border-slate-200/80 shadow-xs">
@@ -265,7 +290,7 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
             </div>`;
         }
         if (node.type === 'prosCons' || node.type === 'prosConsBlock') {
-          const title = node.attrs?.title || 'Đánh Giá Ưu & Nhược Điểm';
+          const title = escapeHtml(node.attrs?.title || 'Đánh Giá Ưu & Nhược Điểm');
           const pros = (node.attrs?.pros as string[]) || [];
           const cons = (node.attrs?.cons as string[]) || [];
 
@@ -275,7 +300,7 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
               (p) => `
             <li class="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700">
               <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs shrink-0 font-bold mt-0.5">✓</span>
-              <span class="leading-relaxed font-medium whitespace-pre-line">${p}</span>
+              <span class="leading-relaxed font-medium whitespace-pre-line">${escapeHtml(p)}</span>
             </li>`
             )
             .join('');
@@ -286,7 +311,7 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
               (c) => `
             <li class="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700">
               <span class="w-5 h-5 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center text-xs shrink-0 font-bold mt-0.5">✕</span>
-              <span class="leading-relaxed font-medium whitespace-pre-line">${c}</span>
+              <span class="leading-relaxed font-medium whitespace-pre-line">${escapeHtml(c)}</span>
             </li>`
             )
             .join('');
@@ -319,16 +344,16 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
         if (node.type === 'faqBlock') {
           const questions = (node.attrs?.questions as Array<{ question: string; answer: string }>) || [];
           if (!questions.length) return '';
-          const title = (node.attrs?.title as string) || (node.attrs?.headline as string) || '';
+          const title = escapeHtml((node.attrs?.title as string) || (node.attrs?.headline as string) || '');
           const faqItems = questions
             .map(
               (q, i) => `
             <div class="border border-slate-200 rounded-xl p-4 bg-white shadow-sm mb-3">
               <div class="font-bold text-slate-900 flex items-center gap-2 mb-2 text-base">
                 <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs shrink-0 font-bold">${i + 1}</span>
-                ${q.question || 'Câu hỏi'}
+                ${escapeHtml(q.question || 'Câu hỏi')}
               </div>
-              <p class="text-slate-600 text-sm pl-8 leading-relaxed whitespace-pre-line">${q.answer || 'Nội dung câu trả lời đang được cập nhật...'}</p>
+              <p class="text-slate-600 text-sm pl-8 leading-relaxed whitespace-pre-line">${escapeHtml(q.answer || 'Nội dung câu trả lời đang được cập nhật...')}</p>
             </div>`
             )
             .join('');
@@ -339,8 +364,9 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
             </div>`;
         }
         if (node.type === 'youtubeBlock') {
-          const videoId = node.attrs?.videoId || '';
-          const caption = node.attrs?.caption || '';
+          const rawVideoId = String(node.attrs?.videoId || '').replace(/[^a-zA-Z0-9_-]/g, '');
+          const videoId = rawVideoId;
+          const caption = escapeHtml(node.attrs?.caption || '');
           return `
             <figure class="my-8 not-prose ignore-toc" data-toc="ignore">
               <div class="relative w-full aspect-video rounded-xl overflow-hidden bg-slate-900 shadow-md">
@@ -356,27 +382,30 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
             </figure>`;
         }
         if (node.type === 'tikTokBlock') {
-          const videoId = node.attrs?.videoId || '';
-          const title = node.attrs?.title || '';
+          const rawVideoId = String(node.attrs?.videoId || '').replace(/[^a-zA-Z0-9_-]/g, '');
+          const videoId = rawVideoId;
+          const title = escapeHtml(node.attrs?.title || 'Xem trên TikTok');
           return `
             <div class="my-8 not-prose ignore-toc p-4 rounded-xl border border-slate-200 bg-slate-50 flex flex-col items-center" data-toc="ignore">
-              <p class="text-sm font-semibold text-slate-800 mb-2">🎬 ${title || 'Xem trên TikTok'}</p>
+              <p class="text-sm font-semibold text-slate-800 mb-2">🎬 ${title}</p>
               <a href="https://www.tiktok.com/@hyundai/video/${videoId}" target="_blank" rel="noopener noreferrer" class="text-xs text-blue-600 hover:underline">
                 Mở video TikTok (#${videoId}) &rarr;
               </a>
             </div>`;
         }
         if (node.type === 'relatedCarBlock') {
-          const carName = node.attrs?.carName || node.attrs?.tenXe || 'Hyundai Accent';
-          const carSlug = node.attrs?.carSlug || node.attrs?.slug || 'accent';
+          const carName = escapeHtml(node.attrs?.carName || node.attrs?.tenXe || 'Hyundai Accent');
+          const rawSlug = String(node.attrs?.carSlug || node.attrs?.slug || 'accent').trim();
+          const carSlug = encodeURIComponent(rawSlug.replace(/^\/+/, ''));
           const minPrice = Number(node.attrs?.carPrice || node.attrs?.minPrice || node.attrs?.giaNiemYetTu) || 0;
-          const imageUrl =
+          const rawImageUrl =
             node.attrs?.carImage ||
             node.attrs?.imageUrl ||
             node.attrs?.anhDaiDienUrl ||
             'https://res.cloudinary.com/ddozajlqu/image/upload/v1/media/Accent-icon.webp?_a=BAMAABkS0';
+          const imageUrl = sanitizeSafeUrl(rawImageUrl, 'https://res.cloudinary.com/ddozajlqu/image/upload/v1/media/Accent-icon.webp?_a=BAMAABkS0');
           const seatCount = Number(node.attrs?.seatCount) || 5;
-          const fuelType = node.attrs?.fuelType || 'Xăng 1.5L Smartstream';
+          const fuelType = escapeHtml(node.attrs?.fuelType || 'Xăng 1.5L Smartstream');
           const formattedPrice = minPrice > 0 ? `${minPrice.toLocaleString('vi-VN')} đ` : 'Liên hệ';
           return `
             <div class="my-8 not-prose ignore-toc p-4 sm:p-5 rounded-2xl border border-slate-200/90 bg-gradient-to-r from-blue-50/60 via-white to-slate-50 flex flex-col sm:flex-row items-center gap-4 sm:gap-5 shadow-sm hover:shadow-md transition-shadow">
@@ -424,13 +453,14 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
         }
         if (node.type === 'priceTableBlock') {
           const rawTitle = typeof node.attrs?.title === 'string' ? node.attrs.title.trim() : '';
-          const title = rawTitle;
+          const title = escapeHtml(rawTitle);
           const prices = (node.attrs?.prices as any[]) || [];
           let tableHtml = '';
           if (Array.isArray(prices) && prices.length > 0) {
             const rows = prices
               .map((p) => {
-                const version = p.version || p.name || 'Phiên bản';
+                const rawVersion = p.version || p.name || 'Phiên bản';
+                const version = escapeHtml(rawVersion);
                 const listed = Number(p.listedPrice || p.price || 0);
                 const listedStr = listed > 0 ? `${listed.toLocaleString('vi-VN')} ₫` : 'Liên hệ';
                 const disc = Number(p.discount || 0);
@@ -439,8 +469,9 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
                   : '<span class="text-slate-400 font-normal">Liên hệ</span>';
                 const rolling = Number(p.rollingPrice || p.onRoadPriceEstimate || 0);
                 const rollingStr = rolling > 0 ? `${rolling.toLocaleString('vi-VN')} ₫` : 'Liên hệ';
-                const cleanVersionEscaped = version.replace(/'/g, "\\'");
+                const cleanVersionForJs = JSON.stringify(String(rawVersion).slice(0, 100));
                 const targetZaloUrl = defaultZalo.startsWith('http') ? defaultZalo : `https://zalo.me/${defaultZalo}`;
+                const safeZaloUrlForJs = JSON.stringify(targetZaloUrl);
 
                 return `
                   <tr class="border-b border-slate-100 hover:bg-blue-50/40 transition-colors">
@@ -459,9 +490,10 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
                     <td class="py-3.5 px-4 text-center whitespace-nowrap align-middle">
                       <button
                         type="button"
-                        onclick="var f=document.getElementById('lead-form')||document.querySelector('[data-role=\\'lead-form\\']')||document.querySelector('form');if(f){f.scrollIntoView({behavior:'smooth',block:'center'});var i=f.querySelector('input[type=\\'tel\\'],input[name=\\'phone\\'],input');if(i){setTimeout(function(){i.focus();i.setAttribute('placeholder','Nhận báo giá ${cleanVersionEscaped}...');},400);}}else{window.open('${targetZaloUrl}','_blank');}"
+                        data-version="${version}"
+                        onclick="(function(){var f=document.getElementById('lead-form')||document.querySelector('[data-role=\\'lead-form\\']')||document.querySelector('form');if(f){f.scrollIntoView({behavior:'smooth',block:'center'});var i=f.querySelector('input[type=\\'tel\\'],input[name=\\'phone\\'],input');if(i){setTimeout(function(){i.focus();i.setAttribute('placeholder','Nhận báo giá ' + ${cleanVersionForJs} + '...');},400);}}else{window.open(${safeZaloUrlForJs},'_blank');}})()"
                         class="inline-flex items-center justify-center px-3.5 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 active:scale-95 rounded-lg shadow-xs hover:shadow transition-all cursor-pointer whitespace-nowrap"
-                        title="Nhận báo giá lăn bánh chi tiết cho ${cleanVersionEscaped}"
+                        title="Nhận báo giá lăn bánh chi tiết"
                       >
                         Báo giá
                       </button>
@@ -510,7 +542,7 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
           return '';
         }
         if (node.type === 'gatedContent') {
-          const ctaTitle = (node.attrs?.title || 'Nhận Báo Giá Lăn Bánh Ưu Đãi').replace(/^\📞\s*/, '');
+          const ctaTitle = escapeHtml((node.attrs?.title || 'Nhận Báo Giá Lăn Bánh Ưu Đãi').replace(/^\📞\s*/, ''));
           return `
             <div class="my-8 mx-auto max-w-lg text-center not-prose p-5 rounded-2xl bg-slate-50 border border-slate-200/80 shadow-xs">
               <a href="tel:${defaultHotline}" class="inline-flex items-center justify-center gap-2.5 w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-sm sm:text-base shadow-lg transition-all transform hover:scale-[1.02] active:scale-95 bg-gradient-to-r from-red-600 via-rose-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-red-500/25">

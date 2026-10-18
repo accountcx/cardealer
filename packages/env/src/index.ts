@@ -58,7 +58,9 @@ export function getServerApiUrl(): string {
     process.env.INTERNAL_API_URL ||
     clientEnv.NEXT_PUBLIC_API_URL ||
     DEFAULT_API_URL
-  ).replace(/\/+$/, '');
+  )
+    .replace(/\/+$/, '')
+    .replace(/\/api$/, '');
 }
 
 // 🧠 Mental Model: Hàm lấy Site URL chuẩn cho Storefront (Canonical SEO, JSON-LD Schema, Sitemap)

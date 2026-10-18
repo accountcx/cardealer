@@ -3,7 +3,9 @@ import { db, schema } from '@cardealer/database';
 import { eq, desc, and } from 'drizzle-orm';
 import {
   BulkSettingsSchema,
+  PublicBulkSettingsSchema,
   SiteSettingsSchema,
+  PublicSiteSettingsSchema,
   NavigationSettingsSchema,
   ContactSettingsSchema,
   FloatingSellerSettingsSchema,
@@ -308,7 +310,7 @@ export async function handleCatalogRoutes(
         footer: settingsMap.get('footer_settings') || {},
       };
 
-      const parsed = BulkSettingsSchema.parse(bulkData);
+      const parsed = PublicBulkSettingsSchema.parse(bulkData);
       const homepageRaw = settingsMap.get('homepage_settings');
       const homepageParsed = HomepageSettingsSchema.parse(homepageRaw || {});
 
@@ -324,7 +326,7 @@ export async function handleCatalogRoutes(
       return true;
     } catch {
       // Fallback an toàn tuyệt đối khi DB gặp sự cố (Zero-Crash Protocol)
-      const fallback = BulkSettingsSchema.parse({});
+      const fallback = PublicBulkSettingsSchema.parse({});
       const homepageFallback = HomepageSettingsSchema.parse({});
       sendJson(200, {
         success: true,
@@ -349,7 +351,7 @@ export async function handleCatalogRoutes(
       if (!row) {
         // Nếu là key chuẩn nhưng chưa có bản ghi, trả về schema default
         if (key === 'site_settings') {
-          sendJson(200, { success: true, data: SiteSettingsSchema.parse({}) });
+          sendJson(200, { success: true, data: PublicSiteSettingsSchema.parse({}) });
           return true;
         }
         if (key === 'navigation_settings') {
@@ -389,6 +391,11 @@ export async function handleCatalogRoutes(
           success: false,
           error: { code: 'SETTING_NOT_FOUND', message: `Không tìm thấy cấu hình với key "${key}"` },
         });
+        return true;
+      }
+
+      if (key === 'site_settings') {
+        sendJson(200, { success: true, data: PublicSiteSettingsSchema.parse(row.data) });
         return true;
       }
 

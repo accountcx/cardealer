@@ -18,6 +18,7 @@
 
 import React from 'react';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
   Calendar,
@@ -45,6 +46,7 @@ import {
   extractHeadingsFromTiptap,
   slugifyVietnamese,
   convertTiptapToHtml,
+  sanitizeJsonLd,
 } from '@cardealer/core';
 import { apiClient } from '../../../lib/api-client';
 import { StickyToc } from '../../../components/StickyToc';
@@ -154,9 +156,9 @@ export async function generateMetadata({ params, searchParams }: PostDetailPageP
 
   if (!post) {
     return {
-      title: 'Không tìm thấy bài viết | Hyundai Vinh',
+      title: '404 - Không tìm thấy bài viết | Hyundai Vinh',
       description: 'Bài viết bạn đang tìm kiếm không tồn tại hoặc đã được chuyển sang đường dẫn mới.',
-      robots: { index: false, follow: true },
+      robots: { index: false, follow: false },
     };
   }
 
@@ -241,33 +243,9 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
     rawHotline;
   const cleanZalo = rawZalo.replace(/\D/g, '') || cleanHotline;
 
-  // 1. EMPTY / 404 STATE
+  // 1. EMPTY / 404 STATE: Trả về HTTP status 404 thực thể chống Soft-404 penalty (C-07)
   if (!post) {
-    return (
-      <main className="min-h-[70vh] bg-slate-50 flex items-center justify-center px-4 py-16">
-        <Card className="max-w-lg w-full text-center p-8 bg-white border border-slate-200 shadow-sm rounded-2xl">
-          <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
-            <FileQuestion className="w-8 h-8" />
-          </div>
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">Không tìm thấy bài viết</h1>
-          <p className="text-slate-600 text-sm mb-6 leading-relaxed">
-            Nội dung bài viết với đường dẫn <span className="font-mono text-xs bg-slate-100 px-2 py-1 rounded text-blue-800">/{slug}</span> có thể đã được thay đổi hoặc tạm ẩn.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/tin-tuc">
-              <Button variant="outline" className="w-full sm:w-auto h-11 px-5 border-slate-300">
-                <ArrowLeft className="w-4 h-4 mr-2" /> Về Hub Tin tức
-              </Button>
-            </Link>
-            <a href={`tel:${cleanHotline}`}>
-              <Button className="w-full sm:w-auto h-11 px-5 bg-blue-700 hover:bg-blue-800 text-white font-medium">
-                <Phone className="w-4 h-4 mr-2" /> Hotline {rawHotline}
-              </Button>
-            </a>
-          </div>
-        </Card>
-      </main>
-    );
+    notFound();
   }
 
   // Luôn nạp lại HTML bài viết với thông tin hotline/zalo từ Admin Settings
@@ -378,10 +356,10 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
         </div>
       )}
 
-      {/* 🧠 5 Schemas JSON-LD Master Graph */}
+      {/* 🧠 5 Schemas JSON-LD Master Graph (M-07 Sanitization) */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(masterSchema) }}
+        dangerouslySetInnerHTML={{ __html: sanitizeJsonLd(masterSchema) }}
       />
 
       {/* ======================================================================

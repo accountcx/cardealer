@@ -60,6 +60,13 @@ export const SiteSettingsSchema = z.object({
 });
 export type SiteSettings = z.infer<typeof SiteSettingsSchema>;
 
+// WHY: Schema công khai dành riêng cho Storefront và các Public API.
+// Tuyệt đối loại bỏ openaiApiKey để không rò rỉ secret key ra ngoài mạng công cộng (CWE-200).
+export const PublicSiteSettingsSchema = SiteSettingsSchema.omit({
+  openaiApiKey: true,
+});
+export type PublicSiteSettings = z.infer<typeof PublicSiteSettingsSchema>;
+
 // 2. Navigation Settings Schemas (Menu điều hướng đa cấp)
 export const NavSubLinkSchema = z.object({
   id: z.string().default(''),
@@ -255,6 +262,12 @@ export const BulkSettingsSchema = z.object({
   footer: FooterSettingsSchema.default(() => FooterSettingsSchema.parse({})),
 });
 export type BulkSettings = z.infer<typeof BulkSettingsSchema>;
+
+// WHY: Schema nạp gộp dành riêng cho Storefront công khai (Public Storefront API).
+export const PublicBulkSettingsSchema = BulkSettingsSchema.extend({
+  site: PublicSiteSettingsSchema.default(() => PublicSiteSettingsSchema.parse({})),
+});
+export type PublicBulkSettings = z.infer<typeof PublicBulkSettingsSchema>;
 
 // 10. Homepage Funnel 6 Zones Schemas (Phase 4.2)
 // 🧠 Mental Model: Mỗi phân khu đều có công tắc enabled độc lập. Khi enabled = false hoặc dữ liệu rỗng,

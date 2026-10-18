@@ -23,8 +23,8 @@ RUN pnpm install --frozen-lockfile
 
 COPY --from=pruner /app/out/full/ .
 
-# Stage 3: Runner môi trường Production siêu nhẹ
-FROM node:24-alpine AS runner
+# Stage 3: Runner môi trường Production
+FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production

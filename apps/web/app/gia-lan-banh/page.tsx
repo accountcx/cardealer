@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { getSiteUrl } from '@cardealer/env';
+import { sanitizeJsonLd } from '@cardealer/core';
 import CalculatorMasterView from '../../components/calculator/CalculatorMasterView';
 import { Breadcrumbs } from '../../components/layout/Breadcrumbs';
 import { getCarsList } from '../../services/cars.service';
@@ -77,10 +78,10 @@ export default async function GiaLanBanhPage(props: GiaLanBanhPageProps) {
 
   return (
     <div className="w-full pb-20">
-      {/* Script SEO JSON-LD */}
+      {/* Script SEO JSON-LD (M-07 Sanitization) */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSchema) }}
+        dangerouslySetInnerHTML={{ __html: sanitizeJsonLd(jsonLdSchema) }}
       />
 
       {/* Hero Section Banner - Siêu tinh gọn trên mobile (<45px) */}

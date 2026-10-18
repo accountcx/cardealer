@@ -9,6 +9,8 @@ import {
   AuthorSettingsSchema,
   FooterSettingsSchema,
   BulkSettingsSchema,
+  PublicSiteSettingsSchema,
+  PublicBulkSettingsSchema,
   sanitizePhoneNumber,
   normalizeZaloUrl,
 } from '@cardealer/types';
@@ -133,5 +135,29 @@ describe('Settings Zod Schemas & Zero-Crash Fallbacks', () => {
     expect(normalizeZaloUrl('https://zalo.me/0981234567')).toBe('https://zalo.me/0981234567');
     expect(normalizeZaloUrl('0981 234 567')).toBe('https://zalo.me/0981234567');
     expect(normalizeZaloUrl('')).toBe('');
+  });
+
+  it('TC-1.12: PublicSiteSettingsSchema and PublicBulkSettingsSchema strip sensitive openaiApiKey (C-01 defense)', () => {
+    const rawSiteData = {
+      siteTitle: 'Hyundai Vinh Showroom',
+      openaiApiKey: 'sk-proj-super-secret-key-that-should-never-leak-to-storefront',
+    };
+    const parsedPublicSite = PublicSiteSettingsSchema.parse(rawSiteData);
+    expect(parsedPublicSite.siteTitle).toBe('Hyundai Vinh Showroom');
+    expect((parsedPublicSite as any).openaiApiKey).toBeUndefined();
+
+    const rawBulkData = {
+      site: rawSiteData,
+      navigation: {},
+      contact: {},
+      floatingSeller: {},
+      stickyBar: {},
+      author: {},
+      slideInBanner: {},
+      footer: {},
+    };
+    const parsedPublicBulk = PublicBulkSettingsSchema.parse(rawBulkData);
+    expect(parsedPublicBulk.site.siteTitle).toBe('Hyundai Vinh Showroom');
+    expect((parsedPublicBulk.site as any).openaiApiKey).toBeUndefined();
   });
 });
