@@ -117,6 +117,9 @@ importers:
       jsonwebtoken:
         specifier: ^9.0.3
         version: 9.0.3
+      tsx:
+        specifier: ^4.23.13
+        version: 4.23.13
     devDependencies:
       '@cardealer/config-typescript':
         specifier: workspace:*
@@ -130,9 +133,6 @@ importers:
       '@types/node':
         specifier: ^26.6.1
         version: 26.6.1
-      tsx:
-        specifier: ^4.23.13
-        version: 4.23.13
       typescript:
         specifier: ^7.0.2
         version: 7.0.2

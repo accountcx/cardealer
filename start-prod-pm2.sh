@@ -37,7 +37,7 @@ mkdir -p "$ROOT_DIR/logs"
 
 # 3. Cài đặt dependencies & Build Production với API_PORT=4000 (Internal API)
 echo "🔨 Đang cài đặt dependencies và build Production (API_PORT=4000)..."
-pnpm install --frozen-lockfile || pnpm install
+pnpm install --no-frozen-lockfile
 API_PORT=4000 INTERNAL_API_URL="http://127.0.0.1:4000" pnpm build
 
 # 4. Dừng toàn bộ 3 container Docker của dự án cũ (cardealer-frontend, cardealer-backend, cardealer-postgres)
