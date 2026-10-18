@@ -13,6 +13,7 @@ import {
   PublicBulkSettingsSchema,
   sanitizePhoneNumber,
   normalizeZaloUrl,
+  sanitizeTrackingId,
 } from '@cardealer/types';
 
 // 🧠 Mental Model: Test Suite kiểm chứng cơ chế Zero-Crash Default Fallbacks cho Phase 4.1 & SlideInBanner
@@ -159,5 +160,20 @@ describe('Settings Zod Schemas & Zero-Crash Fallbacks', () => {
     const parsedPublicBulk = PublicBulkSettingsSchema.parse(rawBulkData);
     expect(parsedPublicBulk.site.siteTitle).toBe('Hyundai Vinh Showroom');
     expect((parsedPublicBulk.site as any).openaiApiKey).toBeUndefined();
+  });
+
+  it('TC-1.13: sanitizeTrackingId và SiteSettingsSchema khử sạch khoảng trắng (id= GTM-MZ6HJKZR) và ký tự XSS trong mã Tracking', () => {
+    expect(sanitizeTrackingId(' GTM-MZ6HJKZR')).toBe('GTM-MZ6HJKZR');
+    expect(sanitizeTrackingId('  GTM - MZ6HJKZR \n')).toBe('GTM-MZ6HJKZR');
+    expect(sanitizeTrackingId("GTM-MZ6HJKZR');alert(1);//")).toBe('GTM-MZ6HJKZRalert1');
+
+    const parsed = PublicSiteSettingsSchema.parse({
+      gtmId: ' GTM-MZ6HJKZR ',
+      gaId: ' G-1234567890 ',
+      fbPixelId: ' 9876543210 ',
+    });
+    expect(parsed.gtmId).toBe('GTM-MZ6HJKZR');
+    expect(parsed.gaId).toBe('G-1234567890');
+    expect(parsed.fbPixelId).toBe('9876543210');
   });
 });

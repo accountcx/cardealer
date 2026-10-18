@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
+import { sanitizeTrackingId } from '@cardealer/types';
 import './globals.css';
 import { getStorefrontSettings } from '../services/settings.service';
 import { ViewportCoordinator } from '../components/layout/ViewportCoordinator';
@@ -71,55 +72,58 @@ export default async function RootLayout({
   const settings = await getStorefrontSettings();
   const site = settings.site;
 
+  // Phòng thủ kép: Khử mọi khoảng trắng & ký tự lạ cho toàn bộ mã Tracking / Pixel
+  const gtmId = sanitizeTrackingId(site.gtmId);
+  const gaId = sanitizeTrackingId(site.gaId);
+  const clarityId = sanitizeTrackingId(site.clarityId);
+  const fbPixelId = sanitizeTrackingId(site.fbPixelId);
+  const tiktokPixelId = sanitizeTrackingId(site.tiktokPixelId);
+  const zaloPixelId = sanitizeTrackingId(site.zaloPixelId);
+
   return (
     <html lang="vi-VN" className="overflow-x-clip scroll-smooth">
       <head>
-        {/* 1. Google Tag Manager */}
-        {site.gtmId && (
-          <Script id="google-tag-manager" strategy="afterInteractive">
-            {`
-              (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-              new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-              j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-              'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-              })(window,document,'script','dataLayer','${site.gtmId}');
-            `}
-          </Script>
+        {/* 1. Google Tag Manager (Render trực tiếp trong SSR <head> để Google Tag Assistant & Bot nhận diện 100%) */}
+        {gtmId && (
+          <script
+            id="google-tag-manager"
+            dangerouslySetInnerHTML={{
+              __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${gtmId}');`,
+            }}
+          />
         )}
 
-        {/* 2. Google Analytics 4 (khi không dùng GTM) */}
-        {site.gaId && !site.gtmId && (
+        {/* 2. Google Analytics 4 / Google Tag (gtag.js - hoạt động độc lập, không bị chặn bởi gtmId) */}
+        {gaId && (
           <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${site.gaId}`}
-              strategy="afterInteractive"
+            <script
+              async
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
             />
-            <Script id="google-analytics" strategy="afterInteractive">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${site.gaId}');
-              `}
-            </Script>
+            <script
+              id="google-analytics"
+              dangerouslySetInnerHTML={{
+                __html: `window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', '${gaId}');`,
+              }}
+            />
           </>
         )}
 
         {/* 3. Microsoft Clarity */}
-        {site.clarityId && (
+        {clarityId && (
           <Script id="microsoft-clarity" strategy="afterInteractive">
             {`
               (function(c,l,a,r,i,t,y){
                 c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
                 t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
                 y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-              })(window, document, "clarity", "script", "${site.clarityId}");
+              })(window, document, "clarity", "script", "${clarityId}");
             `}
           </Script>
         )}
 
         {/* 4. Facebook Pixel */}
-        {site.fbPixelId && (
+        {fbPixelId && (
           <Script id="facebook-pixel" strategy="afterInteractive">
             {`
               !function(f,b,e,v,n,t,s)
@@ -130,19 +134,19 @@ export default async function RootLayout({
               t.src=v;s=b.getElementsByTagName(e)[0];
               s.parentNode.insertBefore(t,s)}(window, document,'script',
               'https://connect.facebook.net/en_US/fbevents.js');
-              fbq('init', '${site.fbPixelId}');
+              fbq('init', '${fbPixelId}');
               fbq('track', 'PageView');
             `}
           </Script>
         )}
 
         {/* 5. TikTok Pixel */}
-        {site.tiktokPixelId && (
+        {tiktokPixelId && (
           <Script id="tiktok-pixel" strategy="afterInteractive">
             {`
               !function (w, d, t) {
                 w.TiktokAnalyticsObject=t;var tt=w[t]=w[t]||[];tt.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"],tt.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<tt.methods.length;i++)tt.setAndDefer(tt,tt.methods[i]);tt.instance=function(t){for(var e=tt._i[t]||[],n=0;n<tt.methods.length;n++)tt.setAndDefer(e,tt.methods[n]);return e},tt.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";tt._i=tt._i||{},tt._i[e]=[],tt._i[e]._u=i,tt._t=tt._t||{},tt._t[e]=+new Date,tt._o=tt._o||{},tt._o[e]=n||{};var o=document.createElement("script");o.type="text/javascript",o.async=!0,o.src=i+"?sdkid="+e+"&lib="+t;var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};
-                tt.load('${site.tiktokPixelId}');
+                tt.load('${tiktokPixelId}');
                 tt.page();
               }(window, document, 'ttq');
             `}
@@ -150,32 +154,32 @@ export default async function RootLayout({
         )}
 
         {/* 6. Zalo Pixel */}
-        {site.zaloPixelId && (
+        {zaloPixelId && (
           <Script id="zalo-pixel" strategy="afterInteractive">
             {`
               (function(w,d,s,l,i){w[l]=w[l]||[];var f=d.getElementsByTagName(s)[0],
               j=d.createElement(s);j.async=true;j.src='https://sp.zalo.me/plugins/sdk.js?id='+i;
-              f.parentNode.insertBefore(j,f);})(window,document,'script','zaloSdk','${site.zaloPixelId}');
+              f.parentNode.insertBefore(j,f);})(window,document,'script','zaloSdk','${zaloPixelId}');
             `}
           </Script>
         )}
-
-        {/* 7. Custom Head Scripts / Meta Tags (Google Search Console, Domain Verifications) */}
+      </head>
+      <body
+        className={`${inter.variable} font-sans antialiased min-h-screen bg-slate-50 text-slate-900 selection:bg-[#0072CE] selection:text-white overflow-x-clip flex flex-col justify-between`}
+      >
+        {/* 7. Custom Head / Verification Scripts (Đặt ngoài <head> để không vi phạm HTML5 spec với thẻ <div>) */}
         {site.customHeaderScripts && (
           <div
             id="custom-header-scripts"
             dangerouslySetInnerHTML={{ __html: site.customHeaderScripts }}
           />
         )}
-      </head>
-      <body
-        className={`${inter.variable} font-sans antialiased min-h-screen bg-slate-50 text-slate-900 selection:bg-[#0072CE] selection:text-white overflow-x-clip flex flex-col justify-between`}
-      >
+
         {/* GTM noscript fallback */}
-        {site.gtmId && (
+        {gtmId && (
           <noscript>
             <iframe
-              src={`https://www.googletagmanager.com/ns.html?id=${site.gtmId}`}
+              src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
               height="0"
               width="0"
               style={{ display: 'none', visibility: 'hidden' }}
@@ -184,13 +188,13 @@ export default async function RootLayout({
         )}
 
         {/* Facebook Pixel noscript fallback */}
-        {site.fbPixelId && (
+        {fbPixelId && (
           <noscript>
             <img
               height="1"
               width="1"
               style={{ display: 'none' }}
-              src={`https://www.facebook.com/tr?id=${site.fbPixelId}&ev=PageView&noscript=1`}
+              src={`https://www.facebook.com/tr?id=${fbPixelId}&ev=PageView&noscript=1`}
               alt=""
             />
           </noscript>

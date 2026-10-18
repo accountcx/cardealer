@@ -19,6 +19,13 @@ export function normalizeZaloUrl(zaloOrPhone: string | undefined | null): string
   return cleanPhone ? `https://zalo.me/${cleanPhone}` : '';
 }
 
+// 🧠 Mental Model: Helper tiện ích chuẩn hóa các mã Tracking/Pixel ID (GTM, GA4, Clarity, FB/TikTok/Zalo Pixel).
+// Loại bỏ triệt để mọi khoảng trắng (đầu, cuối, giữa chuỗi) và các ký tự ngoài [a-zA-Z0-9_-] để ngăn lỗi URL `id= GTM-...` và chặn XSS Script Injection (CWE-79).
+export function sanitizeTrackingId(raw: string | undefined | null): string {
+  if (!raw) return '';
+  return raw.replace(/\s+/g, '').replace(/[^a-zA-Z0-9_-]/g, '');
+}
+
 // 1. Site Settings Schema
 export const SiteSettingsSchema = z.object({
   // Global SEO Meta Defaults
@@ -27,15 +34,15 @@ export const SiteSettingsSchema = z.object({
   defaultDescription: z.string().default('Website phân phối xe Hyundai chính hãng tại Nghệ An, Hà Tĩnh. Giá tốt nhất, hỗ trợ trả góp 85%, giao xe tận nhà.'),
   defaultImage: z.string().default('/images/og-image.jpg'),
   favicon: z.string().default('/favicon.ico'),
-  siteUrl: z.string().optional().default(''),
+  siteUrl: z.string().trim().optional().default(''),
 
-  // Tracking & Analytics IDs
-  gtmId: z.string().optional().default(''),
-  gaId: z.string().optional().default(''),
-  clarityId: z.string().optional().default(''),
-  fbPixelId: z.string().optional().default(''),
-  tiktokPixelId: z.string().optional().default(''),
-  zaloPixelId: z.string().optional().default(''),
+  // Tracking & Analytics IDs (Tự động khử khoảng trắng & ký tự lạ cả khi lưu lẫn khi đọc từ DB)
+  gtmId: z.string().optional().default('').transform(sanitizeTrackingId),
+  gaId: z.string().optional().default('').transform(sanitizeTrackingId),
+  clarityId: z.string().optional().default('').transform(sanitizeTrackingId),
+  fbPixelId: z.string().optional().default('').transform(sanitizeTrackingId),
+  tiktokPixelId: z.string().optional().default('').transform(sanitizeTrackingId),
+  zaloPixelId: z.string().optional().default('').transform(sanitizeTrackingId),
 
   // Custom Injectable Scripts
   customHeaderScripts: z.string().optional().default(''),

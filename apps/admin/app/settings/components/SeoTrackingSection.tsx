@@ -16,7 +16,7 @@ import {
   Sliders,
 } from 'lucide-react';
 import { Button, Card, Input } from '@cardealer/ui';
-import type { SiteSettings } from '@cardealer/types';
+import { sanitizeTrackingId, type SiteSettings } from '@cardealer/types';
 import { settingsService } from '../../../services/settings.service';
 import { MediaPickerModal } from '../../components/MediaPickerModal';
 
@@ -73,8 +73,19 @@ export const SeoTrackingSection: React.FC<SeoTrackingSectionProps> = ({ initialD
     e.preventDefault();
     setSaving(true);
     setError(null);
+    const cleanedData: SiteSettings = {
+      ...formData,
+      gtmId: sanitizeTrackingId(formData.gtmId),
+      gaId: sanitizeTrackingId(formData.gaId),
+      clarityId: sanitizeTrackingId(formData.clarityId),
+      fbPixelId: sanitizeTrackingId(formData.fbPixelId),
+      tiktokPixelId: sanitizeTrackingId(formData.tiktokPixelId),
+      zaloPixelId: sanitizeTrackingId(formData.zaloPixelId),
+      openaiApiKey: formData.openaiApiKey?.trim() || '',
+    };
+    setFormData(cleanedData);
     try {
-      await settingsService.updateSettingByKey<SiteSettings>('site_settings', formData);
+      await settingsService.updateSettingByKey<SiteSettings>('site_settings', cleanedData);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (err: unknown) {
