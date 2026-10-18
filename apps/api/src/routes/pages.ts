@@ -1,9 +1,11 @@
 import { IncomingMessage, ServerResponse } from 'node:http';
 import { db, schema } from '@cardealer/database';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 
 /**
- * 🌐 Router Công Khai Truy Vấn Trang Tĩnh Theo Slug (Public Storefront API)
+ * 🌐 Router Công Khai Truy Vấn Trang Tĩnh (Public Storefront API)
+ * 1. GET /api/public/pages: Lấy danh sách toàn bộ trang đã xuất bản (phục vụ Sitemap XML & Storefront Navigation).
+ * 2. GET /api/public/pages/:slug: Truy vấn chi tiết nội dung trang tĩnh theo slug.
  * Bảo vệ chống lộ dữ liệu nháp (R14): Chỉ trả về dữ liệu khi is_published = true.
  * Cache-Control: Tối ưu TTFB cho crawler Google và Storefront Server Component.
  */
@@ -15,7 +17,54 @@ export async function handlePublicPageRoutes(
 ): Promise<boolean> {
   const pathname = url.pathname;
 
-  // GET /api/public/pages/:slug
+  // 1. GET /api/public/pages: Danh sách toàn bộ trang tĩnh đã xuất bản (cho Sitemap XML & Footer/Header)
+  if (pathname === '/api/public/pages' && req.method === 'GET') {
+    try {
+      const publishedPages = await db.query.staticPages.findMany({
+        where: eq(schema.staticPages.isPublished, true),
+        orderBy: [desc(schema.staticPages.updatedAt)],
+      });
+
+      sendJson(
+        200,
+        {
+          success: true,
+          data: publishedPages.map((page) => ({
+            id: page.id,
+            title: page.title,
+            slug: page.slug,
+            templateType: page.templateType,
+            isPublished: page.isPublished,
+            metaTitle: page.metaTitle,
+            metaDescription: page.metaDescription,
+            canonicalUrl: page.canonicalUrl,
+            ogImage: page.ogImage,
+            noIndex: page.noIndex,
+            schemaType: page.schemaType,
+            createdAt: page.createdAt,
+            updatedAt: page.updatedAt,
+          })),
+        },
+        {
+          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+        }
+      );
+      return true;
+    } catch (error) {
+      console.error('[API] Lỗi khi truy vấn danh sách trang tĩnh public:', error);
+      sendJson(500, {
+        success: false,
+        error: {
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Lỗi máy chủ khi truy vấn danh sách trang tĩnh',
+          timestamp: new Date().toISOString(),
+        },
+      });
+      return true;
+    }
+  }
+
+  // 2. GET /api/public/pages/:slug: Chi tiết trang tĩnh theo slug
   const match = pathname.match(/^\/api\/public\/pages\/([a-zA-Z0-9-]+)$/);
   if (match && req.method === 'GET') {
     const slug = match[1];

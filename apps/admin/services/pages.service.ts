@@ -39,34 +39,34 @@ export const pagesService = {
       search: params.search,
     };
 
-    return apiClient.get<ListPagesResponse>('/admin/pages', queryParams);
+    return apiClient.get<ListPagesResponse>('/api/admin/pages', queryParams);
   },
 
   /**
    * Lấy chi tiết một trang tĩnh theo ID (UUID v4)
    */
   async getPageById(id: string): Promise<StaticPage> {
-    return apiClient.get<StaticPage>(`/admin/pages/${id}`);
+    return apiClient.get<StaticPage>(`/api/admin/pages/${id}`);
   },
 
   /**
    * Tạo mới một trang tĩnh
    */
   async createPage(data: CreateStaticPageDTO): Promise<StaticPage> {
-    return apiClient.post<StaticPage>('/admin/pages', data);
+    return apiClient.post<StaticPage>('/api/admin/pages', data);
   },
 
   /**
    * Cập nhật thông tin trang tĩnh
    */
   async updatePage(id: string, data: UpdateStaticPageDTO): Promise<StaticPage> {
-    return apiClient.put<StaticPage>(`/admin/pages/${id}`, data);
+    return apiClient.put<StaticPage>(`/api/admin/pages/${id}`, data);
   },
 
   /**
    * Xóa vĩnh viễn trang tĩnh theo ID
    */
   async deletePage(id: string): Promise<void> {
-    await apiClient.delete(`/admin/pages/${id}`);
+    await apiClient.delete(`/api/admin/pages/${id}`);
   },
 };
