@@ -40,10 +40,10 @@ echo "🔨 Đang cài đặt dependencies và build Production (API_PORT=4000)..
 pnpm install --frozen-lockfile || pnpm install
 API_PORT=4000 INTERNAL_API_URL="http://127.0.0.1:4000" pnpm build
 
-# 4. Dừng 2 container cũ (cardealer-frontend & cardealer-backend) để giải phóng port 3001 và 3000
-#    LƯU Ý: Tuyệt đối GIỮ NGUYÊN container cardealer-postgres đang chạy!
+# 4. Dừng toàn bộ 3 container Docker của dự án cũ (cardealer-frontend, cardealer-backend, cardealer-postgres)
+#    để giải phóng port 3001, 3000 và tiết kiệm RAM (Dự án mới dùng Neon Cloud DB)
 if command -v docker >/dev/null 2>&1; then
-  for cname in cardealer-frontend cardealer-backend; do
+  for cname in cardealer-frontend cardealer-backend cardealer-postgres; do
     if [ -n "$(docker ps -q -f name=^/${cname}$ 2>/dev/null)" ]; then
       echo "🛑 Đang tắt auto-restart và dừng container cũ: $cname..."
       docker update --restart=no "$cname" >/dev/null 2>&1 || true
