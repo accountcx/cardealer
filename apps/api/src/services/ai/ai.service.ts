@@ -181,12 +181,16 @@ export class AiService {
     const targetKeyword =
       keyword || (prompt.length > 5 && prompt.length < 50 ? prompt : `Đánh giá ${targetCar} tại ${targetLocation}`);
 
+    console.log(`[AI Service] 1. Khởi tạo: action="${action}", car="${targetCar}", location="${targetLocation}", keyword="${targetKeyword}"`);
+
     // 1. Xác định Location Profile
     const locKey = targetLocation.toLowerCase().includes('hà tĩnh') ? 'ha-tinh' : 'nghe-an';
     const locProfile: LocationProfile = LOCAL_PROFILES[locKey] || LOCAL_PROFILES['nghe-an'];
 
     // 2. Truy vấn dữ liệu thực tế từ Database & Bài viết các dòng xe
+    const dbQueryStartTime = Date.now();
     const { dbCarRecord, dbVersions, existingArticles } = await this.queryCarData(targetCar, carSlug);
+    console.log(`[AI Service] 2. Truy vấn DB hoàn tất sau ${Date.now() - dbQueryStartTime}ms: xe="${dbCarRecord?.tenXe || 'Không có trong DB'}", ${dbVersions.length} phiên bản, ${existingArticles.length} bài viết tham chiếu.`);
     const segmentProfile = this.detectSegment(targetCar, dbCarRecord);
 
     const effectiveVersions: CarVersionInput[] =
@@ -202,8 +206,11 @@ export class AiService {
 
     // 3. Nạp cấu hình OpenAI
     const { apiKey, model } = await this.getOpenAiConfig();
+    const maskedKey = apiKey ? `${apiKey.slice(0, 7)}...${apiKey.slice(-4)}` : 'TRỐNG';
+    console.log(`[AI Service] 3. Cấu hình OpenAI: Model="${model}", Key: ${maskedKey}`);
 
     if (!apiKey) {
+      console.warn('[AI Service] ❌ LỖI: OpenAI API Key chưa được cấu hình!');
       throw new AiServiceError(
         'Chưa cấu hình OpenAI API Key trong Cài đặt Hệ thống. Vui lòng vào Cài đặt -> SEO & Tracking -> OpenAI API Key để nhập key.',
         'OPENAI_API_KEY_MISSING',
@@ -227,16 +234,20 @@ export class AiService {
       segmentProfile,
       calculatedPricing,
     });
+    console.log(`[AI Service] 4. Đã dựng prompt: System=${systemPrompt.length} chars, User=${userPrompt.length} chars, jsonFormat=${Boolean(responseFormat)}`);
 
     // 5. Gọi OpenAI với cơ chế Fallback & Timeout
     let callResult;
     try {
+      const openAiStartTime = Date.now();
       callResult = await callOpenAiWithResilience(apiKey, model, systemPrompt, userPrompt, {
         responseFormat,
         maxTokens,
         defaultTokenLimit,
       });
+      console.log(`[AI Service] 5. OpenAI hoàn tất sau ${Date.now() - openAiStartTime}ms: Model="${callResult.model}", Tokens=${JSON.stringify(callResult.usage)}`);
     } catch (err: unknown) {
+      console.error('[AI Service] ❌ Lỗi khi gọi OpenAI API:', err);
       if (err instanceof OpenAiClientError) {
         throw new AiServiceError(err.message, err.code, err.statusCode);
       }
@@ -259,8 +270,11 @@ export class AiService {
     try {
       const transformed = transformAiResponse(callResult.content, callResult.model, transformCtx, Boolean(responseFormat));
       transformed.usage = callResult.usage;
+      const textLen = transformed.text?.length || transformed.rawText?.length || 0;
+      console.log(`[AI Service] 6. Chuẩn hóa kết quả thành công, độ dài văn bản: ${textLen} ký tự.`);
       return transformed;
     } catch (transformErr: unknown) {
+      console.error('[AI Service] ❌ Lỗi parse kết quả trả về từ OpenAI:', transformErr);
       const msg = transformErr instanceof Error ? transformErr.message : 'Lỗi chuẩn hóa dữ liệu AI';
       throw new AiServiceError(msg, 'TRANSFORM_ERROR', 500);
     }

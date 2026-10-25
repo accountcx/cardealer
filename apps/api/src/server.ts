@@ -71,27 +71,55 @@ const server = http.createServer(async (req, res) => {
   // An toàn Logging: Khử ký tự \r\n chống Log Injection (CWE-117), không log Auth Token/PII (CWE-200)
   const safeMethod = (req.method || 'GET').replace(/[\r\n]/g, '');
   const safePath = url.pathname.replace(/[\r\n]/g, '');
+  const reqStartTime = Date.now();
   console.log(`[API] ${safeMethod} ${safePath}`);
+
+  req.on('close', () => {
+    if (!res.writableEnded) {
+      console.warn(`[API] ⚠️ Client đã ngắt kết nối socket sớm: ${safeMethod} ${safePath} (sau ${Date.now() - reqStartTime}ms)`);
+    }
+  });
 
   // Helper response
   const sendJson = (statusCode: number, data: unknown, headers: Record<string, string> = {}) => {
+    if (res.writableEnded) {
+      console.warn(`[API] Cảnh báo: res đã kết thúc, không thể gửi lại sendJson ${statusCode} cho ${safePath}`);
+      return;
+    }
+    console.log(`[API] Trả về response ${statusCode} cho ${safeMethod} ${safePath} (sau ${Date.now() - reqStartTime}ms)`);
     res.writeHead(statusCode, { 'Content-Type': 'application/json', ...headers });
     res.end(JSON.stringify(data));
   };
 
-  // Helper đọc body
+  // Helper đọc body (có cache và guard stream chống treo promise)
+  let cachedBody: Record<string, unknown> | null = null;
   const readBody = async (): Promise<Record<string, unknown>> => {
+    if (cachedBody !== null) return cachedBody;
     return new Promise((resolve) => {
+      if (req.readableEnded) {
+        console.log(`[API Body] Stream đã kết thúc trước khi đọc body cho ${safePath}`);
+        cachedBody = {};
+        return resolve({});
+      }
       let body = '';
       req.on('data', (chunk) => {
         body += chunk;
       });
       req.on('end', () => {
         try {
-          resolve(body ? JSON.parse(body) : {});
-        } catch {
+          cachedBody = body ? JSON.parse(body) : {};
+          console.log(`[API Body] Đã đọc xong body cho ${safePath} (${body.length} bytes)`);
+          resolve(cachedBody || {});
+        } catch (err) {
+          console.error(`[API Body] Lỗi parse JSON body cho ${safePath}:`, err);
+          cachedBody = {};
           resolve({});
         }
+      });
+      req.on('error', (err) => {
+        console.error(`[API Body] Lỗi stream req cho ${safePath}:`, err);
+        cachedBody = {};
+        resolve({});
       });
     });
   };

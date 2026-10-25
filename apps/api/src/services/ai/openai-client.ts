@@ -109,16 +109,29 @@ export async function callOpenAiWithResilience(
 
   const executeFetch = async (payload: Record<string, unknown>): Promise<Response> => {
     // WHY: Egress Security & Timeout Guard - Giới hạn thời gian kết nối tránh nghẽn thread pool.
+    const fetchStartTime = Date.now();
+    const maskedKey = apiKey ? `${apiKey.slice(0, 7)}...${apiKey.slice(-4)}` : 'TRỐNG';
+    console.log(`[OpenAI Client] >>> Bắt đầu gửi HTTP POST tới OpenAI API (model: "${payload.model}", key: ${maskedKey}, timeout: ${timeoutMs}ms)...`);
+
     const signal = AbortSignal.timeout(timeoutMs);
-    return await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(payload),
-      signal,
-    });
+    try {
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(payload),
+        signal,
+      });
+      const duration = Date.now() - fetchStartTime;
+      console.log(`[OpenAI Client] <<< Phản hồi HTTP từ OpenAI sau ${duration}ms: Status ${res.status} ${res.statusText}`);
+      return res;
+    } catch (fetchErr: unknown) {
+      const duration = Date.now() - fetchStartTime;
+      console.error(`[OpenAI Client] ❌ Lỗi kết nối fetch tới OpenAI sau ${duration}ms:`, fetchErr);
+      throw fetchErr;
+    }
   };
 
   let openaiRes: Response;
@@ -127,13 +140,14 @@ export async function callOpenAiWithResilience(
   } catch (err: unknown) {
     const isTimeout = err instanceof Error && err.name === 'TimeoutError';
     const msg = isTimeout ? `OpenAI API request timed out sau ${timeoutMs / 1000}s` : (err instanceof Error ? err.message : 'Network error');
+    console.error(`[OpenAI Client] ❌ Thất bại lần 1: ${msg}`);
     throw new OpenAiClientError(msg, isTimeout ? 'OPENAI_TIMEOUT' : 'OPENAI_NETWORK_ERROR', 504, true);
   }
 
   // Fallback nếu API báo lỗi tham số hoặc model không tồn tại
   if (!openaiRes.ok) {
     const firstErrText = await openaiRes.text();
-    console.warn(`[AI API] Lần gọi OpenAI đầu tiên thất bại (${openaiRes.status}):`, sanitizeLog(firstErrText));
+    console.warn(`[AI API] ⚠️ Lần gọi OpenAI đầu tiên thất bại (${openaiRes.status}):`, sanitizeLog(firstErrText));
 
     if (firstErrText.includes('model_not_found') || firstErrText.includes('does not exist')) {
       console.warn(`[AI API] Model "${model}" không tồn tại trên OpenAI, tự động thử lại với gpt-4o-mini...`);

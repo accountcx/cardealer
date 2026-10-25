@@ -6,6 +6,19 @@ import type { AiGenerateRequest, AiGenerateResponseData } from '@cardealer/types
 // Lưu ý: apiClient tự động unwrap payload trả về json.data (AiGenerateResponseData) và throw AppError nếu có lỗi.
 export const aiService = {
   generate: async (req: AiGenerateRequest): Promise<AiGenerateResponseData> => {
-    return apiClient.post<AiGenerateResponseData>('/api/admin/ai/generate', req);
+    const startTime = Date.now();
+    console.log('[Admin AI Client] 🚀 Bắt đầu gửi yêu cầu tới /api/admin/ai/generate:', {
+      action: req.action,
+      carModel: req.carModel,
+      promptLength: req.prompt?.length,
+    });
+    try {
+      const res = await apiClient.post<AiGenerateResponseData>('/api/admin/ai/generate', req);
+      console.log(`[Admin AI Client] ✅ Thành công sau ${Date.now() - startTime}ms:`, res);
+      return res;
+    } catch (err) {
+      console.error(`[Admin AI Client] ❌ Thất bại sau ${Date.now() - startTime}ms:`, err);
+      throw err;
+    }
   },
 };
