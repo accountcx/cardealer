@@ -64,3 +64,38 @@ sequenceDiagram
     Backend-->>AdminApp: HTTP 201 Created (Media Object)
     AdminApp-->>Editor: Chèn ảnh trực tiếp vào vị trí con trỏ của bài viết Tiptap
 ```
+
+---
+
+## 4. Sequence Diagram: Trợ Lý AI Điền Khối Nội Dung (In-Editor Single Block Generation)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Editor as Biên Tập Viên (Admin CMS)
+    participant BlockUI as BlockItemWrapper (Khối k)
+    participant PostEditor as usePostEditor Hook
+    participant AdminRoute as Route Handler (/api/admin/ai/generate)
+    participant BackendAPI as Backend API Server (apps/api)
+    participant OpenAISvc as OpenAI Client & Prompt Builder
+    participant OpenAI as OpenAI API (api.openai.com)
+
+    Editor->>BlockUI: Nhấp "AI Điền Khối Này" (kèm prompt tùy chọn hoặc 1-Click)
+    BlockUI->>PostEditor: handleGenerateSingleBlock(blockId, customInstruction)
+    PostEditor->>PostEditor: Set generatingBlockId = blockId (Bật Spinner cô lập trên khối)
+    PostEditor->>PostEditor: Trích xuất ngữ cảnh bài viết (tiêu đề, focusKeyword, dòng xe, khối lân cận)
+    PostEditor->>AdminRoute: POST /api/admin/ai/generate (action: generate_single_block, prompt: block.type, context)
+    AdminRoute->>BackendAPI: Forward request (Timeout 120s)
+    BackendAPI->>BackendAPI: Kiểm tra quyền 'posts:write' & Validate Zod Schema
+    BackendAPI->>OpenAISvc: buildSingleBlockPrompt(block.type, context, carData)
+    OpenAISvc->>OpenAI: POST /v1/chat/completions (response_format: json_object)
+    OpenAI-->>OpenAISvc: JSON Block Structure đầy đủ
+    OpenAISvc->>BackendAPI: Chuẩn hóa & đối soát dữ liệu xe (normalizeAndEnrichBlocks)
+    BackendAPI-->>AdminRoute: HTTP 200 OK ({ success: true, data: { blocks: [enrichedBlock] } })
+    AdminRoute-->>PostEditor: Payload khối hoàn thiện
+    PostEditor->>PostEditor: Cập nhật fields của khối k (giữ nguyên blockId và thứ tự bài viết)
+    PostEditor->>PostEditor: calculateSeoScore() tính toán lại điểm SEO real-time
+    PostEditor->>PostEditor: Set generatingBlockId = null (Tắt Spinner)
+    PostEditor-->>BlockUI: Re-render khối k với nội dung giàu thông tin
+    PostEditor-->>Editor: Toast thông báo "Đã sinh nội dung AI cho khối thành công!"
+```

@@ -237,18 +237,20 @@ ${availableCarsListText}
 ${existingArticlesText ? `${existingArticlesText}\n` : ''}
 
 YÊU CẦU ĐẦU RA CHO LOẠI BLOCK "${prompt}":
-- Nếu là "paragraph": Đoạn văn 2-3 câu sắc bén, chứa từ khóa tự nhiên, giàu thông tin thực tế.
-- Nếu là "heading": Tiêu đề H2 hoặc H3 cuốn hút, chuẩn SEO (40-60 ký tự).
-- Nếu là "prosCons": Gồm "title": "Ưu Điểm & Nhược Điểm Xe ${targetCar}", "pros": [4 ưu điểm thuyết phục], "cons": [2 nhược điểm thực tế].
-- Nếu là "specTable": Gồm "title": "Bảng Thông Số Kỹ Thuật Xe ${targetCar}", "specVersions": [2-3 phiên bản], "specRows": [5-8 hàng thông số gồm specName và mảng values].
-- Nếu là "priceTable": Gồm "title": "Bảng Giá Xe ${targetCar} & Lăn Bánh", "prices": [các phiên bản với version, listedPrice, discount, rollingPrice].
-- Nếu là "faq": Gồm "title": "Câu Hỏi Thường Gặp", "faqs": [3-4 câu hỏi & câu trả lời thiết thực nhất].
-- Nếu là "callout": Gồm "title", "calloutType": "info" | "warning" | "success" | "note", "content": đoạn văn lưu ý hoặc ưu đãi đặc quyền.
-- Nếu là "ctaButton": Gồm "ctaButtonText": "Gọi Hotline Báo Giá Lăn Bánh", "ctaSubtext": "Tư vấn 24/7 - Giao xe tận nhà tại ${targetLocation}", "ctaActionType": "hotline", "ctaVariant": "red".
-- Nếu là "leadForm": Gồm "formHeadline", "formSubheadline", "formButtonText", "carName": "${targetCar}".
-- Nếu là "singleImage": Gồm "imageAlt": "Ảnh xe ${targetCar} chuẩn SEO", "caption": "Chú thích ảnh xe...".
+- Nếu là "paragraph": Đoạn văn 2-4 câu sắc bén, giàu số liệu thực tế, chứa từ khóa tự nhiên: {"type": "paragraph", "content": "..."}
+- Nếu là "heading": Tiêu đề H2 hoặc H3 cuốn hút, chuẩn SEO (40-65 ký tự): {"type": "heading", "level": 2, "content": "..."}
+- Nếu là "prosCons": Gồm {"type": "prosCons", "title": "Ưu Điểm & Nhược Điểm Xe ${targetCar}", "pros": ["ưu điểm 1", "ưu điểm 2", "ưu điểm 3", "ưu điểm 4"], "cons": ["nhược điểm 1", "nhược điểm 2"]}
+- Nếu là "specTable": Gồm {"type": "specTable", "title": "Bảng Thông Số Kỹ Thuật Xe ${targetCar}", "specVersions": ["Bản Tiêu Chuẩn", "Bản Đặc Biệt", "Bản Cao Cấp"], "specRows": [{"specName": "Động cơ", "values": ["2.0L MPI", "2.0L MPI", "1.6L Turbo"]}, {"specName": "Công suất (mã lực)", "values": ["156", "156", "180"]}]}
+- Nếu là "priceTable": Gồm {"type": "priceTable", "title": "Bảng Giá Xe ${targetCar} & Lăn Bánh", "prices": [{"version": "${targetCar} Tiêu Chuẩn", "listedPrice": 650000000, "discount": 20000000, "rollingPrice": 720000000}]}
+- Nếu là "faq": Gồm {"type": "faq", "title": "Câu Hỏi Thường Gặp Về ${targetCar}", "faqs": [{"question": "...", "answer": "..."}]}
+- Nếu là "callout": Gồm {"type": "callout", "title": "Lưu Ý Quan Trọng", "calloutType": "info", "content": "Đoạn văn lưu ý, chính sách bảo hành hoặc ưu đãi đặc quyền..."}
+- Nếu là "ctaButton": Gồm {"type": "ctaButton", "ctaButtonText": "Nhận Báo Giá Lăn Bánh ${targetCar}", "ctaSubtext": "Tư vấn 24/7 - Giao xe tận nhà tại ${targetLocation}", "ctaActionType": "hotline", "ctaVariant": "red"}
+- Nếu là "leadForm": Gồm {"type": "leadForm", "formHeadline": "Đăng Ký Lái Thử & Nhận Báo Giá ${targetCar}", "formSubheadline": "Ưu đãi tiền mặt & phụ kiện chính hãng trong tháng", "formButtonText": "Gửi Yêu Cầu Báo Giá", "carName": "${targetCar}"}
+- Nếu là "singleImage": Gồm {"type": "singleImage", "imageAlt": "Đánh giá chi tiết xe ${targetCar} tại ${targetLocation}", "caption": "Ngoại thất hiện đại của dòng xe ${targetCar}"}
+- Nếu là "imageGallery": Gồm {"type": "imageGallery", "title": "Bộ Sưu Tập Hình Ảnh Xe ${targetCar}", "galleryImages": [{"url": "", "alt": "Ngoại thất xe ${targetCar}", "caption": "Góc chụp đầu xe"}]}
+- Nếu là "relatedCar": Gồm {"type": "relatedCar", "carName": "${targetCar}"}
 
-TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON:
+TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON (có thể bọc trong {"block": {...}} hoặc trả trực tiếp object khối):
 {
   "block": {
     "type": "${prompt}"

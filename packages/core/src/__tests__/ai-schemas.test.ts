@@ -27,6 +27,8 @@ describe('AI Writing Assistant Schemas & Model Configurations', () => {
       'optimize_seo',
       'generate_faqs',
       'expand_section',
+      'generate_car_content',
+      'generate_single_block',
     ];
     for (const action of validActions) {
       expect(AiActionSchema.parse(action)).toBe(action);
@@ -46,7 +48,20 @@ describe('AI Writing Assistant Schemas & Model Configurations', () => {
     expect(req.location).toBe('Nghệ An');
   });
 
-  it('TC-AI-4: AiGenerateRequestSchema từ chối prompt rỗng', () => {
+  it('TC-AI-4: AiGenerateRequestSchema validate request tạo từng khối riêng biệt (generate_single_block)', () => {
+    const req = AiGenerateRequestSchema.parse({
+      action: 'generate_single_block',
+      prompt: 'prosCons',
+      context: 'Tiêu đề: Đánh giá Hyundai Santa Fe 2026. Chỉ đạo: tập trung vào cách âm.',
+      carModel: 'Hyundai Santa Fe',
+      location: 'Nghệ An & Hà Tĩnh',
+    });
+    expect(req.action).toBe('generate_single_block');
+    expect(req.prompt).toBe('prosCons');
+    expect(req.context).toContain('cách âm');
+  });
+
+  it('TC-AI-5: AiGenerateRequestSchema từ chối prompt rỗng', () => {
     const result = AiGenerateRequestSchema.safeParse({
       action: 'optimize_seo',
       prompt: '   ',

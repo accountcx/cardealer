@@ -5,6 +5,7 @@ import { useRouter, useParams, usePathname } from 'next/navigation';
 import { postService, type CategoryItem } from '../../../../services/post.service';
 import { catalogService, type CarSummary } from '../../../../services/catalog.service';
 import { uploadSingleMedia } from '../../../../services/media.service';
+import { aiService } from '../../../../services/ai.service';
 import { calculateSeoScore, type SeoAnalysisResult, type TiptapDoc } from '@cardealer/core';
 import type { OutlineItem, FaqItem, SeoOptimizationResult, FullArticleResult, FullArticleBlock } from '@cardealer/types';
 import type { BlockType, EditorBlock, MediaPickerTarget, PostStatus } from '../types';
@@ -237,6 +238,7 @@ export function usePostEditor() {
   const [uploadingSingleImageBlockId, setUploadingSingleImageBlockId] = useState<string | null>(null);
   const [uploadingGalleryBlockId, setUploadingGalleryBlockId] = useState<string | null>(null);
   const [uploadingItemKey, setUploadingItemKey] = useState<string | null>(null);
+  const [generatingBlockId, setGeneratingBlockId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Auto clear toast after 4s
@@ -433,6 +435,96 @@ export function usePostEditor() {
       type: 'success',
       message: `Đã chèn thành công ${mapped.length} Content Block tinh hoa vào bài viết!`,
     });
+  };
+
+  const handleGenerateSingleBlock = async (blockId: string, customInstruction?: string) => {
+    const targetBlock = blocks.find((b) => b.id === blockId);
+    if (!targetBlock) return;
+
+    setGeneratingBlockId(blockId);
+
+    // Tự động tìm dòng xe phù hợp từ tiêu đề, từ khóa hoặc thông tin khối
+    const matchedCar = availableCars.find(
+      (c) =>
+        (tieuDe && tieuDe.toLowerCase().includes(c.tenXe.toLowerCase())) ||
+        (focusKeyword && focusKeyword.toLowerCase().includes(c.tenXe.toLowerCase())) ||
+        (targetBlock.carSlug && c.slug === targetBlock.carSlug) ||
+        (targetBlock.carName && c.tenXe.toLowerCase().includes(targetBlock.carName.toLowerCase()))
+    );
+    const carName = matchedCar?.tenXe || 'Xe ô tô Hyundai';
+    const carSlug = matchedCar?.slug;
+
+    // Ngữ cảnh các khối lân cận để AI liền mạch
+    const blockIndex = blocks.findIndex((b) => b.id === blockId);
+    const prevBlock = blockIndex > 0 ? blocks[blockIndex - 1] : null;
+    const prevText = prevBlock?.content || prevBlock?.title || '';
+
+    const contextParts = [
+      `Tiêu đề bài viết: "${tieuDe || 'Đánh giá xe ô tô'}"`,
+      focusKeyword ? `Từ khóa chính SEO: "${focusKeyword}"` : null,
+      carName ? `Dòng xe mục tiêu: "${carName}"` : null,
+      prevText ? `Nội dung khối liền trước: "${prevText.slice(0, 300)}"` : null,
+      customInstruction ? `Chỉ đạo riêng của biên tập viên: "${customInstruction}"` : null,
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    try {
+      const response = await aiService.generate({
+        action: 'generate_single_block',
+        prompt: targetBlock.type,
+        context: contextParts,
+        keyword: focusKeyword || undefined,
+        carModel: carName,
+        carSlug: carSlug || undefined,
+        location: 'Nghệ An & Hà Tĩnh',
+        availableCars: availableCars.map((c) => ({
+          id: c.id,
+          tenXe: c.tenXe,
+          slug: c.slug,
+          minPrice: c.minPrice,
+          anhDaiDienUrl: c.anhDaiDienUrl,
+          seatRange: c.seatRange,
+          fuelType: c.fuelType,
+        })),
+      });
+
+      const generatedBlock = response.blocks?.[0];
+      if (!generatedBlock) {
+        throw new Error('AI không trả về cấu trúc khối nội dung hợp lệ');
+      }
+
+      // Convert generatedBlock to EditorBlock fields and merge without altering blockId
+      const convertedList = convertFullArticleBlocksToEditorBlocks([generatedBlock], availableCars, focusKeyword || tieuDe);
+      const converted = convertedList[0];
+
+      if (converted) {
+        setBlocks((prev) =>
+          prev.map((b) => {
+            if (b.id !== blockId) return b;
+            const { id: _, ...contentFields } = converted;
+            return {
+              ...b,
+              ...contentFields,
+            };
+          })
+        );
+
+        setToast({
+          type: 'success',
+          message: `Đã sinh dữ liệu AI cho khối ${targetBlock.type.toUpperCase()} thành công!`,
+        });
+      }
+    } catch (err: unknown) {
+      console.error('[Single Block AI] Lỗi sinh dữ liệu khối:', err);
+      const errorMsg = err instanceof Error ? err.message : 'Lỗi khi gọi trợ lý AI điền khối';
+      setToast({
+        type: 'error',
+        message: errorMsg,
+      });
+    } finally {
+      setGeneratingBlockId(null);
+    }
   };
 
   const applyFullArticle = (article: FullArticleResult) => {
@@ -756,9 +848,11 @@ export function usePostEditor() {
     applyAiSeo,
     applyFullArticle,
     insertContentBlocks,
+    handleGenerateSingleBlock,
     // UI states
     isAiModalOpen,
     setIsAiModalOpen,
+    generatingBlockId,
     mediaPickerTarget,
     setMediaPickerTarget,
     uploadingSingleImageBlockId,

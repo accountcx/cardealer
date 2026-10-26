@@ -42,3 +42,15 @@ Tài liệu này lưu trữ các quy tắc bất biến (Invariants), quyết đ
 ## 5. Dữ Liệu Hạt Giống Hệ Thống (Seed Settings)
 - Bảng `system_settings` lưu trữ 7 Domain Keys cấu hình động theo Zod Schemas từ `@cardealer/types`.
 - Hàm `seedSystemSettings()` trong `@cardealer/database` luôn gọi `parse({})` từ `@cardealer/types` và sử dụng `onConflictDoNothing()` để không ghi đè cấu hình đã được người dùng tùy chỉnh.
+
+---
+
+## 6. Trợ Lý AI Soạn Thảo & Điền Khối (In-Editor AI Block Engine)
+- **Next.js Dev Proxy Rewrite Timeout Bypass:**
+  - `rewrites()` trong `next.config.mjs` có socket timeout cố định 30s. Khi LLM sinh nội dung dài (30-45s), dev server proxy sẽ ngắt kết nối với lỗi `socket hang up (ECONNRESET)`.
+  - Bắt buộc sử dụng Next.js App Router Route Handler chuyên dụng (`apps/admin/app/api/admin/ai/generate/route.ts`) với `maxDuration = 120` và `AbortSignal.timeout(120_000)` để cho phép các tác vụ AI kéo dài tới 2 phút.
+- **In-Editor Single Block Generation Pattern:**
+  - Hỗ trợ cả 1-Click Quick Fill (tự động thu thập tiêu đề, từ khóa SEO, dòng xe, khối trước làm ngữ cảnh) và Custom Instruction (thanh prompt mở rộng).
+  - Trạng thái loading `generatingBlockId` bắt buộc cô lập theo từng ID khối, không khóa toàn màn hình hoặc các khối khác.
+  - Cập nhật các trường nội dung của khối $k$ qua immutable mapping (`prev.map(...)`), bảo toàn 100% ID và thứ tự các khối khác trong bài viết.
+  - Phản hồi từ LLM được chuẩn hóa qua cơ chế fallback đa tầng (`blockJson.block`, `blocks[0]`, root object, hoặc raw text fallback) bảo đảm chống crash component.

@@ -167,6 +167,8 @@ export default function PostEditorPage() {
                   onMoveUp={() => editor.moveBlock(idx, 'up')}
                   onMoveDown={() => editor.moveBlock(idx, 'down')}
                   onRemove={() => editor.removeBlock(block.id)}
+                  onAiGenerate={(customInstruction) => editor.handleGenerateSingleBlock(block.id, customInstruction)}
+                  isAiGenerating={editor.generatingBlockId === block.id}
                 >
                   {block.type === 'heading' && (
                     <HeadingBlock block={block} onUpdate={(upd) => editor.updateBlock(block.id, upd)} />

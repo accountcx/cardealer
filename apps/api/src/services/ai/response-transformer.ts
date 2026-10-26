@@ -240,10 +240,26 @@ export function transformAiResponse(
     case 'generate_single_block': {
       const blockJson = parsedJson as ParsedBlockJson | null;
       let blockObj: FullArticleBlock;
-      if (blockJson && (blockJson.block || (Array.isArray(blockJson.blocks) && blockJson.blocks[0]))) {
-        blockObj = blockJson.block || blockJson.blocks![0];
+      if (blockJson && blockJson.block) {
+        blockObj = blockJson.block;
+      } else if (blockJson && Array.isArray(blockJson.blocks) && blockJson.blocks[0]) {
+        blockObj = blockJson.blocks[0];
+      } else if (
+        parsedJson &&
+        typeof parsedJson === 'object' &&
+        ('type' in parsedJson || 'content' in parsedJson || 'title' in parsedJson || 'pros' in parsedJson || 'faqs' in parsedJson || 'prices' in parsedJson)
+      ) {
+        // AI trả về trực tiếp object khối mà không bọc trong "block"
+        blockObj = {
+          type: (parsedJson.type as FullArticleBlock['type']) || (prompt as FullArticleBlock['type']) || 'paragraph',
+          ...(parsedJson as Record<string, unknown>),
+        } as unknown as FullArticleBlock;
       } else {
-        throw new Error('AI không thể tạo cấu trúc khối nội dung theo định dạng JSON yêu cầu. Vui lòng thử lại.');
+        // Fallback an toàn tuyệt đối chống crash
+        blockObj = {
+          type: (prompt as FullArticleBlock['type']) || 'paragraph',
+          content: aiContent.trim(),
+        };
       }
 
       const enriched = normalizeAndEnrichBlocks([blockObj], availableCars, targetCar);

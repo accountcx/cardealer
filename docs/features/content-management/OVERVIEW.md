@@ -25,6 +25,7 @@ Phân hệ **Quản Trị Nội Dung Bài Viết & Soạn Thảo Đa Phương Ti
 
 | Phiên bản | Ngày cập nhật | Người thực hiện | Nội dung nâng cấp chính | Trạng thái |
 | :---: | :---: | :---: | :--- | :---: |
+| **v1.1.0** | 25/10/2026 | Inbound Content Team | Bổ sung Trợ lý AI Điền Khối Tức Thì (Single Block AI Generator) cho từng Content Block trong Tiptap Studio | 🟢 Active |
 | **v1.0.0** | 18/10/2026 | Inbound Content Team | Xây dựng schema `posts`, `categories`, `media`, tích hợp Tiptap AST Engine, Tối ưu Storefront `/tin-tuc` và `/tin-tuc/[slug]` | 🟢 Active |
 
 ---

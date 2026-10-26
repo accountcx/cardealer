@@ -50,8 +50,26 @@ apps/web/app/tin-tuc/
 | **Error** | Bài viết không tồn tại (404) hoặc lỗi API | Hiển thị thông báo 404 thân thiện | `<div className="py-16 text-center"><h1 className="text-3xl font-bold mb-4">Bài viết không tồn tại</h1></div>` |
 | **Success** | Tải bài viết thành công | Render toàn bộ nội dung Tiptap, TOC và bài liên quan | Render `TiptapBlockRenderer` mượt mà, đầy đủ hình ảnh WebP |
 
+### 🔹 Ma Trận 4 Trạng Thái Cho AI Single Block Generation (`BlockItemWrapper`)
+| Trạng Thái | Điều Kiện | Hành Vi Giao Diện | Thiết Kế Fallback |
+| :--- | :--- | :--- | :--- |
+| **Idle** | Khối bình thường chưa bấm sinh | Nút `AI Điền Khối Này` viền vàng hổ phách `border-amber-500/30 text-amber-400` sẵn sàng | Hiển thị icon Sparkles và nhãn |
+| **Generating** | `generatingBlockId === block.id` | Nút chuyển sang Spinner xoay tròn, `disabled`, nhãn đổi thành `Đang sinh nội dung...` | Khối nội dung giữ nguyên trạng thái cũ cho tới khi hoàn tất |
+| **Error** | API trả về lỗi hoặc timeout | Nút hồi phục trạng thái Idle, hiển thị Toast đỏ thông báo lỗi | Không làm mất dữ liệu hiện tại của khối |
+| **Success** | API trả về cấu trúc block hợp lệ | Tự động điền dữ liệu vào form của khối, tính lại điểm SEO, Toast xanh báo thành công | Tự động highlight nhẹ viền khối trong 1 giây |
+
 ---
 
-## 4. Chuẩn Mực Triển Khai Mã Nguồn
+## 4. Admin Post Editor AI Block Generation Controls
+
+- **Vị trí tích hợp:** Header của từng khối nội dung bên trong [`BlockItemWrapper.tsx`](file:///Users/nhatphan/Code/CarDealer/cardealer/apps/admin/app/posts/[id]/components/BlockItemWrapper.tsx).
+- **Hành vi người dùng:**
+  1. **Quick 1-Click:** Nhấp trực tiếp nút "AI Điền Khối Này" $\rightarrow$ tự động thu thập `tieuDe`, `focusKeyword`, `carModel` và loại block để gọi `handleGenerateSingleBlock(block.id)`.
+  2. **Tùy biến chỉ đạo (Optional Popover):** Có thể nhập thêm gợi ý ngắn (ví dụ: "Viết đoạn văn ngắn 3 câu tập trung vào mức tiêu hao nhiên liệu đường trường") trước khi gửi lệnh.
+- **Hook điều phối:** [`usePostEditor.ts`](file:///Users/nhatphan/Code/CarDealer/cardealer/apps/admin/app/posts/[id]/hooks/usePostEditor.ts) quản lý `generatingBlockId` và hàm `handleGenerateSingleBlock`.
+
+---
+
+## 5. Chuẩn Mực Triển Khai Mã Nguồn
 - Bắt buộc sử dụng **Named Export** (ví dụ: `export function TableOfContents(...)`).
 - 100% tuân thủ **Tailwind Spacing Scale** tiêu chuẩn (tránh các arbitrary values tự do).
