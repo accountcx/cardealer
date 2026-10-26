@@ -124,3 +124,57 @@
   - **`403 Forbidden`**: Tài khoản không có quyền biên tập bài viết (`FORBIDDEN`).
   - **`504 Gateway Timeout`**: OpenAI phản hồi quá thời hạn tối đa 120s (`PROXY_FORWARD_TIMEOUT`).
 
+---
+
+### 3. Gợi Ý Ý Tưởng Bài Viết Chống Trùng Lặp (`POST /api/admin/ai/generate`)
+- **Headers:** `Authorization: Bearer <token>`, `Content-Type: application/json`
+- **Request Body Payload:**
+  ```json
+  {
+    "action": "generate_topic_ideas",
+    "prompt": "Gợi ý các ý tưởng bài viết thực tế cho khách hàng mua xe lần đầu",
+    "carModel": "Hyundai Santa Fe",
+    "category": "Đánh giá xe",
+    "angle": "So sánh chi phí nuôi xe & bảo dưỡng thực tế",
+    "ideasCount": 4
+  }
+  ```
+- **Responses:**
+  - **`200 OK`**:
+    ```json
+    {
+      "success": true,
+      "data": {
+        "action": "generate_topic_ideas",
+        "model": "gpt-4o-mini",
+        "topicIdeas": [
+          {
+            "title": "Dự Toán Chi Phí Nuôi Xe Hyundai Santa Fe 2026 Sau 5 Năm: Chi Tiết Từng Hạng Mục",
+            "slug": "chi-phi-nuoi-xe-hyundai-santa-fe-5-nam",
+            "focusKeyword": "chi phí nuôi xe santa fe 5 năm",
+            "angle": "Chi phí vận hành và khấu hao thực tế",
+            "contentGap": "Website đã có bài giá bán lăn bánh nhưng chưa có bài tính tổng chi phí bảo dưỡng, nhiên liệu, bảo hiểm đường dài",
+            "summary": "Phân tích cụ thể chi phí xăng, bảo dưỡng các cấp mốc 5.000km - 80.000km, phí đường bộ và khấu hao giúp người mua chuẩn bị tài chính vững vàng.",
+            "targetCar": "Hyundai Santa Fe",
+            "suggestedCategory": "Tư vấn & Kinh nghiệm",
+            "outlinePreview": [
+              "1. Tổng quan các khoản phí cố định hàng năm",
+              "2. Chi phí nhiên liệu thực tế đường trường vs đô thị Vinh",
+              "3. Bảng giá bảo dưỡng định kỳ chính hãng tại Hyundai",
+              "4. Lời khuyên tối ưu chi phí sử dụng cho gia đình"
+            ],
+            "searchIntent": "commercial"
+          }
+        ],
+        "usage": {
+          "promptTokens": 1820,
+          "completionTokens": 680,
+          "totalTokens": 2500
+        }
+      }
+    }
+    ```
+  - **`400 Bad Request`**: Thiếu thông tin hoặc tham số không hợp lệ.
+  - **`403 Forbidden`**: Thiếu quyền `posts:write`.
+
+

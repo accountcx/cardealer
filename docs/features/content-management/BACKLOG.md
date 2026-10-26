@@ -77,3 +77,30 @@
     - *When:* Bài viết có các đoạn văn bản chứa liên kết nội bộ.
     - *Then:* `convertTiptapToHtml` kết xuất thẻ `<a href="/...">` có styling nổi bật, tự động mở cùng tab (hoặc tab mới theo chuẩn) và tuyệt đối không gán `rel="nofollow"` cho các link nội bộ để bảo toàn PageRank và Internal Link Equity.
 
+---
+
+### US-05: AI Topic Ideation & Deduplication Engine (Trợ Lý AI Đề Xuất Ý Tưởng Bài Viết Chống Trùng Lặp)
+- **Actor:** Quản trị viên SEO & Biên tập viên nội dung (Content Strategist / Editor).
+- **Mô tả:** Khi biên tập viên cần lập kế hoạch bài viết mới, trợ lý AI sẽ tự động phân tích toàn bộ kho bài viết đã có trong cơ sở dữ liệu (cả bản nháp `draft` lẫn bài đã xuất bản `published`), xác định các góc nhìn chưa được khai thác (Content Gaps), và đề xuất 3 - 5 ý tưởng bài viết độc bản kèm từ khóa mục tiêu, góc tiếp cận độc nhất và dàn ý sơ bộ mà không bao giờ bị trùng lặp hay ăn thịt từ khóa (Keyword Cannibalization).
+- **Kịch bản Chấp Nhận (Acceptance Criteria - Gherkin):**
+  - **Scenario 5.1: Mở Trợ lý AI Gợi ý Ý tưởng từ Danh sách bài viết hoặc Trang tạo mới**
+    - *Given:* Biên tập viên ở trang Quản lý bài viết (`/posts`) hoặc trang Viết bài mới (`/posts/new`).
+    - *When:* Nhấp vào nút "✨ AI Gợi Ý Ý Tưởng".
+    - *Then:* Modal/Drawer Trợ lý AI hiển thị với các bộ lọc: Dòng xe mục tiêu, Chuyên mục, Định hướng/Góc nhìn và số lượng bài viết hiện có trong cơ sở dữ liệu đã được nạp làm căn cứ đối soát.
+  - **Scenario 5.2: Tự động đối soát cơ sở dữ liệu và cấm tuyệt đối trùng lặp từ khóa/tiêu đề**
+    - *Given:* Hệ thống đã có các bài viết về Hyundai Santa Fe (ví dụ: "Đánh giá Hyundai Santa Fe 2026", từ khóa "đánh giá santa fe 2026").
+    - *When:* Yêu cầu AI đề xuất ý tưởng mới cho dòng xe này.
+    - *Then:* Backend AI Service tự động gửi danh sách các bài viết hiện có vào Prompt Negative Grounding, chỉ thị AI tuyệt đối không lặp lại tiêu đề, từ khóa hay góc tiếp cận cũ; AI trả về các góc nhìn mới mẻ (ví dụ: "Chi phí bảo dưỡng Santa Fe sau 50.000km", "So sánh thực tế Santa Fe máy dầu và hybrid cho gia đình 3 thế hệ").
+  - **Scenario 5.3: Cấu trúc chi tiết của từng ý tưởng trả về**
+    - *Given:* AI hoàn tất phân tích và sinh danh sách ý tưởng.
+    - *When:* Giao diện hiển thị danh sách các Idea Cards.
+    - *Then:* Mỗi ý tưởng hiển thị đầy đủ: Tiêu đề đề xuất (Title), Slug đề xuất, Từ khóa chính (Focus Keyword), Góc tiếp cận độc bản (Unique Angle), Khoảng trống nội dung giải quyết (Content Gap), Tóm tắt nội dung (Summary) và Dàn ý sơ bộ (Outline Preview).
+  - **Scenario 5.4: 1-Click chuyển tiếp sang viết bài mới từ ý tưởng đã chọn**
+    - *Given:* Biên tập viên duyệt qua các ý tưởng và chọn 1 ý tưởng ưng ý.
+    - *When:* Nhấp nút "Viết Bài Với Ý Tưởng Này".
+    - *Then:* Hệ thống điều hướng ngay tới trang soạn thảo `/posts/new` và tự động điền sẵn các trường: Tiêu đề, Slug, Focus Keyword, Tóm tắt ngắn, Dòng xe và Chuyên mục tương ứng.
+  - **Scenario 5.5: Kiểm tra trùng lặp hậu xử lý an toàn (Post-generation Deduplication Check)**
+    - *Given:* Kết quả trả về từ mô hình ngôn ngữ lớn (LLM).
+    - *When:* Backend nhận kết quả trước khi gửi về client.
+    - *Then:* Bộ lọc deduplication tự động đối soát lại với database; nếu bất kỳ ý tưởng nào có độ tương đồng từ khóa > 60% với bài cũ sẽ bị loại bỏ hoặc cảnh báo, đảm bảo độ mới 100%.
+

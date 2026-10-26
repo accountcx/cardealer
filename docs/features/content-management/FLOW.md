@@ -123,3 +123,33 @@ sequenceDiagram
     Core->>Core: Nhận diện link bắt đầu bằng "/" -> Render <a href="/dong-xe/santa-fe"> chuẩn SEO (không nofollow)
     Core-->>Web: Kết xuất HTML mượt mà, gia tăng Internal Link Equity
 ```
+
+---
+
+## 6. Sequence Diagram: Trợ Lý AI Gợi Ý Ý Tưởng Chống Trùng Lặp (Topic Ideation Flow)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Editor as Biên Tập Viên
+    participant Modal as AiTopicIdeatorModal (Admin)
+    participant API as /api/admin/ai/generate (Backend)
+    participant DB as PostgreSQL (posts + cars)
+    participant OpenAI as OpenAI LLM (gpt-4o-mini / gpt-4o)
+    participant EditorPage as /posts/new (Post Editor)
+
+    Editor->>Modal: Bấm "✨ AI Gợi Ý Ý Tưởng" -> Chọn Dòng xe, Chuyên mục, Góc nhìn
+    Editor->>Modal: Bấm "Tạo Ý Tưởng Mới"
+    Modal->>API: POST /api/admin/ai/generate { action: "generate_topic_ideas", carModel, category, angle }
+    API->>DB: Query tất cả bài viết đã có (posts draft/published & car_articles)
+    DB-->>API: Danh sách bài viết hiện có (tieuDe, focusKeyword, tomTat, dongXe)
+    API->>API: Định dạng danh sách Blacklist / Negative Grounding chống trùng lặp
+    API->>OpenAI: Gửi Prompt chuyên biệt SEO Content Gap & Yêu cầu sinh 3-5 ý tưởng độc bản
+    OpenAI-->>API: Trả về JSON { topicIdeas: [...] }
+    API->>API: Post-generation Deduplication Check (Đối soát token overlap với DB)
+    API-->>Modal: Trả về HTTP 200 { success: true, data: { topicIdeas: [...] } }
+    Modal-->>Editor: Hiển thị danh sách Idea Cards (Góc nhìn, Tiêu đề, Từ khóa, Dàn ý)
+    Editor->>Modal: Bấm "Viết Bài Với Ý Tưởng Này" trên Card mong muốn
+    Modal->>EditorPage: Điều hướng sang /posts/new với query params hoặc pre-filled state
+    EditorPage-->>Editor: Form bài viết mới đã điền sẵn Tiêu đề, Focus Keyword, Tóm tắt, Dòng xe!
+```

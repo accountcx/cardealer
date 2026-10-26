@@ -1,22 +1,23 @@
 # 📋 BIÊN BẢN NGHIỆM THU GATE 4: HOÀN TẤT THỰC THI (CODE EXECUTION)
-**Mã nghiệm thu:** `AUDIT-GATE-4-CM-US04`  
+**Mã nghiệm thu:** `AUDIT-GATE-4-CM-US05`  
 **Dự án:** CarDealer / Hyundai CMS (`content-management`)  
-**Tính năng:** US-04 - Gắn Link Nội Bộ Cho Khối Đoạn Văn Bản (Paragraph Internal Links Engine)  
-**Thời gian:** 2026-10-26 07:20:00 (ICT)  
-**Trọng tài máy:** Multi-layer Verification & Machine Test Pass  
+**Tính năng:** US-05 - AI Topic Ideation & Deduplication Engine (Trợ lý AI Đề Xuất Ý Tưởng Bài Viết Chống Trùng Lặp)  
+**Thời gian:** 2026-10-26 09:09:00 (ICT)  
+**Trọng tài máy:** Multi-layer Verification & Automated Vitest + Production Build Succeeded  
 **Trạng thái:** **THÔNG QUAN (PASS)** 🟢  
 
 ---
 
-## 1. Danh Mục Các Đơn Vị Công Việc Đã Thực Thi (U-04.1 -> U-04.5)
+## 1. Danh Mục Các Đơn Vị Công Việc Đã Thực Thi (U-05.1 -> U-05.6)
 
 | Đơn Vị (Unit) | Mô Tả & Thay Đổi Mã Nguồn | Trạng Thái Máy |
 | :--- | :--- | :--- |
-| **U-04.1** | Nâng cấp `serializeTiptapDoc` và `deserializeTiptapDoc` trong `apps/admin/app/posts/[id]/ast.ts`: sử dụng `parseTextToTiptapContent` và `formatTiptapContentToMarkdown` từ `@cardealer/core`. | ✅ PASS |
-| **U-04.2** | Tối ưu hóa `convertTiptapToHtml` trong `packages/core/src/tiptap/render-html.ts`: phân biệt liên kết nội bộ (`isInternalLink`), loại bỏ `rel="nofollow"` và `target="_blank"`, styling `text-blue-600 hover:text-blue-800 underline font-medium transition-colors`. | ✅ PASS |
-| **U-04.3** | Nâng cấp `ParagraphBlock.tsx` trong `apps/admin`: tích hợp Toolbar gắn link 🔗, Quick Link Chips (tiện ích hệ thống & dòng xe) và Modal chọn liên kết nội bộ trực quan. | ✅ PASS |
-| **U-04.4** | Truyền `availableCars={editor.availableCars}` vào `ParagraphBlock` trong `apps/admin/app/posts/[id]/page.tsx`. | ✅ PASS |
-| **U-04.5** | Viết bộ Unit test toàn diện trong `packages/core/src/__tests__/tiptap-internal-links.test.ts` (12 test cases) bao phủ TC-11, TC-12, TC-13, TC-14. | ✅ PASS |
+| **U-05.1** | Mở rộng `AiActionSchema` ('generate_topic_ideas'), khai báo Zod schemas và TypeScript types cho `TopicIdeaItem`, `AiGenerateRequest` (angle, category, ideasCount) và `AiGenerateResponseData` trong `packages/types/src/ai.ts`. | ✅ PASS |
+| **U-05.2** | Nâng cấp `ai.service.ts`: mở rộng `queryCarData` truy vấn toàn diện kho bài viết (`posts` draft + published & `cars` articles), áp dụng thuật toán `checkTitleOrKeywordOverlap` trong `@cardealer/core` để đối soát 2 tầng. | ✅ PASS |
+| **U-05.3** | Xây dựng Prompt Builder `buildTopicIdeasPrompt` trong `apps/api/src/services/ai/prompts/topic-ideas.prompt.ts` tích hợp chặt chẽ Negative Grounding của toàn bộ các chủ đề đã có. | ✅ PASS |
+| **U-05.4** | Nâng cấp `response-transformer.ts`: chuẩn hóa JSON phản hồi từ OpenAI thành danh sách `TopicIdeaItem[]` chuẩn cấu trúc, loại bỏ các ý tưởng có độ trùng lặp cao với database. | ✅ PASS |
+| **U-05.5** | Xây dựng component `AiTopicIdeatorModal.tsx` và gắn nút `✨ AI Gợi Ý Ý Tưởng` tại Header `apps/admin/app/posts/page.tsx` và trong trang soạn thảo `/posts/new`, hỗ trợ 1-Click chuyển ý tưởng thành bài viết mới. | ✅ PASS |
+| **U-05.6** | Viết Unit tests tự động kiểm thử Deduplication logic, Prompt formatting và Response Transformation trong `packages/core/src/__tests__/topic-ideas.test.ts` (8 test cases). | ✅ PASS |
 
 ---
 
@@ -26,15 +27,16 @@
 ```bash
 $ pnpm --filter @cardealer/core test
 RUN v5.0.1 /packages/core
-✓ src/__tests__/tiptap-internal-links.test.ts (12 tests) 9ms
-Test Files 21 passed (21)
-Tests 183 passed (183)
-Duration 633ms
+✓ src/__tests__/topic-ideas.test.ts (8 tests) 4ms
+Test Files 22 passed (22)
+Tests 191 passed (191)
+Duration 613ms
 ```
 
 ### 2.2. Kiểm tra Kiểu Dữ Liệu TypeScript (check-types)
 ```bash
 $ pnpm --filter @cardealer/core check-types
+$ pnpm --filter @cardealer/api check-types
 $ pnpm --filter @cardealer/admin check-types
 Exit code: 0 (Zero errors)
 ```
@@ -45,13 +47,13 @@ $ pnpm --filter @cardealer/api build
 Exit code: 0
 
 $ pnpm --filter @cardealer/admin build
-Exit code: 0 (Compiled successfully in 3.5s)
+Exit code: 0 (Compiled successfully in 2.8s)
 
 $ pnpm --filter @cardealer/web build
-Exit code: 0 (Compiled successfully in 3.9s)
+Exit code: 0 (Compiled successfully in 3.0s)
 ```
 
 ---
 
 ## 3. Kết Luận Gate 4
-Toàn bộ mã nguồn đáp ứng 100% tiêu chí nghiệm thu của User Story US-04, bảo toàn tính tương thích ngược, không có drift hay thoái lui logic. Sẵn sàng tiến hành Gate 5 (Đánh giá Độc lập & Bàn giao).
+Toàn bộ mã nguồn đáp ứng 100% tiêu chí nghiệm thu của User Story US-05, bảo toàn tính tương thích ngược, không có drift hay thoái lui logic. Sẵn sàng tiến hành Gate 5 (Đánh giá Độc lập & Bàn giao).

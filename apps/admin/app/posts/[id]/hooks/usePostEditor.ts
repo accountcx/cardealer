@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useRouter, useParams, usePathname } from 'next/navigation';
+import { useRouter, useParams, usePathname, useSearchParams } from 'next/navigation';
 import { postService, type CategoryItem } from '../../../../services/post.service';
 import { catalogService, type CarSummary } from '../../../../services/catalog.service';
 import { uploadSingleMedia } from '../../../../services/media.service';
 import { aiService } from '../../../../services/ai.service';
 import { calculateSeoScore, type SeoAnalysisResult, type TiptapDoc } from '@cardealer/core';
-import type { OutlineItem, FaqItem, SeoOptimizationResult, FullArticleResult, FullArticleBlock } from '@cardealer/types';
+import type { OutlineItem, FaqItem, SeoOptimizationResult, FullArticleResult, FullArticleBlock, TopicIdeaItem } from '@cardealer/types';
 import type { BlockType, EditorBlock, MediaPickerTarget, PostStatus } from '../types';
 import { toSlug, createDefaultBlock } from '../utils';
 import { serializeTiptapDoc, deserializeTiptapDoc } from '../ast';
@@ -197,6 +197,7 @@ export function usePostEditor() {
   const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const rawId = params?.id as string | undefined;
   const isNew = rawId === 'new' || pathname.endsWith('/new') || !rawId;
   const postId = isNew ? 'new' : (rawId || '');
@@ -234,12 +235,38 @@ export function usePostEditor() {
 
   // UI Modals & Helpers
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [isIdeatorOpen, setIsIdeatorOpen] = useState(false);
   const [mediaPickerTarget, setMediaPickerTarget] = useState<MediaPickerTarget | null>(null);
   const [uploadingSingleImageBlockId, setUploadingSingleImageBlockId] = useState<string | null>(null);
   const [uploadingGalleryBlockId, setUploadingGalleryBlockId] = useState<string | null>(null);
   const [uploadingItemKey, setUploadingItemKey] = useState<string | null>(null);
   const [generatingBlockId, setGeneratingBlockId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Tự động nạp dữ liệu từ URL Query Parameters khi tạo bài mới (US-05)
+  useEffect(() => {
+    if (!isNew || !searchParams) return;
+    const qTitle = searchParams.get('title');
+    const qKeyword = searchParams.get('keyword');
+    const qSlug = searchParams.get('slug');
+    const qSummary = searchParams.get('summary');
+    const qCategory = searchParams.get('category');
+
+    if (qTitle) setTieuDe(qTitle);
+    if (qKeyword) setFocusKeyword(qKeyword);
+    if (qSlug) setSlug(qSlug);
+    if (qSummary) setTomTat(qSummary);
+
+    if (qCategory && categories.length > 0) {
+      const matched = categories.find(
+        (c) =>
+          c.id === qCategory ||
+          c.tenChuyenMuc.toLowerCase().includes(qCategory.toLowerCase()) ||
+          qCategory.toLowerCase().includes(c.tenChuyenMuc.toLowerCase())
+      );
+      if (matched) setCategoryId(matched.id);
+    }
+  }, [isNew, searchParams, categories]);
 
   // Auto clear toast after 4s
   useEffect(() => {
@@ -786,6 +813,27 @@ export function usePostEditor() {
     }
   };
 
+  const applyTopicIdea = (idea: TopicIdeaItem) => {
+    setTieuDe(idea.title);
+    setFocusKeyword(idea.focusKeyword);
+    setSlug(idea.slug);
+    setTomTat(idea.summary);
+
+    if (idea.suggestedCategory && categories.length > 0) {
+      const matched = categories.find(
+        (c) =>
+          c.tenChuyenMuc.toLowerCase().includes(idea.suggestedCategory!.toLowerCase()) ||
+          idea.suggestedCategory!.toLowerCase().includes(c.tenChuyenMuc.toLowerCase())
+      );
+      if (matched) setCategoryId(matched.id);
+    }
+
+    setToast({
+      type: 'success',
+      message: `Đã nạp ý tưởng "${idea.title}". Bạn có thể viết tiếp hoặc bấm AI Trợ lý để sinh toàn bài!`,
+    });
+  };
+
   return {
     isNew,
     postId,
@@ -796,6 +844,9 @@ export function usePostEditor() {
     pageError,
     toast,
     setToast,
+    isIdeatorOpen,
+    setIsIdeatorOpen,
+    applyTopicIdea,
     // Fields
     tieuDe,
     setTieuDe,

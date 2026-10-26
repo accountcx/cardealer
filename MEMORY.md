@@ -67,3 +67,14 @@ Tài liệu này lưu trữ các quy tắc bất biến (Invariants), quyết đ
   - Trạng thái loading `generatingBlockId` bắt buộc cô lập theo từng ID khối, không khóa toàn màn hình hoặc các khối khác.
   - Cập nhật các trường nội dung của khối $k$ qua immutable mapping (`prev.map(...)`), bảo toàn 100% ID và thứ tự các khối khác trong bài viết.
   - Phản hồi từ LLM được chuẩn hóa qua cơ chế fallback đa tầng (`blockJson.block`, `blocks[0]`, root object, hoặc raw text fallback) bảo đảm chống crash component.
+
+---
+
+## 8. Trợ Lý AI Gợi Ý Ý Tưởng Bài Viết & Chống Trùng Lặp (AI Topic Ideation & Deduplication Invariants)
+- **Next.js App Router useSearchParams Suspense Invariant:**
+  - Bất kỳ client component hoặc trang nào sử dụng hook `useSearchParams()` (ví dụ để đọc query param `?title=...&keyword=...`) BẮT BUỘC phải được bọc trong một `<Suspense>` boundary. Nếu không, lệnh `next build` sẽ báo lỗi `useSearchParams() should be wrapped in a suspense boundary (CSR bailout)`.
+- **Two-Tier Deduplication Pattern (Chống ăn thịt từ khóa - Anti-Cannibalization):**
+  - **Tier 1 (Prompt Level - Negative Grounding):** Backend tự động quét danh sách toàn bộ các bài viết đã có (`posts` draft + published và `cars` articles) và nhúng vào Prompt Blacklist để LLM chủ động né tránh tiêu đề, từ khóa cũ và tập trung khai thác các khoảng trống nội dung (Content Gaps).
+  - **Tier 2 (Transformation Level - Algorithm Verification):** Thuật toán `checkTitleOrKeywordOverlap` và `calculateKeywordSimilarity` trong `@cardealer/core` đối soát chéo token overlap (ngưỡng 60%) để loại bỏ hoặc lọc sạch các ý tưởng bị trùng lặp trước khi gửi về client.
+- **1-Click Idea Application Flow:**
+  - Biên tập viên nhấp "Viết bài theo ý tưởng này" trên modal: Tự động điều hướng sang `/posts/new` với các query parameters (`title`, `keyword`, `slug`, `summary`, `car`, `category`) được nạp tự động vào form mà không cần gõ phím lại từ đầu.

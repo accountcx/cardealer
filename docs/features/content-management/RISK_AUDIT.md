@@ -28,6 +28,8 @@
 | **R-08** | Prompt Injection | Người dùng nhập chỉ đạo phá vỡ format JSON hoặc inject thẻ độc hại | Sanitization input chuỗi chỉ đạo, ép chặt `response_format: { type: "json_object" }` và validate schema |
 | **R-09** | XSS via Link Target | Nhập URL nguy hiểm dạng `javascript:`, `data:` vào link markdown | `sanitizeSafeUrl` kiểm tra và lọc sạch mọi protocol nguy hiểm, ép fallback về `#` |
 | **R-10** | Broken Link Parsing | Cú pháp markdown không hợp lệ hoặc ngoặc lồng nhau làm vỡ parser | Regex phân tích cú pháp an toàn, tự động xử lý fallback về plain text an toàn |
+| **R-11** | Keyword Cannibalization | AI đề xuất chủ đề hoặc từ khóa trùng với bài viết đã có làm tụt thứ hạng SEO | Truy vấn toàn diện kho bài viết (`posts` + `cars`) đưa vào Negative Grounding trong Prompt + Thuật toán kiểm tra trùng lặp hậu xử lý |
+| **R-12** | Context Window Overflow | Kho bài viết quá lớn (> 100 bài) làm tràn context window của LLM | Rút gọn compact metadata (`title`, `slug`, `focusKeyword`), ưu tiên bài viết cùng dòng xe và phân khúc |
 
 ---
 

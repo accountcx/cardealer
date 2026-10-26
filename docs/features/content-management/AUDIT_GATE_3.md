@@ -1,31 +1,19 @@
-# 🕵️ Biên Bản Thẩm Định Độc Lập - GATE 3: Risk Control & Test Planning
-
-- **Module:** `content-management`
-- **Phiên bản:** `v1.2.0`
-- **Thời gian thực hiện:** 26/10/2026
-- **Auditor:** Subagent Thẩm định Độc lập (Auditor Gate 3)
-- **Lệnh kiểm chứng máy:**
-  ```bash
-  bash /Users/nhatphan/.gemini/config/plugins/digital-software-agency/scripts/spec_guard.sh docs/features/content-management
-  ```
-- **Kết quả lệnh kiểm chứng máy:** `Exit 0 (PASS)`
+# 📋 BIÊN BẢN NGHIỆM THU GATE 3: THẨM ĐỊNH RỦI RO & MA TRẬN KIỂM THỬ
+**Mã nghiệm thu:** `AUDIT-GATE-3-CM-US05`  
+**Dự án:** CarDealer / Hyundai CMS (`content-management`)  
+**Tính năng:** US-05 - AI Topic Ideation & Deduplication Engine (Trợ lý AI Đề Xuất Ý Tưởng Bài Viết Chống Trùng Lặp)  
+**Thời gian:** 2026-10-26 08:55:10 (ICT)  
+**Trọng tài máy:** `spec_guard.sh`  
+**Trạng thái:** **THÔNG QUAN (PASS)** 🟢  
 
 ---
 
-## 1. Nội Dung Thẩm Định & Bằng Chứng
-
-1. **Rà Soát Rủi Ro & Blast Radius (`RISK_AUDIT.md`):**
-   - Đã bổ sung rủi ro `R-09` (XSS qua Link Target pseudo-protocols) và `R-10` (Broken Markdown Parsing).
-   - Biện pháp phòng ngừa: `sanitizeSafeUrl` lọc sạch pseudo-protocols và regex parser fallback an toàn.
-
-2. **Kế Hoạch Kiểm Thử (`TEST_PLAN.md`):**
-   - Đã bổ sung 4 kịch bản kiểm thử tự động `TC-11` đến `TC-14` phủ kín AST roundtrip serialization/deserialization, HTML rendering và UI controls.
-
-3. **Xác Minh Điều Kiện Khóa Cứng Của Máy (Hard Lock Gate 3):**
-   - `spec_guard.sh` trả về `SPEC GUARD RESULT: PASS (Tài liệu Final đạt chuẩn thi công Phase 4)` với Exit Code 0.
+## 1. Hồ Sơ Thẩm Định Rủi Ro & Kế Hoạch Kiểm Thử
+- [x] **RISK_AUDIT.md:** Bổ sung rủi ro `R-11` (Keyword Cannibalization / Trùng lặp ý tưởng với bài đã có) và `R-12` (Context Window Overflow khi số bài viết lớn), kèm giải pháp phòng ngừa 2 lớp.
+- [x] **TEST_PLAN.md:** Bổ sung các kịch bản kiểm thử tự động `TC-15`, `TC-16`, `TC-17`, `TC-18` bao phủ từ Prompt Builder, Thuật toán Deduplication tới Response Transformer và Giao diện UI.
+- [x] **Zero-Mutation:** Giữ nguyên trạng thái mã nguồn chưa can thiệp cho tới khi hoàn tất phê duyệt thiết kế.
 
 ---
 
-## 2. Quyết Định Thông Quan
-- **Trạng thái:** 🟢 PASSED
-- **Chuyển tiếp:** Đủ điều kiện mở khóa Phase 4 (Atomic Execution & Verification).
+## 2. Kết Luận Gate 3
+Chiến lược kiểm thử và các biện pháp cách ly rủi ro hoàn chỉnh 100%. Chính thức thông quan Gate 3, sẵn sàng tiến hành Phase 4: Thực thi mã nguồn (Execution).

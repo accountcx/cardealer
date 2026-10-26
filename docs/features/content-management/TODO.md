@@ -27,3 +27,11 @@
   - [x] U-04.4: Truyền `availableCars` vào `ParagraphBlock` trong `apps/admin/app/posts/[id]/page.tsx`.
   - [x] U-04.5: Viết Unit tests trong `packages/core/src/__tests__/tiptap-internal-links.test.ts` kiểm thử roundtrip serialization/deserialization và HTML rendering của internal links.
 
+- [x] **US-05: AI Topic Ideation & Deduplication Engine**
+  - [x] U-05.1: Mở rộng `AiActionSchema` ('generate_topic_ideas') và khai báo Zod schemas, TypeScript types cho `TopicIdeaItem` và `AiGenerateRequest` (angle, category, count) trong `packages/types/src/ai.ts`.
+  - [x] U-05.2: Nâng cấp `ai.service.ts`: mở rộng `queryCarData` và truy vấn toàn diện kho bài viết (`posts` draft + published & `cars` articles), xây dựng thuật toán lọc trùng lặp đối soát (Deduplication / Anti-Cannibalization Filter).
+  - [x] U-05.3: Xây dựng Prompt Builder `buildTopicIdeasPrompt` trong `apps/api/src/services/ai/prompts/topic-ideas.prompt.ts` tích hợp chặt chẽ Negative Grounding của toàn bộ các chủ đề đã có.
+  - [x] U-05.4: Nâng cấp `response-transformer.ts`: chuẩn hóa JSON phản hồi từ OpenAI thành danh sách `TopicIdeaItem[]` chuẩn cấu trúc, loại bỏ các ý tưởng có độ trùng lặp cao với database.
+  - [x] U-05.5: Xây dựng component `AiTopicIdeatorModal.tsx` và gắn nút `✨ AI Gợi Ý Ý Tưởng` tại Header `apps/admin/app/posts/page.tsx` và trong trang soạn thảo `/posts/new`, hỗ trợ 1-Click chuyển ý tưởng thành bài viết mới.
+  - [x] U-05.6: Viết Unit tests tự động kiểm thử Deduplication logic, Prompt formatting và Response Transformation trong `packages/core/src/__tests__/topic-ideas.test.ts`.
+

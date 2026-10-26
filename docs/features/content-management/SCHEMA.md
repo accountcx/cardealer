@@ -126,3 +126,25 @@ Các đoạn văn bản chứa liên kết nội bộ được lưu trữ chuẩ
 }
 ```
 
+---
+
+## 4. Đặc Tả Cấu Trúc Dữ Liệu Ý Tưởng Bài Viết (`TopicIdeaItem`)
+
+```typescript
+export const TopicIdeaItemSchema = z.object({
+  title: z.string().min(5, 'Tiêu đề ý tưởng phải có ít nhất 5 ký tự'),
+  slug: z.string().min(3),
+  focusKeyword: z.string().min(2, 'Từ khóa chính không được để trống'),
+  angle: z.string().min(3, 'Góc tiếp cận độc bản'),
+  contentGap: z.string().min(5, 'Mô tả khoảng trống nội dung'),
+  summary: z.string().min(10, 'Tóm tắt nội dung ý tưởng'),
+  targetCar: z.string().optional(),
+  suggestedCategory: z.string().optional(),
+  outlinePreview: z.array(z.string()).optional(),
+  searchIntent: z.enum(['informational', 'commercial', 'transactional', 'navigational']).optional(),
+});
+
+export type TopicIdeaItem = z.infer<typeof TopicIdeaItemSchema>;
+```
+
+

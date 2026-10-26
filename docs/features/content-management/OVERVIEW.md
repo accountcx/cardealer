@@ -3,7 +3,7 @@
 > **Module Slug:** `content-management`  
 > **Package / App Impact:** `packages/database`, `packages/types`, `packages/core`, `apps/api`, `apps/admin`, `apps/web`  
 > **Status:** Active / Production Ready  
-> **Version:** 1.2.0  
+> **Version:** 1.3.0  
 
 ---
 
@@ -18,6 +18,8 @@ Phân hệ **Quản Trị Nội Dung Bài Viết & Soạn Thảo Đa Phương Ti
    - Tải lên hình ảnh, gắn thẻ Alt Text chuẩn SEO, tối ưu định dạng WebP/AVIF và tích hợp Media Picker trực tiếp vào bài viết.
 4. **Hệ Thống Trợ Lý Đánh Giá Điểm SEO Real-Time:**
    - Phân tích mật độ từ khóa chính (`focusKeyword`), độ dài tiêu đề H1/Meta Description, kiểm tra thẻ alt ảnh và cấu trúc H2/H3.
+5. **Trợ Lý AI Gợi Ý Ý Tưởng Bài Viết Chống Trùng Lặp (AI Topic Ideation & Deduplication):**
+   - Tự động quét cơ sở dữ liệu các bài viết đã có (cả draft và published) để tìm ra các "khoảng trống nội dung" (Content Gaps), gợi ý các chủ đề và từ khóa độc bản mới lạ, phòng chống triệt để tình trạng ăn thịt từ khóa (Keyword Cannibalization).
 
 ---
 
@@ -25,6 +27,7 @@ Phân hệ **Quản Trị Nội Dung Bài Viết & Soạn Thảo Đa Phương Ti
 
 | Phiên bản | Ngày cập nhật | Người thực hiện | Nội dung nâng cấp chính | Trạng thái |
 | :---: | :---: | :---: | :--- | :---: |
+| **v1.3.0** | 26/10/2026 | Inbound Content Team | Bổ sung Trợ lý AI Gợi Ý Ý Tưởng Bài Viết Độc Nhất Chống Trùng Lặp (AI Topic Ideation & Deduplication Engine) | 🟢 Active |
 | **v1.2.0** | 26/10/2026 | Inbound Content Team | Bổ sung tính năng Gắn Link Nội Bộ (Internal Links Engine) cho các khối Đoạn văn bản (ParagraphBlock) trong Tiptap Studio | 🟢 Active |
 | **v1.1.0** | 25/10/2026 | Inbound Content Team | Bổ sung Trợ lý AI Điền Khối Tức Thì (Single Block AI Generator) cho từng Content Block trong Tiptap Studio | 🟢 Active |
 | **v1.0.0** | 18/10/2026 | Inbound Content Team | Xây dựng schema `posts`, `categories`, `media`, tích hợp Tiptap AST Engine, Tối ưu Storefront `/tin-tuc` và `/tin-tuc/[slug]` | 🟢 Active |

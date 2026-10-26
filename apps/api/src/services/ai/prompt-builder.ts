@@ -9,6 +9,7 @@ import {
   buildFaqPrompt,
   buildSingleBlockPrompt,
 } from './prompts/article.prompt';
+import { buildTopicIdeasPrompt } from './prompts/topic-ideas.prompt';
 
 export { SYSTEM_PROMPT };
 
@@ -115,6 +116,12 @@ export function buildPrompt(input: PromptBuilderInput): PromptBuilderResult {
       responseFormat = { type: 'json_object' };
       defaultTokenLimit = 2500;
       userPrompt = buildSingleBlockPrompt(input, availableCarsListText, existingArticlesText, targetCar, targetLocation, targetKeyword);
+      break;
+
+    case 'generate_topic_ideas':
+      responseFormat = { type: 'json_object' };
+      defaultTokenLimit = 2500;
+      userPrompt = buildTopicIdeasPrompt(input, availableCarsListText, targetCar, targetLocation, targetKeyword);
       break;
 
     default:

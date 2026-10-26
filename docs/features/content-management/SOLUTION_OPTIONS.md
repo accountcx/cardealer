@@ -1,34 +1,32 @@
-# 💡 SOLUTION OPTIONS: Paragraph Internal Links Engine
-
+# 💡 SOLUTION OPTIONS: AI Topic Ideation & Deduplication Engine
 > **Module:** `content-management`  
-> **Phiên bản:** `v1.2.0`  
-> **Căn cứ:** [`OVERVIEW.md`](./OVERVIEW.md), [`BACKLOG.md`](./BACKLOG.md)  
+> **Phiên bản:** `v1.3.0`  
+> **Căn cứ:** [`OVERVIEW.md`](./OVERVIEW.md), [`BACKLOG.md`](./BACKLOG.md) (US-05)  
 
 ---
 
 ## 1. Bối Cảnh & Bài Toán Nghiệp Vụ
-Trong trình biên tập bài viết của CarDealer CMS (`/posts/[id]`), khối **"Đoạn văn bản" (`ParagraphBlock`)** là khối xuất hiện nhiều nhất và chứa nội dung cốt lõi của bài viết.
-- **Vấn đề:** Hiện tại `ParagraphBlock` chỉ là một `Textarea` nhập văn bản thô, chưa có cơ chế gắn liên kết nội bộ (Internal Links) tới các dòng xe trong showroom, bảng giá, dự toán chi phí hoặc các bài viết liên quan.
-- **Hệ quả:** Biên tập viên không thể xây dựng cấu trúc Internal Linking chuẩn SEO trên từng đoạn văn, làm giảm chỉ số SEO On-page và giảm tỷ lệ điều hướng khách hàng tới trang sản phẩm xe cụ thể.
-- **Yêu cầu:** Cho phép gắn liên kết nội bộ tự nhiên, mượt mà trong khối Đoạn văn bản, tương thích hoàn toàn với Tiptap JSON AST Tree và bộ kết xuất HTML của Storefront.
+Trong hệ thống đại lý ô tô CarDealer (`content-management`), việc phát triển nội dung Inbound Marketing chuẩn SEO đòi hỏi:
+- **Thách thức:** Khi showroom đã có hàng chục hoặc hàng trăm bài viết về các dòng xe (Santa Fe, Tucson, Creta, Accent...), biên tập viên rất dễ rơi vào bẫy **Trùng lặp chủ đề** hoặc **Ăn thịt từ khóa (Keyword Cannibalization)** — tức nhiều bài viết cùng nhắm tới 1 từ khóa giống nhau, khiến Google phân vân và làm tụt thứ hạng SEO toàn trang.
+- **Yêu cầu:** Trợ lý AI cần tự động quét toàn bộ cơ sở dữ liệu các bài viết đã có (`posts` và `car_articles`), phát hiện các khoảng trống nội dung (Content Gaps) và đề xuất các ý tưởng bài viết hoàn toàn độc bản, có từ khóa và góc nhìn mới mẻ.
 
 ---
 
 ## 2. So Sánh Các Phương Án Kỹ Thuật
 
-| Tiêu chí | Phương Án A: Nhúng Trình Soạn Thảo WYSIWYG Nặng Vào Từng Block | Phương Án B: Cú Pháp Markdown Chuẩn Kèm Thanh Công Cụ & Quick Chips (Đề Xuất) | Phương Án C: Mảng Đối Tượng Link Riêng Biệt Ngoài Văn Bản |
+| Tiêu chí | Phương Án A: Client-side Filter Sau Khi LLM Sinh Tự Do | Phương Án B: Vector Database & Semantic Embeddings (Pinecone / PgVector) | Phương Án C: Two-Tier Deduplication Strategy (Đề Xuất) |
 | :--- | :--- | :--- | :--- |
-| **Cơ chế hoạt động** | Tích hợp full Tiptap/Quill instance vào bên trong Textarea của từng khối Paragraph. | Lưu văn bản dạng Markdown linh hoạt `[anchor](url)`. Cung cấp Toolbar chèn link 🔗, Quick Chips dòng xe/tiện ích và Modal trực quan. | Khối có trường `content` riêng và trường `links: [{ text, url }]` riêng biệt. |
-| **Hiệu năng & Bundle Size** | 🔴 Rất nặng: Gây đơ giao diện khi bài viết có 20-30 khối (khởi tạo hàng chục editor instance). | 🟢 Siêu nhẹ: Giữ nguyên Textarea tối ưu, bundle size thêm < 5KB. | 🟢 Nhẹ. |
-| **Tự nhiên trong câu văn** | 🟢 Tự nhiên. | 🟢 Tự nhiên: Link nằm đúng vị trí từ khóa trong câu văn. | 🔴 Rất gượng gạo: Các link bị đùn xuống cuối khối. |
-| **Chuyển đổi AST & Bảo toàn dữ liệu** | 🟡 Dễ lỗi hydration và xung đột schema giữa các editor con. | 🟢 Hoàn hảo: `serializeTiptapDoc` tự động tách thành text node có `marks: [link]`, `deserializeTiptapDoc` tái tạo lại nguyên vẹn. | 🟡 Cần custom AST node phức tạp. |
-| **Trải nghiệm biên tập viên** | 🟡 Phức tạp, dễ vỡ format khi copy paste. | 🟢 Cực kỳ tiện lợi: Có thể gõ tay markdown, click chip nhanh hoặc bôi đen bấm chèn link. | 🔴 Bất tiện. |
+| **Cơ chế hoạt động** | Gửi prompt cho LLM sinh ý tưởng bất kỳ, sau đó frontend tự lọc bỏ các ý tưởng có tiêu đề giống bài cũ. | Bơm embeddings của toàn bộ bài viết vào vector database, chạy cosine similarity để tìm bài tương đồng. | **Tier 1 (Prompt Negative Grounding):** Backend tự query toàn bộ tiêu đề/từ khóa bài cũ bơm vào prompt ép LLM tìm Content Gap.<br/>**Tier 2 (Post-generation Token Overlap):** Thuật toán n-gram/keyword overlap kiểm tra chéo trước khi trả kết quả. |
+| **Độ chính xác chống trùng** | 🔴 Kém: LLM không hề biết bài cũ đang có gì, dễ sinh ra các ý tưởng trùng lặp dẫn tới bị lọc hết. | 🟢 Cao. | 🟢 Rất cao: LLM chủ động tìm góc nhìn mới dựa trên danh sách blacklist bài cũ. |
+| **Độ phức tạp & Chi phí** | 🟢 Đơn giản. | 🔴 Rất phức tạp: Cần setup vector store, tốn thêm chi phí embedding API và bảo trì hạ tầng. | 🟢 Tối ưu: Tận dụng trực tiếp PostgreSQL hiện có và OpenAI model, không tốn thêm hạ tầng ngoài. |
+| **Thời gian phản hồi** | 🟢 Nhanh. | 🟡 Trung bình (2-3 lần gọi API). | 🟢 Rất nhanh: 1 lần gọi DB + 1 lần gọi LLM (2-4 giây). |
+| **Trải nghiệm biên tập viên** | 🔴 Tỷ lệ sinh rỗng cao nếu bài bị lọc. | 🟢 Tốt. | 🟢 Xuất sắc: Mỗi ý tưởng giải thích rõ "Khoảng trống nội dung" và "Góc nhìn độc bản". |
 
 ---
 
 ## 3. Quyết Định Kiến Trúc (Architecture Decision)
-- **Lựa chọn:** **Phương Án B (Cú pháp Markdown Chuẩn `[anchor](url)` kết hợp Thanh Công Cụ Chèn Link & Quick Chips)**.
+- **Lựa chọn:** **Phương Án C (Two-Tier Deduplication Strategy)**.
 - **Lý do lựa chọn:**
-  - Vừa trực quan, vừa siêu nhẹ, không làm giảm tốc độ render của trang biên tập.
-  - Tự động serialize thành cấu trúc Tiptap Mark Link `{ type: "text", text: "...", marks: [{ type: "link", attrs: { href: "..." } }] }` mà `render-html.ts` của Storefront đã hỗ trợ sẵn.
-  - Phân loại rõ ràng liên kết nội bộ (bắt đầu bằng `/`) để không gắn `rel="nofollow"` hay thuộc tính bất lợi cho SEO On-Page.
+  1. **Hiệu quả triệt để:** Bằng cách cung cấp danh sách bài viết hiện có vào Prompt (Negative Grounding), mô hình AI đóng vai trò như một Senior SEO Content Strategist, nhận diện chính xác các góc tiếp cận còn trống.
+  2. **An toàn kép:** Thuật toán kiểm tra chéo ở tầng Backend đảm bảo nếu có ý tưởng nào trùng từ khóa chính > 60% với database sẽ tự động được làm mới hoặc gắn cờ cảnh báo.
+  3. **Zero Infrastructure Overhead:** Không phát sinh dependency bên ngoài, hoàn toàn tương thích với kiến trúc monorepo và stack PostgreSQL + Drizzle hiện tại.

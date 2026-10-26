@@ -18,6 +18,7 @@ import Link from 'next/link';
 import {
   FileText,
   Plus,
+  Sparkles,
   Search,
   Filter,
   RefreshCw,
@@ -52,9 +53,11 @@ import {
   TableCell,
 } from '@cardealer/ui';
 import { postService, type PostItem, type CategoryItem } from '../../services/post.service';
+import { catalogService, type CarSummary } from '../../services/catalog.service';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useAuth } from '../../contexts/AuthContext';
 import { AccessDenied } from '../components/AccessDenied';
+import { AiTopicIdeatorModal } from './components/AiTopicIdeatorModal';
 
 type PostFilterStatus = 'all' | 'published' | 'draft' | 'scheduled' | 'archived';
 
@@ -91,6 +94,14 @@ export default function PostsManagementPage() {
 
   // State Copy Link Preview
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // State Trợ lý AI Gợi ý Ý tưởng (US-05)
+  const [isIdeatorOpen, setIsIdeatorOpen] = useState(false);
+  const [availableCars, setAvailableCars] = useState<CarSummary[]>([]);
+
+  useEffect(() => {
+    catalogService.getCars().then(setAvailableCars).catch(() => {});
+  }, []);
 
   // Debounce search input (350ms)
   useEffect(() => {
@@ -293,15 +304,28 @@ export default function PostsManagementPage() {
         </div>
 
         {can('posts:write') && (
-          <Link href="/posts/new">
+          <div className="flex flex-wrap items-center gap-2.5">
             <Button
-              variant="accent"
-              className="w-full sm:w-auto flex items-center justify-center gap-2 h-11 px-5 font-semibold shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30 transition-all"
+              type="button"
+              variant="outline"
+              onClick={() => setIsIdeatorOpen(true)}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 h-11 px-4 font-semibold text-amber-300 bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-500/50 transition-all shadow-md shadow-amber-500/10 cursor-pointer"
+              title="Trợ lý AI gợi ý ý tưởng bài viết mới lạ, phát hiện Content Gaps chống trùng lặp"
             >
-              <Plus size={18} />
-              Viết bài mới
+              <Sparkles size={18} className="text-amber-400" />
+              <span>AI Gợi Ý Ý Tưởng</span>
             </Button>
-          </Link>
+
+            <Link href="/posts/new">
+              <Button
+                variant="accent"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 h-11 px-5 font-semibold shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30 transition-all"
+              >
+                <Plus size={18} />
+                Viết bài mới
+              </Button>
+            </Link>
+          </div>
         )}
       </div>
 
@@ -670,6 +694,14 @@ export default function PostsManagementPage() {
         cancelText="Hủy bỏ"
         variant="danger"
         loading={deleting}
+      />
+
+      {/* AI Topic Ideator Modal (US-05) */}
+      <AiTopicIdeatorModal
+        isOpen={isIdeatorOpen}
+        onClose={() => setIsIdeatorOpen(false)}
+        availableCars={availableCars}
+        categories={categories}
       />
     </div>
   );

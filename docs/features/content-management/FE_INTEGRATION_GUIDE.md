@@ -89,6 +89,26 @@ apps/web/app/tin-tuc/
 
 ---
 
-## 6. Chuẩn Mực Triển Khai Mã Nguồn
-- Bắt buộc sử dụng **Named Export** (ví dụ: `export function TableOfContents(...)`).
+## 6. Giao Diện Trợ Lý AI Gợi Ý Ý Tưởng Bài Viết (AiTopicIdeatorModal)
+
+- **Vị trí tích hợp:**
+  - Header trang Danh sách bài viết [`apps/admin/app/posts/page.tsx`](file:///Users/nhatphan/Code/CarDealer/cardealer/apps/admin/app/posts/page.tsx) cạnh nút "Viết bài mới".
+  - Trang tạo bài mới [`apps/admin/app/posts/[id]/page.tsx`](file:///Users/nhatphan/Code/CarDealer/cardealer/apps/admin/app/posts/[id]/page.tsx).
+- **Bộ điều khiển (Controls):**
+  - Select Dòng xe: Lấy từ `availableCars` (hoặc "Tất cả dòng xe").
+  - Select Chuyên mục: Lấy từ `categories`.
+  - Input Định hướng / Góc nhìn tùy chọn.
+- **Ma trận 4 Trạng Thái (4-State Matrix):**
+  - **Loading:** Skeleton 3 thẻ ý tưởng nhấp nháy ánh vàng amber kèm thông điệp đối soát kho bài viết.
+  - **Empty:** Khi chưa bấm sinh hoặc chưa có kết quả: Minh họa biểu tượng bóng đèn sáng tạo cùng hướng dẫn.
+  - **Error:** Banner lỗi thân thiện kèm nút "Thử lại".
+  - **Success:** Lưới các Idea Cards sắc nét, mỗi Card có Badge góc nhìn, Tiêu đề, Từ khóa chính, Khoảng trống nội dung giải quyết, Tóm tắt và nút 1-Click "Viết bài theo ý tưởng này".
+- **Hành vi 1-Click "Viết bài theo ý tưởng này":**
+  - Nếu ở trang `/posts`: Chuyển hướng sang `/posts/new?title=...&keyword=...&slug=...&summary=...&carSlug=...`.
+  - Nếu ở trang `/posts/new`: Điền trực tiếp các trường trong form và mở Toast thông báo sẵn sàng.
+
+---
+
+## 7. Chuẩn Mực Triển Khai Mã Nguồn
+- Bắt buộc sử dụng **Named Export** (ví dụ: `export function AiTopicIdeatorModal(...)`).
 - 100% tuân thủ **Tailwind Spacing Scale** tiêu chuẩn (tránh các arbitrary values tự do).

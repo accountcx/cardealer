@@ -108,9 +108,8 @@ export class AiService {
         }));
       }
 
-      // 1. Trích xuất bài viết đã có của các dòng xe khác trong showroom
+      // 1. Trích xuất bài viết đã có của các dòng xe trong showroom
       for (const car of allCars) {
-        if (dbCarRecord && car.slug === dbCarRecord.slug) continue;
         if (car.article && car.article.tieuDe) {
           existingArticles.push({
             carName: car.tenXe,
@@ -124,10 +123,9 @@ export class AiService {
         }
       }
 
-      // 2. Lấy thêm các bài viết đã xuất bản từ bảng posts để bao quát toàn bộ nội dung website
+      // 2. Lấy thêm toàn bộ các bài viết (cả đã xuất bản và bản nháp) từ bảng posts để bao quát toàn diện kho nội dung
       const recentPosts = await db.query.posts.findMany({
-        where: eq(schema.posts.status, 'published'),
-        limit: 5,
+        limit: 60,
         columns: {
           tieuDe: true,
           slug: true,
@@ -174,7 +172,7 @@ export class AiService {
 
   // WHY: Phương thức điều phối chính (Orchestrator) thực thi toàn bộ quy trình AI Content Generation.
   public async generate(request: AiGenerateRequest): Promise<AiGenerateResponseData> {
-    const { action, prompt, context, keyword, carModel, carSlug, location, availableCars, maxTokens } = request;
+    const { action, prompt, context, keyword, carModel, carSlug, location, availableCars, maxTokens, angle, category, ideasCount } = request;
 
     const targetLocation = location || 'Nghệ An & Hà Tĩnh';
     const targetCar = carModel || 'Xe ô tô Hyundai';
@@ -227,6 +225,9 @@ export class AiService {
       carModel: targetCar,
       carSlug,
       location: targetLocation,
+      angle,
+      category,
+      ideasCount,
       availableCars,
       existingArticles,
       maxTokens,
@@ -263,6 +264,7 @@ export class AiService {
       targetLocation,
       targetKeyword,
       availableCars,
+      existingArticles,
       locProfile,
       calculatedPricing,
     };

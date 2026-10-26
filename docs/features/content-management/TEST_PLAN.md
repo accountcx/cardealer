@@ -19,10 +19,14 @@
 | **TC-08** | Integration | `apps/api/src/routes/admin/ai.ts` | POST `/api/admin/ai/generate` với `generate_single_block` trả về HTTP 200 kèm block data | 🟡 Sẵn sàng chạy |
 | **TC-09** | Hook Test | `apps/admin/app/posts/[id]/hooks/__tests__/usePostEditor.test.ts` | `handleGenerateSingleBlock` cập nhật đúng khối $k$, bảo toàn ID & thứ tự mảng blocks | 🟡 Sẵn sàng chạy |
 | **TC-10** | E2E UI Test | `apps/admin/app/posts/[id]/page.tsx` | Nút "AI Điền Khối Này" có spinner cô lập, gọi API thành công và tính lại SEO score | 🟡 Sẵn sàng chạy |
-| **TC-11** | Unit Test | `packages/core/src/__tests__/tiptap-internal-links.test.ts` | `serializeTiptapDoc` parse chính xác `[anchor](url)` thành text nodes có mark link | 🟡 Sẵn sàng chạy |
-| **TC-12** | Unit Test | `packages/core/src/__tests__/tiptap-internal-links.test.ts` | `deserializeTiptapDoc` tái tạo lại cú pháp `[anchor](url)` nguyên vẹn từ Tiptap AST | 🟡 Sẵn sàng chạy |
-| **TC-13** | Unit Test | `packages/core/src/__tests__/tiptap-internal-links.test.ts` | `convertTiptapToHtml` kết xuất `<a href="/...">` chuẩn SEO, bảo toàn PageRank nội bộ | 🟡 Sẵn sàng chạy |
-| **TC-14** | UI Test | `apps/admin/app/posts/[id]/components/blocks/ParagraphBlock.tsx` | Quick Chips và Link Modal chèn đúng cú pháp markdown vào vị trí con trỏ Textarea | 🟡 Sẵn sàng chạy |
+| **TC-11** | Unit Test | `packages/core/src/__tests__/tiptap-internal-links.test.ts` | `serializeTiptapDoc` parse chính xác `[anchor](url)` thành text nodes có mark link | ✅ PASSED |
+| **TC-12** | Unit Test | `packages/core/src/__tests__/tiptap-internal-links.test.ts` | `deserializeTiptapDoc` tái tạo lại cú pháp `[anchor](url)` nguyên vẹn từ Tiptap AST | ✅ PASSED |
+| **TC-13** | Unit Test | `packages/core/src/__tests__/tiptap-internal-links.test.ts` | `convertTiptapToHtml` kết xuất `<a href="/...">` chuẩn SEO, bảo toàn PageRank nội bộ | ✅ PASSED |
+| **TC-14** | Unit Test | `packages/core/src/__tests__/tiptap-internal-links.test.ts` | Xử lý an toàn khi anchor hoặc url chứa ký tự đặc biệt XSS hoặc protocol nguy hại (`javascript:`) | ✅ PASSED |
+| **TC-15** | Unit Test | `apps/api/src/services/ai/__tests__/topic-ideas.test.ts` | Prompt Builder `buildTopicIdeasPrompt` nạp Negative Grounding cấm trùng lặp với danh sách bài viết hiện có | 🟡 Sẵn sàng chạy |
+| **TC-16** | Unit Test | `apps/api/src/services/ai/__tests__/topic-ideas.test.ts` | Thuật toán Deduplication Check loại bỏ ý tưởng trùng lặp từ khóa / tiêu đề với database | 🟡 Sẵn sàng chạy |
+| **TC-17** | Unit Test | `apps/api/src/services/ai/__tests__/topic-ideas.test.ts` | Response Transformer chuẩn hóa danh sách `TopicIdeaItem[]` đầy đủ thuộc tính và search intent | 🟡 Sẵn sàng chạy |
+| **TC-18** | Integration / UI | `apps/admin/app/posts/` | `AiTopicIdeatorModal` hiển thị Idea Cards sinh động và 1-Click chuyển tiếp sang form `/posts/new` | 🟡 Sẵn sàng chạy |
 
 ---
 

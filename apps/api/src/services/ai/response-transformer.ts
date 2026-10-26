@@ -6,8 +6,12 @@ import type {
   FaqItem,
   SeoOptimizationResult,
   CarFullContentResult,
+  TopicIdeaItem,
 } from '@cardealer/types';
-import type { TransformContext } from './ai.types';
+import { slugifyVietnamese, checkTitleOrKeywordOverlap } from '@cardealer/core';
+import type { TransformContext, ExistingCarArticleSummary } from './ai.types';
+
+export { checkTitleOrKeywordOverlap };
 import { extractAndParseJson, fallbackTextToFullArticle, cleanAndFormatTitle } from './json-parser';
 import { normalizeAndEnrichBlocks, createFallbackFaqBlock } from './block-normalizer';
 
@@ -53,6 +57,71 @@ interface ParsedSeoJson {
   metaDescription?: string;
   suggestedKeywords?: string[];
   suggestedSlug?: string;
+}
+
+// WHY: Chuẩn hóa phản hồi danh sách ý tưởng bài viết và lọc bỏ các ý tưởng trùng lặp với DB.
+export function normalizeTopicIdeas(
+  rawIdeas: unknown,
+  fallbackCar = 'Xe ô tô Hyundai',
+  existingArticles: ExistingCarArticleSummary[] = []
+): TopicIdeaItem[] {
+  let list: unknown[] = [];
+  if (Array.isArray(rawIdeas)) {
+    list = rawIdeas;
+  } else if (rawIdeas && typeof rawIdeas === 'object') {
+    const obj = rawIdeas as Record<string, unknown>;
+    if (Array.isArray(obj.topicIdeas)) {
+      list = obj.topicIdeas;
+    } else if (Array.isArray(obj.ideas)) {
+      list = obj.ideas;
+    }
+  }
+
+  const normalized: TopicIdeaItem[] = [];
+
+  for (let idx = 0; idx < list.length; idx++) {
+    const item = (list[idx] && typeof list[idx] === 'object' ? list[idx] : {}) as Record<string, unknown>;
+    const title = cleanAndFormatTitle(
+      String(item.title || item.tieuDe || `Ý tưởng bài viết ${idx + 1} về ${fallbackCar}`),
+      fallbackCar
+    );
+    const focusKeyword = String(item.focusKeyword || item.keyword || item.tuKhoaChinh || `${fallbackCar} mới nhất`).trim();
+    const slug = String(item.slug || slugifyVietnamese(title) || `y-tuong-bai-viet-${idx + 1}`).trim();
+    const angle = String(item.angle || item.gocTiepCan || 'Góc tiếp cận thực tế').trim();
+    const contentGap = String(item.contentGap || item.khoangTrongNoiDung || 'Chủ đề mới mẻ bổ sung khoảng trống nội dung cho website').trim();
+    const summary = String(item.summary || item.tomTat || `Bài viết phân tích chuyên sâu về ${title}`).trim();
+    const targetCar = String(item.targetCar || item.dongXe || fallbackCar).trim();
+    const suggestedCategory = String(item.suggestedCategory || item.category || 'Đánh giá xe').trim();
+    const outlinePreview = Array.isArray(item.outlinePreview)
+      ? item.outlinePreview.map((o) => String(o).trim())
+      : Array.isArray(item.outline)
+      ? item.outline.map((o) => String(o).trim())
+      : undefined;
+
+    const rawIntent = String(item.searchIntent || '').toLowerCase();
+    const searchIntent: TopicIdeaItem['searchIntent'] = ['informational', 'commercial', 'transactional', 'navigational'].includes(rawIntent)
+      ? (rawIntent as TopicIdeaItem['searchIntent'])
+      : 'commercial';
+
+    // Tier 2 Deduplication Check: Kiểm tra đối soát với DB
+    const isDuplicate = checkTitleOrKeywordOverlap(title, focusKeyword, existingArticles);
+    if (!isDuplicate) {
+      normalized.push({
+        title,
+        slug,
+        focusKeyword,
+        angle,
+        contentGap,
+        summary,
+        targetCar,
+        suggestedCategory,
+        outlinePreview,
+        searchIntent,
+      });
+    }
+  }
+
+  return normalized;
 }
 
 // WHY: Chuyển đổi và chuẩn hóa toàn bộ phản hồi từ AI thành định dạng chuẩn của hệ thống (@cardealer/types).
@@ -279,6 +348,14 @@ export function transformAiResponse(
       } else {
         throw new Error('AI không thể tạo dữ liệu tối ưu SEO theo định dạng JSON yêu cầu. Vui lòng thử lại.');
       }
+      break;
+    }
+
+    case 'generate_topic_ideas': {
+      const ideas = normalizeTopicIdeas(parsedJson, targetCar, ctx.existingArticles || []);
+      resultData.topicIdeas = ideas;
+      resultData.deduplicationCount = ctx.existingArticles?.length || 0;
+      resultData.text = `Đã đề xuất thành công ${ideas.length} ý tưởng bài viết độc bản, không trùng lặp.`;
       break;
     }
 

@@ -5,7 +5,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ChevronLeft, Eye, Save, Send, Sparkles } from 'lucide-react';
+import { ChevronLeft, Eye, Save, Send, Sparkles, Lightbulb } from 'lucide-react';
 import { Button, Badge } from '@cardealer/ui';
 import type { PostStatus } from '../types';
 
@@ -17,6 +17,7 @@ export interface PostEditorHeaderProps {
   onPreview: () => void;
   onSave: (status: 'draft' | 'published') => void;
   onOpenAi?: () => void;
+  onOpenIdeator?: () => void;
 }
 
 export function PostEditorHeader({
@@ -27,6 +28,7 @@ export function PostEditorHeader({
   onPreview,
   onSave,
   onOpenAi,
+  onOpenIdeator,
 }: PostEditorHeaderProps) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-white/10">
@@ -58,6 +60,19 @@ export function PostEditorHeader({
 
       {/* Action Buttons */}
       <div className="flex items-center gap-2.5">
+        {onOpenIdeator && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onOpenIdeator}
+            className="flex items-center gap-2 h-11 px-3.5 font-semibold text-xs border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 hover:text-amber-100 transition-colors shadow-sm cursor-pointer"
+            title="Trợ lý AI gợi ý ý tưởng bài viết độc bản, chống trùng lặp"
+          >
+            <Lightbulb size={16} className="text-amber-400" />
+            <span className="hidden md:inline">Gợi ý ý tưởng</span>
+          </Button>
+        )}
+
         {onOpenAi && (
           <Button
             type="button"

@@ -11,6 +11,7 @@ export const AiActionSchema = z.enum([
   'expand_section',
   'generate_car_content',
   'generate_single_block',
+  'generate_topic_ideas',
 ]);
 export type AiAction = z.infer<typeof AiActionSchema>;
 
@@ -37,6 +38,9 @@ export const AiGenerateRequestSchema = z.object({
   carModel: z.string().optional(),
   carSlug: z.string().optional(),
   location: z.string().optional(),
+  angle: z.string().optional(),
+  category: z.string().optional(),
+  ideasCount: z.number().int().min(1).max(10).optional(),
   availableCars: z.array(AiCarSummarySchema).optional(),
   maxTokens: z.number().int().positive().optional(),
 });
@@ -131,6 +135,20 @@ export interface FullArticleResult {
   htmlContent?: string;
 }
 
+export const TopicIdeaItemSchema = z.object({
+  title: z.string().min(5, 'Tiêu đề ý tưởng phải có ít nhất 5 ký tự'),
+  slug: z.string().min(3),
+  focusKeyword: z.string().min(2, 'Từ khóa chính không được để trống'),
+  angle: z.string().min(3, 'Góc tiếp cận độc bản'),
+  contentGap: z.string().min(5, 'Mô tả khoảng trống nội dung'),
+  summary: z.string().min(10, 'Tóm tắt nội dung ý tưởng'),
+  targetCar: z.string().optional(),
+  suggestedCategory: z.string().optional(),
+  outlinePreview: z.array(z.string()).optional(),
+  searchIntent: z.enum(['informational', 'commercial', 'transactional', 'navigational']).optional(),
+});
+export type TopicIdeaItem = z.infer<typeof TopicIdeaItemSchema>;
+
 export interface CarFullContentResult {
   moTaChung: string;
   promotionSummary: string;
@@ -150,6 +168,8 @@ export interface AiGenerateResponseData {
   seo?: SeoOptimizationResult;
   fullArticle?: FullArticleResult;
   carContent?: CarFullContentResult;
+  topicIdeas?: TopicIdeaItem[];
+  deduplicationCount?: number;
   usage?: {
     promptTokens?: number;
     completionTokens?: number;

@@ -9,4 +9,5 @@ export * from './tiptap/steps-extractor';
 export * from './tiptap/render-html';
 export * from './tiptap/markdown-links';
 export * from './seo/static-page-json-ld';
+export * from './seo/deduplication';
 export * from './email/lead-notification';

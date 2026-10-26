@@ -65,6 +65,9 @@ export interface PromptBuilderInput {
   carModel?: string;
   carSlug?: string;
   location?: string;
+  angle?: string;
+  category?: string;
+  ideasCount?: number;
   availableCars?: AiCarSummary[];
   existingArticles?: ExistingCarArticleSummary[];
   maxTokens?: number;
@@ -106,6 +109,7 @@ export interface TransformContext {
   targetLocation: string;
   targetKeyword: string;
   availableCars?: AiCarSummary[];
+  existingArticles?: ExistingCarArticleSummary[];
   locProfile: LocationProfile;
   calculatedPricing: PricingCalculation;
 }

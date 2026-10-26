@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Sparkles, AlertCircle, X, Check, Bot } from 'lucide-react';
 import { Button, Card, Skeleton } from '@cardealer/ui';
 
@@ -15,6 +15,7 @@ import { AddBlockMenu } from './components/AddBlockMenu';
 import { BlockItemWrapper } from './components/BlockItemWrapper';
 import { PostEditorSidebar } from './components/PostEditorSidebar';
 import { AiWritingAssistantModal } from './components/AiWritingAssistantModal';
+import { AiTopicIdeatorModal } from '../components/AiTopicIdeatorModal';
 
 import { HeadingBlock } from './components/blocks/HeadingBlock';
 import { ParagraphBlock } from './components/blocks/ParagraphBlock';
@@ -30,7 +31,7 @@ import { RelatedCarBlock } from './components/blocks/RelatedCarBlock';
 import { PriceTableBlock } from './components/blocks/PriceTableBlock';
 import { SpecTableBlock } from './components/blocks/SpecTableBlock';
 
-export default function PostEditorPage() {
+function PostEditorContent() {
   const { loading: authLoading, can } = useAuth();
   const editor = usePostEditor();
 
@@ -73,6 +74,7 @@ export default function PostEditorPage() {
         onPreview={editor.handlePreview}
         onSave={editor.handleSave}
         onOpenAi={() => editor.setIsAiModalOpen(true)}
+        onOpenIdeator={() => editor.setIsIdeatorOpen(true)}
       />
 
       {/* Toast Alert Banner */}
@@ -286,6 +288,15 @@ export default function PostEditorPage() {
         onApplySeo={(seo) => editor.applyAiSeo(seo)}
       />
 
+      {/* Modal Trợ Lý AI Gợi Ý Ý Tưởng Chống Trùng Lặp */}
+      <AiTopicIdeatorModal
+        isOpen={editor.isIdeatorOpen}
+        onClose={() => editor.setIsIdeatorOpen(false)}
+        availableCars={editor.availableCars}
+        categories={editor.categories}
+        onSelectIdea={(idea) => editor.applyTopicIdea(idea)}
+      />
+
       {/* Modal Chọn Ảnh Từ Thư Viện Dùng Chung */}
       <MediaPickerModal
         isOpen={!!editor.mediaPickerTarget}
@@ -344,5 +355,23 @@ export default function PostEditorPage() {
         }}
       />
     </div>
+  );
+}
+
+export default function PostEditorPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-8 space-y-6 max-w-7xl mx-auto">
+          <Skeleton className="h-10 w-48 bg-slate-800" />
+          <div className="grid grid-cols-12 gap-8">
+            <Skeleton className="col-span-8 h-[600px] bg-slate-800 rounded-2xl" />
+            <Skeleton className="col-span-4 h-[600px] bg-slate-800 rounded-2xl" />
+          </div>
+        </div>
+      }
+    >
+      <PostEditorContent />
+    </Suspense>
   );
 }
