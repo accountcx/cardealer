@@ -1,4 +1,10 @@
-import { extractYoutubeId, extractTikTokId, type TiptapDoc } from '@cardealer/core';
+import {
+  extractYoutubeId,
+  extractTikTokId,
+  parseTextToTiptapContent,
+  formatTiptapContentToMarkdown,
+  type TiptapDoc,
+} from '@cardealer/core';
 import type { EditorBlock, PriceVersionItem } from './types';
 
 // 🔄 Chuyển đổi danh sách Content Blocks sang cấu trúc Tiptap JSON AST Tree
@@ -142,7 +148,7 @@ export function serializeTiptapDoc(blocks: EditorBlock[]): TiptapDoc {
       default:
         return {
           type: 'paragraph',
-          content: [{ type: 'text', text: b.content || '' }],
+          content: parseTextToTiptapContent(b.content || ''),
         };
     }
   });
@@ -315,7 +321,7 @@ export function deserializeTiptapDoc(doc: TiptapDoc): EditorBlock[] {
     return {
       id,
       type: 'paragraph',
-      content: text,
+      content: Array.isArray(node.content) ? formatTiptapContentToMarkdown(node.content) : text,
     };
   });
 }

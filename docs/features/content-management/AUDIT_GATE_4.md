@@ -1,33 +1,57 @@
-# 🕵️ Biên Bản Thẩm Định Độc Lập - GATE 4: Atomic Execution & Verification
-
-- **Module:** `content-management`
-- **Phiên bản:** `v1.1.0`
-- **Thời gian thực hiện:** 25/10/2026
-- **Auditor:** Subagent Thẩm định Độc lập (Auditor Gate 4)
-- **Lệnh kiểm chứng máy:**
-  ```bash
-  export PATH="$HOME/.nvm/versions/node/v24.21.0/bin:$PATH"
-  pnpm --filter @cardealer/core test && pnpm --filter @cardealer/api build && pnpm --filter @cardealer/admin build
-  ```
-- **Kết quả lệnh kiểm chứng máy:** `Exit 0 (ALL PASS)`
+# 📋 BIÊN BẢN NGHIỆM THU GATE 4: HOÀN TẤT THỰC THI (CODE EXECUTION)
+**Mã nghiệm thu:** `AUDIT-GATE-4-CM-US04`  
+**Dự án:** CarDealer / Hyundai CMS (`content-management`)  
+**Tính năng:** US-04 - Gắn Link Nội Bộ Cho Khối Đoạn Văn Bản (Paragraph Internal Links Engine)  
+**Thời gian:** 2026-10-26 07:20:00 (ICT)  
+**Trọng tài máy:** Multi-layer Verification & Machine Test Pass  
+**Trạng thái:** **THÔNG QUAN (PASS)** 🟢  
 
 ---
 
-## 1. Nội Dung Thẩm Định & Bằng Chứng
+## 1. Danh Mục Các Đơn Vị Công Việc Đã Thực Thi (U-04.1 -> U-04.5)
 
-1. **Thực Thi Đầy Đủ Các Đơn Vị Nguyên Tử (`U-03.1` đến `U-03.5`):**
-   - `U-03.1`: Nâng cấp prompt schema cho 14 loại Content Blocks trong `article.prompt.ts` và cơ chế phân giải linh hoạt chống crash trong `response-transformer.ts`.
-   - `U-03.2`: Mở rộng `usePostEditor.ts` với state `generatingBlockId` và hàm `handleGenerateSingleBlock`, trích xuất ngữ cảnh bài viết và dòng xe mục tiêu.
-   - `U-03.3`: Nối nút `AI Điền Khối` và thanh prompt tùy biến trong `BlockItemWrapper.tsx` và `apps/admin/app/posts/[id]/page.tsx`, hỗ trợ cả 1-Click Auto Fill và Custom Instruction.
-   - `U-03.4`: Tự động kích hoạt tính lại điểm SEO tức thì (`calculateSeoScore`) qua reactive hook `tiptapDoc`.
-   - `U-03.5`: Toàn bộ 20 file test với 171 test cases của `@cardealer/core` đạt 100% PASS; build cả 2 ứng dụng `@cardealer/api` và `@cardealer/admin` đều thành công không lỗi TypeScript.
-
-2. **Chất Lượng Mã Nguồn & Bảo Vệ Toàn Vẹn:**
-   - 0 `@ts-ignore`, 0 `.skip()`, 0 lỗi kiểu dữ liệu.
-   - Cập nhật đúng khối $k$, bảo toàn 100% ID và thứ tự mảng `blocks`.
+| Đơn Vị (Unit) | Mô Tả & Thay Đổi Mã Nguồn | Trạng Thái Máy |
+| :--- | :--- | :--- |
+| **U-04.1** | Nâng cấp `serializeTiptapDoc` và `deserializeTiptapDoc` trong `apps/admin/app/posts/[id]/ast.ts`: sử dụng `parseTextToTiptapContent` và `formatTiptapContentToMarkdown` từ `@cardealer/core`. | ✅ PASS |
+| **U-04.2** | Tối ưu hóa `convertTiptapToHtml` trong `packages/core/src/tiptap/render-html.ts`: phân biệt liên kết nội bộ (`isInternalLink`), loại bỏ `rel="nofollow"` và `target="_blank"`, styling `text-blue-600 hover:text-blue-800 underline font-medium transition-colors`. | ✅ PASS |
+| **U-04.3** | Nâng cấp `ParagraphBlock.tsx` trong `apps/admin`: tích hợp Toolbar gắn link 🔗, Quick Link Chips (tiện ích hệ thống & dòng xe) và Modal chọn liên kết nội bộ trực quan. | ✅ PASS |
+| **U-04.4** | Truyền `availableCars={editor.availableCars}` vào `ParagraphBlock` trong `apps/admin/app/posts/[id]/page.tsx`. | ✅ PASS |
+| **U-04.5** | Viết bộ Unit test toàn diện trong `packages/core/src/__tests__/tiptap-internal-links.test.ts` (12 test cases) bao phủ TC-11, TC-12, TC-13, TC-14. | ✅ PASS |
 
 ---
 
-## 2. Quyết Định Thông Quan
-- **Trạng thái:** 🟢 PASSED
-- **Chuyển tiếp:** Đủ điều kiện chuyển tiếp sang Phase 5 (Independent Diff Review & Self-Correction).
+## 2. Bằng Chứng Kiểm Chứng Máy (Deterministic Verification Evidence)
+
+### 2.1. Kiểm thử Tự động (@cardealer/core)
+```bash
+$ pnpm --filter @cardealer/core test
+RUN v5.0.1 /packages/core
+✓ src/__tests__/tiptap-internal-links.test.ts (12 tests) 9ms
+Test Files 21 passed (21)
+Tests 183 passed (183)
+Duration 633ms
+```
+
+### 2.2. Kiểm tra Kiểu Dữ Liệu TypeScript (check-types)
+```bash
+$ pnpm --filter @cardealer/core check-types
+$ pnpm --filter @cardealer/admin check-types
+Exit code: 0 (Zero errors)
+```
+
+### 2.3. Kiểm thử Biên Dịch Sản Xuất (Production Builds)
+```bash
+$ pnpm --filter @cardealer/api build
+Exit code: 0
+
+$ pnpm --filter @cardealer/admin build
+Exit code: 0 (Compiled successfully in 3.5s)
+
+$ pnpm --filter @cardealer/web build
+Exit code: 0 (Compiled successfully in 3.9s)
+```
+
+---
+
+## 3. Kết Luận Gate 4
+Toàn bộ mã nguồn đáp ứng 100% tiêu chí nghiệm thu của User Story US-04, bảo toàn tính tương thích ngược, không có drift hay thoái lui logic. Sẵn sàng tiến hành Gate 5 (Đánh giá Độc lập & Bàn giao).

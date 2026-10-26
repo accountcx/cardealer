@@ -1,4 +1,5 @@
 import { slugifyVietnamese } from './extractor';
+import { isInternalLink } from '../seo/score';
 
 export interface ConvertTiptapOptions {
   hotline?: string;
@@ -57,7 +58,11 @@ export function convertTiptapToHtml(doc: any, options?: ConvertTiptapOptions): s
               if (mark.type === 'underline') text = `<u>${text}</u>`;
               if (mark.type === 'link') {
                 const href = sanitizeSafeUrl(mark.attrs?.href, '#');
-                text = `<a href="${href}" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">${text}</a>`;
+                if (isInternalLink(href)) {
+                  text = `<a href="${href}" class="text-blue-600 hover:text-blue-800 underline font-medium transition-colors">${text}</a>`;
+                } else {
+                  text = `<a href="${href}" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">${text}</a>`;
+                }
               }
             }
           }

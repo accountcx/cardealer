@@ -70,6 +70,25 @@ apps/web/app/tin-tuc/
 
 ---
 
-## 5. Chuẩn Mực Triển Khai Mã Nguồn
+## 5. Cấu Trúc Khối Đoạn Văn Bản Kèm Gắn Link Nội Bộ (ParagraphBlock & Internal Links)
+
+- **Vị trí tích hợp:** [`ParagraphBlock.tsx`](file:///Users/nhatphan/Code/CarDealer/cardealer/apps/admin/app/posts/[id]/components/blocks/ParagraphBlock.tsx) trong Studio Soạn thảo.
+- **Thanh công cụ Toolbar phía trên Textarea:**
+  - Nút **`🔗 Gắn link nội bộ`**: Mở Popover / Modal cho phép chọn trang đích từ danh mục Showroom (dòng xe, tiện ích hoặc đường dẫn tùy chỉnh).
+  - Tự động lấy đoạn text đang được bôi đen (selection) trong Textarea để làm anchor text mặc định.
+- **Thanh Quick Chips phía dưới Textarea:**
+  - Hiển thị các nút tắt tiện lợi:
+    - `+ [Bảng Giá Xe]` (`/bang-gia-xe`)
+    - `+ [Dự Toán Trả Góp]` (`/du-toan-chi-phi`)
+    - `+ [Liên Hệ Báo Giá]` (`/lien-he`)
+    - Các chip dòng xe trong showroom: `+ [Santa Fe]`, `+ [Tucson]`, `+ [Creta]`, `+ [Accent]`...
+  - Bấm vào chip $\rightarrow$ tự động chèn cú pháp Markdown `[Tên](/duong-dan)` vào ngay vị trí con trỏ trong Textarea.
+- **Kết xuất trên Storefront:**
+  - `convertTiptapToHtml` nhận diện link bắt đầu bằng `/` $\rightarrow$ render thẻ `<a href="/...">` có styling `text-blue-600 hover:text-blue-800 underline font-medium hover:underline`.
+  - Không thêm `rel="nofollow"` cho internal links để bảo toàn luồng PageRank nội bộ.
+
+---
+
+## 6. Chuẩn Mực Triển Khai Mã Nguồn
 - Bắt buộc sử dụng **Named Export** (ví dụ: `export function TableOfContents(...)`).
 - 100% tuân thủ **Tailwind Spacing Scale** tiêu chuẩn (tránh các arbitrary values tự do).

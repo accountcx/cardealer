@@ -174,7 +174,11 @@ export default function PostEditorPage() {
                     <HeadingBlock block={block} onUpdate={(upd) => editor.updateBlock(block.id, upd)} />
                   )}
                   {block.type === 'paragraph' && (
-                    <ParagraphBlock block={block} onUpdate={(upd) => editor.updateBlock(block.id, upd)} />
+                    <ParagraphBlock
+                      block={block}
+                      availableCars={editor.availableCars}
+                      onUpdate={(upd) => editor.updateBlock(block.id, upd)}
+                    />
                   )}
                   {block.type === 'callout' && (
                     <CalloutBlock block={block} onUpdate={(upd) => editor.updateBlock(block.id, upd)} />

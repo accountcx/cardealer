@@ -53,3 +53,27 @@
     - *Given:* Yêu cầu AI gặp sự cố mạng hoặc OpenAI trả về lỗi.
     - *When:* Quá trình sinh thất bại.
     - *Then:* Chỉ hiển thị thông báo lỗi Toast thân thiện, tắt loading của khối đó, giữ nguyên nội dung hiện tại của khối và không làm ảnh hưởng tới việc lưu bài viết.
+
+---
+
+### 🔹 US-04: Gắn Link Nội Bộ Cho Khối Đoạn Văn Bản (Paragraph Internal Links Engine)
+- **Actor:** Biên tập viên nội dung & Quản trị viên SEO (Editor / SEO Specialist).
+- **Mô tả:** Trong các khối "Đoạn văn bản" (`ParagraphBlock`), biên tập viên có thể gắn các liên kết nội bộ (Internal Links) tới các dòng xe trong showroom, các trang tiện ích (Bảng giá, Dự toán chi phí, Khuyến mãi, Liên hệ) hoặc các bài viết liên quan. Hệ thống hỗ trợ cả cú pháp trực tiếp dạng Markdown `[Tên hiển thị](/duong-dan)`, thanh gợi ý nhanh (Quick Chips) và hộp thoại lựa chọn trực quan.
+- **Kịch bản Chấp Nhận (Acceptance Criteria - Gherkin):**
+  - **Scenario 4.1: Chèn liên kết nội bộ nhanh từ Quick Chips**
+    - *Given:* Biên tập viên đang soạn thảo nội dung trong khối ParagraphBlock.
+    - *When:* Bấm vào chip gợi ý (ví dụ: `+ [Hyundai Santa Fe]`).
+    - *Then:* Cú pháp `[Hyundai Santa Fe](/dong-xe/santa-fe)` được tự động chèn vào vị trí con trỏ hoặc cuối đoạn văn bản.
+  - **Scenario 4.2: Chèn liên kết qua hộp thoại chọn liên kết nội bộ (Internal Link Modal / Popover)**
+    - *Given:* Biên tập viên bôi đen một cụm từ (ví dụ "bảng giá xe lăn bánh") hoặc bấm nút biểu tượng Link 🔗.
+    - *When:* Chọn trang mục tiêu từ danh mục Dòng xe hoặc Trang tiện ích và bấm "Chèn liên kết".
+    - *Then:* Cụm từ được chuyển thành cú pháp `[bảng giá xe lăn bánh](/bang-gia-xe)` một cách liền mạch.
+  - **Scenario 4.3: Serialize Tiptap AST thành text nodes có marks link & Deserialize bảo toàn**
+    - *Given:* Đoạn văn bản chứa các liên kết Markdown `[anchor](url)`.
+    - *When:* Lưu bài viết (gọi `serializeTiptapDoc`) và tải lại bài viết (gọi `deserializeTiptapDoc`).
+    - *Then:* AST sinh ra các text node có `marks: [{ type: "link", attrs: { href: url } }]` chuẩn Tiptap, và khi tải lại editor thì các liên kết Markdown được bảo toàn 100% nguyên vẹn.
+  - **Scenario 4.4: Storefront kết xuất Semantic HTML chuẩn SEO cho Internal Links**
+    - *Given:* Khách hàng truy cập trang bài viết `/tin-tuc/[slug]` trên Storefront.
+    - *When:* Bài viết có các đoạn văn bản chứa liên kết nội bộ.
+    - *Then:* `convertTiptapToHtml` kết xuất thẻ `<a href="/...">` có styling nổi bật, tự động mở cùng tab (hoặc tab mới theo chuẩn) và tuyệt đối không gán `rel="nofollow"` cho các link nội bộ để bảo toàn PageRank và Internal Link Equity.
+

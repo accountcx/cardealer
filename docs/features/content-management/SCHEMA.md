@@ -91,3 +91,38 @@ CREATE TABLE media (
 | `scheduled` | Tự động kích hoạt | `published` | Thời điểm hiện tại $\ge$ `scheduledAt` |
 | `published` | Hạ bài | `draft` | Biên tập viên có quyền `posts:write` |
 | `published` | Khuyến mãi hết hạn | `archived` | Quá thời hạn `expiredPromoDate` |
+
+---
+
+## 3. Cấu Trúc Tiptap Link Mark AST trong JSONB `noi_dung` (US-04)
+
+Các đoạn văn bản chứa liên kết nội bộ được lưu trữ chuẩn mực theo Tiptap Spec bên trong trường `posts.noi_dung`:
+
+```json
+{
+  "type": "paragraph",
+  "content": [
+    {
+      "type": "text",
+      "text": "Khám phá chi tiết dòng xe "
+    },
+    {
+      "type": "text",
+      "text": "Hyundai Santa Fe 2026",
+      "marks": [
+        {
+          "type": "link",
+          "attrs": {
+            "href": "/dong-xe/santa-fe"
+          }
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": " cùng chính sách ưu đãi lăn bánh mới nhất."
+    }
+  ]
+}
+```
+

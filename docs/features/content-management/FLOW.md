@@ -99,3 +99,27 @@ sequenceDiagram
     PostEditor-->>BlockUI: Re-render khối k với nội dung giàu thông tin
     PostEditor-->>Editor: Toast thông báo "Đã sinh nội dung AI cho khối thành công!"
 ```
+
+---
+
+## 5. Sequence Diagram: Chèn & Bóc Tách Liên Kết Nội Bộ Trong Đoạn Văn Bản (Internal Links Flow)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Editor as Biên Tập Viên
+    participant UI as ParagraphBlock (Studio)
+    participant AST as ast.ts (serialize/deserialize)
+    participant Core as render-html.ts (@cardealer/core)
+    participant Web as Storefront Article (/tin-tuc/[slug])
+
+    Editor->>UI: Nhập văn bản hoặc bôi đen từ khóa "Hyundai Santa Fe 2026"
+    Editor->>UI: Bấm Quick Chip hoặc nút Link 🔗 -> Chọn "/dong-xe/santa-fe"
+    UI->>UI: Chèn cú pháp "[Hyundai Santa Fe 2026](/dong-xe/santa-fe)" vào Textarea
+    Editor->>AST: Lưu bài viết (gọi serializeTiptapDoc)
+    AST->>AST: Parse Regex Markdown Links -> Tách thành mảng Text Nodes kèm Link Marks
+    AST-->>Core: Lưu JSON AST Tree vào PostgreSQL (noi_dung)
+    Web->>Core: Khách truy cập bài viết -> convertTiptapToHtml(noiDung)
+    Core->>Core: Nhận diện link bắt đầu bằng "/" -> Render <a href="/dong-xe/santa-fe"> chuẩn SEO (không nofollow)
+    Core-->>Web: Kết xuất HTML mượt mà, gia tăng Internal Link Equity
+```

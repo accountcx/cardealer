@@ -1,8 +1,8 @@
 # 🕵️ Biên Bản Thẩm Định Độc Lập - GATE 2: Adaptive Architecture Design
 
 - **Module:** `content-management`
-- **Phiên bản:** `v1.1.0`
-- **Thời gian thực hiện:** 25/10/2026
+- **Phiên bản:** `v1.2.0`
+- **Thời gian thực hiện:** 26/10/2026
 - **Auditor:** Subagent Thẩm định Độc lập (Auditor Gate 2)
 - **Lệnh kiểm chứng máy:**
   ```bash
@@ -15,14 +15,14 @@
 ## 1. Nội Dung Thẩm Định & Bằng Chứng
 
 1. **Bộ Hồ Sơ Kiến Trúc Hoàn Chỉnh:**
-   - `SOLUTION_OPTIONS.md`: Phân tích 3 phương án kiến trúc, lựa chọn Phương án 2 (Kết hợp 1-Click Quick Fill & Popover Chỉ Đạo Nhanh).
-   - `FLOW.md`: Bổ sung Mermaid Sequence Diagram chi tiết cho luồng `In-Editor Single Block Generation`.
-   - `SCHEMA.md`: Xác nhận cấu trúc `noiDung JSONB` tương thích 100% với 14 Tiptap Content Blocks.
-   - `API_SPEC.md`: Đặc tả chi tiết endpoint `POST /api/admin/ai/generate` với action `generate_single_block` (đầy đủ request/response schema, status codes).
-   - `FE_INTEGRATION_GUIDE.md`: Cung cấp Component hierarchy, Design tokens, Ma trận 4-State UI (Idle, Generating, Error, Success).
+   - `SOLUTION_OPTIONS.md`: So sánh 3 phương án kỹ thuật gắn link nội bộ, quyết định chọn Phương án B (Markdown Links + In-Editor Toolbar & Quick Chips).
+   - `FLOW.md`: Bổ sung Mermaid Sequence Diagram chi tiết cho luồng chèn, serialize và render link nội bộ.
+   - `SCHEMA.md`: Đặc tả cấu trúc Tiptap Link Mark AST trong JSONB `noi_dung`.
+   - `API_SPEC.md`: Cập nhật đặc tả AST cho bài viết có internal links.
+   - `FE_INTEGRATION_GUIDE.md`: Đặc tả chi tiết UI cho `ParagraphBlock`, `InternalLinkModal`, và Quick Link Chips.
 
 2. **Chống Placeholder & Trốn Việc:**
-   - `spec_guard.sh` kiểm tra không phát hiện `TODO`, `TBD`, `placeholder` nào trong bộ hồ sơ.
+   - `spec_guard.sh` kiểm tra không phát hiện bất kỳ placeholder nào.
 
 ---
 

@@ -48,6 +48,19 @@ Tài liệu này lưu trữ các quy tắc bất biến (Invariants), quyết đ
 ## 6. Trợ Lý AI Soạn Thảo & Điền Khối (In-Editor AI Block Engine)
 - **Next.js Dev Proxy Rewrite Timeout Bypass:**
   - `rewrites()` trong `next.config.mjs` có socket timeout cố định 30s. Khi LLM sinh nội dung dài (30-45s), dev server proxy sẽ ngắt kết nối với lỗi `socket hang up (ECONNRESET)`.
+  - Luôn sử dụng Route Handler trực tiếp tại `apps/admin/app/api/admin/ai/generate/route.ts` với `export const maxDuration = 120` và `signal: AbortSignal.timeout(90000)` để hỗ trợ các request AI tốn nhiều thời gian.
+
+---
+
+## 7. Trình Soạn Thảo Đoạn Văn Bản & Liên Kết Nội Bộ (Paragraph Internal Links Engine)
+- **Markdown-to-AST Roundtrip Invariant:**
+  - Khối `ParagraphBlock` sử dụng cú pháp Markdown tự nhiên `[anchor](url)` trong câu văn thay vì nhúng editor WYSIWYG nặng nề gây nghẽn giao diện.
+  - Bộ chuyển đổi `parseTextToTiptapContent` bóc tách regex `/\[([^\]]+)\]\(([^)]+)\)/g` thành các node text thuần và node text có mark `{ type: 'link', attrs: { href } }`.
+  - Bộ tái tạo `formatTiptapContentToMarkdown` duyệt các child nodes của AST và format lại đúng cú pháp `[anchor](url)` bảo toàn 100% khi reload hoặc lưu bài viết.
+- **Quy Tắc SEO On-Page Cho Liên Kết Nội Bộ:**
+  - `isInternalLink(href)` phân biệt chính xác liên kết nội bộ (bắt đầu bằng `/` hoặc `#`).
+  - Thẻ `<a>` nội bộ kết xuất trên Storefront KHÔNG được chứa `rel="nofollow"` hay `target="_blank"` để giữ vững dòng chảy PageRank và thẩm quyền SEO On-Page trong showroom.
+  - Miễn nhiễm 100% trước Stored XSS bằng việc escape HTML anchor text và chuyển đổi các pseudo-protocols nguy hiểm (`javascript:`, `data:`, `vbscript:`) thành fallback an toàn `#`.
   - Bắt buộc sử dụng Next.js App Router Route Handler chuyên dụng (`apps/admin/app/api/admin/ai/generate/route.ts`) với `maxDuration = 120` và `AbortSignal.timeout(120_000)` để cho phép các tác vụ AI kéo dài tới 2 phút.
 - **In-Editor Single Block Generation Pattern:**
   - Hỗ trợ cả 1-Click Quick Fill (tự động thu thập tiêu đề, từ khóa SEO, dòng xe, khối trước làm ngữ cảnh) và Custom Instruction (thanh prompt mở rộng).

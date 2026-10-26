@@ -26,6 +26,8 @@
 | **R-06** | Malformed Block JSON | AI trả về định dạng JSON sai làm crash React Editor component | Áp dụng hàm `normalizeAndEnrichBlocks` và fallback an toàn cho từng trường thuộc tính |
 | **R-07** | State Overwrite Race | Nhiều khối cùng được sinh AI đồng thời dẫn tới ghi đè mảng `blocks` | Cô lập `generatingBlockId` chỉ cho phép một khối sinh tại một thời điểm hoặc khóa nút khi đang xử lý |
 | **R-08** | Prompt Injection | Người dùng nhập chỉ đạo phá vỡ format JSON hoặc inject thẻ độc hại | Sanitization input chuỗi chỉ đạo, ép chặt `response_format: { type: "json_object" }` và validate schema |
+| **R-09** | XSS via Link Target | Nhập URL nguy hiểm dạng `javascript:`, `data:` vào link markdown | `sanitizeSafeUrl` kiểm tra và lọc sạch mọi protocol nguy hiểm, ép fallback về `#` |
+| **R-10** | Broken Link Parsing | Cú pháp markdown không hợp lệ hoặc ngoặc lồng nhau làm vỡ parser | Regex phân tích cú pháp an toàn, tự động xử lý fallback về plain text an toàn |
 
 ---
 
