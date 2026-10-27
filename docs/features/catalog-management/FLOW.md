@@ -70,3 +70,30 @@ sequenceDiagram
         AdminApp-->>Admin: Thông báo tạo xe thành công & chuyển tới trang chỉnh sửa phiên bản
     end
 ```
+
+---
+
+## 4. Sequence Diagram: Sinh Schema SEO Google (BreadcrumbList & ItemList) & Khử Nhiễu Dữ Liệu
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Googlebot as Googlebot / Web Browser
+    participant Storefront as Next.js Storefront (apps/web)
+    participant CoreSEO as SEO Engine (@cardealer/core)
+    participant Backend as REST API (apps/api)
+    participant DB as PostgreSQL Database
+
+    Googlebot->>Storefront: GET /xe (Danh mục xe)
+    Storefront->>Backend: GET /api/catalog/cars
+    Backend->>DB: SELECT * FROM cars (đã được migration làm sạch prompt note)
+    DB-->>Backend: Records sạch (không dính text ngoặc đơn)
+    Backend-->>Storefront: CarCatalogItem[]
+    Storefront->>CoreSEO: generateCatalogJsonLd(cars, siteUrl)
+    CoreSEO->>CoreSEO: Bổ sung top-level @id và url cho từng Car/Product item
+    CoreSEO->>CoreSEO: Lọc sạch description qua sanitizePromptNotes()
+    CoreSEO-->>Storefront: ItemList JSON-LD hoàn chỉnh (@id, url, AggregateOffer)
+    Storefront->>Storefront: Breadcrumbs render BreadcrumbList với 100% Absolute URL
+    Storefront->>Storefront: position 1 -> siteUrl + '/', position 2 -> siteUrl + '/xe'
+    Storefront-->>Googlebot: HTTP 200 kèm JSON-LD chuẩn Google Search Console (0 Cảnh Báo)
+```

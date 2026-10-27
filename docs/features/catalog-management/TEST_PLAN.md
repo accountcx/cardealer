@@ -15,6 +15,10 @@
 | **TC-04** | Integration | `apps/api/src/routes/catalog.ts` | Gọi `GET /api/catalog/cars` kiểm tra trả về danh sách xe có status `published` | ✅ PASSED |
 | **TC-05** | Integration | `apps/api/src/routes/catalog.ts` | Gọi `GET /api/catalog/cars/:slug` với slug không tồn tại $\rightarrow$ trả về HTTP 404 | ✅ PASSED |
 | **TC-06** | E2E Browser | `apps/web/app/xe/[slug]/page.tsx` | Khách click chọn từng nút swatch màu $\rightarrow$ ảnh đổi mượt mà, query param cập nhật | ✅ PASSED |
+| **TC-07** | Unit Test | `packages/core/src/__tests__/catalog-jsonld.test.ts` | Kiểm tra `generateCatalogJsonLd` sinh ItemList có `@id` và `url` cấp cao nhất cho từng item | ⏳ TO IMPLEMENT |
+| **TC-08** | Unit Test | `packages/core/src/__tests__/catalog-jsonld.test.ts` | Kiểm tra hàm `sanitizePromotionSummary` lọc sạch 100% prompt nhắc việc trong ngoặc đơn | ⏳ TO IMPLEMENT |
+| **TC-09** | Unit Test | `packages/core/src/__tests__/breadcrumb-schema.test.ts` | Kiểm tra Breadcrumbs JSON-LD sinh 100% Absolute URL (`https://...`), position 1 có trailing slash | ⏳ TO IMPLEMENT |
+| **TC-10** | Database Verification | `packages/database/src/scripts/clean-promotion-summaries.ts` | Quét sạch 100% ghi chú prompt ngoặc đơn trong trường `cars.promotion_summary` trên PostgreSQL | ⏳ TO RUN |
 
 ---
 

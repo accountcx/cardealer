@@ -101,3 +101,20 @@
   - **`401 Unauthorized`**: Token không hợp lệ hoặc đã hết hạn.
   - **`403 Forbidden`**: Tài khoản không có quyền `cars:write`.
   - **`409 Conflict`**: Slug xe đã tồn tại trong cơ sở dữ liệu.
+
+---
+
+## 3. SEO Schema & Data Sanitization Contracts
+
+### 🔹 Helper: `generateCatalogJsonLd(cars, siteUrl)`
+- **Đầu vào:** `cars: CarCatalogItem[]`, `siteUrl: string`
+- **Đầu ra:** Cấu trúc Schema.org `ItemList` với:
+  - `@context`: `"https://schema.org"`
+  - `@type`: `"ItemList"`
+  - `itemListElement`: Danh sách các xe với `@type: ["Product", "Car"]`, `@id: "${siteUrl}/xe/${car.slug}"`, `url: "${siteUrl}/xe/${car.slug}"` và `description` đã khử sạch prompt note.
+
+### 🔹 Helper: `Breadcrumbs` Schema JSON-LD Generator
+- **Đầu vào:** `items: BreadcrumbItem[]`, `pathname: string`, `siteUrl: string`
+- **Đầu ra:** Cấu trúc Schema.org `BreadcrumbList`:
+  - `@id`: `"${siteUrl}${pathname}#breadcrumb"`
+  - Tất cả `itemListElement[i].item` là Absolute URL (Bắt đầu bằng `https://...`). Không cho phép relative URL dạng `/` hay `/xe`.

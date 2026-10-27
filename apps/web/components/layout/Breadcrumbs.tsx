@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { ChevronRight } from 'lucide-react';
 import type { NavLink } from '@cardealer/types';
 import { sanitizeJsonLd } from '@cardealer/core';
+import { getSiteUrl } from '@cardealer/env';
 import { useNavigationLinks } from '../../context/NavigationContext';
 
 export interface BreadcrumbItem {
@@ -18,6 +19,7 @@ interface BreadcrumbsProps {
   headerLinks?: NavLink[];
   separator?: 'chevron' | 'slash' | React.ReactNode;
   className?: string;
+  baseUrl?: string;
 }
 
 // 🧠 Mental Model: Dynamic Breadcrumb Component tự động sinh theo URL và danh mục Menu API từ CMS.
@@ -31,6 +33,7 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
   headerLinks: propHeaderLinks,
   separator = 'chevron',
   className = '',
+  baseUrl,
 }) => {
   const pathname = usePathname();
   const contextLinks = useNavigationLinks();
@@ -90,15 +93,42 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
   }, [items, pathname, links]);
 
   // Schema JSON-LD BreadcrumbList cho Google Search
+  // Khắc phục triệt để lỗi Google Search Console: "URL trong trường 'id' không hợp lệ (nằm trong 'itemListElement.item')"
+  const siteUrl = (baseUrl || getSiteUrl()).replace(/\/+$/, '');
+  const cleanPathname = pathname ? (pathname.startsWith('/') ? pathname : `/${pathname}`) : '';
+  const currentFullUrl = `${siteUrl}${cleanPathname || '/'}`;
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
-    itemListElement: breadcrumbItems.map((item, index) => ({
-      '@type': 'ListItem',
-      position: index + 1,
-      name: item.label,
-      ...(item.href ? { item: item.href } : {}),
-    })),
+    '@id': `${currentFullUrl}#breadcrumb`,
+    itemListElement: breadcrumbItems.map((item, index) => {
+      const isLast = index === breadcrumbItems.length - 1;
+      let absoluteItemUrl: string;
+
+      if (item.href) {
+        if (item.href.startsWith('http://') || item.href.startsWith('https://')) {
+          absoluteItemUrl = item.href;
+        } else if (item.href === '/' || item.href === '') {
+          absoluteItemUrl = `${siteUrl}/`;
+        } else {
+          const cleanHref = item.href.startsWith('/') ? item.href : `/${item.href}`;
+          absoluteItemUrl = `${siteUrl}${cleanHref}`;
+        }
+      } else if (isLast) {
+        // Với phần tử cuối cùng không có href (trang hiện tại), gán tường minh absolute URL của trang hiện tại
+        absoluteItemUrl = currentFullUrl;
+      } else {
+        absoluteItemUrl = `${siteUrl}/`;
+      }
+
+      return {
+        '@type': 'ListItem',
+        position: index + 1,
+        name: item.label,
+        item: absoluteItemUrl,
+      };
+    }),
   };
 
   // Render ký tự phân cách theo tùy chọn

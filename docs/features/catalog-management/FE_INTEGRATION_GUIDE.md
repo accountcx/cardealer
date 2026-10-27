@@ -55,3 +55,22 @@ apps/web/app/xe/[slug]/
 ## 4. Chuẩn Mực Triển Khai Mã Nguồn
 - Bắt buộc sử dụng **Named Export** (ví dụ: `export function ProductHero(...)`).
 - 100% tuân thủ **Tailwind Spacing Scale** tiêu chuẩn (tránh các arbitrary values tự do).
+
+---
+
+## 5. Tích Hợp Component Breadcrumbs & Chuẩn Hóa SEO Schema
+
+### 5.1 Kiến Trúc Điều Hướng & Chuyển Bước (Navigation/Stepper/Transition)
+- Component `Breadcrumbs` nhận danh sách `items: BreadcrumbItem[]` (hoặc tự động tính toán từ `usePathname()`).
+- Khi render trên giao diện:
+  - Phân cấp trực quan: Các trang trước được hiển thị nhạt hơn (`text-white/70`), trang hiện tại in đậm (`text-white font-semibold`).
+  - Phân tách bằng icon `ChevronRight` hoặc ký tự gạch chéo `/`.
+  - Chỉ có các trang trước là thẻ `<Link href="...">`, trang hiện tại không có link để tránh reload không cần thiết.
+
+### 5.2 Cơ Chế Sinh Schema JSON-LD Tự Động & Chống Cảnh Báo Google Search Console
+- Component `Breadcrumbs` tự động bọc thẻ `<script type="application/ld+json">` qua `sanitizeJsonLd`:
+  - Mọi đường dẫn `item.href` tương đối (như `/`, `/xe`) được chuẩn hóa thành Absolute URL bằng cách ghép với `getSiteUrl()`.
+  - Vị trí `position: 1`: Luôn là `${siteUrl}/`.
+  - Vị trí cuối cùng: Tự động dùng `${siteUrl}${pathname}` làm URL đại diện đầy đủ, khắc phục triệt để lỗi thiếu thuộc tính `@id`.
+  - Thuộc tính `@id` của BreadcrumbList: `${siteUrl}${pathname}#breadcrumb`.
+

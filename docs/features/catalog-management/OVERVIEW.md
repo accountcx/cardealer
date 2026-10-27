@@ -3,7 +3,7 @@
 > **Module Slug:** `catalog-management`  
 > **Package / App Impact:** `packages/database`, `packages/types`, `packages/core`, `apps/api`, `apps/admin`, `apps/web`  
 > **Status:** Active / Production Ready  
-> **Version:** 1.0.0  
+> **Version:** 1.1.0  
 
 ---
 
@@ -13,6 +13,7 @@ Phân hệ **Quản Lý Danh Mục Xe & Thông Số Kỹ Thuật (Catalog Manage
 2. **Trải nghiệm Đổi Màu Ngoại Thất Thời Gian Thực (Visual Color Switcher):** Cho phép khách hàng trên Storefront chuyển đổi màu sơn trực tiếp trên giao diện xe `/xe/[slug]` với hình ảnh độ phân giải cao và đồng bộ URL query (`?phien-ban=...&mau=...`).
 3. **Quản trị Trạng thái Vòng đời Sản phẩm (Product Lifecycle State Machine):** Hỗ trợ trạng thái `draft` (biên tập nội bộ), `published` (hiển thị công khai Storefront), `archived` (ngừng kinh doanh nhưng bảo toàn liên kết SEO).
 4. **Bảng So Sánh Thông Số Kỹ Thuật (Technical Spec Matrix):** Quản lý các nhóm thông số động (`specGroups`: Động cơ, Kích thước, Tiện nghi, An toàn) phục vụ người mua xe so sánh đối chiếu.
+5. **Chuẩn Hóa SEO Google Structured Data & Làm Sạch Dữ Liệu Khuyến Mãi (Google Schema & Data Hygiene):** Đảm bảo 100% URL trong JSON-LD `BreadcrumbList` là URL tuyệt đối hợp lệ, bổ sung `@id` và `url` cấp cao nhất cho các thực thể `Product`/`Car` trong `ItemList`, đồng thời tự động loại bỏ triệt để các ghi chú/prompt nội bộ rò rỉ trong `promotionSummary`.
 
 ---
 
@@ -21,6 +22,7 @@ Phân hệ **Quản Lý Danh Mục Xe & Thông Số Kỹ Thuật (Catalog Manage
 | Phiên bản | Ngày cập nhật | Người thực hiện | Nội dung nâng cấp chính | Trạng thái |
 | :---: | :---: | :---: | :--- | :---: |
 | **v1.0.0** | 18/10/2026 | Fullstack Architecture Team | Chuẩn hóa toàn bộ schema Drizzle, REST API Catalog & Admin CRUD, Tích hợp Storefront `/xe` & `/xe/[slug]` với bộ chuyển màu trực quan | 🟢 Active |
+| **v1.1.0** | 27/10/2026 | Fullstack Architecture Team | US-04: Sửa triệt để lỗi Google Search Console BreadcrumbList ("URL trong trường id không hợp lệ"), tối ưu ItemList (@id, url), và làm sạch rò rỉ prompt trong promotionSummary | 🟢 Active |
 
 ---
 

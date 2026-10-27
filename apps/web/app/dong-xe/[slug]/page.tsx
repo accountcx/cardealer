@@ -125,12 +125,13 @@ export default async function SegmentPage({ params }: SegmentPageProps) {
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
+    '@id': `${siteUrl}/dong-xe/${config.slug}#breadcrumb`,
     itemListElement: [
       {
         '@type': 'ListItem',
         position: 1,
         name: 'Trang Chủ',
-        item: siteUrl,
+        item: `${siteUrl}/`,
       },
       {
         '@type': 'ListItem',
@@ -159,12 +160,14 @@ export default async function SegmentPage({ params }: SegmentPageProps) {
       '@type': 'ListItem',
       position: index + 1,
       item: {
-        '@type': 'Product',
-        name: car.tenXe,
+        '@id': `${siteUrl}/xe/${car.slug}`,
         url: `${siteUrl}/xe/${car.slug}`,
+        '@type': ['Product', 'Car'],
+        name: car.tenXe,
         image: car.anhDaiDienUrl,
         offers: {
           '@type': 'AggregateOffer',
+          url: `${siteUrl}/xe/${car.slug}`,
           priceCurrency: 'VND',
           lowPrice: car.minPrice,
           highPrice: car.maxPrice,

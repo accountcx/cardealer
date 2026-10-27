@@ -8,7 +8,7 @@ import type {
   CarFullContentResult,
   TopicIdeaItem,
 } from '@cardealer/types';
-import { slugifyVietnamese, checkTitleOrKeywordOverlap } from '@cardealer/core';
+import { slugifyVietnamese, checkTitleOrKeywordOverlap, sanitizePromotionSummary } from '@cardealer/core';
 import type { TransformContext, ExistingCarArticleSummary } from './ai.types';
 
 export { checkTitleOrKeywordOverlap };
@@ -281,7 +281,7 @@ export function transformAiResponse(
 
         const carContentObj: CarFullContentResult = {
           moTaChung: String(carJson.moTaChung || ''),
-          promotionSummary: String(carJson.promotionSummary || ''),
+          promotionSummary: sanitizePromotionSummary(String(carJson.promotionSummary || '')),
           traTruocTu: calculatedPricing.traTruocTu || (typeof carJson.traTruocTu === 'number' ? carJson.traTruocTu : undefined),
           highlightFeatures: Array.isArray(carJson.highlightFeatures) ? carJson.highlightFeatures : [],
           article: articleObj

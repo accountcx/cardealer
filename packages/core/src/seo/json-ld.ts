@@ -20,6 +20,25 @@ import {
 // 1. INTERFACES & CONFIG TYPES
 // ============================================================================
 
+/**
+ * 🧠 Mental Model: Hàm chuẩn hóa và làm sạch chuỗi tóm tắt ưu đãi / mô tả SEO xe.
+ * Tự động loại bỏ triệt để các ghi chú nhắc việc, prompt nội bộ rò rỉ trong ngoặc đơn
+ * ví dụ: "(Tạo nội dung tiếp thị cho dòng xe Hyundai Tucson)", "(Đánh giá về dòng xe Custin)"
+ * để bảo vệ trải nghiệm người dùng và đạt điểm SEO hoàn hảo trên Google Search.
+ */
+export function sanitizePromotionSummary(text: string | null | undefined): string {
+  if (!text || typeof text !== 'string') return '';
+  let cleaned = text.trim();
+  // 1. Loại bỏ các đoạn chỉ dẫn prompt đặc thù trong ngoặc đơn
+  cleaned = cleaned.replace(
+    /\s*\([^)]*(?:tiếp thị|đánh giá|quyết định|lưu ý|yêu cầu|nội dung|prompt|hợp lý|thay vì|bảng giá|khối kêu gọi|hướng dẫn)[^)]*\)/gi,
+    ''
+  );
+  // 2. Loại bỏ các đoạn chỉ dẫn/nhắc việc chung trong ngoặc đơn nằm ở cuối chuỗi
+  cleaned = cleaned.replace(/\s*\((?:Hỗ trợ 50%|Ưu đãi|Tặng)[^)]+\)\s*$/gi, '');
+  return cleaned.trim();
+}
+
 export interface ConsultantSchemaInfo {
   name: string;
   phone: string;
@@ -640,8 +659,8 @@ export function generateCarJsonLd(
     name: car.tenXe,
     image: car.anhDaiDienUrl,
     description:
-      car.promotionSummary ||
-      ('moTaChung' in car ? (car as any).moTaChung : null) ||
+      sanitizePromotionSummary(car.promotionSummary) ||
+      ('moTaChung' in car ? sanitizePromotionSummary((car as any).moTaChung) : null) ||
       `Bảng giá xe ${car.tenXe} lăn bánh mới nhất kèm ưu đãi chính hãng`,
     brand: {
       '@type': 'Brand',
@@ -694,7 +713,7 @@ export function generateCarJsonLd(
         '@type': 'ListItem',
         position: 1,
         name: 'Trang chủ',
-        item: cleanSiteUrl,
+        item: `${cleanSiteUrl}/`,
       },
       {
         '@type': 'ListItem',
@@ -849,12 +868,14 @@ export function generateCatalogJsonLd(cars: (CarCatalogItem | Car)[], siteUrl: s
         '@type': 'ListItem',
         position: index + 1,
         item: {
+          '@id': `${cleanSiteUrl}/xe/${car.slug}`,
+          url: `${cleanSiteUrl}/xe/${car.slug}`,
           '@type': ['Product', 'Car'],
           name: car.tenXe,
           image: car.anhDaiDienUrl,
           description:
-            car.promotionSummary ||
-            ('moTaChung' in car ? (car as any).moTaChung : null) ||
+            sanitizePromotionSummary(car.promotionSummary) ||
+            ('moTaChung' in car ? sanitizePromotionSummary((car as any).moTaChung) : null) ||
             `Bảng giá xe Hyundai ${car.tenXe} mới nhất`,
           brand: {
             '@type': 'Brand',

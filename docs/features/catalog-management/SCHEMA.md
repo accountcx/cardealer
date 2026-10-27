@@ -93,3 +93,30 @@ CREATE TABLE version_colors (
 | `published` | Hạ bài (Unpublish) | `draft` | Người thực hiện có quyền `cars:write` |
 | `published` | Ngừng bán (Archive) | `archived` | Không còn xe sẵn trong kho hoặc phiên bản cũ hết vòng đời |
 | `archived` | Bán lại (Restore) | `published` | Khôi phục trạng thái bán công khai trên Storefront |
+
+---
+
+## 3. Hợp Đồng Dữ Liệu SEO Schema JSON-LD & Quy Chuẩn Làm Sạch
+
+### 3.1 Cấu Trúc Thực Thể BreadcrumbList (Chuẩn Google Search Central)
+- Mọi `item` trong `itemListElement` BẮT BUỘC là Absolute URL (`https://...`). Tuyệt đối cấm Relative URL (`/`, `/xe`).
+- Vị trí `position: 1`: `"item": "https://xehyundaivinh.com/"`
+- Vị trí cuối cùng (`position: N`): Khai báo tường minh `"item": "https://xehyundaivinh.com/[current-path]"` và tên hiển thị `name`.
+- `@id` của BreadcrumbList: `https://xehyundaivinh.com/[current-path]#breadcrumb`.
+
+### 3.2 Cấu Trúc Thực Thể ItemList Cho Danh Sách Xe (`/xe`, `/dong-xe/:slug`)
+- Mỗi phần tử trong `itemListElement`:
+  - `position`: Số nguyên tăng dần từ 1.
+  - `item`: Đối tượng thực thể xe:
+    - `@id`: `https://xehyundaivinh.com/xe/:slug` (Bắt buộc định danh Entity)
+    - `url`: `https://xehyundaivinh.com/xe/:slug` (Bắt buộc)
+    - `@type`: `["Product", "Car"]`
+    - `name`: Tên dòng xe chính thức
+    - `image`: URL ảnh đại diện xe
+    - `description`: Đoạn mô tả xe đã được làm sạch, không chứa prompt note
+    - `brand`: `{ "@type": "Brand", "name": "Hyundai" }`
+    - `offers`: Đối tượng `AggregateOffer` (nếu `validMinPrice > 0`).
+
+### 3.3 Ràng Buộc Dữ Liệu Trường `promotionSummary`
+- Tuyệt đối không chứa các đoạn chỉ dẫn trong ngoặc đơn dạng: `\s*\([^)]*(tiếp thị|đánh giá|quyết định|lưu ý|yêu cầu|nội dung|prompt|hợp lý|thay vì|bảng giá|khối kêu gọi)[^)]*\)`.
+- Hàm làm sạch chuẩn: `sanitizePromotionSummary(raw: string): string` loại bỏ mọi đoạn prompt trong ngoặc đơn rò rỉ trước khi lưu DB hoặc đưa vào JSON-LD Schema.

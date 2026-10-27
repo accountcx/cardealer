@@ -45,3 +45,22 @@
     - *Given:* Phiên bản xe có cấu hình 4 nhóm thông số (Động cơ, Khung gầm, An toàn, Tiện nghi).
     - *When:* Người dùng mở tab "Thông số kỹ thuật".
     - *Then:* Tất cả các hàng thuộc tính và giá trị được hiển thị đầy đủ, không bị lỗi font hoặc tràn bảng trên mobile.
+
+---
+
+### 🔹 US-04: Chuẩn Hóa Schema Google (BreadcrumbList & ItemList) & Khử Nhiễu Prompt Khuyến Mãi
+- **Actor:** Google Search Console crawler, SEO Specialist, Khách hàng duyệt web.
+- **Mô tả:** Chuẩn hóa toàn bộ schema BreadcrumbList bằng URL tuyệt đối (loại bỏ relative URL "/" gây cảnh báo "URL trong trường id không hợp lệ"), tối ưu ItemList với top-level `@id` và `url`, đồng thời làm sạch toàn bộ các đoạn prompt nhắc việc / ghi chú nội bộ nằm trong ngoặc đơn rò rỉ tại trường `promotionSummary`.
+- **Kịch bản Chấp Nhận (Acceptance Criteria - Gherkin):**
+  - **Scenario 4.1: BreadcrumbList Schema 100% Absolute URLs**
+    - *Given:* Trang danh mục `/xe` hoặc phân khúc `/dong-xe/:slug` sử dụng component `Breadcrumbs`.
+    - *When:* Googlebot hoặc validator phân tích JSON-LD `<script type="application/ld+json">`.
+    - *Then:* Trường `item` tại `position: 1` là absolute URL `https://xehyundaivinh.com/` (hoặc baseUrl cấu hình), và vị trí cuối cùng cũng có `item` là absolute URL trang hiện tại (e.g. `https://xehyundaivinh.com/xe`), không chứa relative path đơn thuần `/`.
+  - **Scenario 4.2: Top-level @id và url trong ItemList danh sách xe**
+    - *Given:* Danh mục xe tại `/xe` hoặc `/dong-xe/:slug` sinh schema `@type: ItemList`.
+    - *When:* Trích xuất từng phần tử `itemListElement[i].item`.
+    - *Then:* Mỗi đối tượng `item` (kiểu `['Product', 'Car']` hoặc `Product`) BẮT BUỘC chứa các thuộc tính `@id` và `url` trỏ chính xác về URL chi tiết xe tuyệt đối (e.g. `https://xehyundaivinh.com/xe/:slug`).
+  - **Scenario 4.3: Làm sạch triệt để prompt nội bộ trong promotionSummary**
+    - *Given:* Dữ liệu dòng xe trong cơ sở dữ liệu hoặc phản hồi từ AI Assistant có dính ghi chú trong ngoặc đơn (e.g. `(Tạo nội dung tiếp thị cho dòng xe Hyundai Tucson)`, `(Đánh giá về dòng xe Custin)`...).
+    - *When:* Script migration dọn dẹp DB thực thi và hệ thống sinh dữ liệu SEO / hiển thị UI.
+    - *Then:* Các đoạn text trong ngoặc đơn dạng ghi chú/nhắc việc prompt bị xóa bỏ hoàn toàn, trả về văn bản khuyến mãi tự nhiên, sạch sẽ, không hiển thị ngoặc đơn nhắc việc ra UI hay Schema description.

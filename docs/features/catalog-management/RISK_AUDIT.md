@@ -23,6 +23,9 @@
 | **R-02** | XSS / Content Injection | Tiêm mã HTML/JS vào trường `moTaChung` hoặc `promotionSummary` | Xử lý sanitization tự động khi render và sử dụng text node an toàn |
 | **R-03** | Broken Link / 404 | Thay đổi slug xe đã index trên Google làm hỏng thứ hạng SEO | Bảng `redirects` tự động ghi nhận URL cũ và điều hướng HTTP 301 sang slug mới |
 | **R-04** | N+1 Query ORM | Truy vấn danh sách xe kèm phiên bản và màu sắc gây chậm cơ sở dữ liệu | Đánh chỉ mục B-Tree `cars_slug_idx`, `car_versions_car_id_idx` và dùng eager join |
+| **R-05** | Google Search Console Penalty | Relative URL `"/"` trong `BreadcrumbList` làm Google báo lỗi "URL trong trường id không hợp lệ" | Chuẩn hóa toàn bộ `item` thành Absolute URL dựa trên `getSiteUrl()`, bảo đảm position 1 là `https://.../` |
+| **R-06** | Carousel Snippet Degradation | Thiếu `@id` và `url` cấp cao nhất của `item` trong `ItemList` khiến Googlebot không nhận diện được Entity Car/Product | Bổ sung trực tiếp `@id` và `url` vào `item` trong `generateCatalogJsonLd` |
+| **R-07** | Information Leak / Brand Image | Rò rỉ prompt nhắc việc nội bộ `(Tạo nội dung tiếp thị...)` vào `promotionSummary` gây mất uy tín showroom | Chạy migration dọn sạch DB, bọc 3 tầng phòng thủ: helper regex sanitize + AI response transformer |
 
 ---
 
