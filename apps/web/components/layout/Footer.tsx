@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { PhoneCall, Mail, MapPin, Clock, ShieldCheck, ExternalLink } from 'lucide-react';
 import type { ContactSettings, FooterSettings } from '@cardealer/types';
 import { sanitizePhoneNumber, FooterSettingsSchema } from '@cardealer/types';
+import { FooterMapFacade } from './FooterMapFacade';
 
 export interface FooterProps {
   contact: ContactSettings;
@@ -124,20 +125,12 @@ export const Footer = ({ contact, footer }: FooterProps) => {
               {cfg.column4Title}
             </h4>
             
-            {/* Google Maps Embed hoặc Link bản đồ */}
+            {/* Google Maps Embed hoặc Link bản đồ (Áp dụng Facade Pattern chống nghẽn CPU) */}
             {mapEmbedUrl ? (
-              <div className="w-full h-28 rounded-xl overflow-hidden border border-slate-800 bg-slate-900 shadow-inner">
-                <iframe
-                  src={mapEmbedUrl}
-                  title="Vị trí Showroom Xe Hyundai Vinh"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  className="w-full h-full grayscale hover:grayscale-0 transition-all duration-300"
-                />
-              </div>
+              <FooterMapFacade
+                mapEmbedUrl={mapEmbedUrl}
+                googleMapsUrl={contact.googleMapsUrl}
+              />
             ) : (
               <a
                 href={contact.googleMapsUrl}

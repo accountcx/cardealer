@@ -3,7 +3,7 @@
 > **Module Slug:** `static-pages`  
 > **Package / App Impact:** `packages/database`, `packages/types`, `packages/core`, `apps/api`, `apps/admin`, `apps/web`  
 > **Status:** Active / Production Ready  
-> **Version:** 1.0.0  
+> **Version:** 1.1.0  
 
 ---
 
@@ -18,6 +18,11 @@ Phân hệ **Quản Trị Trang Tĩnh & Cấu Hình Showroom Toàn Cục (Static
 3. **Cấu Hình Showroom Toàn Cục (Global System Settings):**
    - Quản lý thông tin liên hệ (`hotline`, `zalo`, `diaChi`, `email`, `googleMapsUrl`).
    - Cung cấp cho Storefront Header, Footer và Widget tư vấn viên nổi (`FloatingSeller`).
+4. **Tối Ưu Hiệu Năng Core Web Vitals & Trải Nghiệm Khách Hàng (PageSpeed Performance):**
+   - Nén & tối ưu tải trọng ảnh Cloudinary tự động (`f_auto,q_auto,w_...`), chuyển đổi sang `next/image` lazy-loading.
+   - Áp dụng Facade Pattern cho Google Maps iframe ở Footer để cắt giảm 417 KiB JS và 292ms CPU.
+   - Trì hoãn thực thi các Third-party Tracking Scripts (GTM, GA4, Clarity, Pixels) qua `strategy="lazyOnload"` giải phóng Main Thread lúc khởi động.
+   - Triệt tiêu độ lệch bố cục (CLS < 0.05) với aspect-ratio cố định và placeholder.
 
 ---
 
@@ -26,6 +31,7 @@ Phân hệ **Quản Trị Trang Tĩnh & Cấu Hình Showroom Toàn Cục (Static
 | Phiên bản | Ngày cập nhật | Người thực hiện | Nội dung nâng cấp chính | Trạng thái |
 | :---: | :---: | :---: | :--- | :---: |
 | **v1.0.0** | 18/10/2026 | Fullstack CMS Team | Thiết kế bảng `static_pages` & `system_settings`, xây dựng API RESTful, trang soạn thảo Tiptap Admin và Storefront dynamic route `/[slug]` | 🟢 Active |
+| **v1.1.0** | 02/11/2026 | Fullstack Performance Team | US-03: Tối ưu hiệu năng Core Web Vitals (Tải trọng ảnh Cloudinary, Google Maps Facade, Defer Tracking Scripts, Triệt tiêu CLS) | 🟢 Active |
 
 ---
 

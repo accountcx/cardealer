@@ -83,35 +83,44 @@ export default async function RootLayout({
   return (
     <html lang="vi-VN" className="overflow-x-clip scroll-smooth">
       <head>
-        {/* 1. Google Tag Manager (Render trực tiếp trong SSR <head> để Google Tag Assistant & Bot nhận diện 100%) */}
+        {/* Khởi tạo dataLayer sớm để lưu trữ sự kiện trước khi script nạp */}
+        <script
+          id="gtm-datalayer-init"
+          dangerouslySetInnerHTML={{
+            __html: 'window.dataLayer = window.dataLayer || [];',
+          }}
+        />
+
+        {/* 1. Google Tag Manager (Tối ưu Core Web Vitals: nạp khi browser idle để không chặn CPU main thread) */}
         {gtmId && (
-          <script
-            id="google-tag-manager"
-            dangerouslySetInnerHTML={{
-              __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${gtmId}');`,
-            }}
-          />
+          <Script id="google-tag-manager" strategy="lazyOnload">
+            {`
+              (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${gtmId}');
+            `}
+          </Script>
         )}
 
-        {/* 2. Google Analytics 4 / Google Tag (gtag.js - hoạt động độc lập, không bị chặn bởi gtmId) */}
+        {/* 2. Google Analytics 4 / Google Tag (gtag.js - nạp lazyOnload giải phóng TBT) */}
         {gaId && (
           <>
-            <script
-              async
+            <Script
+              id="google-tag-src"
+              strategy="lazyOnload"
               src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
             />
-            <script
-              id="google-analytics"
-              dangerouslySetInnerHTML={{
-                __html: `window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', '${gaId}');`,
-              }}
-            />
+            <Script id="google-analytics" strategy="lazyOnload">
+              {`
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${gaId}');
+              `}
+            </Script>
           </>
         )}
 
-        {/* 3. Microsoft Clarity */}
+        {/* 3. Microsoft Clarity (Tối ưu lazyOnload chống Long Tasks) */}
         {clarityId && (
-          <Script id="microsoft-clarity" strategy="afterInteractive">
+          <Script id="microsoft-clarity" strategy="lazyOnload">
             {`
               (function(c,l,a,r,i,t,y){
                 c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -124,7 +133,7 @@ export default async function RootLayout({
 
         {/* 4. Facebook Pixel */}
         {fbPixelId && (
-          <Script id="facebook-pixel" strategy="afterInteractive">
+          <Script id="facebook-pixel" strategy="lazyOnload">
             {`
               !function(f,b,e,v,n,t,s)
               {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -142,7 +151,7 @@ export default async function RootLayout({
 
         {/* 5. TikTok Pixel */}
         {tiktokPixelId && (
-          <Script id="tiktok-pixel" strategy="afterInteractive">
+          <Script id="tiktok-pixel" strategy="lazyOnload">
             {`
               !function (w, d, t) {
                 w.TiktokAnalyticsObject=t;var tt=w[t]=w[t]||[];tt.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"],tt.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<tt.methods.length;i++)tt.setAndDefer(tt,tt.methods[i]);tt.instance=function(t){for(var e=tt._i[t]||[],n=0;n<tt.methods.length;n++)tt.setAndDefer(e,tt.methods[n]);return e},tt.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";tt._i=tt._i||{},tt._i[e]=[],tt._i[e]._u=i,tt._t=tt._t||{},tt._t[e]=+new Date,tt._o=tt._o||{},tt._o[e]=n||{};var o=document.createElement("script");o.type="text/javascript",o.async=!0,o.src=i+"?sdkid="+e+"&lib="+t;var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};
@@ -155,7 +164,7 @@ export default async function RootLayout({
 
         {/* 6. Zalo Pixel */}
         {zaloPixelId && (
-          <Script id="zalo-pixel" strategy="afterInteractive">
+          <Script id="zalo-pixel" strategy="lazyOnload">
             {`
               (function(w,d,s,l,i){w[l]=w[l]||[];var f=d.getElementsByTagName(s)[0],
               j=d.createElement(s);j.async=true;j.src='https://sp.zalo.me/plugins/sdk.js?id='+i;

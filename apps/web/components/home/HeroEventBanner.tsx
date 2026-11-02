@@ -1,9 +1,11 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Sparkles, ArrowRight, PhoneCall, Tag } from 'lucide-react';
 import { Button } from '@cardealer/ui';
+import { optimizeCloudinaryUrl } from '@cardealer/core';
 import type { HeroBannerConfig } from '@cardealer/types';
 import { CountdownTimer } from './CountdownTimer';
 
@@ -60,7 +62,7 @@ export const HeroEventBanner: React.FC<HeroEventBannerProps> = ({ config, hotlin
     : 'justify-start';
 
   return (
-    <section className="relative w-full bg-slate-950 overflow-hidden" aria-label="Khuyến Mại Sự Kiện Lớn">
+    <section className="relative w-full bg-slate-950 overflow-hidden min-h-[480px] sm:min-h-[520px] lg:min-h-[560px] flex items-center" aria-label="Khuyến Mại Sự Kiện Lớn">
       {/* Background Media & Gradient Overlay */}
       <div className="absolute inset-0 z-0">
         {config.mediaType === 'video' && config.mediaUrl ? (
@@ -74,15 +76,22 @@ export const HeroEventBanner: React.FC<HeroEventBannerProps> = ({ config, hotlin
             <source src={config.mediaUrl} type="video/mp4" />
           </video>
         ) : (
-          <div
-            className={`w-full h-full bg-cover transition-transform duration-700 hover:scale-105 ${
-              isRight ? 'bg-center md:bg-[center_left]' : isCenter ? 'bg-center' : 'bg-center md:bg-[center_right]'
-            }`}
-            style={{
-              backgroundImage: `url(${config.mediaUrl || '/images/banners/hero-event.webp'})`,
-              backgroundColor: '#001A44',
-            }}
-          />
+          <div className="relative w-full h-full bg-[#001A44] overflow-hidden">
+            <Image
+              src={optimizeCloudinaryUrl(config.mediaUrl || '/images/banners/hero-event.webp', {
+                width: 1440,
+                quality: 'auto',
+                crop: 'fill',
+              })}
+              alt={config.headline || 'Banner Sự Kiện Hyundai'}
+              fill
+              priority
+              sizes="100vw"
+              className={`object-cover transition-transform duration-700 hover:scale-105 ${
+                isRight ? 'object-center md:object-[center_left]' : isCenter ? 'object-center' : 'object-center md:object-[center_right]'
+              }`}
+            />
+          </div>
         )}
         {/* Lớp phủ Linear Gradient Đa Tầng Siêu Mịn thích ứng vị trí nội dung */}
         <div

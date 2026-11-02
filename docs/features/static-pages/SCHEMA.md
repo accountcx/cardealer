@@ -55,3 +55,23 @@ CREATE UNIQUE INDEX system_settings_key_idx ON system_settings (key);
 | `draft` | Bật xuất bản | `published` | Bắt buộc có tiêu đề, slug hợp lệ và nội dung không rỗng |
 | `published` | Chuyển về nháp | `draft` | Người dùng có quyền `pages:write` |
 | `draft` / `published` | Xóa trang | `deleted` | Người dùng có quyền `pages:delete` |
+
+---
+
+## 3. Hợp Đồng Dữ Liệu Tối Ưu Tải Trọng Ảnh & Map Facade (US-03)
+
+### 3.1 Cấu Trúc Tham Số Biến Đổi Ảnh (`CloudinaryTransformOptions`)
+```typescript
+export interface CloudinaryTransformOptions {
+  width?: number; // Chiều rộng pixel mong muốn (ví dụ: 400, 600, 800, 1200)
+  height?: number; // Chiều cao pixel mong muốn (tùy chọn)
+  quality?: 'auto' | number; // Chất lượng nén: 'auto' (mặc định) hoặc số nguyên 1-100
+  format?: 'auto' | 'webp' | 'avif'; // Định dạng xuất: 'auto' (mặc định)
+  crop?: 'fill' | 'fit' | 'limit' | 'scale'; // Chế độ cắt ảnh: 'fill' (mặc định)
+}
+```
+
+### 3.2 Quy Chuẩn Định Dạng URL Cloudinary Biến Đổi
+- Đầu vào: `https://res.cloudinary.com/[cloud_name]/image/upload/v1791044041/media/[filename].jpg`
+- Đầu ra: `https://res.cloudinary.com/[cloud_name]/image/upload/f_auto,q_auto,w_600,c_fill/v1791044041/media/[filename].jpg`
+- Nếu ảnh không phải từ Cloudinary (ví dụ ảnh nội bộ `/images/...` hoặc Unsplash), hàm giữ nguyên URL an toàn (Zero Disruption).

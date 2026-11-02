@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import Image from 'next/image';
 import {
   Camera,
   MapPin,
@@ -11,6 +12,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { Button } from '@cardealer/ui';
+import { optimizeCloudinaryUrl } from '@cardealer/core';
 import type { DeliveryStoriesZoneConfig, DeliveryStoryItem } from '@cardealer/types';
 
 export interface DeliveryStoriesSectionProps {
@@ -223,9 +225,17 @@ export const DeliveryStoriesSection: React.FC<DeliveryStoriesSectionProps> = ({ 
             >
               <div>
                 <div className="relative w-full aspect-[16/10] bg-slate-100 overflow-hidden">
-                  <div
-                    className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none"
-                    style={{ backgroundImage: `url(${story.imageUrl || '/images/delivery/default.webp'})` }}
+                  <Image
+                    src={optimizeCloudinaryUrl(story.imageUrl || '/images/delivery/default.webp', {
+                      width: 500,
+                      quality: 'auto',
+                      crop: 'fill',
+                    })}
+                    alt={`Bàn giao xe ${story.carModel} cho khách hàng ${story.customerName}`}
+                    fill
+                    sizes="(max-width: 640px) 88vw, (max-width: 1024px) 380px, 400px"
+                    loading="lazy"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/10 opacity-60 group-hover:opacity-80 transition-opacity" />
                   <div className="absolute top-3 right-3 p-2 rounded-xl bg-black/50 text-white backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all transform scale-90 group-hover:scale-100 shadow-md">
@@ -317,10 +327,16 @@ export const DeliveryStoriesSection: React.FC<DeliveryStoriesSectionProps> = ({ 
             </div>
 
             <div className="aspect-[16/10] w-full rounded-2xl overflow-hidden bg-slate-950 border border-white/10 relative">
-              <img
-                src={lightboxStory.imageUrl || '/images/delivery/default.webp'}
+              <Image
+                src={optimizeCloudinaryUrl(lightboxStory.imageUrl || '/images/delivery/default.webp', {
+                  width: 1200,
+                  quality: 'auto',
+                  crop: 'fit',
+                })}
                 alt={lightboxStory.customerName || 'Ảnh bàn giao'}
-                className="w-full h-full object-contain"
+                fill
+                sizes="(max-width: 1024px) 100vw, 1200px"
+                className="object-contain"
               />
             </div>
 

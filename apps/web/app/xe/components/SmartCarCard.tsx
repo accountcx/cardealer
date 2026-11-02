@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Users, Fuel, Layers, Tag, ArrowRight, Calculator } from 'lucide-react';
-import { formatVNDShort } from '@cardealer/core';
+import { formatVNDShort, optimizeCloudinaryUrl } from '@cardealer/core';
 import type { CarCatalogItem } from '@cardealer/types';
 import { Button, Skeleton } from '@cardealer/ui';
 
@@ -90,13 +91,21 @@ export const SmartCarCard: React.FC<SmartCarCardProps> = ({ car }) => {
         <div className="relative w-full aspect-[16/9] bg-gradient-to-b from-slate-50 to-slate-100/70 overflow-hidden flex items-center justify-center p-2 sm:p-2.5">
           <Link
             href={`/xe/${car.slug}`}
-            className="w-full h-full block focus-visible:ring-2 focus-visible:ring-[#0072CE] focus-visible:outline-none rounded-2xl overflow-hidden"
+            className="w-full h-full block relative focus-visible:ring-2 focus-visible:ring-[#0072CE] focus-visible:outline-none rounded-2xl overflow-hidden"
             tabIndex={-1}
             aria-hidden="true"
           >
-            <div
-              className="w-full h-full bg-contain bg-no-repeat bg-center transition-transform duration-500 group-hover:scale-105 drop-shadow-md motion-reduce:transition-none motion-reduce:transform-none"
-              style={{ backgroundImage: `url(${car.anhDaiDienUrl || '/images/cars/default.webp'})` }}
+            <Image
+              src={optimizeCloudinaryUrl(car.anhDaiDienUrl || '/images/cars/default.webp', {
+                width: 500,
+                quality: 'auto',
+                crop: 'fit',
+              })}
+              alt={`Xe ${car.tenXe}`}
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              loading="lazy"
+              className="object-contain transition-transform duration-500 group-hover:scale-105 drop-shadow-md motion-reduce:transition-none motion-reduce:transform-none"
             />
           </Link>
 

@@ -51,3 +51,22 @@ apps/admin/app/pages/
 ## 4. Chuẩn Mực Triển Khai Mã Nguồn
 - Bắt buộc sử dụng **Named Export** (ví dụ: `export function StaticPageRenderer(...)`).
 - 100% tuân thủ **Tailwind Spacing Scale** tiêu chuẩn (tránh các arbitrary values tự do).
+
+---
+
+## 5. Tích Hợp Google Maps Facade & Hình Ảnh Tối Ưu (US-03)
+
+### 5.1 Kiến Trúc Bản Đồ Facade (Footer Map Facade)
+- **Mặc định:** Hiển thị khung bản đồ với ảnh tĩnh vệ tinh / đồ họa vị trí showroom Hyundai Dũng Lạc TP. Vinh.
+- **Tương tác:**
+  - Nút bấm *"Xem bản đồ tương tác"* kích hoạt nạp `<iframe>` thực tế theo nhu cầu.
+  - Nút *"Mở Google Maps"* dẫn trực tiếp sang ứng dụng Google Maps.
+  - Đảm bảo 0 script Google Maps chạy trong giai đoạn FCP và Hydration.
+
+### 5.2 Chuẩn Mực Nhúng Ảnh Next.js `<Image />`
+- Mọi hình ảnh có tỷ lệ hiển thị cụ thể đều phải bọc trong container có class `aspect-[16/10]` hoặc `aspect-video`.
+- Cung cấp thuộc tính `sizes` chuẩn xác:
+  - Mobile slider: `sizes="(max-width: 640px) 88vw, 400px"`
+  - Thẻ xe Showcase: `sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"`
+- Đặt `loading="lazy"` cho các ảnh ngoài màn hình đầu tiên (above-the-fold) và `priority` cho Hero Banner.
+

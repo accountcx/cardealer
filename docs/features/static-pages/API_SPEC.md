@@ -62,3 +62,18 @@
 - **Headers:** `Authorization: Bearer <token>` (Yêu cầu quyền `system:write`)
 - **Responses:**
   - **`200 OK`**: Cập nhật cấu hình thành công.
+
+---
+
+## 3. Helper Functions Specification (Core Package)
+
+### 🔹 Helper: `optimizeCloudinaryUrl(url, options)`
+- **Vị trí:** `@cardealer/core`
+- **Đầu vào:** `url: string | null | undefined`, `options?: CloudinaryTransformOptions`
+- **Đầu ra:** `string` (URL đã được tiêm cờ biến đổi hoặc URL fallback)
+- **Hành vi:**
+  - Trả về empty string nếu URL null hoặc undefined.
+  - Tự động phát hiện URL Cloudinary (`res.cloudinary.com`).
+  - Chèn `/upload/f_auto,q_auto,w_...,c_fill/` ngay sau `/upload/`.
+  - Nếu đã có cờ transformation cũ, thay thế bằng cờ mới tương thích.
+  - Bảo lưu 100% URL gốc nếu không phải Cloudinary.

@@ -1,7 +1,9 @@
 import React from 'react';
+import Image from 'next/image';
 import { Shield, Truck, Clock, Landmark, PhoneCall, MessageCircle, Star, Award, CheckCircle2, Building2, MapPin } from 'lucide-react';
 import type { SalerShowroomConfig } from '@cardealer/types';
 import { sanitizePhoneNumber, normalizeZaloUrl } from '@cardealer/types';
+import { optimizeCloudinaryUrl } from '@cardealer/core';
 
 export interface SalerProfileSectionProps {
   config: SalerShowroomConfig;
@@ -68,9 +70,17 @@ export const SalerProfileSection: React.FC<SalerProfileSectionProps> = ({
               <div className="space-y-5">
                 {/* Showroom Photo / Banner */}
                 <div className="relative w-full h-44 sm:h-48 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 group">
-                  <div
-                    className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                    style={{ backgroundImage: `url(${config.galleryImages?.[0] || '/images/banners/hero-event.webp'})` }}
+                  <Image
+                    src={optimizeCloudinaryUrl(config.galleryImages?.[0] || '/images/banners/hero-event.webp', {
+                      width: 800,
+                      quality: 'auto',
+                      crop: 'fill',
+                    })}
+                    alt={config.showroomName || 'Showroom Hyundai'}
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 500px"
+                    loading="lazy"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
                   <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white text-xs">
@@ -144,9 +154,18 @@ export const SalerProfileSection: React.FC<SalerProfileSectionProps> = ({
               <div className="space-y-6">
                 <div className="flex items-center gap-4">
                   <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden bg-gradient-to-tr from-[#002C6C] to-[#0072CE] border-2 border-white shadow-md flex-shrink-0 ring-2 ring-sky-200">
-                    <div
-                      className="w-full h-full bg-cover bg-center"
-                      style={{ backgroundImage: `url(${config.avatarUrl || '/images/saler-avatar.webp'})` }}
+                    <Image
+                      src={optimizeCloudinaryUrl(config.avatarUrl || '/images/saler-avatar.webp', {
+                        width: 160,
+                        height: 160,
+                        quality: 'auto',
+                        crop: 'fill',
+                      })}
+                      alt={config.salerName || 'Tư vấn viên'}
+                      fill
+                      sizes="80px"
+                      loading="lazy"
+                      className="object-cover"
                     />
                   </div>
                   <div>

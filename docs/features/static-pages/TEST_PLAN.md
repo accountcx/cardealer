@@ -15,6 +15,9 @@
 | **TC-04** | Unit Test | `packages/core/src/__tests__/settings-schemas.test.ts` | Xác thực cấu hình `ContactSettingsSchema` (hotline, email, địa chỉ) | ✅ PASSED |
 | **TC-05** | Integration | `apps/api/src/routes/pages.ts` | Truy vấn trang có `is_published: false` $\rightarrow$ API trả về HTTP 404 | ✅ PASSED |
 | **TC-06** | E2E Browser | `apps/web/app/(main)/[slug]/page.tsx` | Truy cập `/gioi-thieu` $\rightarrow$ trang tải đầy đủ nội dung, breadcrumb và thẻ meta | ✅ PASSED |
+| **TC-07** | Unit Test | `packages/core/src/__tests__/cloudinary-optimizer.test.ts` | Kiểm tra hàm `optimizeCloudinaryUrl` chèn đúng cờ `f_auto,q_auto,w_...,c_fill`, xử lý an toàn URL ngoài và null/undefined | ⏳ TO IMPLEMENT |
+| **TC-08** | Component Test | `apps/web/components/layout/Footer.tsx` | Kiểm tra Map Facade không inject iframe khi tải trang ban đầu, chỉ inject khi user click hoặc tương tác | ⏳ TO IMPLEMENT |
+| **TC-09** | Build & Type Verification | Monorepo root | Chạy `pnpm check-types` và `next build` đảm bảo không có lỗi TypeScript hay lỗi bundling | ⏳ TO IMPLEMENT |
 
 ---
 

@@ -65,3 +65,36 @@ sequenceDiagram
     Backend-->>AdminApp: HTTP 200 OK { success: true }
     AdminApp-->>Admin: Hiển thị thông báo lưu thành công
 ```
+
+---
+
+## 4. Sequence Diagram: Tải Trang Tối Ưu Hiệu Năng & Bản Đồ Facade (US-03)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Khách Hàng / Googlebot
+    participant Browser as Trình Duyệt Web
+    participant Storefront as Next.js SSR (apps/web)
+    participant CoreMedia as Core Media Optimizer (@cardealer/core)
+    participant Cloudinary as Cloudinary CDN
+    participant GoogleMaps as Google Maps Engine
+
+    User->>Browser: Truy cập trang chủ /xehyundaivinh.com
+    Browser->>Storefront: GET /
+    Storefront->>CoreMedia: optimizeCloudinaryUrl(rawUrl, { width: 600, quality: 'auto' })
+    CoreMedia-->>Storefront: URL biến đổi f_auto,q_auto,w_600,c_fill
+    Storefront-->>Browser: HTML kết xuất SSR + Footer Map Facade (0 Google Maps JS)
+    
+    Note over Browser: FCP & Hydration hoàn tất siêu tốc (< 1s, 0 Long Tasks)
+    Browser->>Cloudinary: Tải ảnh đã nén (~20 KiB thay vì 500 KiB)
+    
+    Note over Browser: Trình duyệt chuyển sang trạng thái Rảnh (Idle)
+    Browser->>Browser: Kích hoạt next/script strategy="lazyOnload" (GTM, GA4, Clarity)
+    
+    opt Khách hàng tương tác với bản đồ ở Footer
+        User->>Browser: Bấm "Xem bản đồ tương tác" trên Map Facade
+        Browser->>GoogleMaps: Kích hoạt tải iframe embed & thư viện bản đồ
+        GoogleMaps-->>Browser: Render bản đồ tương tác mượt mà
+    end
+```

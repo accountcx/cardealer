@@ -1,10 +1,11 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Sparkles, ArrowRight, Tag, ShieldCheck, Calculator } from 'lucide-react';
 import { Button } from '@cardealer/ui';
-import { formatVNDShort } from '@cardealer/core';
+import { formatVNDShort, optimizeCloudinaryUrl } from '@cardealer/core';
 import type { Car } from '@cardealer/types';
 
 export interface CarShowcaseCardProps {
@@ -32,9 +33,17 @@ export const CarShowcaseCard: React.FC<CarShowcaseCardProps> = ({ car }) => {
       <div>
         {/* Car Image with Segment Badge */}
         <div className="relative w-full aspect-[16/10] bg-gradient-to-b from-slate-50 to-slate-100/90 overflow-hidden flex items-center justify-center p-3 sm:p-4">
-          <div
-            className="w-full h-full bg-contain bg-no-repeat bg-center transition-transform duration-500 group-hover:scale-105 drop-shadow-md"
-            style={{ backgroundImage: `url(${car.anhDaiDienUrl || '/images/cars/default.webp'})` }}
+          <Image
+            src={optimizeCloudinaryUrl(car.anhDaiDienUrl || '/images/cars/default.webp', {
+              width: 500,
+              quality: 'auto',
+              crop: 'fit',
+            })}
+            alt={`Xe ${car.tenXe}`}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            loading="lazy"
+            className="object-contain p-3 sm:p-4 transition-transform duration-500 group-hover:scale-105 drop-shadow-md"
           />
 
           <div className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-white/95 backdrop-blur-sm border border-slate-200/80 text-slate-700 text-[11px] font-bold uppercase tracking-wider shadow-sm font-mono z-10">

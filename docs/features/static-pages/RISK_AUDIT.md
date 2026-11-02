@@ -22,6 +22,9 @@
 | **R-02** | Slug Collision | Đặt slug trùng với các route cố định hệ thống (như `/xe`, `/tin-tuc`, `/api`) | Danh sách Blacklist Slug chặn các từ khóa hệ thống trong Zod Validation |
 | **R-03** | Unpublished Leak | Khách hàng vãng lai đoán được slug trang nháp và đọc nội dung trước thời hạn | Truy vấn Fail-Closed bắt buộc điều kiện `is_published = true` |
 | **R-04** | Setting Data Corruption | Ghi đè cấu hình với payload sai định dạng làm sập Footer/Header | Kiểm tra chặt chẽ bằng `ContactSettingsSchema` trước khi lưu vào `system_settings` |
+| **R-05** | Broken Image Transform | URL ảnh Cloudinary không đúng chuẩn làm lỗi hiển thị ảnh xe / bàn giao | Hàm `optimizeCloudinaryUrl` bọc try-catch, kiểm tra regex định dạng nghiêm ngặt và fallback về URL gốc |
+| **R-06** | Tracking Event Delay | Trì hoãn script khiến các sự kiện tracking đầu tiên không được thu thập | GTM khởi tạo dataLayer rỗng ngay từ đầu, sự kiện được xếp hàng chờ (queued) và tự động gửi đi khi script nạp |
+| **R-07** | CLS Regression on Mobile | Khung ảnh không có aspect ratio làm giật trang khi nạp mạng di động yếu | Thiết lập class `aspect-[16/10]` và placeholder màu nền nhẹ giữ chỗ cố định 100% thời gian |
 
 ---
 

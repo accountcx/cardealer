@@ -65,7 +65,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
   // Placeholder trước khi mount trên Client để giữ layout không bị nhảy (CLS = 0)
   if (!mounted) {
     return (
-      <div className="space-y-2.5 min-h-[76px]" aria-label="Bộ đếm ngược ưu đãi">
+      <div className="space-y-2.5 min-h-[104px] sm:min-h-[112px]" aria-label="Bộ đếm ngược ưu đãi">
         <p className="text-xs sm:text-sm font-semibold text-white tracking-wide flex items-center gap-2">
           <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-ping" />
           {urgencyText}
