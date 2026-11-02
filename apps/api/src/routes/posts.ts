@@ -1,7 +1,7 @@
-import { IncomingMessage, ServerResponse } from 'node:http';
-import crypto from 'node:crypto';
-import { db, schema } from '@cardealer/database';
-import { eq, desc, asc, and, or, ilike, count, sql, ne } from 'drizzle-orm';
+import { IncomingMessage, ServerResponse } from "node:http";
+import crypto from "node:crypto";
+import { db, schema } from "@cardealer/database";
+import { eq, desc, asc, and, or, ilike, count, sql, ne } from "drizzle-orm";
 import {
   CreatePostInputSchema,
   UpdatePostInputSchema,
@@ -9,9 +9,13 @@ import {
   updateCategorySchema,
   hasPermission,
   type Role,
-} from '@cardealer/types';
-import { calculateReadingTimeAndWordCount, extractTextFromTiptap, slugifyVietnamese } from '@cardealer/core';
-import { authenticateAdmin } from '../middleware/rbac';
+} from "@cardealer/types";
+import {
+  calculateReadingTimeAndWordCount,
+  extractTextFromTiptap,
+  slugifyVietnamese,
+} from "@cardealer/core";
+import { authenticateAdmin } from "../middleware/rbac";
 
 // 🧠 Mental Model: Router Quản Trị Biên Tập Bài Viết & Inbound Lead Receiver (CMS Posts Engine).
 // 1. RBAC Guard: Bắt buộc xác thực JWT token và phân quyền chặt chẽ ('posts:read', 'posts:write').
@@ -26,22 +30,29 @@ export async function handlePostRoutes(
   res: ServerResponse,
   url: URL,
   readBody: () => Promise<Record<string, unknown>>,
-  sendJson: (status: number, data: unknown, headers?: Record<string, string>) => void
+  sendJson: (
+    status: number,
+    data: unknown,
+    headers?: Record<string, string>,
+  ) => void,
 ): Promise<boolean> {
   const pathname = url.pathname;
-  const method = req.method || 'GET';
+  const method = req.method || "GET";
 
   // ==========================================================================
   // 1. PUBLIC ROUTES: PREVIEW BÀI VIẾT & INBOUND LEAD
   // ==========================================================================
 
   // 1.1. GET /api/posts/preview?token=... (Xem trước bài viết nháp bí mật)
-  if (pathname === '/api/posts/preview' && method === 'GET') {
-    const token = url.searchParams.get('token');
+  if (pathname === "/api/posts/preview" && method === "GET") {
+    const token = url.searchParams.get("token");
     if (!token || token.length < 16) {
       sendJson(400, {
         success: false,
-        error: { code: 'INVALID_TOKEN', message: 'Token xem trước không hợp lệ hoặc thiếu' },
+        error: {
+          code: "INVALID_TOKEN",
+          message: "Token xem trước không hợp lệ hoặc thiếu",
+        },
       });
       return true;
     }
@@ -67,7 +78,10 @@ export async function handlePostRoutes(
       if (!post) {
         sendJson(404, {
           success: false,
-          error: { code: 'NOT_FOUND', message: 'Không tìm thấy bài viết tương ứng với token xem trước' },
+          error: {
+            code: "NOT_FOUND",
+            message: "Không tìm thấy bài viết tương ứng với token xem trước",
+          },
         });
         return true;
       }
@@ -78,48 +92,62 @@ export async function handlePostRoutes(
       });
       return true;
     } catch (err: unknown) {
-      console.error('[Posts Preview] Lỗi truy vấn:', err);
+      console.error("[Posts Preview] Lỗi truy vấn:", err);
       sendJson(500, {
         success: false,
-        error: { code: 'DB_ERROR', message: 'Lỗi truy vấn bài viết xem trước' },
+        error: { code: "DB_ERROR", message: "Lỗi truy vấn bài viết xem trước" },
       });
       return true;
     }
   }
 
   // 1.2. POST /api/leads/inbound (Tiếp nhận Lead từ Content Blocks kèm Honeypot)
-  if (pathname === '/api/leads/inbound' && method === 'POST') {
+  if (pathname === "/api/leads/inbound" && method === "POST") {
     try {
       const body = await readBody();
 
       // Honeypot Spam Check: Bot thường tự động điền các trường ẩn này
-      const honeypot = body['hp_company'] || body['website'] || body['company_name'];
+      const honeypot =
+        body["hp_company"] || body["website"] || body["company_name"];
       if (honeypot && String(honeypot).trim().length > 0) {
         // Silent drop: Trả về thành công giả lập để đánh lừa bot mà không lưu DB
         sendJson(200, {
           success: true,
-          data: { id: crypto.randomUUID(), message: 'Yêu cầu của bạn đã được ghi nhận' },
+          data: {
+            id: crypto.randomUUID(),
+            message: "Yêu cầu của bạn đã được ghi nhận",
+          },
         });
         return true;
       }
 
       // Chuẩn hóa payload
-      const phone = String(body.phone || body.soDienThoai || '').trim();
-      const fullName = String(body.fullName || body.hoTen || 'Khách hàng quan tâm').trim();
-      const carModelInterested = body.carModelInterested ? String(body.carModelInterested).trim() : null;
+      const phone = String(body.phone || body.soDienThoai || "").trim();
+      const fullName = String(
+        body.fullName || body.hoTen || "Khách hàng quan tâm",
+      ).trim();
+      const carModelInterested = body.carModelInterested
+        ? String(body.carModelInterested).trim()
+        : null;
       const postId = body.postId ? String(body.postId) : null;
       const authorId = body.authorId ? String(body.authorId) : null;
-      const sourceType = body.sourceType ? String(body.sourceType) : 'inbound_post';
+      const sourceType = body.sourceType
+        ? String(body.sourceType)
+        : "inbound_post";
       const utmSource = body.utmSource ? String(body.utmSource) : null;
       const utmMedium = body.utmMedium ? String(body.utmMedium) : null;
       const utmCampaign = body.utmCampaign ? String(body.utmCampaign) : null;
 
       // Validate định dạng SĐT Việt Nam (10 chữ số, bắt đầu bằng 0)
       const phoneRegex = /^(0)(3|5|7|8|9)[0-9]{8}$/;
-      if (!phoneRegex.test(phone.replace(/\s+/g, ''))) {
+      if (!phoneRegex.test(phone.replace(/\s+/g, ""))) {
         sendJson(400, {
           success: false,
-          error: { code: 'INVALID_PHONE', message: 'Số điện thoại không đúng định dạng di động 10 số Việt Nam' },
+          error: {
+            code: "INVALID_PHONE",
+            message:
+              "Số điện thoại không đúng định dạng di động 10 số Việt Nam",
+          },
         });
         return true;
       }
@@ -129,7 +157,7 @@ export async function handlePostRoutes(
         .values({
           fullName,
           phone,
-          status: 'new',
+          status: "new",
           carModelInterested,
           postId: postId || undefined,
           authorId: authorId || undefined,
@@ -137,28 +165,34 @@ export async function handlePostRoutes(
           utmSource,
           utmMedium,
           utmCampaign,
-          notes: body.notes ? String(body.notes) : 'Khách đăng ký nhận báo giá / mở khóa nội dung bài viết',
+          notes: body.notes
+            ? String(body.notes)
+            : "Khách đăng ký nhận báo giá / mở khóa nội dung bài viết",
         })
         .returning();
 
       sendJson(201, {
         success: true,
         data: newLead,
-        message: 'Đăng ký nhận báo giá thành công. Tư vấn viên sẽ liên hệ trong 5 phút!',
+        message:
+          "Đăng ký nhận báo giá thành công. Tư vấn viên sẽ liên hệ trong 5 phút!",
       });
       return true;
     } catch (err: unknown) {
-      console.error('[Inbound Lead] Lỗi lưu lead:', err);
+      console.error("[Inbound Lead] Lỗi lưu lead:", err);
       sendJson(500, {
         success: false,
-        error: { code: 'DB_ERROR', message: 'Lỗi ghi nhận thông tin khách hàng' },
+        error: {
+          code: "DB_ERROR",
+          message: "Lỗi ghi nhận thông tin khách hàng",
+        },
       });
       return true;
     }
   }
 
   // 1.3. GET /api/posts/categories (Danh mục công khai cho Storefront)
-  if (pathname === '/api/posts/categories' && method === 'GET') {
+  if (pathname === "/api/posts/categories" && method === "GET") {
     try {
       const publicCategories = await db
         .select({
@@ -169,37 +203,53 @@ export async function handlePostRoutes(
           sortOrder: schema.categories.sortOrder,
         })
         .from(schema.categories)
-        .orderBy(asc(schema.categories.sortOrder), desc(schema.categories.createdAt));
+        .orderBy(
+          asc(schema.categories.sortOrder),
+          desc(schema.categories.createdAt),
+        );
 
       sendJson(200, { success: true, data: publicCategories });
       return true;
     } catch (err: unknown) {
-      console.error('[Public Categories] Lỗi tải chuyên mục:', err);
-      sendJson(500, { success: false, error: { code: 'DB_ERROR', message: 'Lỗi tải chuyên mục bài viết' } });
+      console.error("[Public Categories] Lỗi tải chuyên mục:", err);
+      sendJson(500, {
+        success: false,
+        error: { code: "DB_ERROR", message: "Lỗi tải chuyên mục bài viết" },
+      });
       return true;
     }
   }
 
   // 1.4. GET /api/posts (Danh sách bài viết đã xuất bản cho Storefront kèm lọc category, car & search)
-  if (pathname === '/api/posts' && method === 'GET') {
+  if (pathname === "/api/posts" && method === "GET") {
     try {
-      const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
-      const limit = Math.min(50, Math.max(1, Number(url.searchParams.get('limit')) || 12));
+      const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
+      const limit = Math.min(
+        50,
+        Math.max(1, Number(url.searchParams.get("limit")) || 12),
+      );
       const offset = (page - 1) * limit;
 
-      const categoryFilter = url.searchParams.get('category')?.trim() || url.searchParams.get('chuyenMuc')?.trim();
-      const searchQuery = url.searchParams.get('search')?.trim() || url.searchParams.get('q')?.trim();
+      const categoryFilter =
+        url.searchParams.get("category")?.trim() ||
+        url.searchParams.get("chuyenMuc")?.trim();
+      const searchQuery =
+        url.searchParams.get("search")?.trim() ||
+        url.searchParams.get("q")?.trim();
 
-      const conditions = [eq(schema.posts.status, 'published')];
+      const conditions = [eq(schema.posts.status, "published")];
 
       if (categoryFilter) {
         // Tìm category theo slug hoặc UUID (chỉ đối chiếu UUID khi định dạng hợp lệ để tránh lỗi Postgres 22P02)
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(categoryFilter);
+        const isUuid =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            categoryFilter,
+          );
         const foundCategory = await db.query.categories.findFirst({
           where: isUuid
             ? or(
                 eq(schema.categories.slug, categoryFilter),
-                eq(schema.categories.id, categoryFilter)
+                eq(schema.categories.id, categoryFilter),
               )
             : eq(schema.categories.slug, categoryFilter),
         });
@@ -221,6 +271,13 @@ export async function handlePostRoutes(
         conditions.push(ilike(schema.posts.tieuDe, `%${searchQuery}%`));
       }
 
+      const isFeaturedParam = url.searchParams.get("isFeatured");
+      if (isFeaturedParam === "true") {
+        conditions.push(eq(schema.posts.isFeatured, true));
+      } else if (isFeaturedParam === "false") {
+        conditions.push(eq(schema.posts.isFeatured, false));
+      }
+
       const whereClause = and(...conditions);
 
       const [totalCountResult] = await db
@@ -235,7 +292,9 @@ export async function handlePostRoutes(
         orderBy: [
           desc(schema.posts.isFeatured),
           asc(schema.posts.featuredOrder),
-          desc(sql`coalesce(${schema.posts.publishedAt}, ${schema.posts.createdAt})`),
+          desc(
+            sql`coalesce(${schema.posts.publishedAt}, ${schema.posts.createdAt})`,
+          ),
         ],
         limit,
         offset,
@@ -271,22 +330,27 @@ export async function handlePostRoutes(
       });
       return true;
     } catch (err: unknown) {
-      console.error('[Public Posts] Lỗi tải danh sách bài viết:', err);
-      sendJson(500, { success: false, error: { code: 'DB_ERROR', message: 'Lỗi tải danh sách bài viết' } });
+      console.error("[Public Posts] Lỗi tải danh sách bài viết:", err);
+      sendJson(500, {
+        success: false,
+        error: { code: "DB_ERROR", message: "Lỗi tải danh sách bài viết" },
+      });
       return true;
     }
   }
 
   // 1.5. GET /api/posts/:slug (Chi tiết bài viết chuẩn SEO cho Storefront)
-  const publicSinglePostMatch = pathname.match(/^\/api\/posts\/([a-zA-Z0-9_-]+)$/);
-  if (publicSinglePostMatch && method === 'GET') {
+  const publicSinglePostMatch = pathname.match(
+    /^\/api\/posts\/([a-zA-Z0-9_-]+)$/,
+  );
+  if (publicSinglePostMatch && method === "GET") {
     const postSlug = publicSinglePostMatch[1];
-    if (postSlug !== 'preview' && postSlug !== 'categories') {
+    if (postSlug !== "preview" && postSlug !== "categories") {
       try {
         const post = await db.query.posts.findFirst({
           where: and(
             eq(schema.posts.slug, postSlug),
-            eq(schema.posts.status, 'published')
+            eq(schema.posts.status, "published"),
           ),
           with: {
             category: {
@@ -313,7 +377,7 @@ export async function handlePostRoutes(
         if (!post) {
           sendJson(404, {
             success: false,
-            error: { code: 'NOT_FOUND', message: 'Không tìm thấy bài viết' },
+            error: { code: "NOT_FOUND", message: "Không tìm thấy bài viết" },
           });
           return true;
         }
@@ -322,7 +386,9 @@ export async function handlePostRoutes(
         db.update(schema.posts)
           .set({ viewCount: sql`${schema.posts.viewCount} + 1` })
           .where(eq(schema.posts.id, post.id))
-          .catch((viewErr) => console.error('[Public Post Detail] Lỗi tăng lượt xem:', viewErr));
+          .catch((viewErr) =>
+            console.error("[Public Post Detail] Lỗi tăng lượt xem:", viewErr),
+          );
 
         sendJson(200, {
           success: true,
@@ -330,8 +396,11 @@ export async function handlePostRoutes(
         });
         return true;
       } catch (err: unknown) {
-        console.error('[Public Post Detail] Lỗi truy vấn bài viết:', err);
-        sendJson(500, { success: false, error: { code: 'DB_ERROR', message: 'Lỗi tải chi tiết bài viết' } });
+        console.error("[Public Post Detail] Lỗi truy vấn bài viết:", err);
+        sendJson(500, {
+          success: false,
+          error: { code: "DB_ERROR", message: "Lỗi tải chi tiết bài viết" },
+        });
         return true;
       }
     }
@@ -341,7 +410,10 @@ export async function handlePostRoutes(
   // 2. ADMIN PROTECTED ROUTES (Yêu cầu JWT Token & RBAC)
   // ==========================================================================
 
-  if (!pathname.startsWith('/api/admin/posts') && !pathname.startsWith('/api/admin/categories')) {
+  if (
+    !pathname.startsWith("/api/admin/posts") &&
+    !pathname.startsWith("/api/admin/categories")
+  ) {
     return false;
   }
 
@@ -357,13 +429,21 @@ export async function handlePostRoutes(
   // 2.1. CHUYÊN MỤC BÀI VIẾT (CATEGORIES) — CRUD, AGGREGATE COUNT & DELETE GUARD
   // --------------------------------------------------------------------------
 
-  const categoryIdMatch = pathname.match(/^\/api\/admin\/categories\/([0-9a-fA-F-]{36})$/);
+  const categoryIdMatch = pathname.match(
+    /^\/api\/admin\/categories\/([0-9a-fA-F-]{36})$/,
+  );
   const categoryIdParam = categoryIdMatch ? categoryIdMatch[1] : null;
 
   // 2.1.1. GET /api/admin/categories (Danh sách chuyên mục kèm số bài viết postCount)
-  if (pathname === '/api/admin/categories' && method === 'GET') {
-    if (!hasPermission(userRole, 'posts:read')) {
-      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền xem danh mục bài viết' } });
+  if (pathname === "/api/admin/categories" && method === "GET") {
+    if (!hasPermission(userRole, "posts:read")) {
+      sendJson(403, {
+        success: false,
+        error: {
+          code: "FORBIDDEN",
+          message: "Bạn không có quyền xem danh mục bài viết",
+        },
+      });
       return true;
     }
 
@@ -381,23 +461,38 @@ export async function handlePostRoutes(
           postCount: sql<number>`cast(count(${schema.posts.id}) as integer)`,
         })
         .from(schema.categories)
-        .leftJoin(schema.posts, eq(schema.posts.categoryId, schema.categories.id))
+        .leftJoin(
+          schema.posts,
+          eq(schema.posts.categoryId, schema.categories.id),
+        )
         .groupBy(schema.categories.id)
-        .orderBy(asc(schema.categories.sortOrder), desc(schema.categories.createdAt));
+        .orderBy(
+          asc(schema.categories.sortOrder),
+          desc(schema.categories.createdAt),
+        );
 
       sendJson(200, { success: true, data: categoriesList });
       return true;
     } catch (err: unknown) {
-      console.error('[Admin Categories] Lỗi truy vấn danh mục kèm count:', err);
-      sendJson(500, { success: false, error: { code: 'DB_ERROR', message: 'Lỗi tải danh mục bài viết' } });
+      console.error("[Admin Categories] Lỗi truy vấn danh mục kèm count:", err);
+      sendJson(500, {
+        success: false,
+        error: { code: "DB_ERROR", message: "Lỗi tải danh mục bài viết" },
+      });
       return true;
     }
   }
 
   // 2.1.2. POST /api/admin/categories (Tạo mới chuyên mục + Unique Slug Validation)
-  if (pathname === '/api/admin/categories' && method === 'POST') {
-    if (!hasPermission(userRole, 'posts:write')) {
-      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền tạo chuyên mục' } });
+  if (pathname === "/api/admin/categories" && method === "POST") {
+    if (!hasPermission(userRole, "posts:write")) {
+      sendJson(403, {
+        success: false,
+        error: {
+          code: "FORBIDDEN",
+          message: "Bạn không có quyền tạo chuyên mục",
+        },
+      });
       return true;
     }
 
@@ -408,15 +503,22 @@ export async function handlePostRoutes(
         sendJson(400, {
           success: false,
           error: {
-            code: 'INVALID_INPUT',
-            message: parseResult.error.issues[0]?.message || 'Dữ liệu chuyên mục không hợp lệ',
+            code: "INVALID_INPUT",
+            message:
+              parseResult.error.issues[0]?.message ||
+              "Dữ liệu chuyên mục không hợp lệ",
             details: parseResult.error.flatten(),
           },
         });
         return true;
       }
 
-      const { tenChuyenMuc, slug: inputSlug, moTa, sortOrder } = parseResult.data;
+      const {
+        tenChuyenMuc,
+        slug: inputSlug,
+        moTa,
+        sortOrder,
+      } = parseResult.data;
       const slug = inputSlug || slugifyVietnamese(tenChuyenMuc);
 
       // Kiểm tra Unique Slug
@@ -428,8 +530,9 @@ export async function handlePostRoutes(
         sendJson(409, {
           success: false,
           error: {
-            code: 'SLUG_CONFLICT',
-            message: 'Slug này đã tồn tại trên hệ thống, vui lòng chọn một slug khác.',
+            code: "SLUG_CONFLICT",
+            message:
+              "Slug này đã tồn tại trên hệ thống, vui lòng chọn một slug khác.",
           },
         });
         return true;
@@ -448,20 +551,29 @@ export async function handlePostRoutes(
       sendJson(201, {
         success: true,
         data: { ...newCategory, postCount: 0 },
-        message: 'Tạo chuyên mục thành công',
+        message: "Tạo chuyên mục thành công",
       });
       return true;
     } catch (err: unknown) {
-      console.error('[Admin Categories] Lỗi tạo chuyên mục:', err);
-      sendJson(500, { success: false, error: { code: 'DB_ERROR', message: 'Lỗi tạo mới chuyên mục' } });
+      console.error("[Admin Categories] Lỗi tạo chuyên mục:", err);
+      sendJson(500, {
+        success: false,
+        error: { code: "DB_ERROR", message: "Lỗi tạo mới chuyên mục" },
+      });
       return true;
     }
   }
 
   // 2.1.3. PUT /api/admin/categories/:id (Cập nhật chuyên mục)
-  if (categoryIdParam && method === 'PUT') {
-    if (!hasPermission(userRole, 'posts:write')) {
-      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền chỉnh sửa chuyên mục' } });
+  if (categoryIdParam && method === "PUT") {
+    if (!hasPermission(userRole, "posts:write")) {
+      sendJson(403, {
+        success: false,
+        error: {
+          code: "FORBIDDEN",
+          message: "Bạn không có quyền chỉnh sửa chuyên mục",
+        },
+      });
       return true;
     }
 
@@ -472,8 +584,10 @@ export async function handlePostRoutes(
         sendJson(400, {
           success: false,
           error: {
-            code: 'INVALID_INPUT',
-            message: parseResult.error.issues[0]?.message || 'Dữ liệu cập nhật không hợp lệ',
+            code: "INVALID_INPUT",
+            message:
+              parseResult.error.issues[0]?.message ||
+              "Dữ liệu cập nhật không hợp lệ",
             details: parseResult.error.flatten(),
           },
         });
@@ -485,21 +599,31 @@ export async function handlePostRoutes(
       });
 
       if (!existingCategory) {
-        sendJson(404, { success: false, error: { code: 'NOT_FOUND', message: 'Không tìm thấy chuyên mục' } });
+        sendJson(404, {
+          success: false,
+          error: { code: "NOT_FOUND", message: "Không tìm thấy chuyên mục" },
+        });
         return true;
       }
 
       // Kiểm tra Unique Slug nếu slug được thay đổi
-      if (parseResult.data.slug && parseResult.data.slug !== existingCategory.slug) {
+      if (
+        parseResult.data.slug &&
+        parseResult.data.slug !== existingCategory.slug
+      ) {
         const conflict = await db.query.categories.findFirst({
-          where: and(eq(schema.categories.slug, parseResult.data.slug), ne(schema.categories.id, categoryIdParam)),
+          where: and(
+            eq(schema.categories.slug, parseResult.data.slug),
+            ne(schema.categories.id, categoryIdParam),
+          ),
         });
         if (conflict) {
           sendJson(409, {
             success: false,
             error: {
-              code: 'SLUG_CONFLICT',
-              message: 'Slug này đã tồn tại trên hệ thống, vui lòng chọn một slug khác.',
+              code: "SLUG_CONFLICT",
+              message:
+                "Slug này đã tồn tại trên hệ thống, vui lòng chọn một slug khác.",
             },
           });
           return true;
@@ -509,10 +633,14 @@ export async function handlePostRoutes(
       const updateData: Record<string, unknown> = {
         updatedAt: new Date(),
       };
-      if (parseResult.data.tenChuyenMuc !== undefined) updateData.tenChuyenMuc = parseResult.data.tenChuyenMuc;
-      if (parseResult.data.slug !== undefined) updateData.slug = parseResult.data.slug;
-      if (parseResult.data.moTa !== undefined) updateData.moTa = parseResult.data.moTa;
-      if (parseResult.data.sortOrder !== undefined) updateData.sortOrder = parseResult.data.sortOrder;
+      if (parseResult.data.tenChuyenMuc !== undefined)
+        updateData.tenChuyenMuc = parseResult.data.tenChuyenMuc;
+      if (parseResult.data.slug !== undefined)
+        updateData.slug = parseResult.data.slug;
+      if (parseResult.data.moTa !== undefined)
+        updateData.moTa = parseResult.data.moTa;
+      if (parseResult.data.sortOrder !== undefined)
+        updateData.sortOrder = parseResult.data.sortOrder;
 
       const [updatedCategory] = await db
         .update(schema.categories)
@@ -523,20 +651,29 @@ export async function handlePostRoutes(
       sendJson(200, {
         success: true,
         data: updatedCategory,
-        message: 'Cập nhật chuyên mục thành công',
+        message: "Cập nhật chuyên mục thành công",
       });
       return true;
     } catch (err: unknown) {
-      console.error('[Admin Categories] Lỗi cập nhật chuyên mục:', err);
-      sendJson(500, { success: false, error: { code: 'DB_ERROR', message: 'Lỗi cập nhật chuyên mục' } });
+      console.error("[Admin Categories] Lỗi cập nhật chuyên mục:", err);
+      sendJson(500, {
+        success: false,
+        error: { code: "DB_ERROR", message: "Lỗi cập nhật chuyên mục" },
+      });
       return true;
     }
   }
 
   // 2.1.4. DELETE /api/admin/categories/:id (Chặn xóa an toàn khi còn bài viết liên kết)
-  if (categoryIdParam && method === 'DELETE') {
-    if (!hasPermission(userRole, 'posts:write')) {
-      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền xóa chuyên mục' } });
+  if (categoryIdParam && method === "DELETE") {
+    if (!hasPermission(userRole, "posts:write")) {
+      sendJson(403, {
+        success: false,
+        error: {
+          code: "FORBIDDEN",
+          message: "Bạn không có quyền xóa chuyên mục",
+        },
+      });
       return true;
     }
 
@@ -546,7 +683,10 @@ export async function handlePostRoutes(
       });
 
       if (!existingCategory) {
-        sendJson(404, { success: false, error: { code: 'NOT_FOUND', message: 'Không tìm thấy chuyên mục' } });
+        sendJson(404, {
+          success: false,
+          error: { code: "NOT_FOUND", message: "Không tìm thấy chuyên mục" },
+        });
         return true;
       }
 
@@ -560,14 +700,16 @@ export async function handlePostRoutes(
         sendJson(400, {
           success: false,
           error: {
-            code: 'CATEGORY_IN_USE',
+            code: "CATEGORY_IN_USE",
             message: `Không thể xóa chuyên mục "${existingCategory.tenChuyenMuc}" vì đang có ${postCountResult.count} bài viết liên kết. Vui lòng chuyển các bài viết sang chuyên mục khác trước khi xóa.`,
           },
         });
         return true;
       }
 
-      await db.delete(schema.categories).where(eq(schema.categories.id, categoryIdParam));
+      await db
+        .delete(schema.categories)
+        .where(eq(schema.categories.id, categoryIdParam));
 
       sendJson(200, {
         success: true,
@@ -575,8 +717,11 @@ export async function handlePostRoutes(
       });
       return true;
     } catch (err: unknown) {
-      console.error('[Admin Categories] Lỗi xóa chuyên mục:', err);
-      sendJson(500, { success: false, error: { code: 'DB_ERROR', message: 'Lỗi máy chủ khi xóa chuyên mục' } });
+      console.error("[Admin Categories] Lỗi xóa chuyên mục:", err);
+      sendJson(500, {
+        success: false,
+        error: { code: "DB_ERROR", message: "Lỗi máy chủ khi xóa chuyên mục" },
+      });
       return true;
     }
   }
@@ -585,20 +730,29 @@ export async function handlePostRoutes(
   // 2.2. DANH SÁCH BÀI VIẾT (GET /api/admin/posts)
   // --------------------------------------------------------------------------
 
-  if (pathname === '/api/admin/posts' && method === 'GET') {
-    if (!hasPermission(userRole, 'posts:read')) {
-      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền xem bài viết' } });
+  if (pathname === "/api/admin/posts" && method === "GET") {
+    if (!hasPermission(userRole, "posts:read")) {
+      sendJson(403, {
+        success: false,
+        error: {
+          code: "FORBIDDEN",
+          message: "Bạn không có quyền xem bài viết",
+        },
+      });
       return true;
     }
 
     try {
-      const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
-      const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit')) || 20));
+      const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
+      const limit = Math.min(
+        100,
+        Math.max(1, Number(url.searchParams.get("limit")) || 20),
+      );
       const offset = (page - 1) * limit;
 
-      const statusFilter = url.searchParams.get('status');
-      const categoryIdFilter = url.searchParams.get('categoryId');
-      const searchQuery = url.searchParams.get('search');
+      const statusFilter = url.searchParams.get("status");
+      const categoryIdFilter = url.searchParams.get("categoryId");
+      const searchQuery = url.searchParams.get("search");
 
       const conditions: any[] = [];
       if (statusFilter) {
@@ -611,7 +765,15 @@ export async function handlePostRoutes(
         conditions.push(ilike(schema.posts.tieuDe, `%${searchQuery}%`));
       }
 
-      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+      const isFeaturedParam = url.searchParams.get("isFeatured");
+      if (isFeaturedParam === "true") {
+        conditions.push(eq(schema.posts.isFeatured, true));
+      } else if (isFeaturedParam === "false") {
+        conditions.push(eq(schema.posts.isFeatured, false));
+      }
+
+      const whereClause =
+        conditions.length > 0 ? and(...conditions) : undefined;
 
       const [totalCountResult] = await db
         .select({ total: count() })
@@ -622,7 +784,12 @@ export async function handlePostRoutes(
 
       const postsList = await db.query.posts.findMany({
         where: whereClause,
-        orderBy: [desc(sql`coalesce(${schema.posts.publishedAt}, ${schema.posts.createdAt})`)],
+        orderBy: [
+          desc(schema.posts.isFeatured),
+          desc(
+            sql`coalesce(${schema.posts.publishedAt}, ${schema.posts.createdAt})`,
+          ),
+        ],
         limit,
         offset,
         with: {
@@ -655,8 +822,11 @@ export async function handlePostRoutes(
       });
       return true;
     } catch (err: unknown) {
-      console.error('[Admin Posts List] Lỗi truy vấn:', err);
-      sendJson(500, { success: false, error: { code: 'DB_ERROR', message: 'Lỗi tải danh sách bài viết' } });
+      console.error("[Admin Posts List] Lỗi truy vấn:", err);
+      sendJson(500, {
+        success: false,
+        error: { code: "DB_ERROR", message: "Lỗi tải danh sách bài viết" },
+      });
       return true;
     }
   }
@@ -665,9 +835,15 @@ export async function handlePostRoutes(
   // 2.3. TẠO MỚI BÀI VIẾT (POST /api/admin/posts)
   // --------------------------------------------------------------------------
 
-  if (pathname === '/api/admin/posts' && method === 'POST') {
-    if (!hasPermission(userRole, 'posts:write')) {
-      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền tạo bài viết' } });
+  if (pathname === "/api/admin/posts" && method === "POST") {
+    if (!hasPermission(userRole, "posts:write")) {
+      sendJson(403, {
+        success: false,
+        error: {
+          code: "FORBIDDEN",
+          message: "Bạn không có quyền tạo bài viết",
+        },
+      });
       return true;
     }
 
@@ -676,11 +852,12 @@ export async function handlePostRoutes(
       const parsed = CreatePostInputSchema.safeParse(rawBody);
 
       if (!parsed.success) {
-        const firstErrMsg = parsed.error.issues[0]?.message || 'Dữ liệu bài viết không hợp lệ';
+        const firstErrMsg =
+          parsed.error.issues[0]?.message || "Dữ liệu bài viết không hợp lệ";
         sendJson(400, {
           success: false,
           error: {
-            code: 'VALIDATION_ERROR',
+            code: "VALIDATION_ERROR",
             message: firstErrMsg,
             details: parsed.error.format(),
           },
@@ -691,16 +868,17 @@ export async function handlePostRoutes(
       const postData = parsed.data;
 
       // Publish Gatekeeper: Nếu tạo bài trực tiếp ở trạng thái published, phải kiểm tra placeholder
-      if (postData.status === 'published') {
+      if (postData.status === "published") {
         const textContent = extractTextFromTiptap(postData.noiDung);
-        const placeholderRegex = /\[\s*\.\.\.\s*\]|\[\s*…\s*\]|\[cần bổ sung\]|\[todo\]/i;
+        const placeholderRegex =
+          /\[\s*\.\.\.\s*\]|\[\s*…\s*\]|\[cần bổ sung\]|\[todo\]/i;
         if (placeholderRegex.test(textContent)) {
           sendJson(400, {
             success: false,
             error: {
-              code: 'UNFINISHED_CONTENT_DETECTED',
+              code: "UNFINISHED_CONTENT_DETECTED",
               message:
-                'Không thể xuất bản bài viết chứa nội dung giữ chỗ chưa hoàn thiện ([...], [cần bổ sung], hoặc [todo]). Vui lòng bổ sung đầy đủ trước khi đăng!',
+                "Không thể xuất bản bài viết chứa nội dung giữ chỗ chưa hoàn thiện ([...], [cần bổ sung], hoặc [todo]). Vui lòng bổ sung đầy đủ trước khi đăng!",
             },
           });
           return true;
@@ -717,23 +895,29 @@ export async function handlePostRoutes(
           const [defaultCat] = await db
             .insert(schema.categories)
             .values({
-              tenChuyenMuc: 'Tin tức chung',
-              slug: 'tin-tuc-chung',
-              moTa: 'Chuyên mục tin tức ô tô tổng hợp',
+              tenChuyenMuc: "Tin tức chung",
+              slug: "tin-tuc-chung",
+              moTa: "Chuyên mục tin tức ô tô tổng hợp",
             })
             .returning();
           resolvedCategoryId = defaultCat.id;
         }
       }
 
-      const resolvedAnhDaiDienUrl = postData.anhDaiDienUrl?.trim() || '/images/car-placeholder.webp';
-      const resolvedAnhDaiDienAlt = postData.anhDaiDienAlt?.trim() || postData.tieuDe || 'Hình ảnh bài viết';
+      const resolvedAnhDaiDienUrl =
+        postData.anhDaiDienUrl?.trim() || "/images/car-placeholder.webp";
+      const resolvedAnhDaiDienAlt =
+        postData.anhDaiDienAlt?.trim() ||
+        postData.tieuDe ||
+        "Hình ảnh bài viết";
 
       // Tự động tính readingTime & wordCount từ Tiptap AST
-      const { readingTime, wordCount } = calculateReadingTimeAndWordCount(postData.noiDung);
+      const { readingTime, wordCount } = calculateReadingTimeAndWordCount(
+        postData.noiDung,
+      );
 
       // Sinh token bảo mật 64 ký tự cho preview nháp
-      const previewToken = crypto.randomBytes(32).toString('hex');
+      const previewToken = crypto.randomBytes(32).toString("hex");
 
       const authorId = postData.authorId || currentUser.id;
 
@@ -743,7 +927,7 @@ export async function handlePostRoutes(
         customPublishedAt = new Date(postData.publishedAt);
       } else if (postData.createdAt) {
         customPublishedAt = new Date(postData.createdAt);
-      } else if (postData.status === 'published') {
+      } else if (postData.status === "published") {
         customPublishedAt = new Date();
       }
 
@@ -768,8 +952,12 @@ export async function handlePostRoutes(
           status: postData.status,
           publishedAt: customPublishedAt,
           ...(customCreatedAt ? { createdAt: customCreatedAt } : {}),
-          scheduledAt: postData.scheduledAt ? new Date(postData.scheduledAt) : null,
-          expiredPromoDate: postData.expiredPromoDate ? new Date(postData.expiredPromoDate) : null,
+          scheduledAt: postData.scheduledAt
+            ? new Date(postData.scheduledAt)
+            : null,
+          expiredPromoDate: postData.expiredPromoDate
+            ? new Date(postData.expiredPromoDate)
+            : null,
           isFeatured: postData.isFeatured,
           featuredOrder: postData.featuredOrder,
           readingTime,
@@ -786,15 +974,18 @@ export async function handlePostRoutes(
       sendJson(201, {
         success: true,
         data: newPost,
-        message: 'Tạo bài viết mới thành công',
+        message: "Tạo bài viết mới thành công",
       });
       return true;
     } catch (err: unknown) {
-      console.error('[Admin Create Post] Lỗi tạo bài viết:', err);
-      const errMsg = err instanceof Error ? err.message : 'Lỗi tạo bài viết (trùng slug hoặc thiếu dữ liệu)';
+      console.error("[Admin Create Post] Lỗi tạo bài viết:", err);
+      const errMsg =
+        err instanceof Error
+          ? err.message
+          : "Lỗi tạo bài viết (trùng slug hoặc thiếu dữ liệu)";
       sendJson(500, {
         success: false,
-        error: { code: 'DB_ERROR', message: errMsg },
+        error: { code: "DB_ERROR", message: errMsg },
       });
       return true;
     }
@@ -804,11 +995,19 @@ export async function handlePostRoutes(
   // 2.4. CHI TIẾT BÀI VIẾT (GET /api/admin/posts/:id)
   // --------------------------------------------------------------------------
 
-  const singlePostMatch = pathname.match(/^\/api\/admin\/posts\/([0-9a-fA-F-]+)$/);
+  const singlePostMatch = pathname.match(
+    /^\/api\/admin\/posts\/([0-9a-fA-F-]+)$/,
+  );
 
-  if (singlePostMatch && method === 'GET') {
-    if (!hasPermission(userRole, 'posts:read')) {
-      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền xem bài viết' } });
+  if (singlePostMatch && method === "GET") {
+    if (!hasPermission(userRole, "posts:read")) {
+      sendJson(403, {
+        success: false,
+        error: {
+          code: "FORBIDDEN",
+          message: "Bạn không có quyền xem bài viết",
+        },
+      });
       return true;
     }
 
@@ -831,21 +1030,30 @@ export async function handlePostRoutes(
       });
 
       if (!post) {
-        sendJson(404, { success: false, error: { code: 'NOT_FOUND', message: 'Không tìm thấy bài viết' } });
+        sendJson(404, {
+          success: false,
+          error: { code: "NOT_FOUND", message: "Không tìm thấy bài viết" },
+        });
         return true;
       }
 
       if (!post.previewToken) {
-        const generatedToken = crypto.randomBytes(32).toString('hex');
-        await db.update(schema.posts).set({ previewToken: generatedToken }).where(eq(schema.posts.id, postId));
+        const generatedToken = crypto.randomBytes(32).toString("hex");
+        await db
+          .update(schema.posts)
+          .set({ previewToken: generatedToken })
+          .where(eq(schema.posts.id, postId));
         post.previewToken = generatedToken;
       }
 
       sendJson(200, { success: true, data: post });
       return true;
     } catch (err: unknown) {
-      console.error('[Admin Get Post] Lỗi truy vấn:', err);
-      sendJson(500, { success: false, error: { code: 'DB_ERROR', message: 'Lỗi tải chi tiết bài viết' } });
+      console.error("[Admin Get Post] Lỗi truy vấn:", err);
+      sendJson(500, {
+        success: false,
+        error: { code: "DB_ERROR", message: "Lỗi tải chi tiết bài viết" },
+      });
       return true;
     }
   }
@@ -854,9 +1062,15 @@ export async function handlePostRoutes(
   // 2.5. CẬP NHẬT BÀI VIẾT (PUT /api/admin/posts/:id)
   // --------------------------------------------------------------------------
 
-  if (singlePostMatch && method === 'PUT') {
-    if (!hasPermission(userRole, 'posts:write')) {
-      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền sửa bài viết' } });
+  if (singlePostMatch && method === "PUT") {
+    if (!hasPermission(userRole, "posts:write")) {
+      sendJson(403, {
+        success: false,
+        error: {
+          code: "FORBIDDEN",
+          message: "Bạn không có quyền sửa bài viết",
+        },
+      });
       return true;
     }
 
@@ -867,7 +1081,13 @@ export async function handlePostRoutes(
       });
 
       if (!existingPost) {
-        sendJson(404, { success: false, error: { code: 'NOT_FOUND', message: 'Không tìm thấy bài viết để cập nhật' } });
+        sendJson(404, {
+          success: false,
+          error: {
+            code: "NOT_FOUND",
+            message: "Không tìm thấy bài viết để cập nhật",
+          },
+        });
         return true;
       }
 
@@ -875,11 +1095,13 @@ export async function handlePostRoutes(
       const parsed = UpdatePostInputSchema.safeParse(rawBody);
 
       if (!parsed.success) {
-        const firstErrMsg = parsed.error.issues[0]?.message || 'Dữ liệu cập nhật bài viết không hợp lệ';
+        const firstErrMsg =
+          parsed.error.issues[0]?.message ||
+          "Dữ liệu cập nhật bài viết không hợp lệ";
         sendJson(400, {
           success: false,
           error: {
-            code: 'VALIDATION_ERROR',
+            code: "VALIDATION_ERROR",
             message: firstErrMsg,
             details: parsed.error.format(),
           },
@@ -893,16 +1115,17 @@ export async function handlePostRoutes(
       const targetStatus = updateData.status || existingPost.status;
       const targetContent = updateData.noiDung || existingPost.noiDung;
 
-      if (targetStatus === 'published') {
+      if (targetStatus === "published") {
         const textContent = extractTextFromTiptap(targetContent);
-        const placeholderRegex = /\[\s*\.\.\.\s*\]|\[\s*…\s*\]|\[cần bổ sung\]|\[todo\]/i;
+        const placeholderRegex =
+          /\[\s*\.\.\.\s*\]|\[\s*…\s*\]|\[cần bổ sung\]|\[todo\]/i;
         if (placeholderRegex.test(textContent)) {
           sendJson(400, {
             success: false,
             error: {
-              code: 'UNFINISHED_CONTENT_DETECTED',
+              code: "UNFINISHED_CONTENT_DETECTED",
               message:
-                'Không thể xuất bản bài viết chứa nội dung giữ chỗ chưa hoàn thiện ([...], [cần bổ sung], hoặc [todo]). Vui lòng bổ sung đầy đủ trước khi đăng!',
+                "Không thể xuất bản bài viết chứa nội dung giữ chỗ chưa hoàn thiện ([...], [cần bổ sung], hoặc [todo]). Vui lòng bổ sung đầy đủ trước khi đăng!",
             },
           });
           return true;
@@ -930,64 +1153,121 @@ export async function handlePostRoutes(
                 updatedAt: new Date(),
               },
             });
-          console.log(`[Posts 301 Redirect] Tự động tạo chuyển hướng: ${oldPath} ➔ ${newPath}`);
+          console.log(
+            `[Posts 301 Redirect] Tự động tạo chuyển hướng: ${oldPath} ➔ ${newPath}`,
+          );
         } catch (redirectErr) {
-          console.error('[Posts 301 Redirect] Lỗi ghi nhận chuyển hướng tự động:', redirectErr);
+          console.error(
+            "[Posts 301 Redirect] Lỗi ghi nhận chuyển hướng tự động:",
+            redirectErr,
+          );
         }
       }
 
       // Tính lại readingTime & wordCount nếu nội dung thay đổi
       let stats = {};
       if (updateData.noiDung) {
-        const { readingTime, wordCount } = calculateReadingTimeAndWordCount(updateData.noiDung);
+        const { readingTime, wordCount } = calculateReadingTimeAndWordCount(
+          updateData.noiDung,
+        );
         stats = { readingTime, wordCount };
       }
 
       // Sinh token bảo mật 64 ký tự cho preview nháp nếu chưa có
-      const previewToken = existingPost.previewToken || crypto.randomBytes(32).toString('hex');
+      const previewToken =
+        existingPost.previewToken || crypto.randomBytes(32).toString("hex");
 
       // Xử lý ngày viết bài / ngày đăng tùy chỉnh
       let customPublishedAt: Date | null | undefined = undefined;
       if (updateData.publishedAt !== undefined) {
-        customPublishedAt = updateData.publishedAt ? new Date(updateData.publishedAt) : null;
+        customPublishedAt = updateData.publishedAt
+          ? new Date(updateData.publishedAt)
+          : null;
       } else if (updateData.createdAt !== undefined) {
-        customPublishedAt = updateData.createdAt ? new Date(updateData.createdAt) : null;
+        customPublishedAt = updateData.createdAt
+          ? new Date(updateData.createdAt)
+          : null;
       }
 
       let customCreatedAt: Date | undefined = undefined;
       if (updateData.createdAt !== undefined && updateData.createdAt) {
         customCreatedAt = new Date(updateData.createdAt);
-      } else if (updateData.publishedAt !== undefined && updateData.publishedAt) {
+      } else if (
+        updateData.publishedAt !== undefined &&
+        updateData.publishedAt
+      ) {
         customCreatedAt = new Date(updateData.publishedAt);
       }
 
       const [updatedPost] = await db
         .update(schema.posts)
         .set({
-          ...(updateData.tieuDe !== undefined ? { tieuDe: updateData.tieuDe } : {}),
+          ...(updateData.tieuDe !== undefined
+            ? { tieuDe: updateData.tieuDe }
+            : {}),
           ...(updateData.slug !== undefined ? { slug: updateData.slug } : {}),
-          ...(updateData.categoryId ? { categoryId: updateData.categoryId } : {}),
-          ...(updateData.authorId !== undefined ? { authorId: updateData.authorId } : {}),
-          ...(updateData.anhDaiDienUrl ? { anhDaiDienUrl: updateData.anhDaiDienUrl } : {}),
-          ...(updateData.anhDaiDienAlt ? { anhDaiDienAlt: updateData.anhDaiDienAlt } : {}),
-          ...(updateData.tomTat !== undefined ? { tomTat: updateData.tomTat } : {}),
-          ...(updateData.noiDung !== undefined ? { noiDung: updateData.noiDung } : {}),
-          ...(updateData.status !== undefined ? { status: updateData.status } : {}),
-          ...(customPublishedAt !== undefined ? { publishedAt: customPublishedAt } : {}),
-          ...(customCreatedAt !== undefined ? { createdAt: customCreatedAt } : {}),
+          ...(updateData.categoryId
+            ? { categoryId: updateData.categoryId }
+            : {}),
+          ...(updateData.authorId !== undefined
+            ? { authorId: updateData.authorId }
+            : {}),
+          ...(updateData.anhDaiDienUrl
+            ? { anhDaiDienUrl: updateData.anhDaiDienUrl }
+            : {}),
+          ...(updateData.anhDaiDienAlt
+            ? { anhDaiDienAlt: updateData.anhDaiDienAlt }
+            : {}),
+          ...(updateData.tomTat !== undefined
+            ? { tomTat: updateData.tomTat }
+            : {}),
+          ...(updateData.noiDung !== undefined
+            ? { noiDung: updateData.noiDung }
+            : {}),
+          ...(updateData.status !== undefined
+            ? { status: updateData.status }
+            : {}),
+          ...(customPublishedAt !== undefined
+            ? { publishedAt: customPublishedAt }
+            : {}),
+          ...(customCreatedAt !== undefined
+            ? { createdAt: customCreatedAt }
+            : {}),
           ...(updateData.scheduledAt !== undefined
-            ? { scheduledAt: updateData.scheduledAt ? new Date(updateData.scheduledAt) : null }
+            ? {
+                scheduledAt: updateData.scheduledAt
+                  ? new Date(updateData.scheduledAt)
+                  : null,
+              }
             : {}),
           ...(updateData.expiredPromoDate !== undefined
-            ? { expiredPromoDate: updateData.expiredPromoDate ? new Date(updateData.expiredPromoDate) : null }
+            ? {
+                expiredPromoDate: updateData.expiredPromoDate
+                  ? new Date(updateData.expiredPromoDate)
+                  : null,
+              }
             : {}),
-          ...(updateData.isFeatured !== undefined ? { isFeatured: updateData.isFeatured } : {}),
-          ...(updateData.featuredOrder !== undefined ? { featuredOrder: updateData.featuredOrder } : {}),
-          ...(updateData.focusKeyword !== undefined ? { focusKeyword: updateData.focusKeyword } : {}),
-          ...(updateData.metaTitle !== undefined ? { metaTitle: updateData.metaTitle } : {}),
-          ...(updateData.metaDescription !== undefined ? { metaDescription: updateData.metaDescription } : {}),
-          ...(updateData.canonicalUrl !== undefined ? { canonicalUrl: updateData.canonicalUrl } : {}),
-          ...(updateData.noIndex !== undefined ? { noIndex: updateData.noIndex } : {}),
+          ...(updateData.isFeatured !== undefined
+            ? { isFeatured: updateData.isFeatured }
+            : {}),
+          ...(updateData.featuredOrder !== undefined
+            ? { featuredOrder: updateData.featuredOrder }
+            : {}),
+          ...(updateData.focusKeyword !== undefined
+            ? { focusKeyword: updateData.focusKeyword }
+            : {}),
+          ...(updateData.metaTitle !== undefined
+            ? { metaTitle: updateData.metaTitle }
+            : {}),
+          ...(updateData.metaDescription !== undefined
+            ? { metaDescription: updateData.metaDescription }
+            : {}),
+          ...(updateData.canonicalUrl !== undefined
+            ? { canonicalUrl: updateData.canonicalUrl }
+            : {}),
+          ...(updateData.noIndex !== undefined
+            ? { noIndex: updateData.noIndex }
+            : {}),
           previewToken,
           ...stats,
           updatedAt: new Date(),
@@ -998,13 +1278,17 @@ export async function handlePostRoutes(
       sendJson(200, {
         success: true,
         data: updatedPost,
-        message: 'Cập nhật bài viết thành công',
+        message: "Cập nhật bài viết thành công",
       });
       return true;
     } catch (err: unknown) {
-      console.error('[Admin Update Post] Lỗi cập nhật bài viết:', err);
-      const errMsg = err instanceof Error ? err.message : 'Lỗi cập nhật bài viết';
-      sendJson(500, { success: false, error: { code: 'DB_ERROR', message: errMsg } });
+      console.error("[Admin Update Post] Lỗi cập nhật bài viết:", err);
+      const errMsg =
+        err instanceof Error ? err.message : "Lỗi cập nhật bài viết";
+      sendJson(500, {
+        success: false,
+        error: { code: "DB_ERROR", message: errMsg },
+      });
       return true;
     }
   }
@@ -1013,26 +1297,44 @@ export async function handlePostRoutes(
   // 2.6. XÓA BÀI VIẾT (DELETE /api/admin/posts/:id)
   // --------------------------------------------------------------------------
 
-  if (singlePostMatch && method === 'DELETE') {
-    if (!hasPermission(userRole, 'posts:write')) {
-      sendJson(403, { success: false, error: { code: 'FORBIDDEN', message: 'Bạn không có quyền xóa bài viết' } });
+  if (singlePostMatch && method === "DELETE") {
+    if (!hasPermission(userRole, "posts:write")) {
+      sendJson(403, {
+        success: false,
+        error: {
+          code: "FORBIDDEN",
+          message: "Bạn không có quyền xóa bài viết",
+        },
+      });
       return true;
     }
 
     const postId = singlePostMatch[1];
     try {
-      const [deleted] = await db.delete(schema.posts).where(eq(schema.posts.id, postId)).returning({ id: schema.posts.id });
+      const [deleted] = await db
+        .delete(schema.posts)
+        .where(eq(schema.posts.id, postId))
+        .returning({ id: schema.posts.id });
 
       if (!deleted) {
-        sendJson(404, { success: false, error: { code: 'NOT_FOUND', message: 'Không tìm thấy bài viết để xóa' } });
+        sendJson(404, {
+          success: false,
+          error: {
+            code: "NOT_FOUND",
+            message: "Không tìm thấy bài viết để xóa",
+          },
+        });
         return true;
       }
 
-      sendJson(200, { success: true, message: 'Đã xóa bài viết thành công' });
+      sendJson(200, { success: true, message: "Đã xóa bài viết thành công" });
       return true;
     } catch (err: unknown) {
-      console.error('[Admin Delete Post] Lỗi xóa bài viết:', err);
-      sendJson(500, { success: false, error: { code: 'DB_ERROR', message: 'Lỗi xóa bài viết' } });
+      console.error("[Admin Delete Post] Lỗi xóa bài viết:", err);
+      sendJson(500, {
+        success: false,
+        error: { code: "DB_ERROR", message: "Lỗi xóa bài viết" },
+      });
       return true;
     }
   }

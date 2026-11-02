@@ -1,4 +1,4 @@
-import { apiClient } from '../lib/api-client';
+import { apiClient } from "../lib/api-client";
 
 // 🧠 Mental Model: Typed Service Layer cho Quản trị Bài viết Tin tức (apps/admin).
 // Tương tác trực tiếp với API namespace /api/admin/posts/* và /api/admin/categories/* và liên kết dòng xe (carId).
@@ -13,7 +13,7 @@ export interface PostItem {
   anhDaiDienUrl: string;
   anhDaiDienAlt: string;
   tomTat?: string | null;
-  status: 'draft' | 'published' | 'scheduled' | 'archived';
+  status: "draft" | "published" | "scheduled" | "archived";
   publishedAt?: string | null;
   scheduledAt?: string | null;
   expiredPromoDate?: string | null;
@@ -70,8 +70,9 @@ export const postService = {
     status?: string;
     categoryId?: string;
     search?: string;
+    isFeatured?: boolean | string;
   }): Promise<PostListResponse> => {
-    const res = await apiClient.get<any>('/api/admin/posts', params);
+    const res = await apiClient.get<any>("/api/admin/posts", params);
     if (Array.isArray(res)) {
       return {
         data: res,
@@ -95,44 +96,101 @@ export const postService = {
   /**
    * Lấy danh sách chuyên mục tin tức
    */
-  getCategories: async (): Promise<{ success: boolean; data: CategoryItem[] }> => {
-    const res = await apiClient.get<any>('/api/admin/categories');
-    const list = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+  getCategories: async (): Promise<{
+    success: boolean;
+    data: CategoryItem[];
+  }> => {
+    const res = await apiClient.get<any>("/api/admin/categories");
+    const list = Array.isArray(res)
+      ? res
+      : Array.isArray(res?.data)
+        ? res.data
+        : [];
     return { success: true, data: list };
   },
 
   /**
    * Lấy chi tiết bài viết theo ID
    */
-  getPostById: async (id: string): Promise<{ success: boolean; data: PostItem & { noiDung: unknown; focusKeyword?: string; metaTitle?: string; metaDescription?: string; canonicalUrl?: string; noIndex?: boolean } }> => {
+  getPostById: async (
+    id: string,
+  ): Promise<{
+    success: boolean;
+    data: PostItem & {
+      noiDung: unknown;
+      focusKeyword?: string;
+      metaTitle?: string;
+      metaDescription?: string;
+      canonicalUrl?: string;
+      noIndex?: boolean;
+    };
+  }> => {
     const res = await apiClient.get<any>(`/api/admin/posts/${id}`);
-    const postData = (res && res.data) ? res.data : res;
+    const postData = res && res.data ? res.data : res;
     return { success: true, data: postData };
   },
 
   /**
    * Tạo bài viết mới
    */
-  createPost: async (payload: unknown): Promise<{ success: boolean; data: PostItem; message?: string }> => {
-    const res = await apiClient.post<any>('/api/admin/posts', payload);
-    const postData = (res && res.data) ? res.data : res;
-    return { success: true, data: postData, message: 'Tạo bài viết mới thành công' };
+  createPost: async (
+    payload: unknown,
+  ): Promise<{ success: boolean; data: PostItem; message?: string }> => {
+    const res = await apiClient.post<any>("/api/admin/posts", payload);
+    const postData = res && res.data ? res.data : res;
+    return {
+      success: true,
+      data: postData,
+      message: "Tạo bài viết mới thành công",
+    };
   },
 
   /**
    * Cập nhật bài viết theo ID
    */
-  updatePost: async (id: string, payload: unknown): Promise<{ success: boolean; data: PostItem; message?: string }> => {
+  updatePost: async (
+    id: string,
+    payload: unknown,
+  ): Promise<{ success: boolean; data: PostItem; message?: string }> => {
     const res = await apiClient.put<any>(`/api/admin/posts/${id}`, payload);
-    const postData = (res && res.data) ? res.data : res;
-    return { success: true, data: postData, message: 'Cập nhật bài viết thành công' };
+    const postData = res && res.data ? res.data : res;
+    return {
+      success: true,
+      data: postData,
+      message: "Cập nhật bài viết thành công",
+    };
   },
 
   /**
    * Xóa bài viết theo ID
    */
-  deletePost: async (id: string): Promise<{ success: boolean; message: string }> => {
+  deletePost: async (
+    id: string,
+  ): Promise<{ success: boolean; message: string }> => {
     const res = await apiClient.delete<any>(`/api/admin/posts/${id}`);
-    return { success: true, message: res?.message || 'Xóa bài viết thành công' };
+    return {
+      success: true,
+      message: res?.message || "Xóa bài viết thành công",
+    };
+  },
+
+  /**
+   * Bật/tắt ghim bài viết ở trang chủ
+   */
+  toggleFeatured: async (
+    id: string,
+    isFeatured: boolean,
+  ): Promise<{ success: boolean; data: PostItem; message?: string }> => {
+    const res = await apiClient.put<any>(`/api/admin/posts/${id}`, {
+      isFeatured,
+    });
+    const postData = res && res.data ? res.data : res;
+    return {
+      success: true,
+      data: postData,
+      message: isFeatured
+        ? "Đã ghim bài viết ở trang chủ"
+        : "Đã bỏ ghim bài viết ở trang chủ",
+    };
   },
 };

@@ -1,7 +1,9 @@
-import React from 'react';
-import Link from 'next/link';
-import { Newspaper, ArrowRight, Calendar } from 'lucide-react';
-import type { LatestPromotionsZoneConfig } from '@cardealer/types';
+import React from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { Newspaper, ArrowRight, Calendar } from "lucide-react";
+import { optimizeCloudinaryUrl } from "@cardealer/core";
+import type { LatestPromotionsZoneConfig } from "@cardealer/types";
 
 export interface ArticlePreview {
   id: string;
@@ -20,7 +22,10 @@ export interface LatestNewsSectionProps {
 // 🧠 Mental Model: Phân khu 6 - Latest News & Special Promotions.
 // 1. Áp dụng Graceful Degradation: Nếu config.enabled = false HOẶC danh sách bài viết rỗng ➡️ return null hoàn toàn.
 // 2. Tự động ẩn thanh lịch khi saler chưa kịp viết bài tin tức thật, bảo vệ tính thẩm mỹ của Storefront.
-export const LatestNewsSection: React.FC<LatestNewsSectionProps> = ({ config, posts = [] }) => {
+export const LatestNewsSection: React.FC<LatestNewsSectionProps> = ({
+  config,
+  posts = [],
+}) => {
   if (!config || !config.enabled || !posts || posts.length === 0) {
     return null;
   }
@@ -28,7 +33,10 @@ export const LatestNewsSection: React.FC<LatestNewsSectionProps> = ({ config, po
   const displayPosts = posts.slice(0, config.maxPosts || 3);
 
   return (
-    <section className="py-12 sm:py-16 bg-white relative" aria-label="Tin Tức & Khuyến Mãi">
+    <section
+      className="py-12 sm:py-16 bg-white relative"
+      aria-label="Tin Tức & Khuyến Mãi"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 sm:mb-10">
@@ -64,9 +72,21 @@ export const LatestNewsSection: React.FC<LatestNewsSectionProps> = ({ config, po
             >
               <div>
                 <div className="relative w-full aspect-[16/9] bg-slate-100 overflow-hidden">
-                  <div
-                    className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-                    style={{ backgroundImage: `url(${post.thumbnailUrl || '/images/news/default.webp'})` }}
+                  <Image
+                    src={optimizeCloudinaryUrl(
+                      post.thumbnailUrl || "/images/news/default.webp",
+                      {
+                        width: 600,
+                        height: 338,
+                        quality: "auto",
+                        crop: "fill",
+                      },
+                    )}
+                    alt={post.title}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
                   />
                 </div>
 

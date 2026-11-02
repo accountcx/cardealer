@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 // 🧠 Mental Model: Trang Quản Trị Danh Sách Bài Viết & Inbound Marketing Hub (apps/admin).
 // 1. Phù hợp 100% với Design System của Admin Shell (#0b0f17, glassmorphism, border-white/10, text-white).
@@ -13,8 +13,8 @@
 //    - Chỉnh sửa bài viết trong Tiptap WYSIWYG Editor.
 //    - Xóa bài viết an toàn qua ConfirmModal kính mờ.
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import Link from 'next/link';
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import Link from "next/link";
 import {
   FileText,
   Plus,
@@ -37,7 +37,8 @@ import {
   ChevronLeft,
   ChevronRight,
   BookOpen,
-} from 'lucide-react';
+  Pin,
+} from "lucide-react";
 import {
   Button,
   Input,
@@ -51,18 +52,27 @@ import {
   TableRow,
   TableHead,
   TableCell,
-} from '@cardealer/ui';
-import { postService, type PostItem, type CategoryItem } from '../../services/post.service';
-import { catalogService, type CarSummary } from '../../services/catalog.service';
-import { ConfirmModal } from '../components/ConfirmModal';
-import { useAuth } from '../../contexts/AuthContext';
-import { AccessDenied } from '../components/AccessDenied';
-import { AiTopicIdeatorModal } from './components/AiTopicIdeatorModal';
+} from "@cardealer/ui";
+import {
+  postService,
+  type PostItem,
+  type CategoryItem,
+} from "../../services/post.service";
+import {
+  catalogService,
+  type CarSummary,
+} from "../../services/catalog.service";
+import { ConfirmModal } from "../components/ConfirmModal";
+import { useAuth } from "../../contexts/AuthContext";
+import { AccessDenied } from "../components/AccessDenied";
+import { AiTopicIdeatorModal } from "./components/AiTopicIdeatorModal";
 
-type PostFilterStatus = 'all' | 'published' | 'draft' | 'scheduled' | 'archived';
+type PostFilterStatus =
+  "all" | "published" | "draft" | "scheduled" | "archived";
+type FeaturedFilter = "all" | "featured" | "not_featured";
 
 interface ActionNotification {
-  type: 'success' | 'error';
+  type: "success" | "error";
   title: string;
   message: string;
 }
@@ -75,7 +85,9 @@ export default function PostsManagementPage() {
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [notification, setNotification] = useState<ActionNotification | null>(null);
+  const [notification, setNotification] = useState<ActionNotification | null>(
+    null,
+  );
 
   // Bộ lọc & Phân trang
   const [page, setPage] = useState(1);
@@ -83,10 +95,16 @@ export default function PostsManagementPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
-  const [statusFilter, setStatusFilter] = useState<PostFilterStatus>('all');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<PostFilterStatus>("all");
+  const [featuredFilter, setFeaturedFilter] = useState<FeaturedFilter>("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  // State Ghim / Bỏ ghim bài viết
+  const [togglingFeaturedId, setTogglingFeaturedId] = useState<string | null>(
+    null,
+  );
 
   // State Xóa bài viết
   const [deleteTarget, setDeleteTarget] = useState<PostItem | null>(null);
@@ -100,7 +118,10 @@ export default function PostsManagementPage() {
   const [availableCars, setAvailableCars] = useState<CarSummary[]>([]);
 
   useEffect(() => {
-    catalogService.getCars().then(setAvailableCars).catch(() => {});
+    catalogService
+      .getCars()
+      .then(setAvailableCars)
+      .catch(() => {});
   }, []);
 
   // Debounce search input (350ms)
@@ -122,12 +143,12 @@ export default function PostsManagementPage() {
           const list = Array.isArray(res?.data)
             ? res.data
             : Array.isArray(res)
-            ? res
-            : [];
+              ? res
+              : [];
           setCategories(list);
         }
       })
-      .catch((err) => console.error('[Posts Page] Lỗi tải chuyên mục:', err));
+      .catch((err) => console.error("[Posts Page] Lỗi tải chuyên mục:", err));
 
     return () => {
       isMounted = false;
@@ -145,10 +166,15 @@ export default function PostsManagementPage() {
         limit,
       };
 
-      if (statusFilter !== 'all') {
+      if (statusFilter !== "all") {
         params.status = statusFilter;
       }
-      if (selectedCategory !== 'all') {
+      if (featuredFilter === "featured") {
+        params.isFeatured = true;
+      } else if (featuredFilter === "not_featured") {
+        params.isFeatured = false;
+      }
+      if (selectedCategory !== "all") {
         params.categoryId = selectedCategory;
       }
       if (debouncedSearch.trim()) {
@@ -159,8 +185,8 @@ export default function PostsManagementPage() {
       const postList = Array.isArray(res?.data)
         ? res.data
         : Array.isArray(res)
-        ? res
-        : [];
+          ? res
+          : [];
       setPosts(postList);
       if (res?.pagination) {
         setTotalItems(res.pagination.totalItems);
@@ -170,15 +196,23 @@ export default function PostsManagementPage() {
         setTotalPages(1);
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Không thể tải danh sách bài viết';
+      const msg =
+        err instanceof Error ? err.message : "Không thể tải danh sách bài viết";
       setError(msg);
     } finally {
       setLoading(false);
     }
-  }, [page, limit, statusFilter, selectedCategory, debouncedSearch]);
+  }, [
+    page,
+    limit,
+    statusFilter,
+    featuredFilter,
+    selectedCategory,
+    debouncedSearch,
+  ]);
 
   useEffect(() => {
-    if (!authLoading && can('posts:read')) {
+    if (!authLoading && can("posts:read")) {
       fetchPosts();
     }
   }, [authLoading, can, fetchPosts]);
@@ -190,17 +224,17 @@ export default function PostsManagementPage() {
       setDeleting(true);
       await postService.deletePost(deleteTarget.id);
       setNotification({
-        type: 'success',
-        title: 'Thành công',
+        type: "success",
+        title: "Thành công",
         message: `Đã xóa bài viết "${deleteTarget.tieuDe}"`,
       });
       setDeleteTarget(null);
       fetchPosts();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi khi xóa bài viết';
+      const msg = err instanceof Error ? err.message : "Lỗi khi xóa bài viết";
       setNotification({
-        type: 'error',
-        title: 'Thất bại',
+        type: "error",
+        title: "Thất bại",
         message: msg,
       });
     } finally {
@@ -208,12 +242,45 @@ export default function PostsManagementPage() {
     }
   };
 
+  // Ghim / Bỏ ghim bài viết ở trang chủ
+  const handleToggleFeatured = async (post: PostItem) => {
+    if (!can("posts:write") || togglingFeaturedId) return;
+    try {
+      setTogglingFeaturedId(post.id);
+      const nextFeatured = !post.isFeatured;
+      await postService.toggleFeatured(post.id, nextFeatured);
+      setNotification({
+        type: "success",
+        title: nextFeatured ? "Đã ghim bài viết" : "Đã gỡ ghim bài viết",
+        message: `Bài viết "${post.tieuDe}" ${nextFeatured ? "sẽ được ưu tiên hiển thị ở trang chủ." : "đã chuyển về danh sách thông thường."}`,
+      });
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === post.id ? { ...p, isFeatured: nextFeatured } : p,
+        ),
+      );
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Lỗi khi cập nhật trạng thái ghim";
+      setNotification({
+        type: "error",
+        title: "Thao tác thất bại",
+        message: msg,
+      });
+    } finally {
+      setTogglingFeaturedId(null);
+    }
+  };
+
   // Helper tính Base URL Storefront
   const getStorefrontBaseUrl = () => {
-    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    const isLocal =
+      typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1");
     return isLocal
       ? `http://${window.location.hostname}:3002`
-      : (process.env.NEXT_PUBLIC_SITE_URL || 'https://xehyundaivinh.com');
+      : process.env.NEXT_PUBLIC_SITE_URL || "https://xehyundaivinh.com";
   };
 
   // Copy Preview URL
@@ -225,45 +292,47 @@ export default function PostsManagementPage() {
     setCopiedId(post.id);
     setTimeout(() => setCopiedId(null), 2505);
     setNotification({
-      type: 'success',
-      title: 'Đã sao chép liên kết xem trước',
-      message: 'Liên kết xem trước bài viết nháp đã được lưu vào khay nhớ tạm.',
+      type: "success",
+      title: "Đã sao chép liên kết xem trước",
+      message: "Liên kết xem trước bài viết nháp đã được lưu vào khay nhớ tạm.",
     });
   };
 
   // Open Preview in New Tab
   const handleOpenStorefront = (post: PostItem) => {
     const storefrontBase = getStorefrontBaseUrl();
-    const queryParam = post.previewToken ? `?token=${encodeURIComponent(post.previewToken)}` : '';
+    const queryParam = post.previewToken
+      ? `?token=${encodeURIComponent(post.previewToken)}`
+      : "";
     const targetUrl = `${storefrontBase}/tin-tuc/${encodeURIComponent(post.slug)}${queryParam}`;
-    window.open(targetUrl, '_blank');
+    window.open(targetUrl, "_blank");
   };
 
   // Render Status Badge
-  const renderStatusBadge = (status: PostItem['status']) => {
+  const renderStatusBadge = (status: PostItem["status"]) => {
     switch (status) {
-      case 'published':
+      case "published":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
             Đã xuất bản
           </span>
         );
-      case 'draft':
+      case "draft":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-500/10 text-slate-400 border border-slate-500/20">
             <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
             Bản nháp
           </span>
         );
-      case 'scheduled':
+      case "scheduled":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
             Hẹn giờ
           </span>
         );
-      case 'archived':
+      case "archived":
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20">
             <span className="w-1.5 h-1.5 rounded-full bg-red-400"></span>
@@ -285,8 +354,10 @@ export default function PostsManagementPage() {
     );
   }
 
-  if (!can('posts:read')) {
-    return <AccessDenied message="Bạn không có quyền xem và quản lý bài viết tin tức." />;
+  if (!can("posts:read")) {
+    return (
+      <AccessDenied message="Bạn không có quyền xem và quản lý bài viết tin tức." />
+    );
   }
 
   return (
@@ -299,11 +370,12 @@ export default function PostsManagementPage() {
             Quản Lý Bài Viết & Inbound Hub
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Biên tập bài viết chuẩn SEO Onpage theo từng dòng xe, chèn Content Blocks tinh hoa và theo dõi khách hàng tiềm năng.
+            Biên tập bài viết chuẩn SEO Onpage theo từng dòng xe, chèn Content
+            Blocks tinh hoa và theo dõi khách hàng tiềm năng.
           </p>
         </div>
 
-        {can('posts:write') && (
+        {can("posts:write") && (
           <div className="flex flex-wrap items-center gap-2.5">
             <Button
               type="button"
@@ -333,20 +405,25 @@ export default function PostsManagementPage() {
       {notification && (
         <div
           className={`flex items-start justify-between p-4 rounded-xl border backdrop-blur-md transition-all ${
-            notification.type === 'success'
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
-              : 'bg-red-500/10 border-red-500/20 text-red-300'
+            notification.type === "success"
+              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
+              : "bg-red-500/10 border-red-500/20 text-red-300"
           }`}
         >
           <div className="flex items-start gap-3">
-            {notification.type === 'success' ? (
-              <CheckCircle2 size={20} className="shrink-0 text-emerald-400 mt-0.5" />
+            {notification.type === "success" ? (
+              <CheckCircle2
+                size={20}
+                className="shrink-0 text-emerald-400 mt-0.5"
+              />
             ) : (
               <AlertCircle size={20} className="shrink-0 text-red-400 mt-0.5" />
             )}
             <div>
               <p className="font-semibold text-sm">{notification.title}</p>
-              <p className="text-xs opacity-90 mt-0.5">{notification.message}</p>
+              <p className="text-xs opacity-90 mt-0.5">
+                {notification.message}
+              </p>
             </div>
           </div>
           <Button
@@ -364,39 +441,73 @@ export default function PostsManagementPage() {
 
       {/* 2. Interactive Filter Bar */}
       <Card className="relative z-20 p-4 md:p-6 bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl space-y-4">
-        {/* Status Tabs */}
-        <div className="flex flex-wrap items-center gap-2 border-b border-white/10 pb-4">
-          {[
-            { key: 'all', label: 'Tất cả trạng thái' },
-            { key: 'published', label: 'Đã xuất bản' },
-            { key: 'draft', label: 'Bản nháp' },
-            { key: 'scheduled', label: 'Hẹn giờ' },
-            { key: 'archived', label: 'Lưu trữ' },
-          ].map((tab) => (
-            <Button
-              key={tab.key}
-              type="button"
-              variant={statusFilter === tab.key ? 'accent' : 'ghost'}
-              size="sm"
-              onClick={() => {
-                setStatusFilter(tab.key as PostFilterStatus);
-                setPage(1);
-              }}
-              className={`rounded-xl text-xs md:text-sm font-semibold h-9 px-4 transition-all ${
-                statusFilter === tab.key
-                  ? 'shadow-[0_0_15px_rgba(0,114,206,0.3)]'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
-              }`}
-            >
-              {tab.label}
-            </Button>
-          ))}
+        {/* Status Tabs & Quick Featured Filter */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              { key: "all", label: "Tất cả trạng thái" },
+              { key: "published", label: "Đã xuất bản" },
+              { key: "draft", label: "Bản nháp" },
+              { key: "scheduled", label: "Hẹn giờ" },
+              { key: "archived", label: "Lưu trữ" },
+            ].map((tab) => (
+              <Button
+                key={tab.key}
+                type="button"
+                variant={statusFilter === tab.key ? "accent" : "ghost"}
+                size="sm"
+                onClick={() => {
+                  setStatusFilter(tab.key as PostFilterStatus);
+                  setPage(1);
+                }}
+                className={`rounded-xl text-xs md:text-sm font-semibold h-9 px-4 transition-all ${
+                  statusFilter === tab.key
+                    ? "shadow-[0_0_15px_rgba(0,114,206,0.3)]"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                }`}
+              >
+                {tab.label}
+              </Button>
+            ))}
+          </div>
+
+          {/* Quick Toggle Button: Ghim trang chủ */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setFeaturedFilter((prev) =>
+                prev === "featured" ? "all" : "featured",
+              );
+              setPage(1);
+            }}
+            className={`rounded-xl text-xs md:text-sm font-semibold h-9 px-3.5 border transition-all flex items-center gap-2 ${
+              featuredFilter === "featured"
+                ? "bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.25)]"
+                : "text-slate-400 border-white/10 hover:text-amber-300 hover:border-amber-500/30 hover:bg-amber-500/10"
+            }`}
+            title="Lọc nhanh các bài viết đang được ghim ở trang chủ"
+          >
+            <Pin
+              size={14}
+              className={
+                featuredFilter === "featured"
+                  ? "fill-amber-400 rotate-45 text-amber-400"
+                  : "rotate-45 text-slate-400"
+              }
+            />
+            <span>Ghim Trang Chủ</span>
+            {featuredFilter === "featured" && (
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            )}
+          </Button>
         </div>
 
-        {/* Search & Category Filter */}
+        {/* Search, Category & Featured Filter */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 pt-1">
           {/* Search Box */}
-          <div className="md:col-span-8">
+          <div className="md:col-span-6">
             <Input
               type="text"
               value={searchQuery}
@@ -408,7 +519,7 @@ export default function PostsManagementPage() {
           </div>
 
           {/* Category Dropdown */}
-          <div className="md:col-span-4 relative z-30">
+          <div className="md:col-span-3 relative z-30">
             <Select
               value={selectedCategory}
               onChange={(e) => {
@@ -417,8 +528,29 @@ export default function PostsManagementPage() {
               }}
               variant="dark"
               options={[
-                { value: 'all', label: 'Tất cả chuyên mục' },
-                ...categories.map((cat) => ({ value: cat.id, label: cat.tenChuyenMuc })),
+                { value: "all", label: "Tất cả chuyên mục" },
+                ...categories.map((cat) => ({
+                  value: cat.id,
+                  label: cat.tenChuyenMuc,
+                })),
+              ]}
+              className="h-11 rounded-xl bg-slate-950/60 border-white/10 text-slate-200 text-sm focus-visible:ring-cyan-500/20 focus-visible:border-cyan-500/60"
+            />
+          </div>
+
+          {/* Homepage Pinned Filter Dropdown */}
+          <div className="md:col-span-3 relative z-30">
+            <Select
+              value={featuredFilter}
+              onChange={(e) => {
+                setFeaturedFilter(e.target.value as FeaturedFilter);
+                setPage(1);
+              }}
+              variant="dark"
+              options={[
+                { value: "all", label: "Tất cả (Ghim & Không ghim)" },
+                { value: "featured", label: "⭐ Đang ghim trang chủ" },
+                { value: "not_featured", label: "Không ghim trang chủ" },
               ]}
               className="h-11 rounded-xl bg-slate-950/60 border-white/10 text-slate-200 text-sm focus-visible:ring-cyan-500/20 focus-visible:border-cyan-500/60"
             />
@@ -432,7 +564,10 @@ export default function PostsManagementPage() {
         {loading && (
           <div className="p-6 space-y-4">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-center gap-4 py-3 border-b border-white/5 last:border-none">
+              <div
+                key={i}
+                className="flex items-center gap-4 py-3 border-b border-white/5 last:border-none"
+              >
                 <Skeleton className="w-16 h-12 rounded-lg bg-slate-800 shrink-0" />
                 <div className="space-y-2 flex-1">
                   <Skeleton className="h-5 w-3/4 bg-slate-800" />
@@ -452,7 +587,9 @@ export default function PostsManagementPage() {
               <AlertCircle size={28} />
             </div>
             <div className="max-w-md">
-              <h3 className="text-lg font-bold text-slate-100">Đã xảy ra lỗi khi tải dữ liệu</h3>
+              <h3 className="text-lg font-bold text-slate-100">
+                Đã xảy ra lỗi khi tải dữ liệu
+              </h3>
               <p className="text-sm text-slate-400 mt-1">{error}</p>
             </div>
             <Button
@@ -473,16 +610,24 @@ export default function PostsManagementPage() {
               <FileText size={32} />
             </div>
             <div className="max-w-md">
-              <h3 className="text-lg font-bold text-slate-200">Không tìm thấy bài viết nào</h3>
+              <h3 className="text-lg font-bold text-slate-200">
+                Không tìm thấy bài viết nào
+              </h3>
               <p className="text-sm text-slate-400 mt-1">
-                {searchQuery || statusFilter !== 'all' || selectedCategory !== 'all'
-                  ? 'Không có bài viết nào khớp với tiêu chí tìm kiếm hiện tại.'
-                  : 'Chưa có bài viết nào trong hệ thống. Hãy bắt đầu tạo bài viết đầu tiên của bạn.'}
+                {searchQuery ||
+                statusFilter !== "all" ||
+                selectedCategory !== "all" ||
+                featuredFilter !== "all"
+                  ? "Không có bài viết nào khớp với tiêu chí tìm kiếm hiện tại."
+                  : "Chưa có bài viết nào trong hệ thống. Hãy bắt đầu tạo bài viết đầu tiên của bạn."}
               </p>
             </div>
-            {can('posts:write') && (
+            {can("posts:write") && (
               <Link href="/posts/new">
-                <Button variant="accent" className="flex items-center gap-2 h-11 px-5 font-semibold text-sm mt-2">
+                <Button
+                  variant="accent"
+                  className="flex items-center gap-2 h-11 px-5 font-semibold text-sm mt-2"
+                >
                   <Plus size={18} />
                   Tạo bài viết mới ngay
                 </Button>
@@ -495,14 +640,31 @@ export default function PostsManagementPage() {
         {!loading && !error && posts.length > 0 && (
           <Table>
             <TableHeader>
-              <TableRow isHeader className="bg-white/[0.02] border-b border-white/10">
-                <TableHead className="py-4 px-6 text-slate-400 font-semibold">Bài viết</TableHead>
-                <TableHead className="py-4 px-4 text-slate-400 font-semibold">Chuyên mục</TableHead>
-                <TableHead className="py-4 px-4 text-slate-400 font-semibold">Tác giả</TableHead>
-                <TableHead className="py-4 px-4 text-center text-slate-400 font-semibold">Trạng thái</TableHead>
-                <TableHead className="py-4 px-4 text-center text-slate-400 font-semibold">Thống kê</TableHead>
-                <TableHead className="py-4 px-4 text-center text-slate-400 font-semibold">Ngày viết</TableHead>
-                <TableHead className="py-4 px-6 text-right text-slate-400 font-semibold">Thao tác</TableHead>
+              <TableRow
+                isHeader
+                className="bg-white/[0.02] border-b border-white/10"
+              >
+                <TableHead className="py-4 px-6 text-slate-400 font-semibold">
+                  Bài viết
+                </TableHead>
+                <TableHead className="py-4 px-4 text-slate-400 font-semibold">
+                  Chuyên mục
+                </TableHead>
+                <TableHead className="py-4 px-4 text-slate-400 font-semibold">
+                  Tác giả
+                </TableHead>
+                <TableHead className="py-4 px-4 text-center text-slate-400 font-semibold">
+                  Trạng thái
+                </TableHead>
+                <TableHead className="py-4 px-4 text-center text-slate-400 font-semibold">
+                  Thống kê
+                </TableHead>
+                <TableHead className="py-4 px-4 text-center text-slate-400 font-semibold">
+                  Ngày viết
+                </TableHead>
+                <TableHead className="py-4 px-6 text-right text-slate-400 font-semibold">
+                  Thao tác
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody className="divide-y divide-white/5 text-sm">
@@ -520,7 +682,8 @@ export default function PostsManagementPage() {
                         className="w-16 h-12 rounded-lg object-cover bg-slate-800 border border-white/10 shrink-0"
                         onError={(e) => {
                           // Fallback image
-                          (e.target as HTMLImageElement).src = '/images/placeholder-car.webp';
+                          (e.target as HTMLImageElement).src =
+                            "/images/placeholder-car.webp";
                         }}
                       />
                       <div className="min-w-0">
@@ -530,9 +693,20 @@ export default function PostsManagementPage() {
                         >
                           {post.tieuDe}
                         </Link>
-                        <span className="text-xs text-slate-500 font-mono block mt-1 truncate">
-                          /{post.slug}
-                        </span>
+                        <div className="flex items-center gap-2 mt-1">
+                          {post.isFeatured && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30 shrink-0">
+                              <Pin
+                                size={11}
+                                className="fill-amber-400 text-amber-400 rotate-45"
+                              />
+                              Ghim trang chủ
+                            </span>
+                          )}
+                          <span className="text-xs text-slate-500 font-mono truncate">
+                            /{post.slug}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </TableCell>
@@ -544,7 +718,9 @@ export default function PostsManagementPage() {
                         {post.category.tenChuyenMuc}
                       </span>
                     ) : (
-                      <span className="text-xs text-slate-500">Chưa phân loại</span>
+                      <span className="text-xs text-slate-500">
+                        Chưa phân loại
+                      </span>
                     )}
                   </TableCell>
 
@@ -553,7 +729,7 @@ export default function PostsManagementPage() {
                     <div className="flex items-center gap-2 text-slate-300">
                       <User size={14} className="text-slate-500 shrink-0" />
                       <span className="text-xs font-medium">
-                        {post.author?.fullName || 'Ban Biên Tập'}
+                        {post.author?.fullName || "Ban Biên Tập"}
                       </span>
                     </div>
                   </TableCell>
@@ -568,7 +744,7 @@ export default function PostsManagementPage() {
                     <div className="inline-flex flex-col items-center gap-1 text-xs text-slate-400">
                       <span className="flex items-center gap-1 font-semibold text-slate-200">
                         <Eye size={13} className="text-cyan-400" />
-                        {post.viewCount.toLocaleString('vi-VN')}
+                        {post.viewCount.toLocaleString("vi-VN")}
                       </span>
                       <span className="text-[11px] text-slate-500">
                         {post.wordCount} từ • {post.readingTime}p đọc
@@ -578,7 +754,9 @@ export default function PostsManagementPage() {
 
                   {/* Date */}
                   <TableCell className="py-4 px-4 text-center whitespace-nowrap text-xs text-slate-400 font-mono">
-                    {new Date(post.publishedAt || post.createdAt).toLocaleDateString('vi-VN')}
+                    {new Date(
+                      post.publishedAt || post.createdAt,
+                    ).toLocaleDateString("vi-VN")}
                   </TableCell>
 
                   {/* Actions */}
@@ -606,12 +784,46 @@ export default function PostsManagementPage() {
                           title="Sao chép link xem trước bài viết"
                           className="h-8 w-8 text-slate-400 hover:text-cyan-300 hover:bg-cyan-500/10"
                         >
-                          {copiedId === post.id ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
+                          {copiedId === post.id ? (
+                            <Check size={16} className="text-emerald-400" />
+                          ) : (
+                            <Copy size={16} />
+                          )}
+                        </Button>
+                      )}
+
+                      {/* Pin/Unpin on Homepage */}
+                      {can("posts:write") && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          disabled={togglingFeaturedId === post.id}
+                          onClick={() => handleToggleFeatured(post)}
+                          title={
+                            post.isFeatured
+                              ? "Bỏ ghim khỏi trang chủ"
+                              : "Ghim bài viết lên trang chủ"
+                          }
+                          className={`h-8 w-8 transition-colors ${
+                            post.isFeatured
+                              ? "text-amber-400 hover:text-amber-300 hover:bg-amber-500/15"
+                              : "text-slate-400 hover:text-amber-300 hover:bg-amber-500/10"
+                          }`}
+                        >
+                          <Pin
+                            size={16}
+                            className={
+                              post.isFeatured
+                                ? "fill-amber-400 text-amber-400 rotate-45"
+                                : "rotate-45"
+                            }
+                          />
                         </Button>
                       )}
 
                       {/* Edit Button */}
-                      {can('posts:write') && (
+                      {can("posts:write") && (
                         <Link href={`/posts/${post.id}`}>
                           <Button
                             type="button"
@@ -626,7 +838,7 @@ export default function PostsManagementPage() {
                       )}
 
                       {/* Delete Button */}
-                      {can('posts:write') && (
+                      {can("posts:write") && (
                         <Button
                           type="button"
                           variant="ghost"
@@ -650,8 +862,13 @@ export default function PostsManagementPage() {
         {!loading && !error && posts.length > 0 && totalPages > 1 && (
           <div className="p-4 md:p-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
             <span className="text-xs text-slate-400">
-              Hiển thị <span className="text-slate-200 font-semibold">{posts.length}</span> trên tổng số{' '}
-              <span className="text-slate-200 font-semibold">{totalItems}</span> bài viết
+              Hiển thị{" "}
+              <span className="text-slate-200 font-semibold">
+                {posts.length}
+              </span>{" "}
+              trên tổng số{" "}
+              <span className="text-slate-200 font-semibold">{totalItems}</span>{" "}
+              bài viết
             </span>
 
             <div className="flex items-center gap-2">
