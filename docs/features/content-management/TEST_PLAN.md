@@ -27,6 +27,14 @@
 | **TC-16** | Unit Test | `apps/api/src/services/ai/__tests__/topic-ideas.test.ts` | Thuật toán Deduplication Check loại bỏ ý tưởng trùng lặp từ khóa / tiêu đề với database | 🟡 Sẵn sàng chạy |
 | **TC-17** | Unit Test | `apps/api/src/services/ai/__tests__/topic-ideas.test.ts` | Response Transformer chuẩn hóa danh sách `TopicIdeaItem[]` đầy đủ thuộc tính và search intent | 🟡 Sẵn sàng chạy |
 | **TC-18** | Integration / UI | `apps/admin/app/posts/` | `AiTopicIdeatorModal` hiển thị Idea Cards sinh động và 1-Click chuyển tiếp sang form `/posts/new` | 🟡 Sẵn sàng chạy |
+| **TC-19** | Unit Test | `packages/types/src/__tests__/auto-post.test.ts` | Validate Zod Schemas cho AutoPostSettings, ContentPlanItem, AutoPostLog | 🟡 Sẵn sàng chạy |
+| **TC-20** | Unit Test | `apps/api/src/services/__tests__/auto-post-scheduler.test.ts` | `AutoPostSchedulerService` reload cron task, dừng task cũ và tính toán nextRunTime chính xác | 🟡 Sẵn sàng chạy |
+| **TC-21** | Unit Test | `apps/api/src/services/__tests__/auto-post-scheduler.test.ts` | Mutex flag `isProcessing` chặn đứng 100% tình huống chạy đồng thời (Race Condition) | 🟡 Sẵn sàng chạy |
+| **TC-22** | Unit Test | `apps/api/src/services/ai/__tests__/editorial-plan.test.ts` | `buildEditorialPlanPrompt` kết hợp negative grounding và chia đều lịch đăng 30 ngày | 🟡 Sẵn sàng chạy |
+| **TC-23** | Unit Test | `apps/api/src/services/ai/__tests__/editorial-plan.test.ts` | `transformEditorialPlanResponse` chuẩn hóa mảng plan items hợp lệ | 🟡 Sẵn sàng chạy |
+| **TC-24** | Integration | `apps/api/src/routes/admin/auto-posts.ts` | GET & PUT `/api/admin/auto-posts/settings` lưu cấu hình và phản hồi đúng schema | 🟡 Sẵn sàng chạy |
+| **TC-25** | Integration | `apps/api/src/routes/admin/auto-posts.ts` | CRUD `/api/admin/auto-posts/plans` và POST `/api/admin/auto-posts/ingest-plan` nạp hàng loạt | 🟡 Sẵn sàng chạy |
+| **TC-26** | Integration | `apps/api/src/routes/admin/auto-posts.ts` | POST `/api/admin/auto-posts/run-now` sinh bài viết, lưu DB và ghi nhận `auto_post_logs` | 🟡 Sẵn sàng chạy |
 
 ---
 

@@ -21,6 +21,7 @@ import { handleAdminLeadRoutes } from './admin/leads';
 import { handleMediaRoutes } from './admin/media';
 import { handleAdminPageRoutes } from './admin/pages';
 import { handleAdminAiRoutes } from './admin/ai';
+import { handleAdminAutoPostRoutes } from './admin/auto-posts';
 import { authenticateAdmin, checkPermission } from '../middleware/rbac';
 
 // 🧠 Mental Model: Tuyến đường Quản trị CMS được bảo vệ (Protected Admin Routes).
@@ -41,6 +42,7 @@ export async function handleAdminRoutes(
   if (await handleMediaRoutes(req, res, url, readBody, sendJson)) return true;
   if (await handleAdminPageRoutes(req, res, url, readBody, sendJson)) return true;
   if (await handleAdminAiRoutes(req, res, url, readBody, sendJson)) return true;
+  if (await handleAdminAutoPostRoutes(req, res, url, readBody, sendJson)) return true;
 
   // Middleware guard Zero-Trust cho mọi route /api/admin/* còn lại
   // Xác thực token, kiểm tra trạng thái active và tokenVersion revocation trong DB

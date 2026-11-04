@@ -7,6 +7,7 @@ import { handleAdminRoutes } from './routes/admin';
 import { handleRedirectRoutes } from './routes/redirects';
 import { handlePostRoutes } from './routes/posts';
 import { handlePublicPageRoutes } from './routes/pages';
+import { autoPostSchedulerService } from './services/auto-post-scheduler.service';
 
 // 🧠 Mental Model: Micro REST API Server & Central Dispatcher.
 // Thiết kế theo chuẩn Router Delegation Pattern, phân tách routes thành các module con (< 100 dòng mỗi file).
@@ -173,6 +174,8 @@ if (process.env.NODE_ENV !== 'test') {
       const health = await checkDatabaseHealth();
       if (health.ok) {
         console.log('✅ [CarDealer API] Kết nối Database thành công và sẵn sàng phục vụ!');
+        // Khởi động In-Process Auto Post Scheduler
+        await autoPostSchedulerService.init();
       } else {
         console.warn('⚠️ [CarDealer API] Không thể kết nối tới Database:', health.message);
       }
@@ -181,6 +184,17 @@ if (process.env.NODE_ENV !== 'test') {
       console.error('💥 [CarDealer API] Lỗi kiểm tra kết nối DB:', msg);
     }
   });
+
+  const handleShutdown = () => {
+    console.log('[API] Đang dừng server an toàn...');
+    autoPostSchedulerService.stop();
+    server.close(() => {
+      process.exit(0);
+    });
+  };
+
+  process.on('SIGTERM', handleShutdown);
+  process.on('SIGINT', handleShutdown);
 }
 
 export default server;

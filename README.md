@@ -72,9 +72,9 @@ Dự án được phân rã và quản lý theo **Universal Agentic Workflow (v2
 | **Phase 2** | **Admin User & RBAC Management** | Full-stack | ⏳ **Kế Tiếp (Next)** | Quản lý nhân viên, phân quyền đa cấp, Security Audit Trail |
 | **Phase 3** | **Pricing & Lead Engine** | Full-stack | ⏳ Sắp tới | Thuật toán tính lăn bánh, trả góp ngân hàng, Lead Gate 2 bước |
 | **Phase 4** | **Storefront & Car Experience** | Frontend | ⏳ Sắp tới | Trang chủ 6 phân khu, `/xe/[slug]` đổi màu qua query URL |
-| **Phase 5** | **Content & Lexical Blocks** | Full-stack | ⏳ Sắp tới | 15 Content Blocks, TikTok Embed không cuộn, FAQ Accordion |
+| **Phase 5** | **Content & Lexical Blocks** | Full-stack | ✅ **100% Hoàn Thành** | • Tiptap AST 8 Content Blocks & TikTok 9:16 (`packages/core`)<br/>• Single Block AI Generator & Internal Links Engine<br/>• AI Topic Ideation & Deduplication Engine (v1.3.0)<br/>• Storefront tin tức `/tin-tuc` & TOC Scrollspy (`apps/web`) |
 | **Phase 6** | **Technical SEO & Indexing** | Full-stack | ⏳ Sắp tới | 7 Schema JSON-LD, Dynamic Sitemap, Google Indexing API v3 |
-| **Phase 7** | **AI-Powered Automation** | AI + Workers | ⏳ Sắp tới | AI sinh bài giá xe hàng tháng, FAQ Schema, Chatbot Showroom |
+| **Phase 7** | **AI-Powered Automation & Publishing Scheduler** | AI + Workers | 🟢 **v1.4.0 Active** | • In-Process Node Scheduler (`node-cron`) tự động viết và xuất bản bài định kỳ<br/>• AI 30-Day Editorial Planner quét Content Gap & chia đều lịch đăng 1 tháng<br/>• Admin Back-Office `/posts/auto-schedule` quản lý hàng đợi & nhật ký thực thi |
 
 > Chi tiết kế hoạch kỹ thuật xem tại: [06-PHASED-IMPLEMENTATION-ROADMAP.md](./docs/06-PHASED-IMPLEMENTATION-ROADMAP.md)
 
@@ -122,7 +122,7 @@ Truy cập các cổng dịch vụ cục bộ:
 ### 1. Thư mục Ứng dụng (`apps/`)
 * **`apps/web` (`@cardealer/web`):** Trang web chính cho người dùng tìm kiếm xe, xem bảng màu ngoại thất trực quan, tính dự toán lăn bánh theo từng tỉnh thành, và gửi yêu cầu tư vấn.
 * **`apps/api` (`@cardealer/api`):** Dịch vụ Backend chịu trách nhiệm nhận Lead, gửi thông báo Telegram/Zalo, cung cấp REST API cho hệ thống và đóng vai trò cầu nối với các mô hình AI.
-* **`apps/admin` (`@cardealer/admin`):** Cổng quản lý nội bộ dành cho nhân viên bán hàng và ban biên tập nội dung.
+* **`apps/admin` (`@cardealer/admin`):** Cổng quản lý nội bộ dành cho nhân viên bán hàng và ban biên tập nội dung (Quản trị kho xe, Leads CRM, Bài viết Tiptap Studio, Lập lịch tự động viết bài & AI Editorial Planner 30 ngày tại `/posts/auto-schedule`).
 
 ### 2. Thư mục Thư viện Dùng Chung (`packages/`)
 * **`packages/core` (`@cardealer/core`):** Tầng trung tâm chứa toàn bộ thuật toán nghiệp vụ thuần túy:
@@ -408,6 +408,7 @@ Dịch vụ Backend (`apps/api` - `@cardealer/api`) là một REST API server đ
 - Quản lý kho xe, phiên bản, giá lăn bánh, màu sắc (`/api/cars`, `/api/admin/cars`).
 - Thu nhận Lead & đồng bộ thông báo (`/api/leads`).
 - Quản lý bài viết, cấu hình hệ thống & Trợ lý AI SEO (`/api/posts`, `/api/admin/ai`).
+- Lập lịch tự động viết bài theo định kỳ (In-Process Scheduler) & Trợ lý AI Lập kế hoạch 30 ngày (`/api/admin/auto-posts/*`).
 - Cung cấp Endpoint Healthcheck kiểm tra kết nối DB: `GET /api/health`.
 
 Backend phụ thuộc vào các shared package nội bộ trong monorepo: `@cardealer/database`, `@cardealer/core`, `@cardealer/types`, `@cardealer/env`. Dưới đây là các phương thức triển khai Production độc lập:

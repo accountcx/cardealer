@@ -1,19 +1,37 @@
-# 📋 BIÊN BẢN NGHIỆM THU GATE 3: THẨM ĐỊNH RỦI RO & MA TRẬN KIỂM THỬ
-**Mã nghiệm thu:** `AUDIT-GATE-3-CM-US05`  
-**Dự án:** CarDealer / Hyundai CMS (`content-management`)  
-**Tính năng:** US-05 - AI Topic Ideation & Deduplication Engine (Trợ lý AI Đề Xuất Ý Tưởng Bài Viết Chống Trùng Lặp)  
-**Thời gian:** 2026-10-26 08:55:10 (ICT)  
-**Trọng tài máy:** `spec_guard.sh`  
-**Trạng thái:** **THÔNG QUAN (PASS)** 🟢  
+# 🛡️ BIÊN BẢN THẨM ĐỊNH RỦI RO & MA TRẬN TEST PHASE 3 (GATE 3 AUDIT)
+
+- **Module:** `content-management`
+- **Phiên bản:** `v1.4.0`
+- **Tác vụ:** Tự động viết bài theo định kỳ & AI Lập kế hoạch nội dung 30 ngày
+- **Ngày thực hiện:** 04/11/2026
 
 ---
 
-## 1. Hồ Sơ Thẩm Định Rủi Ro & Kế Hoạch Kiểm Thử
-- [x] **RISK_AUDIT.md:** Bổ sung rủi ro `R-11` (Keyword Cannibalization / Trùng lặp ý tưởng với bài đã có) và `R-12` (Context Window Overflow khi số bài viết lớn), kèm giải pháp phòng ngừa 2 lớp.
-- [x] **TEST_PLAN.md:** Bổ sung các kịch bản kiểm thử tự động `TC-15`, `TC-16`, `TC-17`, `TC-18` bao phủ từ Prompt Builder, Thuật toán Deduplication tới Response Transformer và Giao diện UI.
-- [x] **Zero-Mutation:** Giữ nguyên trạng thái mã nguồn chưa can thiệp cho tới khi hoàn tất phê duyệt thiết kế.
+## 1. Kết Quả Rà Soát Rủi Ro & Bán Kính Tác Động (Blast Radius)
+- `RISK_AUDIT.md`: Đã bổ sung 5 rủi ro kỹ thuật trọng yếu của v1.4.0 (`R-13` đến `R-17`):
+  - `R-13`: LLM Rate Limit & Quota Exhaustion -> Try/catch cô lập, log failure, không crash server.
+  - `R-14`: Concurrency & Race Condition -> Mutex lock in-memory `isProcessing` + atomic status `processing`.
+  - `R-15`: Automated Content Drift & Low Quality -> Ép cấu trúc tối thiểu 4 khối Tiptap, chấm điểm SEO, admin chọn `draft` hoặc `published`.
+  - `R-16`: Cron Job Memory Leak -> Quản lý tham chiếu singleton job, gọi `stop()` trước khi reload.
+  - `R-17`: Database Migration Drift -> Cấu trúc Drizzle chuẩn, khóa ngoại `ON DELETE SET NULL`.
 
 ---
 
-## 2. Kết Luận Gate 3
-Chiến lược kiểm thử và các biện pháp cách ly rủi ro hoàn chỉnh 100%. Chính thức thông quan Gate 3, sẵn sàng tiến hành Phase 4: Thực thi mã nguồn (Execution).
+## 2. Ma Trận Kiểm Thử Tự Động (Test Specification)
+- `TEST_PLAN.md`: Đã mở rộng ma trận kiểm thử tự động từ `TC-19` đến `TC-26`:
+  - Kiểm thử Zod schema cho Settings, ContentPlanItem, AutoPostLog.
+  - Kiểm thử Scheduler Service (reload, mutex lock, execution flow).
+  - Kiểm thử AI Editorial Planner Prompt Builder và Response Transformer.
+  - Kiểm thử Integration REST API endpoints cho settings, plan items, run-now và logs.
+
+---
+
+## 3. Kiểm Chứng Máy (Automated Machine Verification)
+- **Lệnh kiểm chứng:** `bash $SPEC_GUARD docs/features/content-management`
+- **Kết quả:** `SPEC GUARD RESULT: PASS (exit 0)`
+- **Zero-Mutation:** Đạt chuẩn 100%, bảo toàn mã nguồn trước khi mở khóa Phase 4.
+
+---
+
+## 4. Quyết Định Cổng Thẩm Định (Gate Decision)
+🟢 **PASSED (Exit code 0)**: Đã hoàn tất thẩm định rủi ro và kế hoạch kiểm thử, chính thức mở khóa chuyển tiếp sang **Phase 4: Atomic Execution & Verification**!

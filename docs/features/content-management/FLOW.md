@@ -152,4 +152,92 @@ sequenceDiagram
     Editor->>Modal: Bấm "Viết Bài Với Ý Tưởng Này" trên Card mong muốn
     Modal->>EditorPage: Điều hướng sang /posts/new với query params hoặc pre-filled state
     EditorPage-->>Editor: Form bài viết mới đã điền sẵn Tiêu đề, Focus Keyword, Tóm tắt, Dòng xe!
+
+---
+
+## 7. Sơ Đồ Trạng Thái Hàng Đợi Kế Hoạch Đăng Bài (Content Plan Queue State Machine)
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending : Admin thêm mục HOẶC AI Planner nạp 30 ngày
+    Pending --> Processing : Scheduler khóa mục khi đến lịch chạy HOẶC Admin bấm 'Chạy ngay'
+    Processing --> Completed : Sinh bài viết thành công & lưu vào bảng posts
+    Processing --> Failed : OpenAI lỗi / Timeout / Validation thất bại
+    Failed --> Pending : Admin bấm 'Thử lại' (Retry)
+    Pending --> [*] : Admin xóa khỏi hàng đợi
+    Completed --> [*] : Bài viết đã hoàn thành vòng đời
+```
+
+---
+
+## 8. Sequence Diagram: Tự Động Viết & Xuất Bản Định Kỳ (Auto Post Execution Flow)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Cron as node-cron Scheduler / Admin Run-Now
+    participant AutoPostSvc as AutoPostSchedulerService (apps/api)
+    participant DB as PostgreSQL (Drizzle ORM)
+    participant AISvc as AiService (OpenAI gpt-4o-mini)
+    participant CoreSEO as SEO Engine (@cardealer/core)
+
+    Cron->>AutoPostSvc: Trigger execution (Scheduled Tick HOẶC manual run-now)
+    AutoPostSvc->>AutoPostSvc: Mutex check: isProcessing flag (chống race condition)
+    AutoPostSvc->>DB: Lấy 1 mục pending gần nhất từ content_plan_items
+    alt Có mục pending trong hàng đợi
+        DB-->>AutoPostSvc: PlanItem { id, title, focusKeyword, categoryId, targetCar, angle }
+        AutoPostSvc->>DB: UPDATE content_plan_items SET status = 'processing'
+    else Hàng đợi rỗng
+        AutoPostSvc->>AISvc: Gọi action 'generate_topic_ideas' để lấy 1 ý tưởng độc bản từ Content Gap
+        AISvc-->>AutoPostSvc: TopicIdea { title, focusKeyword, angle, category }
+    end
+
+    AutoPostSvc->>AISvc: Gọi action 'generate_full_article' (Prompt tiêu đề, từ khóa, góc nhìn, xe)
+    AISvc-->>AutoPostSvc: FullArticlePayload { tieuDe, slug, tomTat, metaTitle, metaDescription, blocks, focusKeyword }
+    AutoPostSvc->>CoreSEO: calculateSeoScore(fullArticlePayload)
+    CoreSEO-->>AutoPostSvc: seoScore (0-100)
+
+    AutoPostSvc->>DB: Đọc auto_post_settings -> defaultStatus ('draft' hoặc 'published'), defaultAuthorId
+    AutoPostSvc->>DB: INSERT INTO posts (tieuDe, slug, noiDung, status, tacGiaId, categoryId, seoScore...)
+    DB-->>AutoPostSvc: Post Row created (postId)
+
+    alt Xuất phát từ hàng đợi plan item
+        AutoPostSvc->>DB: UPDATE content_plan_items SET status = 'completed', post_id = postId
+    end
+
+    AutoPostSvc->>DB: INSERT INTO auto_post_logs (triggerType, postId, status = 'success', executionTimeMs)
+    AutoPostSvc->>AutoPostSvc: Giải phóng lock Mutex (isProcessing = false)
+```
+
+---
+
+## 9. Sequence Diagram: Trợ Lý AI Lập Kế Hoạch Biên Tập 30 Ngày (AI Editorial Planner Flow)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Strategist as Quản Trị Viên / SEO Lead
+    participant UI as EditorialPlanModal (apps/admin)
+    participant API as /api/admin/auto-posts/generate-plan
+    participant DB as PostgreSQL (posts + cars + categories)
+    participant AISvc as AiService (buildEditorialPlanPrompt)
+    participant OpenAI as OpenAI LLM (gpt-4o-mini)
+
+    Strategist->>UI: Mở "Lập kế hoạch 30 ngày" -> Chọn số bài (ví dụ 12 bài/tháng), chuyên mục, dòng xe
+    UI->>API: POST /api/admin/auto-posts/generate-plan { targetMonthCount: 12, categoryId, carModel }
+    API->>DB: Truy vấn kho bài viết (posts) + danh sách dòng xe (cars) + chuyên mục (categories)
+    DB-->>API: Danh sách bài viết hiện có & catalogue xe
+    API->>AISvc: buildEditorialPlanPrompt(cars, categories, existingArticlesContext)
+    AISvc->>OpenAI: POST /v1/chat/completions (response_format: json_object)
+    OpenAI-->>AISvc: JSON { planItems: [ { title, focusKeyword, categorySlug, suggestedDay, angle } ] }
+    AISvc-->>API: Danh sách kế hoạch đã chuẩn hóa ngày/giờ dàn đều 30 ngày
+    API-->>UI: HTTP 200 { success: true, data: { planItems: [...] } }
+    UI-->>Strategist: Hiển thị bảng kế hoạch dạng lịch / danh sách có checkbox
+    Strategist->>UI: Chọn lọc bài viết ưng ý -> Bấm "Nạp vào Hàng Đợi Đăng Bài"
+    UI->>API: POST /api/admin/auto-posts/ingest-plan { items: selectedPlanItems }
+    API->>DB: INSERT INTO content_plan_items (hàng loạt mục với status = 'pending')
+    DB-->>API: Đã nạp thành công N mục
+    API-->>UI: HTTP 201 Created
+    UI-->>Strategist: Toast "Đã nạp N bài viết vào lịch đăng tự động!" và tải lại hàng đợi
+```
 ```

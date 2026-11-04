@@ -104,3 +104,87 @@
     - *When:* Backend nhận kết quả trước khi gửi về client.
     - *Then:* Bộ lọc deduplication tự động đối soát lại với database; nếu bất kỳ ý tưởng nào có độ tương đồng từ khóa > 60% với bài cũ sẽ bị loại bỏ hoặc cảnh báo, đảm bảo độ mới 100%.
 
+---
+
+### 🔹 US-06: Cấu Hình Lịch Tự Động & Hàng Đợi Kế Hoạch Đăng Bài (Auto Publishing Schedule & Content Queue Schema & API)
+- **Actor:** Quản trị viên hệ thống & Trưởng ban nội dung (Admin / Content Lead).
+- **Mô tả:** Lưu trữ và quản lý cấu hình lập lịch tự động viết bài (tần suất cron, bật/tắt, trạng thái bài viết mặc định `draft` hoặc `published`, chuyên mục ưu tiên, tác giả mặc định) cùng bảng hàng đợi kế hoạch bài viết (`content_plan_items`) và lịch sử chạy (`auto_post_logs`).
+- **Kịch bản Chấp Nhận (Acceptance Criteria - Gherkin):**
+  - **Scenario 6.1: Đọc và cập nhật cấu hình lập lịch đăng bài tự động**
+    - *Given:* Quản trị viên truy cập trang Cài đặt Lịch Tự Động Viết Bài.
+    - *When:* Cập nhật cấu hình: bật scheduler (`isEnabled: true`), tần suất `cronExpression: "0 8 * * *"` (8:00 sáng hàng ngày), trạng thái bài viết `defaultStatus: "draft"`, chuyên mục mặc định.
+    - *Then:* API `PUT /api/admin/auto-posts/settings` lưu trữ cài đặt hợp lệ, reload lại cron task trong memory của server ngay lập tức.
+  - **Scenario 6.2: Quản lý hàng đợi các bài viết theo kế hoạch (Content Plan Queue)**
+    - *Given:* Có danh sách các bài viết đã được lên lịch trong hàng đợi `content_plan_items`.
+    - *When:* Quản trị viên thêm mới thủ công, chỉnh sửa tiêu đề/từ khóa, đổi ngày xuất bản hoặc xóa một mục trong hàng đợi.
+    - *Then:* Hàng đợi được cập nhật chính xác với các trạng thái (`pending`, `processing`, `completed`, `failed`).
+  - **Scenario 6.3: Truy xuất nhật ký thực thi tự động (Execution Logs)**
+    - *Given:* Hệ thống đã từng chạy tự động hoặc chạy kích hoạt thủ công.
+    - *When:* Quản trị viên xem tab "Nhật ký thực thi".
+    - *Then:* API trả về danh sách lịch sử gồm: thời điểm chạy, kiểu kích hoạt (`cron` hoặc `manual_run_now`), bài viết đã tạo (`postId`, `title`), trạng thái (`success`/`failed`), mã lỗi (nếu có) và thời gian thực thi tính bằng milliseconds.
+
+---
+
+### 🔹 US-07: Trợ Lý AI Phân Tích & Lập Kế Hoạch Biên Tập Nội Dung 30 Ngày (AI 30-Day Content Editorial Planner Engine)
+- **Actor:** Quản trị viên SEO & Trưởng phòng Marketing (Content Strategist / SEO Lead).
+- **Mô tả:** Trợ lý AI tự động quét toàn bộ cơ sở dữ liệu các dòng xe, danh mục bài viết và bài viết hiện có để phân tích ma trận Content Gap, từ đó đề xuất một kế hoạch biên tập hoàn chỉnh trong 30 ngày (Editorial Calendar Plan) gồm danh sách các bài viết với tần suất hợp lý, đa dạng chuyên mục và góc nhìn, hoàn toàn không trùng lặp từ khóa.
+- **Kịch bản Chấp Nhận (Acceptance Criteria - Gherkin):**
+  - **Scenario 7.1: Khởi tạo yêu cầu sinh kế hoạch 30 ngày**
+    - *Given:* Quản trị viên mở modal "Lập kế hoạch 30 ngày bằng AI" và chọn số lượng bài (ví dụ 8, 12 hoặc 30 bài trong tháng), chọn dòng xe ưu tiên hoặc tất cả dòng xe.
+    - *When:* Bấm nút "Phân Tích & Lập Kế Hoạch".
+    - *Then:* AI Service phân tích kho nội dung hiện tại, đối chiếu negative grounding, xây dựng prompt chuyên biệt `buildEditorialPlanPrompt` và sinh danh sách các mục kế hoạch tương ứng.
+  - **Scenario 7.2: Dữ liệu chi tiết của từng bài trong kế hoạch 30 ngày**
+    - *Given:* AI phản hồi kế hoạch biên tập 30 ngày thành công.
+    - *When:* Giao diện hiển thị bảng kế hoạch dự kiến.
+    - *Then:* Mỗi mục kế hoạch gồm có: Tiêu đề gợi ý, Từ khóa chính, Chuyên mục mục tiêu, Dòng xe liên quan (nếu có), Góc nhìn độc bản (Angle), Tóm tắt định hướng và Ngày/giờ dự kiến xuất bản (dàn đều theo chu kỳ 30 ngày).
+  - **Scenario 7.3: Nạp kế hoạch vào Hàng đợi Đăng bài tự động (Batch Ingest to Queue)**
+    - *Given:* Quản trị viên xem xét bảng kế hoạch 30 ngày, có thể bỏ chọn hoặc chỉnh sửa các bài chưa ưng ý.
+    - *When:* Bấm nút "Lưu Kế Hoạch Vào Hàng Đợi".
+    - *Then:* Toàn bộ các mục được chọn sẽ được nạp hàng loạt vào bảng `content_plan_items` với trạng thái `pending`, sẵn sàng để scheduler tự động lấy ra viết bài khi đến hẹn.
+
+---
+
+### 🔹 US-08: Bộ Lập Lịch Định Kỳ & Động Cơ Tự Động Viết Bài Hoàn Chỉnh (In-Process Scheduler & Automated Article Generation Pipeline)
+- **Actor:** Hệ thống nền tự động (Background Scheduler Engine) & Quản trị viên kích hoạt.
+- **Mô tả:** Bộ lập lịch in-process trong `apps/api` chạy theo cấu hình cron hoặc qua nút kích hoạt thủ công "Chạy ngay" (`POST /api/admin/auto-posts/run-now`). Khi đến kỳ hoặc khi trigger, hệ thống lấy mục kế hoạch tiếp theo trong hàng đợi (hoặc tự động dùng AI sinh ý tưởng độc bản nếu hàng đợi rỗng), sau đó gọi pipeline sinh bài viết đầy đủ (Full Article Generation Pipeline) để tạo bài viết chất lượng cao với các khối Tiptap AST phong phú, gán tác giả mặc định E-E-A-T và lưu bài với trạng thái `draft` hoặc `published`.
+- **Kịch bản Chấp Nhận (Acceptance Criteria - Gherkin):**
+  - **Scenario 8.1: Tự động chạy theo Cron Timer**
+    - *Given:* Scheduler đang bật (`isEnabled: true`) và đồng hồ hệ thống khớp với `cronExpression`.
+    - *When:* Tác vụ cron kích hoạt.
+    - *Then:* Scheduler thực hiện lấy 1 mục kế hoạch `pending` gần nhất (hoặc sinh ý tưởng mới nếu không có hàng đợi), khóa trạng thái sang `processing` để chống race condition.
+  - **Scenario 8.2: Sinh trọn vẹn cấu trúc bài viết Tiptap AST chuẩn SEO**
+    - *Given:* Thông tin đề tài (tiêu đề, từ khóa, chuyên mục, góc nhìn).
+    - *When:* Động cơ AI Article Generator thực thi với action `generate_full_article`.
+    - *Then:* AI tạo ra bài viết hoàn chỉnh gồm: Tiêu đề, Slug duy nhất, Tóm tắt, Từ khóa SEO, Meta Title, Meta Description, và mảng nội dung AST với tối thiểu 4 khối (`paragraph`, `heading`, `callout`, `faq` hoặc `priceTable`), tính điểm SEO đạt chuẩn.
+  - **Scenario 8.3: Tuân thủ cấu hình trạng thái bài viết (Draft vs Published)**
+    - *Given:* Cấu hình `defaultStatus` là `draft` (hoặc `published`).
+    - *When:* Bài viết được tạo thành công trong bảng `posts`.
+    - *Then:* Bài viết được lưu với đúng trạng thái tương ứng, gán tác giả mặc định từ cấu hình hệ thống, và mục kế hoạch được cập nhật thành `completed` kèm `postId` liên kết.
+  - **Scenario 8.4: Nút kích hoạt thủ công "Chạy ngay" (Manual Run Now)**
+    - *Given:* Quản trị viên bấm nút "Viết & Đăng bài ngay" trên trang quản trị.
+    - *When:* Gửi yêu cầu `POST /api/admin/auto-posts/run-now`.
+    - *Then:* Tác vụ chạy ngay lập tức, trả về kết quả bài viết mới tạo mà không cần chờ đến khung giờ cron, đồng thời ghi log với `triggerType = 'manual_run_now'`.
+  - **Scenario 8.5: Xử lý lỗi an toàn và ghi nhận log thất bại**
+    - *Given:* OpenAI API bị timeout, hết hạn mức hoặc lỗi mạng.
+    - *When:* Quá trình sinh bài thất bại.
+    - *Then:* Hệ thống không crash server, mục kế hoạch chuyển trạng thái `failed` kèm thông điệp lỗi, ghi nhận vào `auto_post_logs` và gửi cảnh báo toast cho quản trị viên nếu là trigger thủ công.
+
+---
+
+### 🔹 US-09: Giao Diện Quản Trị Lịch Định Kỳ, Kế Hoạch Biên Tập & Nhật Ký Thực Thi trong Admin (Admin Editorial Calendar & Schedule Management UI)
+- **Actor:** Quản trị viên nội dung (Admin / Content Editor).
+- **Mô tả:** Trang quản trị chuyên biệt tại `apps/admin/app/posts/auto-schedule/` với giao diện trực quan gồm: Bảng điều khiển Bật/Tắt & Cấu hình Cron/Trạng thái xuất bản; Nút "⚡ Viết Bài Ngay"; Modal "✨ AI Lập Kế Hoạch 30 Ngày"; Bảng hàng đợi bài viết (Content Plan Queue) kèm bộ lọc trạng thái; và Bảng nhật ký thực thi (Execution Logs) chi tiết.
+- **Kịch bản Chấp Nhận (Acceptance Criteria - Gherkin):**
+  - **Scenario 9.1: Bật/Tắt lịch đăng bài và thay đổi cấu hình**
+    - *Given:* Quản trị viên ở trang `/posts/auto-schedule`.
+    - *When:* Bật Switch "Tự động đăng bài theo lịch", chọn tần suất (ví dụ: Mỗi ngày một lần lúc 08:00 sáng, Mỗi tuần 2 lần...), chọn Trạng thái xuất bản mặc định ("Lưu nháp (Draft)" hoặc "Xuất bản ngay (Published)") và bấm "Lưu cấu hình".
+    - *Then:* Cấu hình được lưu thành công, hiển thị badge trạng thái Scheduler đang chạy, và hiển thị thời gian chạy dự kiến tiếp theo (Next Run Time).
+  - **Scenario 9.2: Mở modal và tạo kế hoạch 30 ngày bằng AI**
+    - *Given:* Quản trị viên bấm nút "✨ AI Lập Kế Hoạch 30 Ngày".
+    - *When:* Modal xuất hiện, chọn các tiêu chí (Số lượng bài, chuyên mục, dòng xe) và bấm "Bắt đầu phân tích".
+    - *Then:* Hiển thị danh sách đề xuất kế hoạch dạng thẻ/bảng, có thể tick chọn/bỏ chọn từng bài, bấm "Lưu vào Hàng Đợi", bảng Hàng đợi lập tức cập nhật dữ liệu mới.
+  - **Scenario 9.3: Điều hướng và liên kết từ trang danh sách bài viết `/posts`**
+    - *Given:* Quản trị viên đang ở trang quản lý bài viết `/posts`.
+    - *When:* Nhìn lên thanh Header.
+    - *Then:* Có nút điều hướng nổi bật "⏰ Lịch Tự Động & Kế Hoạch AI" dẫn trực tiếp đến `/posts/auto-schedule`.
+

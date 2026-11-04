@@ -9,6 +9,7 @@ import { posts, categories, postTags } from './posts';
 import { media } from './media';
 import { staticPages } from './static-pages';
 import { carArticles } from './car_articles';
+import { autoPostSettings, contentPlanItems, autoPostLogs } from './auto-posts';
 
 export const carsRelations = relations(cars, ({ one, many }) => ({
   versions: many(carVersions),
@@ -74,4 +75,20 @@ export const postTagsRelations = relations(postTags, ({ one }) => ({
 export const staticPagesRelations = relations(staticPages, ({ one }) => ({
   creator: one(users, { fields: [staticPages.createdBy], references: [users.id] }),
   updater: one(users, { fields: [staticPages.updatedBy], references: [users.id] }),
+}));
+
+export const autoPostSettingsRelations = relations(autoPostSettings, ({ one }) => ({
+  defaultCategory: one(categories, { fields: [autoPostSettings.defaultCategoryId], references: [categories.id] }),
+  defaultAuthor: one(users, { fields: [autoPostSettings.defaultAuthorId], references: [users.id] }),
+}));
+
+export const contentPlanItemsRelations = relations(contentPlanItems, ({ one, many }) => ({
+  category: one(categories, { fields: [contentPlanItems.categoryId], references: [categories.id] }),
+  post: one(posts, { fields: [contentPlanItems.postId], references: [posts.id] }),
+  logs: many(autoPostLogs),
+}));
+
+export const autoPostLogsRelations = relations(autoPostLogs, ({ one }) => ({
+  planItem: one(contentPlanItems, { fields: [autoPostLogs.planItemId], references: [contentPlanItems.id] }),
+  post: one(posts, { fields: [autoPostLogs.postId], references: [posts.id] }),
 }));

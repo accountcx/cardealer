@@ -57,6 +57,13 @@
       "when": 1791275268356,
       "tag": "0007_car_articles",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793761989881,
+      "tag": "0008_brave_marten_broadcloak",
+      "breakpoints": true
     }
   ]
 }

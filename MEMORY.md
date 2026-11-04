@@ -78,3 +78,21 @@ Tài liệu này lưu trữ các quy tắc bất biến (Invariants), quyết đ
   - **Tier 2 (Transformation Level - Algorithm Verification):** Thuật toán `checkTitleOrKeywordOverlap` và `calculateKeywordSimilarity` trong `@cardealer/core` đối soát chéo token overlap (ngưỡng 60%) để loại bỏ hoặc lọc sạch các ý tưởng bị trùng lặp trước khi gửi về client.
 - **1-Click Idea Application Flow:**
   - Biên tập viên nhấp "Viết bài theo ý tưởng này" trên modal: Tự động điều hướng sang `/posts/new` với các query parameters (`title`, `keyword`, `slug`, `summary`, `car`, `category`) được nạp tự động vào form mà không cần gõ phím lại từ đầu.
+
+---
+
+## 9. Tự Động Viết Bài Định Kỳ & Kế Hoạch 30 Ngày (Auto-Posting & AI Planner Invariants - v1.4.0)
+- **In-Process Node Scheduler & Mutex Lock Invariant:**
+  - `AutoPostSchedulerService` trong `apps/api` tích hợp thư viện `node-cron`.
+  - Luôn sử dụng cờ Mutex `isProcessing` trong bộ nhớ và atomic status update `status = 'processing'` trong database để ngăn chặn 100% tình huống trùng lặp tác vụ (Race Condition) khi cron tick và admin bấm "Chạy ngay" đồng thời.
+  - Khi reload cấu hình cron hoặc khi server nhận tín hiệu tắt (`SIGTERM`/`SIGINT`), bắt buộc gọi `currentJob.stop()` để giải phóng timers, triệt tiêu hoàn toàn rủi ro memory leak.
+- **AI 30-Day Editorial Planner & Day Distribution Pattern:**
+  - `buildEditorialPlanPrompt` kết hợp Negative Grounding của toàn bộ kho bài viết cũ, phân bổ tỷ lệ Content Pillar chuẩn SEO (40% chuyên môn dòng xe, 30% tài chính lăn bánh/trả góp, 30% cẩm nang sử dụng).
+  - Thuộc tính `suggestedDay` (1-30) được dàn đều và tính toán ngày giờ xuất bản mục tiêu (`scheduledAt`) tự động nạp vào bảng `content_plan_items`.
+- **Full Article Pipeline & Tiptap Serialization:**
+  - Động cơ sinh bài tự động `runAutoPostPipeline` chuyển đổi mảng `FullArticleBlock[]` từ AI thành tài liệu Tiptap AST chuẩn `{ type: 'doc', content: [...] }`.
+  - Tự động kiểm tra xung đột slug trong database và nối thêm hậu tố thời gian nếu trùng lặp.
+  - Đảm bảo trường `categoryId` của bài viết luôn được phân giải hợp lệ (fallback tự tạo chuyên mục nếu cơ sở dữ liệu trống) để thỏa mãn ràng buộc `NOT NULL` của bảng `posts`.
+- **Giao Diện Quản Trị & Ma Trận 4 Trạng Thái (4-State UI):**
+  - Cả bảng hàng đợi kế hoạch (`ContentPlanQueueTable`) và bảng nhật ký (`AutoPostLogsTable`) bắt buộc xử lý đầy đủ 4 trạng thái: Loading Skeleton, Empty State (kèm CTA nạp kế hoạch AI), Error State (kèm nút Thử lại), và Data Table chuẩn Dark Theme `#0b0f17`.
+

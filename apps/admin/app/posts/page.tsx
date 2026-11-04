@@ -377,6 +377,18 @@ export default function PostsManagementPage() {
 
         {can("posts:write") && (
           <div className="flex flex-wrap items-center gap-2.5">
+            <Link href="/posts/auto-schedule">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 h-11 px-4 font-semibold text-sky-300 bg-sky-500/10 border-sky-500/30 hover:bg-sky-500/20 hover:border-sky-500/50 transition-all shadow-md shadow-sky-500/10 cursor-pointer"
+                title="Lập lịch tự động viết bài theo định kỳ và AI lên kế hoạch 30 ngày"
+              >
+                <Clock size={18} className="text-sky-400" />
+                <span>Lịch Tự Động & Kế Hoạch AI</span>
+              </Button>
+            </Link>
+
             <Button
               type="button"
               variant="outline"

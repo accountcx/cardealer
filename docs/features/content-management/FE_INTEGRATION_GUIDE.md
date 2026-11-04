@@ -112,3 +112,63 @@ apps/web/app/tin-tuc/
 ## 7. Chuẩn Mực Triển Khai Mã Nguồn
 - Bắt buộc sử dụng **Named Export** (ví dụ: `export function AiTopicIdeatorModal(...)`).
 - 100% tuân thủ **Tailwind Spacing Scale** tiêu chuẩn (tránh các arbitrary values tự do).
+
+---
+
+## 8. Giao Diện Quản Trị Lập Lịch & Kế Hoạch Biên Tập (US-09 / v1.4.0)
+
+### 🔹 Vị Trí & Cấu Trúc Điều Hướng (Navigation Topology)
+- **Tọa độ trang quản trị mới:** `apps/admin/app/posts/auto-schedule/page.tsx`
+- **Điểm truy cập điều hướng:**
+  - Header trang danh sách bài viết [`apps/admin/app/posts/page.tsx`](file:///Users/nhatphan/Code/CarDealer/cardealer/apps/admin/app/posts/page.tsx): Thêm nút điều hướng nổi bật "⏰ Lịch Tự Động & Kế Hoạch AI" đặt cạnh nút "Viết bài mới".
+  - Sidebar Admin: Nhóm menu Bài viết có sub-link tới "Lập lịch & Kế hoạch AI".
+
+### 🔹 Bố Cục Trang `/posts/auto-schedule`
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│ Header: Lập Lịch Tự Động Viết Bài & Kế Hoạch 30 Ngày                   │
+│ Actions: [⚡ Viết Bài Ngay] [✨ AI Lập Kế Hoạch 30 Ngày]                 │
+├────────────────────────────────────────────────────────────────────────┤
+│ Card 1: Cấu hình Scheduler                                            │
+│ - Switch: Kích hoạt tự động viết bài (Bật/Tắt)                         │
+│ - Tần suất chạy: Dropdown gợi ý (Hàng ngày lúc 08:00 / Tuần 2 lần...)  │
+│ - Trạng thái bài viết mặc định: [Lưu nháp (Draft)] [Xuất bản (Public)] │
+│ - Chuyên mục mặc định & Tác giả mặc định                               │
+│ - Badge: Lần chạy tiếp theo (Next Run: 05/11/2026 08:00:00)           │
+│ - Nút: [Lưu Cấu Hình]                                                 │
+├────────────────────────────────────────────────────────────────────────┤
+│ Card 2: Hàng Đợi Kế Hoạch Bài Viết (Content Plan Queue)                │
+│ - Bộ lọc trạng thái: Tất cả | Chờ chạy (Pending) | Đã xong | Lỗi       │
+│ - Bảng: Tiêu đề | Từ khóa | Chuyên mục | Ngày dự kiến | Trạng thái    │
+│ - Actions: Xóa mục | Thử lại                                           │
+├────────────────────────────────────────────────────────────────────────┤
+│ Card 3: Nhật Ký Thực Thi (Execution Logs)                             │
+│ - Bảng: Thời gian | Kiểu kích hoạt | Tiêu đề bài viết | Kết quả | Thời gian │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+### 🔹 Ma Trận 4 Trạng Thái Cho Bảng Hàng Đợi (`ContentPlanQueueTable`)
+| Trạng Thái | Điều Kiện | Hành Vi Giao Diện | Thiết Kế Fallback |
+| :--- | :--- | :--- | :--- |
+| **Loading** | Đang tải danh sách hàng đợi | Hiển thị 5 dòng Skeleton nhấp nháy | `<tr><td colSpan={6}><div className="animate-pulse h-10 bg-slate-100 dark:bg-slate-800 rounded" /></td></tr>` |
+| **Empty** | Hàng đợi chưa có bài viết nào | Khung trống với minh họa lịch & nút bấm "Lập kế hoạch 30 ngày bằng AI" | `<div className="py-12 text-center text-slate-500 dark:text-slate-400"><Calendar className="mx-auto w-12 h-12 mb-3 text-slate-400" /><p className="font-medium">Chưa có bài viết nào trong hàng đợi kế hoạch.</p></div>` |
+| **Error** | API gặp lỗi khi tải danh sách | Banner thông báo lỗi màu đỏ kèm nút "Tải lại" | `<div className="p-4 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 rounded-lg">Không thể tải hàng đợi kế hoạch.</div>` |
+| **Success** | Tải danh sách thành công | Bảng dữ liệu chi tiết kèm Badges trạng thái `pending` (vàng), `processing` (xanh dương), `completed` (xanh lá), `failed` (đỏ) | Hiển thị bảng kèm phân trang |
+
+### 🔹 Modal "✨ AI Lập Kế Hoạch 30 Ngày" (`AiEditorialPlanModal`)
+- **Bộ điều khiển đầu vào:**
+  - Số lượng bài trong tháng: Input/Select (8, 12, 16, 20 hoặc 30 bài).
+  - Chuyên mục ưu tiên (hoặc "Tất cả chuyên mục").
+  - Dòng xe trọng tâm (hoặc "Đa dạng tất cả các dòng xe").
+- **Hành vi sinh & nạp:**
+  - Bấm "Bắt đầu phân tích" $\rightarrow$ Spinner loading kèm thông báo: *"AI đang rà soát Content Gap từ kho bài viết hiện có..."*.
+  - Kết quả hiển thị bảng kế hoạch dự kiến: Ngày đăng, Tiêu đề, Từ khóa, Góc nhìn độc bản.
+  - Mỗi hàng có Checkbox để Admin chọn/bỏ chọn.
+  - Nút "Nạp vào Hàng Đợi (N bài)" $\rightarrow$ Gửi batch request tới `/api/admin/auto-posts/ingest-plan`, đóng modal và tải lại hàng đợi.
+
+### 🔹 Surface-Text Contrast & Token Safety
+- Nền Card: `bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm`
+- Tiêu đề Card: `text-lg font-semibold text-slate-900 dark:text-slate-100`
+- Nhãn phụ / Hint: `text-sm text-slate-500 dark:text-slate-400`
+- Tuyệt đối không dùng `dark:text-white` mồ côi trên nền thiếu dark mode surface tokens.
+

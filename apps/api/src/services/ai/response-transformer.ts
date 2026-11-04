@@ -7,6 +7,7 @@ import type {
   SeoOptimizationResult,
   CarFullContentResult,
   TopicIdeaItem,
+  EditorialPlanItem,
 } from '@cardealer/types';
 import { slugifyVietnamese, checkTitleOrKeywordOverlap, sanitizePromotionSummary } from '@cardealer/core';
 import type { TransformContext, ExistingCarArticleSummary } from './ai.types';
@@ -117,6 +118,56 @@ export function normalizeTopicIdeas(
         suggestedCategory,
         outlinePreview,
         searchIntent,
+      });
+    }
+  }
+
+  return normalized;
+}
+
+// WHY: Chuẩn hóa phản hồi kế hoạch biên tập 30 ngày và lọc trùng lặp với DB.
+export function normalizeEditorialPlan(
+  rawPlan: unknown,
+  fallbackCar = 'Xe ô tô Hyundai',
+  existingArticles: ExistingCarArticleSummary[] = []
+): EditorialPlanItem[] {
+  let list: unknown[] = [];
+  if (Array.isArray(rawPlan)) {
+    list = rawPlan;
+  } else if (rawPlan && typeof rawPlan === 'object') {
+    const obj = rawPlan as Record<string, unknown>;
+    if (Array.isArray(obj.planItems)) {
+      list = obj.planItems;
+    } else if (Array.isArray(obj.items)) {
+      list = obj.items;
+    }
+  }
+
+  const normalized: EditorialPlanItem[] = [];
+
+  for (let idx = 0; idx < list.length; idx++) {
+    const item = (list[idx] && typeof list[idx] === 'object' ? list[idx] : {}) as Record<string, unknown>;
+    const title = cleanAndFormatTitle(
+      String(item.title || item.tieuDe || `Kế hoạch bài viết ${idx + 1} về ${fallbackCar}`),
+      fallbackCar
+    );
+    const focusKeyword = String(item.focusKeyword || item.keyword || item.tuKhoaChinh || `${fallbackCar} mới nhất`).trim();
+    const targetCar = String(item.targetCar || item.dongXe || fallbackCar).trim();
+    const categorySlug = String(item.categorySlug || item.category || 'danh-gia-xe').trim();
+    const angle = String(item.angle || item.gocTiepCan || 'Góc nhìn thực tế').trim();
+    const summary = String(item.summary || item.tomTat || `Bài viết định hướng cho ${title}`).trim();
+    const suggestedDay = typeof item.suggestedDay === 'number' ? item.suggestedDay : Math.min(30, Math.max(1, (idx * 2) + 1));
+
+    const isDuplicate = checkTitleOrKeywordOverlap(title, focusKeyword, existingArticles);
+    if (!isDuplicate) {
+      normalized.push({
+        title,
+        focusKeyword,
+        targetCar,
+        categorySlug,
+        angle,
+        summary,
+        suggestedDay,
       });
     }
   }
@@ -356,6 +407,14 @@ export function transformAiResponse(
       resultData.topicIdeas = ideas;
       resultData.deduplicationCount = ctx.existingArticles?.length || 0;
       resultData.text = `Đã đề xuất thành công ${ideas.length} ý tưởng bài viết độc bản, không trùng lặp.`;
+      break;
+    }
+
+    case 'generate_editorial_plan': {
+      const plan = normalizeEditorialPlan(parsedJson, targetCar, ctx.existingArticles || []);
+      resultData.editorialPlan = plan;
+      resultData.deduplicationCount = ctx.existingArticles?.length || 0;
+      resultData.text = `Đã lập kế hoạch biên tập thành công gồm ${plan.length} bài viết 30 ngày không trùng lặp.`;
       break;
     }
 

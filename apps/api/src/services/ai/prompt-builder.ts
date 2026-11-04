@@ -10,6 +10,7 @@ import {
   buildSingleBlockPrompt,
 } from './prompts/article.prompt';
 import { buildTopicIdeasPrompt } from './prompts/topic-ideas.prompt';
+import { buildEditorialPlanPrompt } from './prompts/editorial-plan.prompt';
 
 export { SYSTEM_PROMPT };
 
@@ -122,6 +123,19 @@ export function buildPrompt(input: PromptBuilderInput): PromptBuilderResult {
       responseFormat = { type: 'json_object' };
       defaultTokenLimit = 2500;
       userPrompt = buildTopicIdeasPrompt(input, availableCarsListText, targetCar, targetLocation, targetKeyword);
+      break;
+
+    case 'generate_editorial_plan':
+      responseFormat = { type: 'json_object' };
+      defaultTokenLimit = 4000;
+      userPrompt = buildEditorialPlanPrompt({
+        targetMonthCount: input.ideasCount || 12,
+        targetCar,
+        categoryName: input.category,
+        availableCars: input.availableCars,
+        existingArticles: input.existingArticles,
+        location: targetLocation,
+      });
       break;
 
     default:

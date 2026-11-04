@@ -1,21 +1,27 @@
-# 📋 BIÊN BẢN NGHIỆM THU GATE 2: THIẾT KẾ KIẾN TRÚC KỸ THUẬT & HỢP ĐỒNG DỮ LIỆU
-**Mã nghiệm thu:** `AUDIT-GATE-2-CM-US05`  
-**Dự án:** CarDealer / Hyundai CMS (`content-management`)  
-**Tính năng:** US-05 - AI Topic Ideation & Deduplication Engine (Trợ lý AI Đề Xuất Ý Tưởng Bài Viết Chống Trùng Lặp)  
-**Thời gian:** 2026-10-26 08:55:00 (ICT)  
-**Trọng tài máy:** `spec_guard.sh`  
-**Trạng thái:** **THÔNG QUAN (PASS)** 🟢  
+# 🛡️ BIÊN BẢN THẨM ĐỊNH THIẾT KẾ KIẾN TRÚC PHASE 2 (GATE 2 AUDIT)
+
+- **Module:** `content-management`
+- **Phiên bản:** `v1.4.0`
+- **Tác vụ:** Tự động viết bài theo định kỳ & AI Lập kế hoạch nội dung 30 ngày
+- **Ngày thực hiện:** 04/11/2026
 
 ---
 
-## 1. Hồ Sơ Kiến Trúc & Hợp Đồng Đã Thẩm Định
-- [x] **SOLUTION_OPTIONS.md:** Đã đối chiếu 3 phương án kỹ thuật và chốt Phương án C (Two-Tier Deduplication: Prompt Negative Grounding + Post-generation Token Overlap Check).
-- [x] **FLOW.md:** Đã bổ sung Sequence Diagram mục 6 mô tả luồng gọi API, nạp danh sách bài viết từ database, prompt LLM và trả kết quả ý tưởng.
-- [x] **SCHEMA.md:** Đã đặc tả cấu trúc `TopicIdeaItemSchema` và kiểu dữ liệu `TopicIdeaItem`.
-- [x] **API_SPEC.md:** Đã đặc tả hợp đồng API cho action `generate_topic_ideas` trong `POST /api/admin/ai/generate` gồm request payload, status codes và response schema.
-- [x] **FE_INTEGRATION_GUIDE.md:** Đã thiết kế giao diện `AiTopicIdeatorModal`, ma trận 4-State UI Matrix và cơ chế 1-Click chuyển tiếp sang trang tạo bài mới.
+## 1. Kết Quả Kiểm Tra Bộ Hồ Sơ Thiết Kế (Living Spec Merge)
+- `SOLUTION_OPTIONS.md`: Đã so sánh chi tiết In-Process Node Scheduler (`node-cron`) vs BullMQ vs REST Cron Trigger. Lựa chọn In-Process Node Scheduler kết hợp trigger 'Chạy ngay'.
+- `FLOW.md`: Đã bổ sung Sequence Diagram chi tiết cho Scheduler Auto Posting, AI Full Article Generation Pipeline, AI 30-Day Editorial Planner và State Machine cho `content_plan_items`.
+- `SCHEMA.md`: Đã đặc tả 3 bảng Drizzle mới (`auto_post_settings`, `content_plan_items`, `auto_post_logs`), ma trận trạng thái và Zod schemas tương ứng.
+- `API_SPEC.md`: Đã đặc tả đầy đủ 10 REST endpoints cho quản trị Scheduler, Hàng đợi Kế hoạch, AI Planner và Logs.
+- `FE_INTEGRATION_GUIDE.md`: Đã đặc tả wireframe, Ma trận 4-State UI, Token Surface-Text Contrast Safety cho trang `/posts/auto-schedule`.
 
 ---
 
-## 2. Kết Luận Gate 2
-Kiến trúc kỹ thuật vững chắc, không phá vỡ cấu trúc cơ sở dữ liệu hiện có, đảm bảo tính phân ly trách nhiệm và mở rộng mượt mà. Sẵn sàng cho Gate 3.
+## 2. Kiểm Chứng Máy (Automated Machine Verification)
+- **Lệnh kiểm chứng:** `bash $SPEC_GUARD docs/features/content-management`
+- **Kết quả:** `SPEC GUARD RESULT: PASS (exit 0)`
+- **Zero-Mutation:** Tuyệt đối chưa chạm vào mã nguồn ứng dụng trước khi qua Gate 3.
+
+---
+
+## 3. Quyết Định Cổng Thẩm Định (Gate Decision)
+🟢 **PASSED (Exit code 0)**: Thiết kế kiến trúc hợp nhất đạt chuẩn, sẵn sàng chuyển tiếp sang Phase 3 (Risk Control & Test Planning).

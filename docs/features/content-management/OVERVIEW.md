@@ -2,8 +2,8 @@
 
 > **Module Slug:** `content-management`  
 > **Package / App Impact:** `packages/database`, `packages/types`, `packages/core`, `apps/api`, `apps/admin`, `apps/web`  
-> **Status:** Active / Production Ready  
-> **Version:** 1.3.0  
+> **Status:** 🟢 Active / Production Ready  
+> **Version:** 1.4.0  
 
 ---
 
@@ -20,6 +20,11 @@ Phân hệ **Quản Trị Nội Dung Bài Viết & Soạn Thảo Đa Phương Ti
    - Phân tích mật độ từ khóa chính (`focusKeyword`), độ dài tiêu đề H1/Meta Description, kiểm tra thẻ alt ảnh và cấu trúc H2/H3.
 5. **Trợ Lý AI Gợi Ý Ý Tưởng Bài Viết Chống Trùng Lặp (AI Topic Ideation & Deduplication):**
    - Tự động quét cơ sở dữ liệu các bài viết đã có (cả draft và published) để tìm ra các "khoảng trống nội dung" (Content Gaps), gợi ý các chủ đề và từ khóa độc bản mới lạ, phòng chống triệt để tình trạng ăn thịt từ khóa (Keyword Cannibalization).
+6. **Hệ Thống Tự Động Viết Bài Theo Định Kỳ & AI Content Planner 30 Ngày (Auto Publishing Scheduler & AI Planner):**
+   - Lập lịch tự động viết và xuất bản bài viết theo chu kỳ thời gian (In-Process Scheduler kết hợp API kích hoạt tức thì "Chạy ngay").
+   - Trợ lý AI Phân tích & Lập Kế hoạch Biên tập 30 ngày (30-Day AI Editorial Planner): Tự động phân tích kho bài viết hiện có và dòng xe trong showroom, đề xuất kế hoạch các bài viết dự kiến cho 1 tháng (tiêu đề, từ khóa, chuyên mục, ngày giờ xuất bản mục tiêu) và đưa vào hàng đợi (`content_plan_items`).
+   - Động cơ tự động sinh bài viết hoàn chỉnh (Full Article Generator Pipeline): Tự động tạo trọn vẹn từ Tiêu đề, Slug, Tóm tắt, Từ khóa SEO, Meta Description đến các khối nội dung Tiptap AST phong phú (Paragraph, Heading, Callout, FAQ, PriceTable...).
+   - Cấu hình linh hoạt trạng thái xuất bản (`draft` chờ kiểm duyệt hoặc `published` tự động xuất bản ngay) và ghi nhật ký thực thi (`auto_post_logs`) chi tiết.
 
 ---
 
@@ -27,6 +32,7 @@ Phân hệ **Quản Trị Nội Dung Bài Viết & Soạn Thảo Đa Phương Ti
 
 | Phiên bản | Ngày cập nhật | Người thực hiện | Nội dung nâng cấp chính | Trạng thái |
 | :---: | :---: | :---: | :--- | :---: |
+| **v1.4.0** | 04/11/2026 | Inbound Content Team | Bổ sung Hệ thống Tự Động Viết Bài Theo Định Kỳ (In-Process Scheduler) & Trợ lý AI Lập Kế Hoạch Nội Dung 30 Ngày (AI Content Editorial Planner) | 🟢 Active |
 | **v1.3.0** | 26/10/2026 | Inbound Content Team | Bổ sung Trợ lý AI Gợi Ý Ý Tưởng Bài Viết Độc Nhất Chống Trùng Lặp (AI Topic Ideation & Deduplication Engine) | 🟢 Active |
 | **v1.2.0** | 26/10/2026 | Inbound Content Team | Bổ sung tính năng Gắn Link Nội Bộ (Internal Links Engine) cho các khối Đoạn văn bản (ParagraphBlock) trong Tiptap Studio | 🟢 Active |
 | **v1.1.0** | 25/10/2026 | Inbound Content Team | Bổ sung Trợ lý AI Điền Khối Tức Thì (Single Block AI Generator) cho từng Content Block trong Tiptap Studio | 🟢 Active |
@@ -45,6 +51,8 @@ flowchart TD
 
     subgraph AdminPortal ["Admin Back-Office (apps/admin)"]
         PostsAdmin["Quản lý bài viết (/posts)"]
+        AutoPostAdmin["Quản lý Lịch Tự Động & Hàng Đợi Kế Hoạch (/posts/auto-schedule)"]
+        AiPlanModal["Trợ lý AI Lập Kế Hoạch 30 Ngày (AI Planner)"]
         CategoriesAdmin["Quản lý chuyên mục (/categories)"]
         MediaAdmin["Thư viện ảnh Cloudinary (/media)"]
         TiptapEditor["Trình soạn thảo Tiptap & Đo điểm SEO"]
@@ -53,24 +61,42 @@ flowchart TD
     subgraph BackendAPI ["REST API Server (apps/api)"]
         PublicPostsAPI["GET /api/posts<br/>GET /api/posts/:slug"]
         AdminPostsAPI["CRUD /api/admin/posts<br/>CRUD /api/admin/categories<br/>POST /api/admin/media/upload"]
+        AutoPostAPI["GET/PUT /api/admin/auto-posts/settings<br/>GET/POST /api/admin/auto-posts/plans<br/>POST /api/admin/auto-posts/run-now<br/>GET /api/admin/auto-posts/logs"]
+        SchedulerService["In-Process Node Scheduler Engine<br/>(node-cron / interval timer)"]
+        AiPlannerEngine["AI 30-Day Editorial Planner & Article Generator"]
     end
 
     subgraph DatabaseLayer ["PostgreSQL 16 (Drizzle ORM)"]
         TablePosts["posts (tieuDe, slug, noiDung, status)"]
         TableCategories["categories (tenChuyenMuc, slug)"]
         TableMedia["media (publicId, secureUrl, alt)"]
+        TableAutoSettings["auto_post_settings (cronExpression, isEnabled, defaultStatus, categoryId)"]
+        TableContentPlans["content_plan_items (title, focusKeyword, categoryId, scheduledAt, status)"]
+        TableAutoLogs["auto_post_logs (triggerType, postId, status, error, executionTimeMs)"]
     end
 
     NewsIndex --> PublicPostsAPI
     PostDetail --> PublicPostsAPI
     PostsAdmin --> AdminPostsAPI
+    AutoPostAdmin --> AutoPostAPI
+    AiPlanModal --> AutoPostAPI
     CategoriesAdmin --> AdminPostsAPI
     MediaAdmin --> AdminPostsAPI
     TiptapEditor --> AdminPostsAPI
+
+    AutoPostAPI --> SchedulerService
+    AutoPostAPI --> AiPlannerEngine
+    SchedulerService --> AiPlannerEngine
+    AiPlannerEngine --> TablePosts
+    AiPlannerEngine --> TableContentPlans
+    AiPlannerEngine --> TableAutoLogs
 
     PublicPostsAPI --> TablePosts
     PublicPostsAPI --> TableCategories
     AdminPostsAPI --> TablePosts
     AdminPostsAPI --> TableCategories
     AdminPostsAPI --> TableMedia
+    AutoPostAPI --> TableAutoSettings
+    AutoPostAPI --> TableContentPlans
+    AutoPostAPI --> TableAutoLogs
 ```

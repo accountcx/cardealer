@@ -30,6 +30,11 @@
 | **R-10** | Broken Link Parsing | Cú pháp markdown không hợp lệ hoặc ngoặc lồng nhau làm vỡ parser | Regex phân tích cú pháp an toàn, tự động xử lý fallback về plain text an toàn |
 | **R-11** | Keyword Cannibalization | AI đề xuất chủ đề hoặc từ khóa trùng với bài viết đã có làm tụt thứ hạng SEO | Truy vấn toàn diện kho bài viết (`posts` + `cars`) đưa vào Negative Grounding trong Prompt + Thuật toán kiểm tra trùng lặp hậu xử lý |
 | **R-12** | Context Window Overflow | Kho bài viết quá lớn (> 100 bài) làm tràn context window của LLM | Rút gọn compact metadata (`title`, `slug`, `focusKeyword`), ưu tiên bài viết cùng dòng xe và phân khúc |
+| **R-13** | LLM Rate Limit / Quota Exhaustion | Scheduler chạy định kỳ gặp lỗi 429 hoặc hết hạn mức OpenAI | Xử lý try/catch an toàn, lưu vết `auto_post_logs` trạng thái `failed`, giữ nguyên trạng thái `failed` của plan item, không crash tiến trình API |
+| **R-14** | Concurrency & Race Condition | Cron tick tự động và người dùng bấm nút "Chạy ngay" đồng thời | Sử dụng cờ Mutex `isProcessing` trong memory và atomic status update `status = 'processing'` trong database để chặn duplicate execution |
+| **R-15** | Automated Content Drift | Bài viết tự động có chất lượng kém hoặc thiếu khối Tiptap | Pipeline `generate_full_article` ép cấu trúc chuẩn tối thiểu 4 khối Tiptap, chạy bộ tính điểm `calculateSeoScore` $\ge 70$ và cho phép admin cấu hình mặc định là `draft` |
+| **R-16** | Cron Job Memory Leak | Tạo mới cron task mỗi khi admin đổi cấu hình mà không hủy task cũ | Quản lý đối tượng cron task tập trung (`currentJob?.stop()`), hủy triệt để instance cũ trước khi khởi tạo job mới |
+| **R-17** | Database Migration Drift | Xung đột khi tạo bảng mới `auto_post_settings`, `content_plan_items`, `auto_post_logs` | Sử dụng cú pháp Drizzle ORM chuẩn, khóa ngoại `ON DELETE SET NULL`, script migration có thể rollback |
 
 ---
 

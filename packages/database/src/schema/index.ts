@@ -11,3 +11,4 @@ export * from './car_articles';
 export * from './relations';
 export * from './static-pages';
 export * from './redirects';
+export * from './auto-posts';

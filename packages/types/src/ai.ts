@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { EditorialPlanItem } from './auto-post';
 
 // 🧠 Mental Model: Type Definitions & Zod Schemas cho AI Writing Assistant (ChatGPT / OpenAI Integration).
 // Hỗ trợ tự động phân bổ thông minh 14 Content Blocks tinh hoa (Images, SpecTable, RelatedCar, ProsCons, FAQ, Callout, CTA, Video...).
@@ -12,6 +13,7 @@ export const AiActionSchema = z.enum([
   'generate_car_content',
   'generate_single_block',
   'generate_topic_ideas',
+  'generate_editorial_plan',
 ]);
 export type AiAction = z.infer<typeof AiActionSchema>;
 
@@ -169,6 +171,7 @@ export interface AiGenerateResponseData {
   fullArticle?: FullArticleResult;
   carContent?: CarFullContentResult;
   topicIdeas?: TopicIdeaItem[];
+  editorialPlan?: EditorialPlanItem[];
   deduplicationCount?: number;
   usage?: {
     promptTokens?: number;

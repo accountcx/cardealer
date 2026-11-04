@@ -1,32 +1,82 @@
-# 💡 SOLUTION OPTIONS: AI Topic Ideation & Deduplication Engine
+# 📐 SOLUTION OPTIONS: Scheduled Auto-Posting & AI Editorial Planner (v1.4.0)
+
 > **Module:** `content-management`  
-> **Phiên bản:** `v1.3.0`  
-> **Căn cứ:** [`OVERVIEW.md`](./OVERVIEW.md), [`BACKLOG.md`](./BACKLOG.md) (US-05)  
+> **Căn cứ:** [`OVERVIEW.md`](./OVERVIEW.md), [`BACKLOG.md`](./BACKLOG.md)  
+> **Tác giả:** system-analyst-architect  
+> **Trạng thái:** 🟢 Approved by Developer Decision (Pure Sandbox / In-Process Cron / Admin Configurable Draft-Published)  
 
 ---
 
-## 1. Bối Cảnh & Bài Toán Nghiệp Vụ
-Trong hệ thống đại lý ô tô CarDealer (`content-management`), việc phát triển nội dung Inbound Marketing chuẩn SEO đòi hỏi:
-- **Thách thức:** Khi showroom đã có hàng chục hoặc hàng trăm bài viết về các dòng xe (Santa Fe, Tucson, Creta, Accent...), biên tập viên rất dễ rơi vào bẫy **Trùng lặp chủ đề** hoặc **Ăn thịt từ khóa (Keyword Cannibalization)** — tức nhiều bài viết cùng nhắm tới 1 từ khóa giống nhau, khiến Google phân vân và làm tụt thứ hạng SEO toàn trang.
-- **Yêu cầu:** Trợ lý AI cần tự động quét toàn bộ cơ sở dữ liệu các bài viết đã có (`posts` và `car_articles`), phát hiện các khoảng trống nội dung (Content Gaps) và đề xuất các ý tưởng bài viết hoàn toàn độc bản, có từ khóa và góc nhìn mới mẻ.
+## 1. Bối Cảnh & Mục Tiêu Kỹ Thuật
+Hệ thống cần cung cấp khả năng:
+1. Lập lịch tự động viết và xuất bản bài viết theo chu kỳ (ví dụ 8:00 sáng hàng ngày).
+2. Trợ lý AI phân tích kho nội dung hiện tại và danh mục xe trong showroom, đề xuất kế hoạch biên tập nội dung 30 ngày (Editorial Calendar Plan), sau đó nạp hàng loạt vào hàng đợi (`content_plan_items`).
+3. Động cơ tự động sinh bài viết hoàn chỉnh (Full Article Generator Pipeline): tạo slug, tiêu đề, tóm tắt, từ khóa SEO, meta tags và danh sách Content Blocks Tiptap AST chất lượng cao.
+4. Quản lý trạng thái xuất bản linh hoạt (`draft` hoặc `published`), cung cấp nút kích hoạt tức thì ("Chạy ngay"), và lưu nhật ký thực thi (`auto_post_logs`).
 
 ---
 
-## 2. So Sánh Các Phương Án Kỹ Thuật
+## 2. So Sánh Các Phương Án Kiến Trúc Scheduler (Arch Evaluation)
 
-| Tiêu chí | Phương Án A: Client-side Filter Sau Khi LLM Sinh Tự Do | Phương Án B: Vector Database & Semantic Embeddings (Pinecone / PgVector) | Phương Án C: Two-Tier Deduplication Strategy (Đề Xuất) |
-| :--- | :--- | :--- | :--- |
-| **Cơ chế hoạt động** | Gửi prompt cho LLM sinh ý tưởng bất kỳ, sau đó frontend tự lọc bỏ các ý tưởng có tiêu đề giống bài cũ. | Bơm embeddings của toàn bộ bài viết vào vector database, chạy cosine similarity để tìm bài tương đồng. | **Tier 1 (Prompt Negative Grounding):** Backend tự query toàn bộ tiêu đề/từ khóa bài cũ bơm vào prompt ép LLM tìm Content Gap.<br/>**Tier 2 (Post-generation Token Overlap):** Thuật toán n-gram/keyword overlap kiểm tra chéo trước khi trả kết quả. |
-| **Độ chính xác chống trùng** | 🔴 Kém: LLM không hề biết bài cũ đang có gì, dễ sinh ra các ý tưởng trùng lặp dẫn tới bị lọc hết. | 🟢 Cao. | 🟢 Rất cao: LLM chủ động tìm góc nhìn mới dựa trên danh sách blacklist bài cũ. |
-| **Độ phức tạp & Chi phí** | 🟢 Đơn giản. | 🔴 Rất phức tạp: Cần setup vector store, tốn thêm chi phí embedding API và bảo trì hạ tầng. | 🟢 Tối ưu: Tận dụng trực tiếp PostgreSQL hiện có và OpenAI model, không tốn thêm hạ tầng ngoài. |
-| **Thời gian phản hồi** | 🟢 Nhanh. | 🟡 Trung bình (2-3 lần gọi API). | 🟢 Rất nhanh: 1 lần gọi DB + 1 lần gọi LLM (2-4 giây). |
-| **Trải nghiệm biên tập viên** | 🔴 Tỷ lệ sinh rỗng cao nếu bài bị lọc. | 🟢 Tốt. | 🟢 Xuất sắc: Mỗi ý tưởng giải thích rõ "Khoảng trống nội dung" và "Góc nhìn độc bản". |
+### Phương Án A: In-Process Node Scheduler (`node-cron` trong `apps/api`) [LỰA CHỌN ĐƯỢC CHỌN]
+* **Mô tả:** Tích hợp thư viện `node-cron` trực tiếp trong vòng đời tiến trình Fastify/NodeJS của `apps/api`. Khi server khởi động, service nạp cấu hình từ database (`auto_post_settings`) và đăng ký cron task. Khi admin cập nhật cấu hình qua API hoặc bấm "Chạy ngay", service reload lại job trong memory ngay lập tức.
+* **Ưu điểm:**
+  - Không cần thêm hạ tầng bên thứ ba (không cần Redis server hay Worker tách biệt).
+  - Tận dụng 100% database pool, Drizzle ORM và AI Service hiện có của `apps/api`.
+  - Dễ triển khai, kiểm thử cục bộ và hoàn toàn phù hợp với môi trường hiện tại của dự án.
+  - Hỗ trợ API trigger thủ công tức thì ("Chạy ngay") dùng chung một hàm xử lý cốt lõi.
+* **Nhược điểm & Biện pháp khắc phục:**
+  - Nếu scale nhiều instance API, có thể chạy trùng cron $\rightarrow$ **Khắc phục:** Dùng cờ `isProcessing` trong memory và atomic update trạng thái `processing` trong database với lock optimistic / skip locked để bảo đảm tính duy nhất (idempotency).
 
 ---
 
-## 3. Quyết Định Kiến Trúc (Architecture Decision)
-- **Lựa chọn:** **Phương Án C (Two-Tier Deduplication Strategy)**.
-- **Lý do lựa chọn:**
-  1. **Hiệu quả triệt để:** Bằng cách cung cấp danh sách bài viết hiện có vào Prompt (Negative Grounding), mô hình AI đóng vai trò như một Senior SEO Content Strategist, nhận diện chính xác các góc tiếp cận còn trống.
-  2. **An toàn kép:** Thuật toán kiểm tra chéo ở tầng Backend đảm bảo nếu có ý tưởng nào trùng từ khóa chính > 60% với database sẽ tự động được làm mới hoặc gắn cờ cảnh báo.
-  3. **Zero Infrastructure Overhead:** Không phát sinh dependency bên ngoài, hoàn toàn tương thích với kiến trúc monorepo và stack PostgreSQL + Drizzle hiện tại.
+### Phương Án B: Hàng Đợi Phân Tán BullMQ + Redis Worker
+* **Mô tả:** Sử dụng Redis làm message broker, `apps/api` đẩy repeatable job vào Redis queue, một worker process độc lập lắng nghe và xử lý.
+* **Ưu điểm:** Khả năng mở rộng cao cho hệ thống đa server, retry phân tán tốt.
+* **Nhược điểm:** Phức tạp hóa hạ tầng quá mức (cần cài đặt và duy trì Redis daemon), tốn tài nguyên bộ nhớ cho dự án xe hơi vừa và nhỏ.
+
+---
+
+### Phương Án C: Webhook / REST Cron Trigger Ngoại Vi
+* **Mô tả:** Không chạy cron trong tiến trình NodeJS, chỉ mở endpoint `POST /api/admin/auto-posts/cron-trigger` bảo vệ bằng secret key và nhờ cron hệ điều hành (crontab) hoặc Vercel Cron gọi vào.
+* **Ưu điểm:** Không chiếm bộ nhớ thường trực cho cron timer trong app.
+* **Nhược điểm:** Phụ thuộc cấu hình mạng và dịch vụ ngoài, khó debug khi offline, không chủ động reload lịch khi admin đổi giờ trên giao diện.
+
+---
+
+## 3. Kiến Trúc Pipeline Sinh Bài Viết Tự Động (AI Generation Pipeline)
+
+### Luồng Xử Lý Cốt Lõi (Execution Core):
+```mermaid
+flowchart TD
+    Trigger["Kích hoạt: Cron Timer HOẶC Nút 'Chạy ngay'"] --> CheckLock{"Kiểm tra đang chạy (Mutex / isRunning)"}
+    CheckLock -- "Đang bận" --> ExitBusy["Bỏ qua & Log: Bị trùng lặp"]
+    CheckLock -- "Rảnh" --> FetchQueue["Lấy 1 mục pending gần nhất từ content_plan_items"]
+    
+    FetchQueue --> HasPlan{"Có mục trong hàng đợi?"}
+    HasPlan -- "Có" --> LockPlan["Đổi trạng thái: processing"]
+    HasPlan -- "Không" --> AutoIdeate["Gọi AI Ideation: Sinh 1 ý tưởng độc bản từ Content Gap"]
+    
+    LockPlan --> GenFull["Pipeline: Generate Full Article (OpenAI gpt-4o-mini)"]
+    AutoIdeate --> GenFull
+    
+    GenFull --> ParseAST["Chuẩn hóa Tiptap AST, SEO Meta & Calculate SEO Score"]
+    ParseAST --> CheckConfig["Đọc auto_post_settings (defaultStatus: draft / published)"]
+    CheckConfig --> SavePost["Lưu vào bảng posts & gán tác giả mặc định"]
+    
+    SavePost --> UpdateQueue["Cập nhật content_plan_items: completed (postId)"]
+    UpdateQueue --> LogSuccess["Ghi nhật ký: auto_post_logs (success, executionTimeMs)"]
+    
+    GenFull -- "Lỗi (Timeout / API Error)" --> HandleErr["Cập nhật content_plan_items: failed (errorMsg)"]
+    HandleErr --> LogErr["Ghi nhật ký: auto_post_logs (failed, error)"]
+```
+
+---
+
+## 4. Quyết Định Thiết Kế Cuối Cùng
+1. **Engine Lập Lịch:** Sử dụng `node-cron` tích hợp trong `apps/api/src/services/auto-post-scheduler.service.ts`.
+2. **Database:** Bổ sung 3 bảng trong Drizzle:
+   - `auto_post_settings`: Cấu hình toàn cục (cronExpression, isEnabled, defaultStatus, categoryId, defaultAuthorId).
+   - `content_plan_items`: Hàng đợi kế hoạch biên tập 30 ngày.
+   - `auto_post_logs`: Lưu vết lịch sử chạy, thời gian thực thi, kết quả, lỗi.
+3. **AI Service:** Bổ sung Action `generate_editorial_plan` (30-day plan) và tái sử dụng action `generate_full_article` với negative grounding.
