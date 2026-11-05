@@ -19,7 +19,7 @@ import { Button, Badge, Card, Skeleton } from '@cardealer/ui';
 import { apiClient } from '../../lib/api-client';
 
 // 🧠 Mental Model: Trang Danh Sách Tin Tức, Bảng Giá & Inbound Hub Storefront (/tin-tuc).
-// Tuân thủ triệt để universal-agentic-workflow.xml, fullstack-dev-executor.xml và tailwind-ui-designer.xml:
+// Tuân thủ triệt để tiêu chuẩn kiến trúc Storefront, SEO 10 tiêu chí và hệ thống UI Design System:
 // 1. Server-Side Rendering (RSC) & ISR 60s: Nạp dữ liệu bài viết đã xuất bản (status = 'published') tại build-time/ISR,
 //    triệt tiêu hoàn toàn hiện tượng layout shift (CLS = 0) và tối ưu điểm Core Web Vitals (LCP < 1.2s).
 // 2. SEO Best Practices:

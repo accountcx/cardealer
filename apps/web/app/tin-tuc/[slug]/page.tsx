@@ -1,5 +1,5 @@
 // 🧠 Mental Model: Trang Chi Tiết Bài Viết & Inbound Marketing Hub Storefront (/tin-tuc/[slug]).
-// Tuân thủ triệt để universal-agentic-workflow.xml, fullstack-dev-executor.xml và tailwind-ui-designer.xml:
+// Tuân thủ triệt để tiêu chuẩn kiến trúc Storefront, SEO 10 tiêu chí và hệ thống UI Design System:
 // 1. Server-Side Rendering (RSC) & ISR 60s: Kết xuất dữ liệu bài viết theo slug tại server, tối ưu Core Web Vitals (LCP < 1.2s, CLS = 0).
 // 2. SEO Best Practices 10 Tiêu Chí:
 //    - Cố định Canonical URL tuyệt đối: https://xehyundaivinh.com/tin-tuc/[slug].
@@ -172,9 +172,12 @@ export async function generateMetadata({ params, searchParams }: PostDetailPageP
     post.tomTat ||
     `Đọc bài viết ${post.tieuDe} chi tiết từ các chuyên gia tư vấn tại đại lý Hyundai Vinh.`;
   const canonicalUrl = `/tin-tuc/${post.slug}`;
-  const imageUrl = post.anhDaiDienUrl.startsWith('http')
-    ? post.anhDaiDienUrl
-    : `https://xehyundaivinh.com${post.anhDaiDienUrl}`;
+  const rawImageUrl = post.anhDaiDienUrl?.trim();
+  const imageUrl = rawImageUrl
+    ? rawImageUrl.startsWith('http')
+      ? rawImageUrl
+      : `https://xehyundaivinh.com${rawImageUrl.startsWith('/') ? '' : '/'}${rawImageUrl}`
+    : 'https://xehyundaivinh.com/images/og-image.jpg';
 
   return {
     title,

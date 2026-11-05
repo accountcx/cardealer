@@ -27,11 +27,16 @@ function escapeXml(unsafe: string): string {
     .replace(/'/g, '&apos;');
 }
 
+function sanitizeCdata(text: string): string {
+  return text.replace(/\]\]>/g, ']]]]><![CDATA[>');
+}
+
 // 🧠 Mental Model: Dynamic RSS 2.0 Feed Generator theo chuẩn Google News và RSS Reader.
 // Tự động tổng hợp 20 bài viết mới nhất phục vụ syndication và tăng tốc độ crawl của bot.
 export async function GET() {
   const settings = await getStorefrontSettings();
-  const baseUrl = (settings.site?.siteUrl || 'https://xehyundaivinh.com').replace(/\/$/, '');
+  const rawBaseUrl = (settings.site?.siteUrl || 'https://xehyundaivinh.com').replace(/\/$/, '');
+  const baseUrl = escapeXml(rawBaseUrl);
   const siteTitle = escapeXml(settings.site?.siteTitle || 'Xe Hyundai Vinh');
   const siteDescription = escapeXml(
     settings.site?.defaultDescription || 'Tin tức thị trường ô tô Hyundai, ưu đãi lăn bánh và khuyến mãi xe mới nhất.'
@@ -49,9 +54,9 @@ export async function GET() {
     .filter((post) => post.slug && post.status !== 'draft')
     .map((post) => {
       const title = escapeXml(post.tieuDe || 'Tin tức xe Hyundai');
-      const link = `${baseUrl}/tin-tuc/${post.slug}`;
+      const link = escapeXml(`${rawBaseUrl}/tin-tuc/${post.slug}`);
       const pubDate = new Date(post.publishedAt || post.createdAt || Date.now()).toUTCString();
-      const summary = escapeXml(post.tomTat || post.tieuDe || '');
+      const summary = sanitizeCdata(post.tomTat || post.tieuDe || '');
 
       return `
     <item>

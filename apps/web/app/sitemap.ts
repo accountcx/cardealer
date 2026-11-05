@@ -61,18 +61,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.85,
   }));
 
-  // 3. Dynamic Car Detail Pages (/xe/[slug])
+  // 3. Dynamic Car Detail Pages (/xe/[slug]) & Programmatic Rolling Cost Pages (/gia-lan-banh/[carSlug])
   let carRoutes: MetadataRoute.Sitemap = [];
   try {
     const cars = await carsService.getCatalogCars();
-    carRoutes = cars
-      .filter((c) => c.status === 'published' || !c.status)
-      .map((car) => ({
-        url: `${baseUrl}/xe/${car.slug}`,
-        lastModified: now,
-        changeFrequency: 'weekly',
-        priority: 0.9,
-      }));
+    const publishedCars = cars.filter((c) => c.status === 'published' || !c.status);
+
+    const carDetailRoutes: MetadataRoute.Sitemap = publishedCars.map((car) => ({
+      url: `${baseUrl}/xe/${car.slug}`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    }));
+
+    const rollingCostRoutes: MetadataRoute.Sitemap = publishedCars.map((car) => ({
+      url: `${baseUrl}/gia-lan-banh/${car.slug}`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.85,
+    }));
+
+    carRoutes = [...carDetailRoutes, ...rollingCostRoutes];
   } catch (err) {
     console.warn('[Sitemap] Không thể nạp danh sách xe:', err);
   }

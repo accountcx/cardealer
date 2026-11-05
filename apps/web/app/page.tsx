@@ -34,7 +34,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 // 🧠 Mental Model: Danh sách bài viết khuyến mãi & cẩm nang mua xe mặc định.
-// Phục vụ hiển thị phân khu 6 cho tới khi Phase 5 Content Engine hoàn thành.
+// Phục vụ hiển thị phân khu khuyến mãi & bài viết nổi bật.
 // Nếu admin tắt công tắc Khu 6 trong Admin Portal, phân khu này sẽ tự động ẩn đi (Graceful Degradation).
 const SAMPLE_PROMOTIONS: ArticlePreview[] = [
   {

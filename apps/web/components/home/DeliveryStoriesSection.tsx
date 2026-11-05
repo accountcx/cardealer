@@ -12,7 +12,8 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { Button } from '@cardealer/ui';
-import { optimizeCloudinaryUrl } from '@cardealer/core';
+import { optimizeCloudinaryUrl, sanitizeJsonLd } from '@cardealer/core';
+import { getSiteUrl } from '@cardealer/env';
 import type { DeliveryStoriesZoneConfig, DeliveryStoryItem } from '@cardealer/types';
 
 export interface DeliveryStoriesSectionProps {
@@ -23,7 +24,7 @@ export interface DeliveryStoriesSectionProps {
 // 1. Áp dụng Graceful Degradation: Nếu config.enabled = false HOẶC danh sách stories rỗng ➡️ return null.
 // 2. Slider Vô Cực (Infinite Loop Carousel): Buffer 5 chu kỳ lặp liền mạch, tự động reset offset ở trạng thái nghỉ mà không giật khung hình.
 // 3. Tương tác cao cấp: Touch Snap, Auto-play 5s (pause khi hover/touch), Lightbox phóng to ảnh chất lượng cao.
-// 4. Tuân thủ 100% fullstack-dev-executor.xml & unit size limit (< 300 dòng).
+// 4. Tuân thủ tiêu chuẩn mã nguồn sạch và bảo mật DOM JSON-LD injection.
 export const DeliveryStoriesSection: React.FC<DeliveryStoriesSectionProps> = ({ config }) => {
   const [activeRealIndex, setActiveRealIndex] = useState(0);
   const [lightboxStory, setLightboxStory] = useState<DeliveryStoryItem | null>(null);
@@ -157,16 +158,17 @@ export const DeliveryStoriesSection: React.FC<DeliveryStoriesSectionProps> = ({ 
   }
 
   // Schema.org Review & AggregateRating cho Google Rich Snippets sao vàng
+  const siteUrl = getSiteUrl();
   const reviewJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'AutoDealer',
-    '@id': 'https://xehyundaivinh.com/#dealer',
+    '@id': `${siteUrl}/#dealer`,
     name: 'Xe Hyundai Vinh',
-    url: 'https://xehyundaivinh.com',
+    url: siteUrl,
     aggregateRating: {
       '@type': 'AggregateRating',
       ratingValue: '4.9',
-      reviewCount: Math.max(stories.length, 28),
+      reviewCount: stories.length,
       bestRating: '5',
       worstRating: '1',
     },
@@ -205,7 +207,7 @@ export const DeliveryStoriesSection: React.FC<DeliveryStoriesSectionProps> = ({ 
       {/* Schema.org Review & AggregateRating JSON-LD */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: sanitizeJsonLd(reviewJsonLd) }}
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Header */}
