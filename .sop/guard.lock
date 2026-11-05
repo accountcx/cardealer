@@ -1,9 +1,9 @@
 # guard_unit lock - KHONG sua tay (tao boi: guard_unit.sh lock-roadmap). Moi thay doi => sha khac => guard FAIL.
 version=2
-revision=1
-base=80f195a7730770026b02172f51b5b05f7d67d396
+revision=2
+base=9d3bd2f0b05f8148e5d1085af31a3dabbf357e17
 origin_base=80f195a7730770026b02172f51b5b05f7d67d396
-created=2026-11-05_23:24:30
+created=2026-11-05_23:27:41
 max_lines=300
 verify_cmd=
 verify_timeout=900
@@ -13,7 +13,7 @@ guard_path=scripts/guard_unit.sh
 skip_baseline=0
 guard=013066e0b09688c5d7e548a913c365c179cc8d6f431ad2d22a9ea6eb14a966d2
 ext_dir=/Users/nhatphan/.local/state/guard-unit/c958eb5869a3
-unit	U-01	LOW	apps/web/app/gia-lan-banh/page.tsx,apps/web/app/tra-gop/page.tsx,apps/web/app/sitemap.ts	-	-
+unit	U-01	LOW	apps/web/app/gia-lan-banh/page.tsx,apps/web/app/tra-gop/route.ts,apps/web/app/sitemap.ts	-	-
 unit	U-02	LOW	apps/web/public/images/og-image.jpg,apps/web/public/images/og-sedan.webp,apps/web/public/images/og-suv.webp	-	-
 unit	U-03	LOW	apps/web/public/favicon.ico,apps/web/public/apple-touch-icon.png,apps/web/public/manifest.webmanifest	-	-
 unit	U-04	LOW	apps/web/app/page.tsx,apps/web/components/home/HeroEventBanner.tsx	-	-
