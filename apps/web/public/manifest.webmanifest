@@ -1,0 +1,16 @@
+{
+  "name": "Xe Hyundai Vinh - Đại Lý Chính Hãng",
+  "short_name": "Hyundai Vinh",
+  "description": "Đại lý phân phối xe ô tô Hyundai chính hãng tại Nghệ An & Hà Tĩnh",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#002C6C",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}
