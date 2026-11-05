@@ -3,7 +3,7 @@
 // 1. Whitelist Guard: Chỉ cho phép các slug đã được thẩm định an toàn (sedan, suv, mpv) để ngăn chặn Soft-404 và XSS Injection.
 // 2. Data Alignment: Ánh xạ chuẩn xác từ URL slug chữ thường sang các định dạng chuỗi kieuDang thực tế lưu trong Database.
 
-export const VALID_SEGMENT_SLUGS = ['sedan', 'suv', 'mpv'] as const;
+export const VALID_SEGMENT_SLUGS = ['sedan', 'suv', 'mpv', 'hatchback', 'xe-dien'] as const;
 
 export type SegmentSlug = (typeof VALID_SEGMENT_SLUGS)[number];
 
@@ -54,6 +54,30 @@ export const SEGMENT_REGISTRY: Record<SegmentSlug, SegmentConfig> = {
     ogImage: '/images/og-mpv.webp',
     seoIntroParagraph:
       'Dòng xe đa dụng MPV Hyundai (Hyundai Stargazer X và Hyundai Custin) định nghĩa lại tiêu chuẩn di chuyển cho gia đình đông thành viên và doanh nghiệp dịch vụ cao cấp. Thiết kế phi thuyền tương lai, cửa trượt tự động thông minh, hàng ghế cơ trưởng thương gia cùng không gian 7 chỗ ngồi rộng rãi đem lại sự thư thái tối đa trên mọi chặng đường. Động cơ bền bỉ, chi phí bảo dưỡng tối ưu và chính sách bảo hành chính hãng 5 năm là điểm tựa vững chắc cho mọi chủ xe.',
+  },
+  hatchback: {
+    slug: 'hatchback',
+    name: 'Hatchback Đô Thị',
+    h1Title: 'Các Dòng Xe Hatchback Hyundai Nhỏ Gọn & Tiết Kiệm Nhiên Liệu',
+    metaTitle: 'Các Dòng Xe Hatchback Hyundai Mới Nhất 2026 | Báo Giá & Lăn Bánh',
+    metaDescription:
+      'Khám phá dòng xe đô thị cỡ nhỏ Hyundai Grand i10 Hatchback thế hệ mới. Thiết kế trẻ trung, vận hành linh hoạt, bảng giá niêm yết và ưu đãi trả góp tốt nhất.',
+    kieuDangMapping: ['Hatchback', 'hatchback'],
+    ogImage: '/images/og-sedan.webp',
+    seoIntroParagraph:
+      'Phân khúc xe Hatchback Hyundai đại diện cho phong cách sống năng động và tính tiện dụng tối đa trong đô thị hiện đại. Dòng xe Hyundai Grand i10 Hatchback dẫn đầu phân khúc với không gian cabin rộng rãi bất ngờ, trang bị tính năng an toàn vượt tầm phân khúc và khả năng tiết kiệm nhiên liệu ấn tượng. Lựa chọn lý tưởng cho các gia đình trẻ hoặc nhu cầu kinh doanh dịch vụ vận tải đô thị với chi phí đầu tư ban đầu cực kỳ hợp lý.',
+  },
+  'xe-dien': {
+    slug: 'xe-dien',
+    name: 'Xe Điện Thông Minh (EV)',
+    h1Title: 'Các Dòng Xe Điện Hyundai Hiện Đại — Tương Lai Của Di Chuyển Xanh',
+    metaTitle: 'Bảng Giá Xe Ô Tô Điện Hyundai 2026 Chính Hãng | Trả Góp & Ưu Đãi',
+    metaDescription:
+      'Tìm hiểu các dòng xe ô tô điện thông minh Hyundai Ioniq 5 cao cấp. Công nghệ sạc siêu nhanh 800V, phạm vi di chuyển vượt trội và chính sách bảo hành pin chính hãng.',
+    kieuDangMapping: ['Xe điện', 'xe-dien', 'Electric', 'EV', 'ev'],
+    ogImage: '/images/og-suv.webp',
+    seoIntroParagraph:
+      'Xe điện Hyundai (EV) tiên phong mở lối kỷ nguyên di chuyển bền vững với kiến trúc E-GMP độc quyền toàn cầu. Dòng xe Hyundai Ioniq 5 đạt hàng loạt giải thưởng danh giá thế giới nhờ khả năng sạc siêu nhanh từ 10% lên 80% chỉ trong 18 phút, công nghệ cấp nguồn ngoại vi V2L thông minh và khoang nội thất chuẩn phòng khách tiện nghi. Trải nghiệm tương lai xanh cùng các chính sách bảo hành pin và trạm sạc chính hãng tại đại lý.',
   },
 };
 
