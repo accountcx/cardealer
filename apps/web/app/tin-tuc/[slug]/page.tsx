@@ -20,6 +20,7 @@ import React from 'react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Calendar,
   Clock,
@@ -420,9 +421,11 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
             {/* Cụm Tác giả E-E-A-T */}
             <div className="flex items-center gap-3">
               {post.author?.avatarUrl ? (
-                <img
+                <Image
                   src={post.author.avatarUrl}
                   alt={resolvedAuthorName}
+                  width={40}
+                  height={40}
                   className="w-10 h-10 rounded-full object-cover border-2 border-slate-100 shadow-2xs shrink-0"
                 />
               ) : (
@@ -471,12 +474,16 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
             {/* Ảnh đại diện Featured Image */}
             {post.anhDaiDienUrl && (
               <figure className="mb-8 overflow-hidden rounded-2xl border border-slate-200 shadow-md">
-                <img
-                  src={post.anhDaiDienUrl}
-                  alt={post.anhDaiDienAlt || post.tieuDe}
-                  className="w-full h-auto object-cover max-h-[500px]"
-                  loading="eager"
-                />
+                <div className="relative aspect-[16/9] w-full bg-slate-100 overflow-hidden">
+                  <Image
+                    src={post.anhDaiDienUrl}
+                    alt={post.anhDaiDienAlt || post.tieuDe}
+                    fill
+                    priority
+                    sizes="(max-width: 1024px) 100vw, 800px"
+                    className="object-cover"
+                  />
+                </div>
                 {post.anhDaiDienAlt && (
                   <figcaption className="p-3 text-center text-xs text-slate-500 italic bg-white border-t border-slate-100">
                     {post.anhDaiDienAlt}
@@ -656,10 +663,12 @@ export default async function PostDetailPage({ params, searchParams }: PostDetai
                   className="group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md hover:border-blue-300 transition-all flex flex-col"
                 >
                   <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
-                    <img
+                    <Image
                       src={article.anhDaiDienUrl}
                       alt={article.anhDaiDienAlt || article.tieuDe}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
                       loading="lazy"
                     />
                     {article.category && (

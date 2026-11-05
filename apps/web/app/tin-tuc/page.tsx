@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Calendar,
   Clock,
@@ -368,10 +369,13 @@ export default async function NewsListingPage({ searchParams }: NewsPageProps) {
                 className="group block h-full bg-white rounded-3xl overflow-hidden border border-slate-200/80 shadow-xl hover:shadow-2xl transition-all duration-300 motion-reduce:transition-none"
               >
                 <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-900">
-                  <img
+                  <Image
                     src={heroArticle.anhDaiDienUrl}
                     alt={heroArticle.anhDaiDienAlt || heroArticle.tieuDe}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 motion-reduce:transform-none"
+                    fill
+                    priority
+                    sizes="(max-width: 1024px) 100vw, 66vw"
+                    className="object-cover group-hover:scale-105 transition-transform duration-500 motion-reduce:transform-none"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                   <div className="absolute top-4 left-4 flex items-center gap-2">
@@ -424,10 +428,12 @@ export default async function NewsListingPage({ searchParams }: NewsPageProps) {
                 >
                   <div className="space-y-3">
                     <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden bg-slate-900">
-                      <img
+                      <Image
                         src={item.anhDaiDienUrl}
                         alt={item.anhDaiDienAlt || item.tieuDe}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 motion-reduce:transform-none"
+                        fill
+                        sizes="(max-width: 1024px) 100vw, 33vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-500 motion-reduce:transform-none"
                       />
                       {item.category && (
                         <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-900/80 text-white backdrop-blur-md">
@@ -497,11 +503,14 @@ export default async function NewsListingPage({ searchParams }: NewsPageProps) {
                 className="group flex flex-col bg-white rounded-3xl overflow-hidden border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-300 motion-reduce:transition-none"
               >
                 {/* Thumbnail */}
-                <Link href={`/tin-tuc/${article.slug}`} className="relative aspect-[16/9] w-full overflow-hidden bg-slate-900">
-                  <img
+                <Link href={`/tin-tuc/${article.slug}`} className="relative aspect-[16/9] w-full overflow-hidden bg-slate-900 block">
+                  <Image
                     src={article.anhDaiDienUrl}
                     alt={article.anhDaiDienAlt || article.tieuDe}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 motion-reduce:transform-none"
+                    fill
+                    loading="lazy"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    className="object-cover group-hover:scale-105 transition-transform duration-500 motion-reduce:transform-none"
                   />
                   {article.category && (
                     <span className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-semibold bg-slate-900/80 backdrop-blur-md text-white border border-white/10">
