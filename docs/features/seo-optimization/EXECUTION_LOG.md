@@ -25,12 +25,12 @@
 
 ## 2. Nhật Ký Tiến Độ Từng Đơn Vị (Progress Tracking)
 
-* [ ] `U-01`: Chuẩn hóa Canonical & Khắc phục Sitemap Redirects
-* [ ] `U-02`: Tài nguyên Social Open Graph Images
-* [ ] `U-03`: SERP Mobile Icons & Web Manifest
-* [ ] `U-04`: Bảo vệ cấu trúc Heading H1 Toàn Cục
-* [ ] `U-05`: Tối ưu Core Web Vitals Trang Tin Tức (LCP & CLS)
-* [ ] `U-06`: On-Demand Cache Revalidation & RSS Feed
-* [ ] `U-07`: Mở rộng Phân khúc Xe (Hatchback & Xe Điện)
-* [ ] `U-08`: Programmatic Landing Page Dự toán lăn bánh theo mẫu xe
-* [ ] `U-09`: Review Schema & Local SEO Showroom
+* [x] `U-01`: Chuẩn hóa Canonical & Khắc phục Sitemap Redirects (Commit: `fc9da35`)
+* [x] `U-02`: Tài nguyên Social Open Graph Images (Commit: `15cc99f`)
+* [x] `U-03`: SERP Mobile Icons & Web Manifest (Commit: `21e4bf3`)
+* [x] `U-04`: Bảo vệ cấu trúc Heading H1 Toàn Cục (Commit: `7eb1db2`)
+* [x] `U-05`: Tối ưu Core Web Vitals Trang Tin Tức (LCP & CLS) (Commit: `7b66e44`)
+* [x] `U-06`: On-Demand Cache Revalidation & RSS Feed (Commit: `13e4e3f`)
+* [x] `U-07`: Mở rộng Phân khúc Xe (Hatchback & Xe Điện) (Commit: `8884b18`)
+* [x] `U-08`: Programmatic Landing Page Dự toán lăn bánh theo mẫu xe (Commit: `b308557`)
+* [x] `U-09`: Review Schema & Local SEO Showroom (Commit: `963344c`)
