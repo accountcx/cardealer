@@ -37,3 +37,4 @@
 4. **[`pricing-calculator/`](./pricing-calculator/)**: Phân hệ Tính Chi Phí Lăn Bánh Địa Phương, Bảng Tính Trả Góp Ngân Hàng Dư Nợ Giảm Dần & Format Tiền Tệ VNĐ (v1.0.0 Active).
 5. **[`static-pages/`](./static-pages/)**: Phân hệ Trang Tĩnh E-E-A-T (Giới thiệu, Chính sách, Quy trình) & Cấu Hình Showroom Toàn Cục (v1.0.0 Active).
 6. **[`content-management/`](./content-management/)**: Phân hệ Tin Tức & Quản Trị Nội Dung: Soạn Thảo Tiptap AST 8 Content Blocks, Trình Phát TikTok 9:16, Gắn Link Nội Bộ, AI Gợi Ý Đề Tài Chống Trùng Lặp, Lập Lịch Tự Động Viết Bài Định Kỳ (In-Process Node Scheduler) & Trợ Lý AI Lập Kế Hoạch Biên Tập 30 Ngày (v1.4.0 Active).
+7. **[`seo-optimization/`](./seo-optimization/)**: Phân hệ Tối Ưu Hóa Công Cụ Tìm Kiếm (SEO), Core Web Vitals, Structured Data Schema.org, Programmatic Landing Pages & Tăng Trưởng Lượt Truy Cập Tự Nhiên (v1.0.0 Planning).

@@ -1,0 +1,24 @@
+# guard_unit lock - KHONG sua tay (tao boi: guard_unit.sh lock-roadmap). Moi thay doi => sha khac => guard FAIL.
+version=2
+revision=1
+base=80f195a7730770026b02172f51b5b05f7d67d396
+origin_base=80f195a7730770026b02172f51b5b05f7d67d396
+created=2026-11-05_23:24:30
+max_lines=300
+verify_cmd=
+verify_timeout=900
+allow_zero_tests=0
+auto_pilot=1
+guard_path=scripts/guard_unit.sh
+skip_baseline=0
+guard=013066e0b09688c5d7e548a913c365c179cc8d6f431ad2d22a9ea6eb14a966d2
+ext_dir=/Users/nhatphan/.local/state/guard-unit/c958eb5869a3
+unit	U-01	LOW	apps/web/app/gia-lan-banh/page.tsx,apps/web/app/tra-gop/page.tsx,apps/web/app/sitemap.ts	-	-
+unit	U-02	LOW	apps/web/public/images/og-image.jpg,apps/web/public/images/og-sedan.webp,apps/web/public/images/og-suv.webp	-	-
+unit	U-03	LOW	apps/web/public/favicon.ico,apps/web/public/apple-touch-icon.png,apps/web/public/manifest.webmanifest	-	-
+unit	U-04	LOW	apps/web/app/page.tsx,apps/web/components/home/HeroEventBanner.tsx	-	-
+unit	U-05	LOW	apps/web/app/tin-tuc/page.tsx,apps/web/app/tin-tuc/[slug]/page.tsx	-	-
+unit	U-06	LOW	apps/web/app/api/revalidate/route.ts,apps/web/app/feed.xml/route.ts	-	-
+unit	U-07	LOW	apps/web/config/segments.ts	-	-
+unit	U-08	LOW	apps/web/app/gia-lan-banh/[carSlug]/page.tsx	-	-
+unit	U-09	LOW	apps/web/components/home/DeliveryStoriesSection.tsx	-	-
