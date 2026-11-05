@@ -46,12 +46,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/tra-gop`,
-      lastModified: now,
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
-    {
       url: `${baseUrl}/lien-he`,
       lastModified: now,
       changeFrequency: 'monthly',
@@ -116,11 +110,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.warn('[Sitemap] Không thể nạp danh sách trang tĩnh:', err);
   }
 
-  return [
+  const allRoutes = [
     ...staticRoutes,
     ...segmentRoutes,
     ...carRoutes,
     ...postRoutes,
     ...staticPageRoutes,
   ];
+
+  // Khử trùng lặp URL tuyệt đối bằng Map theo chuẩn Google Search Central
+  const uniqueRoutesMap = new Map<string, MetadataRoute.Sitemap[number]>();
+  for (const route of allRoutes) {
+    if (route.url && !uniqueRoutesMap.has(route.url)) {
+      uniqueRoutesMap.set(route.url, route);
+    }
+  }
+
+  return Array.from(uniqueRoutesMap.values());
 }

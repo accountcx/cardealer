@@ -19,10 +19,14 @@ export const metadata: Metadata = {
   title: 'Bảng Tính Giá Lăn Bánh & Trả Góp Xe Hyundai 2026 | Xe Hyundai Vinh',
   description:
     'Công cụ tính toán chính xác giá lăn bánh xe ô tô Hyundai tại Nghệ An & Hà Tĩnh: Grand i10, Accent, Creta, Tucson, Santa Fe, Custin, Palisade. Dự toán lãi suất trả góp chỉ 7.9%/năm.',
+  alternates: {
+    canonical: '/gia-lan-banh',
+  },
   openGraph: {
     title: 'Tính Giá Lăn Bánh Xe Hyundai Nhanh Chóng & Nhận Ưu Đãi Độc Quyền',
     description:
       'Dự toán trọn gói các khoản thuế trước bạ 10%, biển số, đăng kiểm. Nhận ưu đãi tiền mặt độc quyền tại Xe Hyundai Vinh!',
+    url: '/gia-lan-banh',
     type: 'website',
   },
 };
