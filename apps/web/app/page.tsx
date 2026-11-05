@@ -92,8 +92,24 @@ export default async function HomePage() {
 
   return (
     <div className="w-full bg-white text-slate-900 selection:bg-[#0072CE] selection:text-white min-h-screen">
-      {/* Phân Khu 1: Hero Event Banner & Countdown Timer */}
-      <HeroEventBanner config={homepage.heroBanner} hotline={hotline} />
+      {/* Phân Khu 1: Hero Event Banner & Countdown Timer (Có Fallback H1 bảo vệ On-page SEO) */}
+      {homepage.heroBanner?.enabled ? (
+        <HeroEventBanner config={homepage.heroBanner} hotline={hotline} />
+      ) : (
+        <section className="bg-gradient-to-r from-[#002C6C] via-[#003882] to-[#041a3d] text-white py-12 sm:py-16 px-4 sm:px-6 lg:px-8 border-b border-slate-200">
+          <div className="max-w-7xl mx-auto space-y-3">
+            <span className="inline-block px-3 py-1 bg-sky-500/20 text-sky-300 font-bold text-xs uppercase tracking-widest rounded-full border border-sky-400/30">
+              Đại Lý Ủy Quyền Chính Hãng
+            </span>
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight uppercase">
+              {settings.site.businessName || settings.site.siteTitle || "Xe Hyundai Vinh"}
+            </h1>
+            <p className="text-sm sm:text-base text-slate-200 max-w-2xl leading-relaxed">
+              {settings.site.defaultDescription || "Bảng giá xe Hyundai mới nhất 2026, dự toán chi phí lăn bánh và chương trình hỗ trợ trả góp lãi suất ưu đãi."}
+            </p>
+          </div>
+        </section>
+      )}
 
       <React.Suspense fallback={null}>
         <HomeFilterProvider

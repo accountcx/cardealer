@@ -118,10 +118,10 @@ export const HeroEventBanner: React.FC<HeroEventBannerProps> = ({ config, hotlin
             </div>
           )}
 
-          {/* Tiêu đề chính & Slogan */}
+          {/* Tiêu đề chính & Slogan (Fallback an toàn cho SEO không bị rỗng H1) */}
           <div className="space-y-3 sm:space-y-4 w-full">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight uppercase drop-shadow-xl">
-              {config.headline}
+              {config.headline || 'Đại Lý Xe Hyundai Chính Hãng Tại TP. Vinh, Nghệ An'}
             </h1>
             <p className={`text-base sm:text-lg lg:text-xl text-slate-200 font-medium leading-relaxed max-w-2xl drop-shadow ${subheadlineClasses}`}>
               {config.subheadline}
