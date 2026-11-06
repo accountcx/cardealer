@@ -86,6 +86,8 @@ export const HeroEventBanner: React.FC<HeroEventBannerProps> = ({ config, hotlin
               alt={config.headline || 'Banner Sự Kiện Hyundai'}
               fill
               priority
+              fetchPriority="high"
+              loading="eager"
               sizes="100vw"
               className={`object-cover transition-transform duration-700 hover:scale-105 ${
                 isRight ? 'object-center md:object-[center_left]' : isCenter ? 'object-center' : 'object-center md:object-[center_right]'

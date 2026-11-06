@@ -8,6 +8,13 @@
     "start": "sh -c 'next start --port ${PORT:-3002}'",
     "check-types": "tsc --noEmit"
   },
+  "browserslist": [
+    "chrome >= 109",
+    "edge >= 109",
+    "safari >= 15.6",
+    "firefox >= 108",
+    "ios_saf >= 15.6"
+  ],
   "dependencies": {
     "@cardealer/core": "workspace:*",
     "@cardealer/env": "workspace:*",

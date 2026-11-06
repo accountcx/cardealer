@@ -76,19 +76,29 @@ export const ChipGroup: React.FC<ChipGroupProps> = ({
   }, [scrollableOnMobile]);
 
   React.useEffect(() => {
-    updateScrollIndicators();
+    if (!scrollableOnMobile) return;
     const el = scrollContainerRef.current;
     if (!el) return;
 
-    const handleScroll = () => updateScrollIndicators();
+    // Trì hoãn đo lường bằng requestAnimationFrame để không chặn luồng vẽ ban đầu (Khử Forced Reflow)
+    let rafId = requestAnimationFrame(() => {
+      updateScrollIndicators();
+    });
+
+    const handleScroll = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(updateScrollIndicators);
+    };
+
     el.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', updateScrollIndicators);
+    window.addEventListener('resize', handleScroll);
 
     return () => {
+      cancelAnimationFrame(rafId);
       el.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', updateScrollIndicators);
+      window.removeEventListener('resize', handleScroll);
     };
-  }, [updateScrollIndicators, options]);
+  }, [updateScrollIndicators, scrollableOnMobile, options]);
 
   const gridClasses = React.useMemo(() => {
     switch (gridCols) {

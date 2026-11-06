@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import Script from 'next/script';
 import { sanitizeTrackingId } from '@cardealer/types';
 import './globals.css';
 import { getStorefrontSettings } from '../services/settings.service';
 import { ViewportCoordinator } from '../components/layout/ViewportCoordinator';
 import { Footer } from '../components/layout/Footer';
 import { AutoDealerJsonLd, SalerJsonLd } from '../components/seo/AutoDealerJsonLd';
+import { DeferredAnalytics } from '../components/analytics/DeferredAnalytics';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -83,99 +83,32 @@ export default async function RootLayout({
   return (
     <html lang="vi-VN" className="overflow-x-clip scroll-smooth">
       <head>
-        {/* Khởi tạo dataLayer sớm để lưu trữ sự kiện trước khi script nạp */}
+        {/* 1. Tối ưu Kết Nối Sớm (Preconnect & DNS-Prefetch) cho CDN ảnh LCP */}
+        <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+        {gtmId && <link rel="dns-prefetch" href="https://www.googletagmanager.com" />}
+        {clarityId && <link rel="dns-prefetch" href="https://scripts.clarity.ms" />}
+
+        {/* 2. Khởi tạo dataLayer & gtag sớm để lưu trữ sự kiện trước khi script nạp */}
         <script
           id="gtm-datalayer-init"
           dangerouslySetInnerHTML={{
-            __html: 'window.dataLayer = window.dataLayer || [];',
+            __html: 'window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}',
           }}
         />
-
-        {/* 1. Google Tag Manager (Tối ưu Core Web Vitals: nạp khi browser idle để không chặn CPU main thread) */}
-        {gtmId && (
-          <Script id="google-tag-manager" strategy="lazyOnload">
-            {`
-              (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${gtmId}');
-            `}
-          </Script>
-        )}
-
-        {/* 2. Google Analytics 4 / Google Tag (gtag.js - nạp lazyOnload giải phóng TBT) */}
-        {gaId && (
-          <>
-            <Script
-              id="google-tag-src"
-              strategy="lazyOnload"
-              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
-            />
-            <Script id="google-analytics" strategy="lazyOnload">
-              {`
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${gaId}');
-              `}
-            </Script>
-          </>
-        )}
-
-        {/* 3. Microsoft Clarity (Tối ưu lazyOnload chống Long Tasks) */}
-        {clarityId && (
-          <Script id="microsoft-clarity" strategy="lazyOnload">
-            {`
-              (function(c,l,a,r,i,t,y){
-                c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-              })(window, document, "clarity", "script", "${clarityId}");
-            `}
-          </Script>
-        )}
-
-        {/* 4. Facebook Pixel */}
-        {fbPixelId && (
-          <Script id="facebook-pixel" strategy="lazyOnload">
-            {`
-              !function(f,b,e,v,n,t,s)
-              {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-              n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-              if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-              n.queue=[];t=b.createElement(e);t.async=!0;
-              t.src=v;s=b.getElementsByTagName(e)[0];
-              s.parentNode.insertBefore(t,s)}(window, document,'script',
-              'https://connect.facebook.net/en_US/fbevents.js');
-              fbq('init', '${fbPixelId}');
-              fbq('track', 'PageView');
-            `}
-          </Script>
-        )}
-
-        {/* 5. TikTok Pixel */}
-        {tiktokPixelId && (
-          <Script id="tiktok-pixel" strategy="lazyOnload">
-            {`
-              !function (w, d, t) {
-                w.TiktokAnalyticsObject=t;var tt=w[t]=w[t]||[];tt.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"],tt.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<tt.methods.length;i++)tt.setAndDefer(tt,tt.methods[i]);tt.instance=function(t){for(var e=tt._i[t]||[],n=0;n<tt.methods.length;n++)tt.setAndDefer(e,tt.methods[n]);return e},tt.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";tt._i=tt._i||{},tt._i[e]=[],tt._i[e]._u=i,tt._t=tt._t||{},tt._t[e]=+new Date,tt._o=tt._o||{},tt._o[e]=n||{};var o=document.createElement("script");o.type="text/javascript",o.async=!0,o.src=i+"?sdkid="+e+"&lib="+t;var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};
-                tt.load('${tiktokPixelId}');
-                tt.page();
-              }(window, document, 'ttq');
-            `}
-          </Script>
-        )}
-
-        {/* 6. Zalo Pixel */}
-        {zaloPixelId && (
-          <Script id="zalo-pixel" strategy="lazyOnload">
-            {`
-              (function(w,d,s,l,i){w[l]=w[l]||[];var f=d.getElementsByTagName(s)[0],
-              j=d.createElement(s);j.async=true;j.src='https://sp.zalo.me/plugins/sdk.js?id='+i;
-              f.parentNode.insertBefore(j,f);})(window,document,'script','zaloSdk','${zaloPixelId}');
-            `}
-          </Script>
-        )}
       </head>
       <body
         className={`${inter.variable} font-sans antialiased min-h-screen bg-slate-50 text-slate-900 selection:bg-[#0072CE] selection:text-white overflow-x-clip flex flex-col justify-between`}
       >
+        {/* 3. Tối ưu Third-Party Scripts: Nạp theo tương tác hoặc Idle để giải phóng Main Thread (TBT = 0ms) */}
+        <DeferredAnalytics
+          gtmId={gtmId}
+          gaId={gaId}
+          clarityId={clarityId}
+          fbPixelId={fbPixelId}
+          tiktokPixelId={tiktokPixelId}
+          zaloPixelId={zaloPixelId}
+        />
         {/* 7. Custom Head / Verification Scripts (Đặt ngoài <head> để không vi phạm HTML5 spec với thẻ <div>) */}
         {site.customHeaderScripts && (
           <div

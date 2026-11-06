@@ -35,8 +35,8 @@ export const DeliveryStoriesSection: React.FC<DeliveryStoriesSectionProps> = ({ 
   const stories = config?.stories || [];
   const totalOriginal = stories.length;
 
-  // Lặp 5 bộ stories để tạo buffer vô cực mượt mà cho cả hướng Prev và Next
-  const repeatCount = totalOriginal > 1 ? 5 : 1;
+  // Lặp 3 bộ stories (thay vì 5) để tạo buffer vô cực mượt mà, cắt giảm hơn 300 phần tử DOM dư thừa
+  const repeatCount = totalOriginal > 1 ? 3 : 1;
   const extendedStories = useMemo(() => {
     if (totalOriginal <= 1) return stories;
     const list: DeliveryStoryItem[] = [];
@@ -52,13 +52,17 @@ export const DeliveryStoriesSection: React.FC<DeliveryStoriesSectionProps> = ({ 
     return firstChild ? firstChild.offsetWidth + 24 : 0; // 24px = gap-6
   }, []);
 
-  // Khởi tạo vị trí chính giữa (Set 2) khi mount
+  // Khởi tạo vị trí chính giữa (Set 1) khi mount bằng requestAnimationFrame
+  // Tránh đọc offsetWidth và ghi scrollLeft đồng bộ ngay khi mount (Khử 100% Forced Reflow)
   useEffect(() => {
     if (totalOriginal <= 1 || !scrollRef.current) return;
-    const itemWidth = getItemWidth();
-    if (itemWidth > 0) {
-      scrollRef.current.scrollLeft = totalOriginal * 2 * itemWidth;
-    }
+    const rafId = requestAnimationFrame(() => {
+      const itemWidth = getItemWidth();
+      if (itemWidth > 0 && scrollRef.current) {
+        scrollRef.current.scrollLeft = totalOriginal * 1 * itemWidth;
+      }
+    });
+    return () => cancelAnimationFrame(rafId);
   }, [totalOriginal, getItemWidth]);
 
   // Chuẩn hóa vị trí vô cực khi ngừng cuộn (debounce 150ms) để không ngắt animation lướt
@@ -80,13 +84,13 @@ export const DeliveryStoriesSection: React.FC<DeliveryStoriesSectionProps> = ({ 
       if (!scrollRef.current) return;
       const singleSetWidth = totalOriginal * itemWidth;
       const currentScroll = scrollRef.current.scrollLeft;
-      const minBound = singleSetWidth * 1.2;
-      const maxBound = singleSetWidth * 3.8;
+      const minBound = singleSetWidth * 0.4;
+      const maxBound = singleSetWidth * 2.2;
 
       if (currentScroll < minBound || currentScroll > maxBound) {
         const offsetInSet = currentScroll % singleSetWidth;
-        // Đưa về Set 2 một cách tức thì và vô hình với mắt người
-        scrollRef.current.scrollLeft = 2 * singleSetWidth + offsetInSet;
+        // Đưa về Set 1 một cách tức thì và vô hình với mắt người
+        scrollRef.current.scrollLeft = singleSetWidth + offsetInSet;
       }
     }, 150);
   }, [totalOriginal, getItemWidth]);
