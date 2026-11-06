@@ -1,6 +1,7 @@
 import type { PromptBuilderInput } from '../ai.types';
+import { detectTopicCluster, slugifyVietnamese } from '@cardealer/core';
 
-// WHY: Tạo prompt viết bài hoàn chỉnh từ A-Z đạt 10 tiêu chí Động cơ SEO Real-time.
+// WHY: Tạo prompt viết bài hoàn chỉnh từ A-Z đạt 10 tiêu chí Động cơ SEO Real-time và Chiến Lược Topic Cluster.
 export function buildFullArticlePrompt(
   input: PromptBuilderInput,
   availableCarsListText: string,
@@ -9,18 +10,40 @@ export function buildFullArticlePrompt(
   targetLocation: string,
   targetKeyword: string
 ): string {
-  const { prompt, context } = input;
+  const { prompt, context, cluster, angle, carSlug } = input;
+  const effectiveCluster = cluster || detectTopicCluster(prompt, angle, targetKeyword);
+  const carUrlSlug = carSlug || slugifyVietnamese(targetCar);
+
+  let clusterLinkingGuidance = '';
+  if (effectiveCluster === 'comparison') {
+    clusterLinkingGuidance = `8. QUY TẮC TOPIC CLUSTER: CỤM 1 - SO SÁNH XE ĐỐI THỦ (MOFU - INTERNAL LINKING & CONVERSION):
+   - Đặt trọng tâm so sánh khách quan với đối thủ (trang bị, kích thước, mức tiêu hao nhiên liệu, chi phí lăn bánh).
+   - Bắt buộc chèn liên kết nội bộ hoặc khối callout dẫn về trang chi tiết xe tại "/xe/${carUrlSlug}" để người đọc xem bảng thông số kỹ thuật và hình ảnh thực tế.
+   - Bắt buộc có khối leadForm hoặc ctaButton kêu gọi "Đăng Ký Lái Thử & So Sánh Trực Tiếp Tại Showroom".`;
+  } else if (effectiveCluster === 'finance_procedure') {
+    clusterLinkingGuidance = `8. QUY TẮC TOPIC CLUSTER: CỤM 2 - THỦ TỤC & TÀI CHÍNH ĐỊA PHƯƠNG (BOFU - INTERNAL LINKING & CALCULATOR):
+   - Hướng dẫn rõ ràng các bước thủ tục giấy tờ tại ${targetLocation} (nộp thuế trước bạ, thủ tục đăng ký bấm biển, đăng kiểm).
+   - Bắt buộc chèn liên kết nội bộ hoặc khối callout dẫn về công cụ tính giá lăn bánh & trả góp tự động tại "/gia-lan-banh" để khách hàng tự tính khoản vay và dự toán ngân sách.
+   - Thêm khối callout hoặc faq giải đáp chi tiết về gói vay ngân hàng và duyệt hồ sơ nhanh 24h.`;
+  } else {
+    clusterLinkingGuidance = `8. QUY TẮC TOPIC CLUSTER: CỤM 3 - ĐÁNH GIÁ CHI TIẾT & CHI PHÍ NUÔI XE (E-E-A-T & OWNERSHIP):
+   - Đưa ra đánh giá thực tế về mức tiêu hao nhiên liệu (đô thị vs đường trường), chi phí bảo dưỡng từng cấp độ (5.000km, 10.000km, 20.000km).
+   - Nếu phân tích trang bị an toàn (SmartSense), gắn liền với bối cảnh giao thông thực tế tại ${targetLocation} (như cao tốc Diễn Châu - Bãi Vọt).
+   - Bắt buộc chèn liên kết nội bộ dẫn về trang chi tiết xe tại "/xe/${carUrlSlug}" và xưởng dịch vụ ủy quyền.`;
+  }
+
   return `Hãy viết một BÀI VIẾT HOÀN CHỈNH TỪ A-Z ĐẠT ĐIỂM TUYỆT ĐỐI ĐỘNG CƠ SEO REAL-TIME (100/100 ĐIỂM) về chủ đề: "${prompt}".
 
 Thông tin trọng tâm:
 - Dòng xe: ${targetCar}
 - Khu vực / Tỉnh thành: ${targetLocation}
 - Từ khóa chính mục tiêu (Focus Keyword): ${targetKeyword}
+- Cụm chủ đề (Topic Cluster): ${effectiveCluster}
 ${context ? `- Ngữ cảnh bổ sung / Dàn ý biên tập viên cung cấp:\n${context}\n` : ''}
 ${availableCarsListText}
 ${existingArticlesText ? `${existingArticlesText}\n` : ''}
 
-CÁC QUY TẮC BẮT BUỘC ĐỂ ĐẠT 100/100 ĐIỂM SEO ON-PAGE:
+CÁC QUY TẮC BẮT BUỘC ĐỂ ĐẠT 100/100 ĐIỂM SEO ON-PAGE & TOPIC CLUSTER:
 1. title: Độ dài 45-62 ký tự, chứa trọn vẹn từ khóa "${targetKeyword}" ở ngay nửa đầu tiêu đề.
 2. summary: 2-3 câu mở đầu cuốn hút, chứa từ khóa chính.
 3. focusKeyword: "${targetKeyword}".
@@ -39,6 +62,7 @@ CÁC QUY TẮC BẮT BUỘC ĐỂ ĐẠT 100/100 ĐIỂM SEO ON-PAGE:
    - 1 khối faq: 3-4 câu hỏi thường gặp thiết thực nhất.
    - 1 khối leadForm: Form đăng ký nhận báo giá lăn bánh & lái thử.
    - 1 khối ctaButton: Nút gọi hotline / Zalo chuyển đổi cao.
+${clusterLinkingGuidance}
 
 TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON SAU (Số lượng blocks từ 8 đến 14 khối linh hoạt theo nội dung thực tế):
 {

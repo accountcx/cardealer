@@ -135,6 +135,7 @@ export function buildPrompt(input: PromptBuilderInput): PromptBuilderResult {
         availableCars: input.availableCars,
         existingArticles: input.existingArticles,
         location: targetLocation,
+        clusterStrategy: input.clusterStrategy,
       });
       break;
 

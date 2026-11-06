@@ -13,3 +13,4 @@ export * from './seo/deduplication';
 export * from './email/lead-notification';
 export * from './media/cloudinary';
 export * from './scheduler/cron-utils';
+export * from './seo/topic-clusters';

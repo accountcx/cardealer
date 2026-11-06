@@ -7,6 +7,8 @@ import type {
   FaqItem,
   SeoOptimizationResult,
   CarFullContentResult,
+  TopicClusterItem,
+  TopicClusterType,
 } from '@cardealer/types';
 
 export interface LocationProfile {
@@ -71,6 +73,8 @@ export interface PromptBuilderInput {
   availableCars?: AiCarSummary[];
   existingArticles?: ExistingCarArticleSummary[];
   maxTokens?: number;
+  clusterStrategy?: TopicClusterType;
+  cluster?: TopicClusterItem;
   locProfile: LocationProfile;
   segmentProfile: SegmentProfile;
   calculatedPricing: PricingCalculation;

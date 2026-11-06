@@ -172,7 +172,22 @@ export class AiService {
 
   // WHY: Phương thức điều phối chính (Orchestrator) thực thi toàn bộ quy trình AI Content Generation.
   public async generate(request: AiGenerateRequest): Promise<AiGenerateResponseData> {
-    const { action, prompt, context, keyword, carModel, carSlug, location, availableCars, maxTokens, angle, category, ideasCount } = request;
+    const {
+      action,
+      prompt,
+      context,
+      keyword,
+      carModel,
+      carSlug,
+      location,
+      availableCars,
+      maxTokens,
+      angle,
+      category,
+      ideasCount,
+      clusterStrategy,
+      cluster,
+    } = request;
 
     const targetLocation = location || 'Nghệ An & Hà Tĩnh';
     const targetCar = carModel || 'Xe ô tô Hyundai';
@@ -231,6 +246,8 @@ export class AiService {
       availableCars,
       existingArticles,
       maxTokens,
+      clusterStrategy,
+      cluster,
       locProfile,
       segmentProfile,
       calculatedPricing,

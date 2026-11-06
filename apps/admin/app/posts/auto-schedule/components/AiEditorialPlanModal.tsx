@@ -13,10 +13,11 @@ import {
   Car,
   Compass,
   ArrowRight,
+  Layers,
 } from "lucide-react";
 import { Button, Badge } from "@cardealer/ui";
 import { autoPostService } from "../../../../services/auto-post.service";
-import type { EditorialPlanItem } from "@cardealer/types";
+import type { EditorialPlanItem, TopicClusterType } from "@cardealer/types";
 
 interface CategoryOption {
   id: string;
@@ -43,6 +44,7 @@ export function AiEditorialPlanModal({
   onPlanIngested,
 }: AiEditorialPlanModalProps) {
   const [targetMonthCount, setTargetMonthCount] = useState<number>(12);
+  const [clusterStrategy, setClusterStrategy] = useState<TopicClusterType>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedCar, setSelectedCar] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -65,6 +67,7 @@ export function AiEditorialPlanModal({
     try {
       const res = await autoPostService.generateEditorialPlan({
         targetMonthCount,
+        clusterStrategy,
         categoryId: selectedCategory || undefined,
         targetCar: selectedCar || undefined,
       });
@@ -99,6 +102,30 @@ export function AiEditorialPlanModal({
     setSelectedIndexes(updated);
   };
 
+  const renderClusterBadge = (cluster?: string | null) => {
+    switch (cluster) {
+      case "comparison":
+        return (
+          <Badge className="bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[11px]">
+            Cụm 1: So sánh xe
+          </Badge>
+        );
+      case "finance_procedure":
+        return (
+          <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px]">
+            Cụm 2: Thủ tục & Tài chính
+          </Badge>
+        );
+      case "detailed_review":
+      default:
+        return (
+          <Badge className="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[11px]">
+            Cụm 3: Đánh giá chi tiết
+          </Badge>
+        );
+    }
+  };
+
   const handleIngest = async () => {
     if (selectedIndexes.size === 0) return;
 
@@ -116,6 +143,7 @@ export function AiEditorialPlanModal({
           categoryId: item.categoryId || selectedCategory || undefined,
           angle: item.angle || undefined,
           summary: item.summary || undefined,
+          cluster: item.cluster || undefined,
           scheduledAt: scheduledDate,
         };
       });
@@ -162,7 +190,7 @@ export function AiEditorialPlanModal({
 
         {/* Controls & Filter */}
         <div className="p-6 border-b border-slate-800/80 bg-slate-950/40">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
                 Số lượng bài trong tháng
@@ -178,6 +206,24 @@ export function AiEditorialPlanModal({
                 <option value={16}>16 bài (~4 bài/tuần)</option>
                 <option value={20}>20 bài (Ngày thường)</option>
                 <option value={30}>30 bài (Mỗi ngày 1 bài)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1">
+                <Layers className="w-3.5 h-3.5 text-amber-400" />
+                Chiến lược Cụm chủ đề
+              </label>
+              <select
+                value={clusterStrategy}
+                onChange={(e) => setClusterStrategy(e.target.value as TopicClusterType)}
+                disabled={isGenerating || isIngesting}
+                className="w-full h-10 px-3 text-sm bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-amber-500 transition-colors"
+              >
+                <option value="all">Toàn diện (Cân bằng 3 Cụm)</option>
+                <option value="comparison">Cụm 1: So sánh xe (MOFU)</option>
+                <option value="finance_procedure">Cụm 2: Thủ tục & Tài chính (BOFU)</option>
+                <option value="detailed_review">Cụm 3: Đánh giá & Nuôi xe (E-E-A-T)</option>
               </select>
             </div>
 
@@ -317,12 +363,13 @@ export function AiEditorialPlanModal({
                             <Badge className="bg-sky-500/10 text-sky-400 border border-sky-500/20 text-[11px] font-mono">
                               Ngày {item.suggestedDay || idx + 1}
                             </Badge>
+                            {renderClusterBadge(item.cluster)}
                             {item.targetCar && (
                               <Badge className="bg-slate-800 text-slate-300 border border-slate-700 text-[11px]">
                                 {item.targetCar}
                               </Badge>
                             )}
-                            <Badge className="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[11px]">
+                            <Badge className="bg-slate-800 text-slate-400 border border-slate-700 text-[11px]">
                               {item.angle}
                             </Badge>
                           </div>

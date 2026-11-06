@@ -8,8 +8,14 @@ import type {
   CarFullContentResult,
   TopicIdeaItem,
   EditorialPlanItem,
+  TopicClusterItem,
 } from '@cardealer/types';
-import { slugifyVietnamese, checkTitleOrKeywordOverlap, sanitizePromotionSummary } from '@cardealer/core';
+import {
+  slugifyVietnamese,
+  checkTitleOrKeywordOverlap,
+  sanitizePromotionSummary,
+  detectTopicCluster,
+} from '@cardealer/core';
 import type { TransformContext, ExistingCarArticleSummary } from './ai.types';
 
 export { checkTitleOrKeywordOverlap };
@@ -158,6 +164,13 @@ export function normalizeEditorialPlan(
     const summary = String(item.summary || item.tomTat || `Bài viết định hướng cho ${title}`).trim();
     const suggestedDay = typeof item.suggestedDay === 'number' ? item.suggestedDay : Math.min(30, Math.max(1, (idx * 2) + 1));
 
+    let cluster: TopicClusterItem = 'detailed_review';
+    if (item.cluster === 'comparison' || item.cluster === 'finance_procedure' || item.cluster === 'detailed_review') {
+      cluster = item.cluster;
+    } else {
+      cluster = detectTopicCluster(title, angle, focusKeyword);
+    }
+
     const isDuplicate = checkTitleOrKeywordOverlap(title, focusKeyword, existingArticles);
     if (!isDuplicate) {
       normalized.push({
@@ -167,6 +180,7 @@ export function normalizeEditorialPlan(
         categorySlug,
         angle,
         summary,
+        cluster,
         suggestedDay,
       });
     }

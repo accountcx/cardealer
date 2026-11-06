@@ -11,7 +11,12 @@ import {
   SyncQueueInputSchema,
   type EditorialPlanItem,
 } from '@cardealer/types';
-import { reschedulePendingItems } from '@cardealer/core';
+import {
+  reschedulePendingItems,
+  formatClusterAngle,
+  parseClusterFromAngle,
+  detectTopicCluster,
+} from '@cardealer/core';
 import { autoPostSchedulerService } from '../../services/auto-post-scheduler.service';
 import { aiService } from '../../services/ai/ai.service';
 
@@ -233,10 +238,15 @@ export async function handleAdminAutoPostRoutes(
       sendJson(200, {
         success: true,
         data: {
-          items: items.map((item) => ({
-            ...item,
-            categoryName: item.category?.tenChuyenMuc || undefined,
-          })),
+          items: items.map((item) => {
+            const { cluster: parsedCluster } = parseClusterFromAngle(item.angle);
+            const cluster = parsedCluster || detectTopicCluster(item.title, item.angle || undefined, item.focusKeyword);
+            return {
+              ...item,
+              cluster,
+              categoryName: item.category?.tenChuyenMuc || undefined,
+            };
+          }),
           pagination: {
             page,
             limit,
@@ -404,10 +414,11 @@ export async function handleAdminAutoPostRoutes(
 
       const aiResponse = await aiService.generate({
         action: 'generate_editorial_plan',
-        prompt: `Lập kế hoạch nội dung biên tập 30 ngày gồm ${parsed.data.targetMonthCount} bài viết`,
+        prompt: `Lập kế hoạch nội dung biên tập 30 ngày gồm ${parsed.data.targetMonthCount} bài viết theo chiến lược cụm chủ đề ${parsed.data.clusterStrategy || 'all'}`,
         ideasCount: parsed.data.targetMonthCount,
         category: categoryName,
         carModel: parsed.data.targetCar || undefined,
+        clusterStrategy: parsed.data.clusterStrategy,
       });
 
       const editorialPlan: EditorialPlanItem[] = aiResponse.editorialPlan || [];
@@ -424,8 +435,10 @@ export async function handleAdminAutoPostRoutes(
         if (scheduledDate < now) {
           scheduledDate.setMonth(scheduledDate.getMonth() + 1);
         }
+        const cluster = item.cluster || detectTopicCluster(item.title, item.angle, item.focusKeyword);
         return {
           ...item,
+          cluster,
           scheduledAt: scheduledDate.toISOString(),
           categoryId: parsed.data.categoryId || null,
         };
@@ -467,16 +480,23 @@ export async function handleAdminAutoPostRoutes(
         return true;
       }
 
-      const rowsToInsert = parsed.data.items.map((item) => ({
-        title: item.title,
-        focusKeyword: item.focusKeyword,
-        categoryId: item.categoryId || null,
-        targetCar: item.targetCar || null,
-        angle: item.angle || null,
-        summary: item.summary || null,
-        scheduledAt: new Date(item.scheduledAt),
-        status: 'pending' as const,
-      }));
+      const rowsToInsert = parsed.data.items.map((item) => {
+        const cluster =
+          item.cluster ||
+          (item.angle ? parseClusterFromAngle(item.angle).cluster : null) ||
+          detectTopicCluster(item.title, item.angle || undefined, item.focusKeyword);
+        const formattedAngle = formatClusterAngle(cluster, item.angle);
+        return {
+          title: item.title,
+          focusKeyword: item.focusKeyword,
+          categoryId: item.categoryId || null,
+          targetCar: item.targetCar || null,
+          angle: formattedAngle,
+          summary: item.summary || null,
+          scheduledAt: new Date(item.scheduledAt),
+          status: 'pending' as const,
+        };
+      });
 
       await db.insert(schema.contentPlanItems).values(rowsToInsert);
 

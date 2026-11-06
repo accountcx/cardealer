@@ -2,7 +2,12 @@ import cron, { type ScheduledTask } from 'node-cron';
 import crypto from 'node:crypto';
 import { db, schema } from '@cardealer/database';
 import { eq, asc, desc } from 'drizzle-orm';
-import { slugifyVietnamese, calculateReadingTimeAndWordCount } from '@cardealer/core';
+import {
+  slugifyVietnamese,
+  calculateReadingTimeAndWordCount,
+  parseClusterFromAngle,
+  detectTopicCluster,
+} from '@cardealer/core';
 import type { FullArticleBlock } from '@cardealer/types';
 import { aiService } from './ai/ai.service';
 
@@ -236,14 +241,19 @@ export class AutoPostSchedulerService {
         targetAngle = firstIdea?.angle || 'Đánh giá toàn diện';
       }
 
+      // Xác định Topic Cluster để định hướng liên kết nội bộ & CTA
+      const { cluster: parsedCluster } = parseClusterFromAngle(targetAngle);
+      const targetCluster = parsedCluster || detectTopicCluster(targetTitle, targetAngle, targetKeyword);
+
       // Gọi AI Service sinh trọn vẹn bài viết Tiptap AST
-      console.log(`[Scheduler] 🚀 Đang sinh bài viết: "${targetTitle}" (từ khóa: "${targetKeyword}")...`);
+      console.log(`[Scheduler] 🚀 Đang sinh bài viết: "${targetTitle}" (từ khóa: "${targetKeyword}", cluster: "${targetCluster}")...`);
       const fullArticleResponse = await aiService.generate({
         action: 'generate_full_article',
         prompt: targetTitle,
         keyword: targetKeyword,
         carModel: targetCar,
         angle: targetAngle,
+        cluster: targetCluster,
       });
 
       const article = fullArticleResponse.fullArticle;

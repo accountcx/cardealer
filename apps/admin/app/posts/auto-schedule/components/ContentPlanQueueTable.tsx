@@ -107,6 +107,39 @@ export function ContentPlanQueueTable({
     }
   };
 
+  const getClusterBadge = (cluster?: string | null, angle?: string | null) => {
+    let effective = cluster;
+    if (!effective && angle) {
+      if (angle.includes("So sánh") || angle.includes("so sánh")) effective = "comparison";
+      else if (angle.includes("Thủ tục") || angle.includes("Tài chính") || angle.includes("trả góp"))
+        effective = "finance_procedure";
+      else if (angle.includes("Đánh giá") || angle.includes("chi tiết")) effective = "detailed_review";
+    }
+
+    switch (effective) {
+      case "comparison":
+        return (
+          <Badge className="bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[10px]">
+            So sánh xe
+          </Badge>
+        );
+      case "finance_procedure":
+        return (
+          <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]">
+            Thủ tục & Tài chính
+          </Badge>
+        );
+      case "detailed_review":
+        return (
+          <Badge className="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px]">
+            Đánh giá chi tiết
+          </Badge>
+        );
+      default:
+        return null;
+    }
+  };
+
   const formatDate = (dateInput: string | Date) => {
     try {
       const d = new Date(dateInput);
@@ -266,8 +299,11 @@ export function ContentPlanQueueTable({
                   </TableCell>
 
                   <TableCell className="py-3">
-                    <div className="space-y-0.5 text-xs text-slate-300">
-                      <p className="font-medium text-white">{item.targetCar || "Tất cả dòng xe"}</p>
+                    <div className="space-y-1 text-xs text-slate-300">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="font-medium text-white">{item.targetCar || "Tất cả dòng xe"}</p>
+                        {getClusterBadge(item.cluster, item.angle)}
+                      </div>
                       <p className="text-[11px] text-slate-400 line-clamp-1">{item.angle || "Chung"}</p>
                     </div>
                   </TableCell>

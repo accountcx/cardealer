@@ -1,5 +1,14 @@
 import { z } from 'zod';
-import type { EditorialPlanItem } from './auto-post';
+import {
+  type EditorialPlanItem,
+  type TopicClusterItem,
+  type TopicClusterType,
+  TopicClusterItemSchema,
+  TopicClusterTypeSchema,
+} from './auto-post';
+
+export type { TopicClusterItem, TopicClusterType };
+export { TopicClusterItemSchema, TopicClusterTypeSchema };
 
 // 🧠 Mental Model: Type Definitions & Zod Schemas cho AI Writing Assistant (ChatGPT / OpenAI Integration).
 // Hỗ trợ tự động phân bổ thông minh 14 Content Blocks tinh hoa (Images, SpecTable, RelatedCar, ProsCons, FAQ, Callout, CTA, Video...).
@@ -45,6 +54,8 @@ export const AiGenerateRequestSchema = z.object({
   ideasCount: z.number().int().min(1).max(10).optional(),
   availableCars: z.array(AiCarSummarySchema).optional(),
   maxTokens: z.number().int().positive().optional(),
+  clusterStrategy: TopicClusterTypeSchema.optional(),
+  cluster: TopicClusterItemSchema.optional(),
 });
 export type AiGenerateRequest = z.infer<typeof AiGenerateRequestSchema>;
 

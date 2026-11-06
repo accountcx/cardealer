@@ -3,6 +3,16 @@ import { z } from 'zod';
 export const ContentPlanStatusSchema = z.enum(['pending', 'processing', 'completed', 'failed']);
 export type ContentPlanStatus = z.infer<typeof ContentPlanStatusSchema>;
 
+// 🧠 Topic Cluster Definitions cho Blog & Content Strategy (US-07 & SEO Engine)
+// Cụm 1: So sánh xe (MOFU - Thúc đẩy cân nhắc, chốt lead)
+// Cụm 2: Thủ tục & Tài chính (BOFU / Local E-E-A-T - Tháo gỡ rào cản tài chính & thủ tục hành chính)
+// Cụm 3: Đánh giá chi tiết (TOFU / Loyalty - Mức tiêu hao nhiên liệu thực tế, chi phí bảo dưỡng, SmartSense)
+export const TopicClusterItemSchema = z.enum(['comparison', 'finance_procedure', 'detailed_review']);
+export type TopicClusterItem = z.infer<typeof TopicClusterItemSchema>;
+
+export const TopicClusterTypeSchema = z.enum(['all', 'comparison', 'finance_procedure', 'detailed_review']);
+export type TopicClusterType = z.infer<typeof TopicClusterTypeSchema>;
+
 // 1. Auto Post Settings
 export const AutoPostSettingsSchema = z.object({
   id: z.string().default('default'),
@@ -46,6 +56,7 @@ export const ContentPlanItemSchema = z.object({
   targetCar: z.string().nullable().optional(),
   angle: z.string().nullable().optional(),
   summary: z.string().nullable().optional(),
+  cluster: TopicClusterItemSchema.nullable().optional(),
   scheduledAt: z.coerce.date(),
   status: ContentPlanStatusSchema.default('pending'),
   postId: z.string().uuid().nullable().optional(),
@@ -63,6 +74,7 @@ export const CreateContentPlanItemInputSchema = z.object({
   targetCar: z.string().nullable().optional(),
   angle: z.string().nullable().optional(),
   summary: z.string().nullable().optional(),
+  cluster: TopicClusterItemSchema.nullable().optional(),
   scheduledAt: z.coerce.date(),
 });
 export type CreateContentPlanItemInput = z.infer<typeof CreateContentPlanItemInputSchema>;
@@ -95,6 +107,7 @@ export const EditorialPlanItemSchema = z.object({
   categoryId: z.string().uuid().optional().nullable(),
   angle: z.string().min(3),
   summary: z.string().min(10),
+  cluster: TopicClusterItemSchema.optional().nullable(),
   suggestedDay: z.number().int().min(1).max(31).optional(),
   scheduledAt: z.coerce.date().optional(),
 });
@@ -104,6 +117,7 @@ export const GenerateEditorialPlanRequestSchema = z.object({
   targetMonthCount: z.number().int().min(1).max(31).default(12),
   categoryId: z.string().uuid().optional().nullable(),
   targetCar: z.string().optional().nullable(),
+  clusterStrategy: TopicClusterTypeSchema.default('all').optional(),
 });
 export type GenerateEditorialPlanRequest = z.infer<typeof GenerateEditorialPlanRequestSchema>;
 
