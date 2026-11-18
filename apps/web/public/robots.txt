@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin/
+Disallow: /preview
+Disallow: /*?*token=
+Disallow: /*?*preview=
+
+User-agent: Googlebot-Image
+Allow: /images/
+Allow: /uploads/
+
+Sitemap: https://xehyundaivinh.com/sitemap.xml
+Host: https://xehyundaivinh.com
